@@ -13,6 +13,7 @@ import {
 } from '../../controllers/admin.controller.js';
 import {
   createPreguntaSchema,
+  idParamSchema,
   importPreguntasCsvSchema,
   listReportesQuerySchema,
   updatePreguntaSchema,
@@ -24,12 +25,12 @@ const router = Router();
 router.use(requireAuth, requireRole('admin', 'editor', 'revisor'));
 router.get('/preguntas', listPreguntas);
 router.post('/preguntas', validate(createPreguntaSchema), createPregunta);
-router.get('/preguntas/:id', getPregunta);
-router.put('/preguntas/:id', validate(updatePreguntaSchema), updatePregunta);
-router.delete('/preguntas/:id', deletePregunta);
+router.get('/preguntas/:id', validate(idParamSchema, 'params'), getPregunta);
+router.put('/preguntas/:id', validate(idParamSchema, 'params'), validate(updatePreguntaSchema), updatePregunta);
+router.delete('/preguntas/:id', validate(idParamSchema, 'params'), deletePregunta);
 router.post('/preguntas/import', validate(importPreguntasCsvSchema), importPreguntasCsv);
 
 router.get('/reportes', validate(listReportesQuerySchema, 'query'), listReportes);
-router.patch('/reportes/:id/estado', validate(updateReporteEstadoSchema), updateReporteEstado);
+router.patch('/reportes/:id/estado', validate(idParamSchema, 'params'), validate(updateReporteEstadoSchema), updateReporteEstado);
 
 export default router;
