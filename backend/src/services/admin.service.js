@@ -51,13 +51,20 @@ const requiredHeaders = [
 
 export const adminService = {
   async listPreguntas(query) {
-    const page = Number(query.page || 1);
-    const pageSize = Number(query.page_size || 20);
+    const {
+      page,
+      page_size: pageSize,
+      oposicion_id: oposicionId,
+      materia_id: materiaId,
+      tema_id: temaId,
+      nivel_dificultad: nivelDificultad,
+    } = query;
+
     const filters = {
-      oposicionId: query.oposicion_id ? Number(query.oposicion_id) : null,
-      materiaId: query.materia_id ? Number(query.materia_id) : null,
-      temaId: query.tema_id ? Number(query.tema_id) : null,
-      nivelDificultad: query.nivel_dificultad ? Number(query.nivel_dificultad) : null,
+      oposicionId: oposicionId ?? null,
+      materiaId: materiaId ?? null,
+      temaId: temaId ?? null,
+      nivelDificultad: nivelDificultad ?? null,
     };
 
     const [items, total] = await Promise.all([
