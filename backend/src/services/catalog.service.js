@@ -27,21 +27,18 @@ export const catalogService = {
       throw new ApiError(400, 'tema_id es obligatorio');
     }
 
-    const safePage = Number.isFinite(page) && page > 0 ? page : 1;
-    const safePageSize = Number.isFinite(pageSize) && pageSize > 0 ? Math.min(pageSize, 100) : 20;
-
     const [items, total] = await Promise.all([
-      catalogRepository.getPreguntas(temaId, safePageSize, (safePage - 1) * safePageSize),
+      catalogRepository.getPreguntas(temaId, pageSize, (page - 1) * pageSize),
       catalogRepository.countPreguntas(temaId),
     ]);
 
     return {
       items,
       pagination: {
-        page: safePage,
-        pageSize: safePageSize,
+        page,
+        pageSize,
         total,
-        totalPages: Math.ceil(total / safePageSize),
+        totalPages: Math.ceil(total / pageSize),
       },
     };
   },
