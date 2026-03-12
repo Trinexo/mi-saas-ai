@@ -39,6 +39,7 @@ Regla operativa:
 - Cierre Sprint 2: `docs/releases/sprint-2-cierre.md`
 - Inicio Sprint 3: `docs/releases/sprint-3-inicio.md`
 - Cierre Sprint 3: `docs/releases/sprint-3-cierre.md`
+- Inicio Sprint 4: `docs/releases/sprint-4-inicio.md`
 - Sprint 3 PR 01 checklist: `docs/releases/sprint-3-pr-01-checklist.md`
 - Sprint 3 PR 01 In Review: `docs/releases/sprint-3-pr-01-in-review.md`
 - Sprint 3 PR 01 Done: `docs/releases/sprint-3-pr-01-done.md`
