@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from '../../services/api';
 import { adminApi } from '../../services/adminApi';
 import { useAuth } from '../../state/auth.jsx';
 
@@ -89,7 +90,7 @@ export default function AdminQuestionsPage() {
     try {
       await Promise.all([loadPreguntas(), loadReportes()]);
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
@@ -112,7 +113,7 @@ export default function AdminQuestionsPage() {
       setMsg('Pregunta creada correctamente');
       await loadPreguntas();
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
@@ -133,7 +134,7 @@ export default function AdminQuestionsPage() {
       setEditingId(id);
       window.scrollTo({ top: document.getElementById('pregunta-form')?.offsetTop ?? 0, behavior: 'smooth' });
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
@@ -159,7 +160,7 @@ export default function AdminQuestionsPage() {
       setForm(EMPTY_FORM);
       await loadPreguntas();
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
@@ -174,7 +175,7 @@ export default function AdminQuestionsPage() {
       if (editingId === id) onCancelEdit();
       await loadPreguntas();
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
@@ -189,7 +190,7 @@ export default function AdminQuestionsPage() {
       setImportResult(result);
       await loadPreguntas();
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
@@ -200,7 +201,7 @@ export default function AdminQuestionsPage() {
       await adminApi.updateReporteEstado(token, reporteId, estado);
       await loadReportes();
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 

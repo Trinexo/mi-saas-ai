@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../services/api';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 
@@ -37,7 +38,7 @@ export default function TestPage() {
       sessionStorage.setItem('last_result', JSON.stringify(result));
       navigate('/resultado');
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 

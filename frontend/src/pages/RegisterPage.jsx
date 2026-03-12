@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../services/authApi';
+import { getErrorMessage } from '../services/api';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function RegisterPage() {
       await authApi.register(form);
       navigate('/login');
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
