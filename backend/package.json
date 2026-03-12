@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "node --test tests/services/critical-services.test.js tests/services/validate-middleware.test.js tests/services/admin-reportes-query.test.js",
+    "test": "node --test tests/services/critical-services.test.js tests/services/validate-middleware.test.js tests/services/admin-reportes-query.test.js tests/services/admin-id-params.test.js",
     "test:smoke": "node --test tests/smoke/e2e-smoke.test.js",
-    "test:all": "node --test tests/services/critical-services.test.js tests/services/validate-middleware.test.js tests/services/admin-reportes-query.test.js tests/smoke/e2e-smoke.test.js",
+    "test:all": "node --test tests/services/critical-services.test.js tests/services/validate-middleware.test.js tests/services/admin-reportes-query.test.js tests/services/admin-id-params.test.js tests/smoke/e2e-smoke.test.js",
     "test:ci": "npm run test && npm run test:smoke"
   },
   "dependencies": {

@@ -12,8 +12,7 @@ export const listPreguntas = async (req, res, next) => {
 
 export const getPregunta = async (req, res, next) => {
   try {
-    const preguntaId = Number(req.params.id);
-    const data = await adminService.getPregunta(preguntaId);
+    const data = await adminService.getPregunta(req.params.id);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -31,8 +30,7 @@ export const createPregunta = async (req, res, next) => {
 
 export const updatePregunta = async (req, res, next) => {
   try {
-    const preguntaId = Number(req.params.id);
-    const data = await adminService.updatePregunta(preguntaId, req.body);
+    const data = await adminService.updatePregunta(req.params.id, req.body);
     return ok(res, data, 'Pregunta actualizada');
   } catch (error) {
     return next(error);
@@ -41,8 +39,7 @@ export const updatePregunta = async (req, res, next) => {
 
 export const deletePregunta = async (req, res, next) => {
   try {
-    const preguntaId = Number(req.params.id);
-    const data = await adminService.deletePregunta(preguntaId);
+    const data = await adminService.deletePregunta(req.params.id);
     return ok(res, data, 'Pregunta eliminada');
   } catch (error) {
     return next(error);
@@ -69,8 +66,7 @@ export const listReportes = async (req, res, next) => {
 
 export const updateReporteEstado = async (req, res, next) => {
   try {
-    const reporteId = Number(req.params.id);
-    const data = await adminService.updateReporteEstado(reporteId, req.body.estado);
+    const data = await adminService.updateReporteEstado(req.params.id, req.body.estado);
     return ok(res, data, 'Reporte actualizado');
   } catch (error) {
     return next(error);
