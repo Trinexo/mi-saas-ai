@@ -1,0 +1,9 @@
+﻿ M .gitignore
+?? .github/PULL_REQUEST_TEMPLATE/
+?? .github/agents/
+?? .github/copilot-instructions.md
+?? .github/instructions/
+?? .github/pull_request_template.md
+?? .github/skills/
+?? CONTRIBUTING.md
+?? docs/
