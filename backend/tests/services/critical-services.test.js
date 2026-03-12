@@ -116,6 +116,18 @@ test('stats por tema exige temaId válido', async () => {
   );
 });
 
+test('stats por tema rechaza temaId decimal o no positivo', async () => {
+  await assert.rejects(
+    () => statsService.getTemaStats(1, 1.5),
+    (error) => error instanceof ApiError && error.status === 400,
+  );
+
+  await assert.rejects(
+    () => statsService.getTemaStats(1, 0),
+    (error) => error instanceof ApiError && error.status === 400,
+  );
+});
+
 test('submit permite enviar el test completamente en blanco', async () => {
   const repoSnapshot = cloneRepoMethods();
   const originalConnect = pool.connect;

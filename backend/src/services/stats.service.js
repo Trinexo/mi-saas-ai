@@ -7,8 +7,8 @@ export const statsService = {
   },
 
   async getTemaStats(userId, temaId) {
-    if (!Number.isFinite(temaId)) {
-      throw new ApiError(400, 'tema_id es obligatorio');
+    if (!Number.isInteger(temaId) || temaId <= 0) {
+      throw new ApiError(400, 'tema_id debe ser un entero positivo');
     }
 
     return statsRepository.getTemaStats(userId, temaId);
