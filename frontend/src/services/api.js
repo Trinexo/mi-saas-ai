@@ -19,6 +19,29 @@ const buildUrl = (path, query) => {
   return `${API_URL}${path}${queryString ? `?${queryString}` : ''}`;
 };
 
+const parseResponsePayload = async (response) => {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  const rawBody = await response.text();
+
+  if (!rawBody) {
+    return null;
+  }
+
+  if (contentType.includes('application/json')) {
+    try {
+      return JSON.parse(rawBody);
+    } catch {
+      return { message: 'Respuesta JSON inválida del servidor' };
+    }
+  }
+
+  return { message: rawBody };
+};
+
 export async function apiRequest(path, { method = 'GET', body, token, query } = {}) {
   const response = await fetch(buildUrl(path, query), {
     method,
@@ -29,11 +52,11 @@ export async function apiRequest(path, { method = 'GET', body, token, query } = 
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
-  const payload = await response.json();
+    const payload = await parseResponsePayload(response);
 
   if (!response.ok) {
     throw new Error(payload?.message || 'Error de API');
   }
 
-  return payload.data;
+    return payload?.data ?? null;
 }
