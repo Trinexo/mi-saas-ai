@@ -61,16 +61,14 @@ export default function AdminQuestionsPage() {
     setCsvPreview(previewRows);
   };
 
-  const buildPreguntasQuery = () => {
-    const params = new URLSearchParams();
-    if (filters.oposicionId) params.set('oposicion_id', filters.oposicionId);
-    if (filters.materiaId) params.set('materia_id', filters.materiaId);
-    if (filters.temaId) params.set('tema_id', filters.temaId);
-    if (filters.nivelDificultad) params.set('nivel_dificultad', filters.nivelDificultad);
-    params.set('page', String(filters.page));
-    params.set('page_size', String(filters.pageSize));
-    return params.toString();
-  };
+  const buildPreguntasQuery = () => ({
+    oposicion_id: filters.oposicionId,
+    materia_id: filters.materiaId,
+    tema_id: filters.temaId,
+    nivel_dificultad: filters.nivelDificultad,
+    page: filters.page,
+    page_size: filters.pageSize,
+  });
 
   const loadPreguntas = async () => {
     const query = buildPreguntasQuery();
@@ -79,11 +77,11 @@ export default function AdminQuestionsPage() {
   };
 
   const loadReportes = async () => {
-    const params = new URLSearchParams();
-    if (reportesEstado) params.set('estado', reportesEstado);
-    params.set('page', '1');
-    params.set('page_size', '10');
-    const response = await adminApi.listReportes(token, params.toString());
+    const response = await adminApi.listReportes(token, {
+      estado: reportesEstado,
+      page: 1,
+      page_size: 10,
+    });
     setReportes(response);
   };
 
