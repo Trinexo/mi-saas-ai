@@ -2,17 +2,7 @@ name: Platform CI
 
 on:
   push:
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'database/**'
-      - '.github/workflows/backend-ci.yml'
   pull_request:
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'database/**'
-      - '.github/workflows/backend-ci.yml'
 
 jobs:
   test-backend:
