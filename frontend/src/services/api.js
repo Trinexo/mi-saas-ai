@@ -42,6 +42,18 @@ const parseResponsePayload = async (response) => {
   return { message: rawBody };
 };
 
+export const getErrorMessage = (error, fallback = 'Ha ocurrido un error inesperado') => {
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 export async function apiRequest(path, { method = 'GET', body, token, query } = {}) {
   const response = await fetch(buildUrl(path, query), {
     method,
@@ -52,11 +64,11 @@ export async function apiRequest(path, { method = 'GET', body, token, query } = 
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
-    const payload = await parseResponsePayload(response);
+  const payload = await parseResponsePayload(response);
 
   if (!response.ok) {
     throw new Error(payload?.message || 'Error de API');
   }
 
-    return payload?.data ?? null;
+  return payload?.data ?? null;
 }

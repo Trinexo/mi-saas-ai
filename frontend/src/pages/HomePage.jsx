@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../services/api';
 import { catalogApi } from '../services/catalogApi';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
@@ -18,7 +19,7 @@ export default function HomePage() {
     catalogApi
       .getOposiciones()
       .then(setOposiciones)
-      .catch((e) => setError(e.message))
+      .catch((e) => setError(getErrorMessage(e, 'No se pudo cargar el catálogo'))) 
       .finally(() => setLoading(false));
   }, []);
 
@@ -26,17 +27,27 @@ export default function HomePage() {
     setSelection({ ...selection, oposicionId: id, materiaId: '', temaId: '' });
     setMaterias([]);
     setTemas([]);
+    setError('');
     if (!id) return;
-    const data = await catalogApi.getMaterias(id);
-    setMaterias(data);
+    try {
+      const data = await catalogApi.getMaterias(id);
+      setMaterias(data);
+    } catch (e) {
+      setError(getErrorMessage(e, 'No se pudieron cargar las materias'));
+    }
   };
 
   const onMateria = async (id) => {
     setSelection({ ...selection, materiaId: id, temaId: '' });
     setTemas([]);
+    setError('');
     if (!id) return;
-    const data = await catalogApi.getTemas(id);
-    setTemas(data);
+    try {
+      const data = await catalogApi.getTemas(id);
+      setTemas(data);
+    } catch (e) {
+      setError(getErrorMessage(e, 'No se pudieron cargar los temas'));
+    }
   };
 
   const onGenerate = async () => {
@@ -49,7 +60,7 @@ export default function HomePage() {
       sessionStorage.setItem('active_test', JSON.stringify(test));
       navigate('/test');
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 

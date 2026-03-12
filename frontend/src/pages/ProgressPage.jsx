@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from '../services/api';
 import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
@@ -19,7 +20,7 @@ export default function ProgressPage() {
   const [loadingTema, setLoadingTema] = useState(false);
 
   useEffect(() => {
-    testApi.userStats(token).then(setStats).catch((e) => setError(e.message));
+    testApi.userStats(token).then(setStats).catch((e) => setError(getErrorMessage(e)));
     catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
   }, [token]);
 

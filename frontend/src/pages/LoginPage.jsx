@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../services/authApi';
+import { getErrorMessage } from '../services/api';
 import { useAuth } from '../state/auth.jsx';
 
 export default function LoginPage() {
@@ -17,7 +18,7 @@ export default function LoginPage() {
       login(data.token, data.user);
       navigate('/');
     } catch (e) {
-      setError(e.message);
+      setError(getErrorMessage(e));
     }
   };
 
