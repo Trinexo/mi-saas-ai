@@ -2,6 +2,11 @@ param(
   [switch]$Stop
 )
 
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+chcp 65001 > $null
+
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $pidFile = Join-Path $projectRoot ".dev-pids.json"
 
