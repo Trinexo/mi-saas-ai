@@ -12,8 +12,7 @@ export const getUserStats = async (req, res, next) => {
 
 export const getTemaStats = async (req, res, next) => {
   try {
-    const temaId = Number(req.query.tema_id);
-    const data = await statsService.getTemaStats(req.user.userId, temaId);
+    const data = await statsService.getTemaStats(req.user.userId, req.query.tema_id);
     return ok(res, data);
   } catch (error) {
     return next(error);
