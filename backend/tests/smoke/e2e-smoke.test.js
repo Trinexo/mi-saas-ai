@@ -101,10 +101,24 @@ test('SMOKE-U07: enviar test con todas las respuestas', async () => {
   assert.ok(typeof data.nota !== 'undefined');
 });
 
+test('SMOKE-U07B: generar test sin enviar no debe contar en estadísticas finalizadas', async () => {
+  const { status, data } = await api('/tests/generate', {
+    method: 'POST',
+    token: userToken,
+    body: { temaId: 1, numeroPreguntas: 5 },
+  });
+
+  assert.ok([201, 400].includes(status));
+
+  if (status === 201) {
+    assert.ok(data.testId > 0);
+  }
+});
+
 test('SMOKE-U08: estadísticas de usuario', async () => {
   const { status, data } = await api('/stats/user', { token: userToken });
   assert.equal(status, 200);
-  assert.ok(data.total_tests >= 1);
+  assert.equal(data.total_tests, 1);
 });
 
 test('SMOKE-U09: estadísticas por tema', async () => {
