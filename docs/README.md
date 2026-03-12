@@ -2,6 +2,11 @@
 
 Esta carpeta contiene la documentación completa de la plataforma.
 
+## Codificación
+
+- Estándar del repositorio: UTF-8.
+- Si usas terminal en Windows, ejecuta `chcp 65001` para evitar caracteres españoles corruptos.
+
 Guía de contribución del repositorio: `../CONTRIBUTING.md`
 
 ## Arquitectura
