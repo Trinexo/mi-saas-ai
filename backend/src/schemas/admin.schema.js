@@ -32,3 +32,9 @@ export const importPreguntasCsvSchema = z.object({
 export const updateReporteEstadoSchema = z.object({
   estado: z.enum(['abierto', 'en_revision', 'resuelto', 'descartado']),
 });
+
+export const listReportesQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
+  estado: z.enum(['abierto', 'en_revision', 'resuelto', 'descartado']).optional(),
+});
