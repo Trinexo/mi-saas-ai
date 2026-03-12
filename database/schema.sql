@@ -109,3 +109,4 @@ CREATE INDEX IF NOT EXISTS idx_temas_materia ON temas(materia_id);
 CREATE INDEX IF NOT EXISTS idx_reportes_estado ON reportes_preguntas(estado);
 CREATE INDEX IF NOT EXISTS idx_reportes_pregunta ON reportes_preguntas(pregunta_id);
 CREATE INDEX IF NOT EXISTS idx_progreso_usuario ON progreso_usuario(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_tests_usuario_finalizados ON tests(usuario_id, id) WHERE estado = 'finalizado';
