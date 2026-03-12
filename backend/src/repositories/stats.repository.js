@@ -11,7 +11,8 @@ export const statsRepository = {
               COALESCE(ROUND(AVG(rt.tiempo_segundos), 2), 0) AS tiempo_medio
        FROM tests t
        JOIN resultados_test rt ON rt.test_id = t.id
-       WHERE t.usuario_id = $1`,
+       WHERE t.usuario_id = $1
+         AND t.estado = 'finalizado'`,
       [userId],
     );
 
