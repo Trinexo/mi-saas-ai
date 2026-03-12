@@ -14,6 +14,7 @@ import {
 import {
   createPreguntaSchema,
   importPreguntasCsvSchema,
+  listReportesQuerySchema,
   updatePreguntaSchema,
   updateReporteEstadoSchema,
 } from '../../schemas/admin.schema.js';
@@ -28,7 +29,7 @@ router.put('/preguntas/:id', validate(updatePreguntaSchema), updatePregunta);
 router.delete('/preguntas/:id', deletePregunta);
 router.post('/preguntas/import', validate(importPreguntasCsvSchema), importPreguntasCsv);
 
-router.get('/reportes', listReportes);
+router.get('/reportes', validate(listReportesQuerySchema, 'query'), listReportes);
 router.patch('/reportes/:id/estado', validate(updateReporteEstadoSchema), updateReporteEstado);
 
 export default router;

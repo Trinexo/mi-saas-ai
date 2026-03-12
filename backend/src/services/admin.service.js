@@ -213,9 +213,7 @@ export const adminService = {
   },
 
   async listReportes(query) {
-    const page = Number(query.page || 1);
-    const pageSize = Number(query.page_size || 20);
-    const estado = query.estado || null;
+    const { page, page_size: pageSize, estado = null } = query;
 
     const [items, total] = await Promise.all([
       adminRepository.listReportes({ estado }, pageSize, (page - 1) * pageSize),
