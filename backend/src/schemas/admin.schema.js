@@ -42,3 +42,12 @@ export const listReportesQuerySchema = z.object({
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
   estado: z.enum(['abierto', 'en_revision', 'resuelto', 'descartado']).optional(),
 });
+
+export const listPreguntasQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
+  oposicion_id: z.coerce.number().int().positive().optional(),
+  materia_id: z.coerce.number().int().positive().optional(),
+  tema_id: z.coerce.number().int().positive().optional(),
+  nivel_dificultad: z.coerce.number().int().min(1).max(5).optional(),
+});

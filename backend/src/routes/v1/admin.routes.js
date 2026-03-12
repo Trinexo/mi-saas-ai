@@ -15,6 +15,7 @@ import {
   createPreguntaSchema,
   idParamSchema,
   importPreguntasCsvSchema,
+  listPreguntasQuerySchema,
   listReportesQuerySchema,
   updatePreguntaSchema,
   updateReporteEstadoSchema,
@@ -23,7 +24,7 @@ import {
 const router = Router();
 
 router.use(requireAuth, requireRole('admin', 'editor', 'revisor'));
-router.get('/preguntas', listPreguntas);
+router.get('/preguntas', validate(listPreguntasQuerySchema, 'query'), listPreguntas);
 router.post('/preguntas', validate(createPreguntaSchema), createPregunta);
 router.get('/preguntas/:id', validate(idParamSchema, 'params'), getPregunta);
 router.put('/preguntas/:id', validate(idParamSchema, 'params'), validate(updatePreguntaSchema), updatePregunta);
