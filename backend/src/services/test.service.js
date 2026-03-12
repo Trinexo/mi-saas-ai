@@ -11,8 +11,8 @@ export const testService = {
   async generate({ userId, temaId, numeroPreguntas }) {
     const preguntas = await testRepository.pickQuestions({ userId, temaId, numeroPreguntas });
 
-    if (!preguntas.length) {
-      throw new ApiError(400, 'No hay preguntas suficientes para generar el test');
+    if (preguntas.length < numeroPreguntas) {
+      throw new ApiError(400, 'No hay preguntas suficientes para generar el test con el criterio solicitado');
     }
 
     const test = await testRepository.createTest({ userId, temaId, numeroPreguntas: preguntas.length });
@@ -26,7 +26,7 @@ export const testService = {
     };
   },
 
-  async submit({ userId, testId, respuestas, tiempoSegundos }) {
+  async submit({ userId, testId, respuestas = [], tiempoSegundos }) {
     const client = await pool.connect();
 
     try {

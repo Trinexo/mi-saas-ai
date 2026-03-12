@@ -80,17 +80,15 @@ export const testRepository = {
   async updateProgress(client, { testId }) {
     await client.query(
       `INSERT INTO progreso_usuario (usuario_id, tema_id, preguntas_vistas, aciertos, errores, tiempo_medio)
-       SELECT t.usuario_id,
-              t.tema_id,
-              COUNT(ru.id) AS preguntas_vistas,
-              COUNT(*) FILTER (WHERE ru.correcta = TRUE) AS aciertos,
-              COUNT(*) FILTER (WHERE ru.correcta = FALSE) AS errores,
-              AVG(rt.tiempo_segundos)::int AS tiempo_medio
+    SELECT t.usuario_id,
+      t.tema_id,
+      t.numero_preguntas AS preguntas_vistas,
+      rt.aciertos,
+      rt.errores,
+      rt.tiempo_segundos AS tiempo_medio
        FROM tests t
-       JOIN respuestas_usuario ru ON ru.test_id = t.id
        JOIN resultados_test rt ON rt.test_id = t.id
-       WHERE t.id = $1
-       GROUP BY t.usuario_id, t.tema_id
+    WHERE t.id = $1
        ON CONFLICT (usuario_id, tema_id)
        DO UPDATE SET
          preguntas_vistas = progreso_usuario.preguntas_vistas + EXCLUDED.preguntas_vistas,

@@ -14,6 +14,6 @@ export const submitTestSchema = z.object({
         respuestaId: z.number().int().positive().nullable(),
       }),
     )
-    .min(1),
+    .default([]),
   tiempoSegundos: z.number().int().nonnegative().default(0),
 });

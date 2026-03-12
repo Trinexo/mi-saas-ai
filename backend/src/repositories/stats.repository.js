@@ -20,15 +20,12 @@ export const statsRepository = {
 
   async getTemaStats(userId, temaId) {
     const result = await pool.query(
-      `SELECT p.tema_id,
-              COUNT(*)::int AS preguntas_vistas,
-              COUNT(*) FILTER (WHERE ru.correcta = TRUE)::int AS aciertos,
-              COUNT(*) FILTER (WHERE ru.correcta = FALSE)::int AS errores
-       FROM respuestas_usuario ru
-       JOIN preguntas p ON p.id = ru.pregunta_id
-       JOIN tests t ON t.id = ru.test_id
-       WHERE t.usuario_id = $1 AND p.tema_id = $2
-       GROUP BY p.tema_id`,
+      `SELECT tema_id,
+              preguntas_vistas,
+              aciertos,
+              errores
+       FROM progreso_usuario
+       WHERE usuario_id = $1 AND tema_id = $2`,
       [userId, temaId],
     );
 
