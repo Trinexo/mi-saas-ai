@@ -9,6 +9,9 @@ import { ApiError } from '../../src/utils/api-error.js';
 const cloneRepoMethods = () => {
   return {
     pickQuestions: testRepository.pickQuestions,
+    pickAdaptiveQuestions: testRepository.pickAdaptiveQuestions,
+    pickFreshQuestions: testRepository.pickFreshQuestions,
+    pickAnyQuestions: testRepository.pickAnyQuestions,
     createTest: testRepository.createTest,
     insertTestPreguntas: testRepository.insertTestPreguntas,
     getTestById: testRepository.getTestById,
@@ -28,7 +31,8 @@ const restoreRepoMethods = (snapshot) => {
 
 test('generate falla si no hay preguntas suficientes', async () => {
   const repoSnapshot = cloneRepoMethods();
-  testRepository.pickQuestions = async () => [];
+  testRepository.pickAdaptiveQuestions = async () => [];
+  testRepository.pickAnyQuestions = async () => [];
 
   await assert.rejects(
     () => testService.generate({ userId: 1, temaId: 999, numeroPreguntas: 5 }),
@@ -40,7 +44,8 @@ test('generate falla si no hay preguntas suficientes', async () => {
 
 test('generate falla si el repositorio devuelve menos preguntas que las solicitadas', async () => {
   const repoSnapshot = cloneRepoMethods();
-  testRepository.pickQuestions = async () => [{ id: 1 }, { id: 2 }, { id: 3 }];
+  testRepository.pickAdaptiveQuestions = async () => [{ id: 1 }, { id: 2 }, { id: 3 }];
+  testRepository.pickAnyQuestions = async () => [];
 
   await assert.rejects(
     () => testService.generate({ userId: 1, temaId: 1, numeroPreguntas: 5 }),
