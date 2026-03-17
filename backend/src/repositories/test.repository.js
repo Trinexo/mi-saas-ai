@@ -76,10 +76,11 @@ const SELECT_ADAPTIVE_QUESTIONS_SQL = `
     ) AS score
   FROM preguntas p
   LEFT JOIN LATERAL (
-    SELECT correcta, fecha_respuesta
-    FROM respuestas_usuario
-    WHERE pregunta_id = p.id AND usuario_id = $1
-    ORDER BY fecha_respuesta DESC
+    SELECT ru.correcta, ru.fecha_respuesta
+    FROM respuestas_usuario ru
+    JOIN tests t ON t.id = ru.test_id
+    WHERE ru.pregunta_id = p.id AND t.usuario_id = $1
+    ORDER BY ru.fecha_respuesta DESC
     LIMIT 1
   ) ru ON true
   WHERE p.tema_id = $2
