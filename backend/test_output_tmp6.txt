@@ -1,0 +1,403 @@
+
+> plataforma-test-backend@1.0.0 test
+> node --test tests/services/critical-services.test.js tests/services/validate-middleware.test.js tests/services/admin-reportes-query.test.js tests/services/admin-id-params.test.js tests/services/admin-preguntas-query.test.js tests/services/admin-profesor-scope.test.js tests/services/admin-profesor-asignaciones-schema.test.js tests/services/admin-auditoria-schema.test.js tests/services/admin-auditoria-service.test.js tests/services/catalog-query.test.js tests/services/test-adaptive-repository.test.js tests/services/test-generate-schema.test.js tests/services/test-generate-service.test.js tests/services/test-dificultad-schema.test.js tests/services/test-dificultad-service.test.js tests/services/spaced-repetition-schema.test.js tests/services/spaced-repetition-repository.test.js tests/services/test-repaso-schema.test.js tests/services/test-repaso-repository.test.js tests/services/stats-repaso-schema.test.js tests/services/simulacro-schema.test.js tests/services/simulacro-generate-schema.test.js tests/services/simulacro-repository.test.js tests/services/stats-simulacros.test.js tests/services/test-review.test.js tests/services/marcadas.test.js tests/services/profile.test.js tests/services/marcadas-mode.test.js tests/services/dashboard.test.js tests/services/reportes.test.js tests/services/evolucion.test.js tests/services/catalogAdmin.test.js tests/services/test-history.test.js tests/services/test-refuerzo.test.js tests/services/repaso-pendientes.test.js tests/services/stats-racha.test.js tests/services/stats-objetivo-diario.test.js tests/services/stats-gamificacion.test.js tests/services/stats-foco-hoy.test.js tests/services/stats-resumen-semana.test.js tests/services/stats-actividad-14dias.test.js tests/services/stats-temas-debiles.test.js tests/services/stats-insight-mensual.test.js tests/services/test-recomendado.test.js tests/services/auth-perfil-oposicion.test.js
+
+✔ auditoria query: acepta sin filtros (usa defaults) (4.0552ms)
+✔ auditoria query: acepta filtros válidos (0.8785ms)
+✔ auditoria query: rechaza accion no permitida (1.1518ms)
+✔ auditoria query: rechaza page_size fuera de rango (0.706ms)
+✔ listAuditoria: solo admin puede consultar (2.8761ms)
+✔ listAuditoria: admin recibe items paginados (0.7818ms)
+✔ listAuditoria: sin actor lanza 403 (2.7665ms)
+✔ admin params id: rechaza id no numérico (4.3798ms)
+✔ admin params id: rechaza id no positivo (0.6785ms)
+✔ admin params id: acepta y normaliza id válido (0.3674ms)
+✔ admin preguntas query: rechaza page_size fuera de rango (5.2289ms)
+✔ admin preguntas query: rechaza nivel_dificultad inválido (0.9658ms)
+✔ admin preguntas query: acepta y normaliza filtros válidos (1.5206ms)
+✔ admin preguntas query: aplica defaults en paginación (0.7799ms)
+✔ profesor asignaciones query: rechaza email inválido (6.2819ms)
+✔ profesor payload: acepta y normaliza oposicionId (0.994ms)
+✔ profesor payload: rechaza oposicionId no positivo (0.6611ms)
+✔ profesor sin oposiciones asignadas no puede listar preguntas (2.851ms)
+✔ profesor con oposición asignada solo lista su ámbito (1.775ms)
+✔ profesor no puede crear pregunta fuera de su oposición (0.7447ms)
+✔ admin reportes query: rechaza page_size fuera de rango (5.3089ms)
+✔ admin reportes query: acepta y normaliza valores válidos (0.9133ms)
+✔ admin reportes query: aplica defaults (0.5974ms)
+▶ authRepository — updateProfile con oposicionPreferidaId
+  ✔ getUserById está exportado (1.351ms)
+  ✔ updateProfile está exportado y acepta oposicionPreferidaId (0.3921ms)
+✔ authRepository — updateProfile con oposicionPreferidaId (9.4787ms)
+▶ authService — getProfile devuelve oposicionPreferidaId
+  ✔ getProfile está exportado (0.3232ms)
+  ✔ updateProfile está exportado (0.2047ms)
+✔ authService — getProfile devuelve oposicionPreferidaId (0.8705ms)
+✔ catalog materias query: rechaza oposicion_id inválido (9.4102ms)
+✔ catalog temas query: acepta materia_id válido (0.4593ms)
+✔ catalog preguntas query: rechaza page_size fuera de rango (0.9249ms)
+✔ catalog preguntas query: aplica defaults y coerción (0.8644ms)
+▶ createOposicionSchema
+  ✔ acepta nombre válido (3.9476ms)
+  ✔ acepta nombre con descripcion (0.5084ms)
+  ✔ rechaza nombre vacío (1.461ms)
+  ✔ rechaza si falta nombre (0.4958ms)
+✔ createOposicionSchema (8.9668ms)
+▶ updateOposicionSchema
+  ✔ acepta solo nombre (1.3153ms)
+  ✔ acepta solo descripcion (0.4668ms)
+  ✔ rechaza si no se envía ningún campo (0.6301ms)
+✔ updateOposicionSchema (3.0084ms)
+▶ createMateriaSchema
+  ✔ acepta campos válidos (2.4054ms)
+  ✔ rechaza oposicion_id cero (0.9934ms)
+  ✔ rechaza nombre de 1 carácter (0.5562ms)
+✔ createMateriaSchema (4.5804ms)
+▶ updateMateriaSchema
+  ✔ acepta nombre válido (0.3333ms)
+✔ updateMateriaSchema (0.5022ms)
+▶ createTemaSchema
+  ✔ acepta campos válidos (0.3469ms)
+  ✔ rechaza materia_id negativo (2.6156ms)
+✔ createTemaSchema (3.1963ms)
+▶ updateTemaSchema
+  ✔ acepta nombre válido (0.3367ms)
+✔ updateTemaSchema (0.5761ms)
+▶ catalogAdminRepository exports
+  ✔ createOposicion está exportado (0.3317ms)
+  ✔ updateOposicion está exportado (0.1279ms)
+  ✔ deleteOposicion está exportado (0.1028ms)
+  ✔ createMateria está exportado (0.2025ms)
+  ✔ updateMateria está exportado (0.2762ms)
+  ✔ deleteMateria está exportado (0.1059ms)
+  ✔ createTema está exportado (0.2281ms)
+  ✔ updateTema está exportado (0.1509ms)
+  ✔ deleteTema está exportado (0.1258ms)
+✔ catalogAdminRepository exports (2.214ms)
+▶ catalogAdminService exports
+  ✔ createOposicion está exportado (0.3863ms)
+  ✔ updateOposicion está exportado (0.1173ms)
+  ✔ deleteOposicion está exportado (0.1422ms)
+  ✔ createMateria está exportado (0.1188ms)
+  ✔ updateMateria está exportado (0.1473ms)
+  ✔ deleteMateria está exportado (0.1523ms)
+  ✔ createTema está exportado (0.1455ms)
+  ✔ updateTema está exportado (0.1532ms)
+  ✔ deleteTema está exportado (0.1133ms)
+✔ catalogAdminService exports (2.0983ms)
+✔ generate falla si no hay preguntas suficientes (167.3657ms)
+✔ generate completa con preguntas ya vistas cuando no alcanza el pool fresco (3.2469ms)
+✔ generate falla si ni el fallback completa las preguntas solicitadas (0.705ms)
+✔ submit falla en respuestas duplicadas por pregunta (1.0728ms)
+✔ submit falla si hay pregunta que no pertenece al test (0.7312ms)
+✔ stats por tema exige temaId válido (0.6218ms)
+✔ stats por tema rechaza temaId decimal o no positivo (1.0611ms)
+✔ submit permite enviar el test completamente en blanco (1.7113ms)
+▶ statsRepository — getDashboard
+  ✔ getDashboard está exportado (1.5434ms)
+✔ statsRepository — getDashboard (5.2528ms)
+▶ statsService — getDashboard
+  ✔ getDashboard está exportado (0.8643ms)
+✔ statsService — getDashboard (2.1994ms)
+▶ evolucionQuerySchema
+  ✔ aplica default 30 si limit no está presente (4.2513ms)
+  ✔ acepta limit numérico válido desde string (0.4672ms)
+  ✔ rechaza limit cero (1.2824ms)
+  ✔ rechaza limit mayor de 100 (2.4596ms)
+  ✔ acepta limit exactamente 100 (0.416ms)
+✔ evolucionQuerySchema (12.0089ms)
+▶ statsRepository
+  ✔ getEvolucion está exportado (0.2857ms)
+✔ statsRepository (0.596ms)
+▶ statsService
+  ✔ getEvolucion está exportado (0.3467ms)
+✔ statsService (0.6939ms)
+▶ generateTestSchema — modo marcadas
+  ✔ acepta modo marcadas sin temaId (7.2655ms)
+  ✔ acepta modo marcadas con temaId (se ignora, no rompe) (1.3872ms)
+  ✔ rechaza modo marcadas sin numeroPreguntas (1.6444ms)
+  ✔ sigue rechazando modo normal sin temaId (0.6741ms)
+  ✔ sigue rechazando modo adaptativo sin temaId (0.5524ms)
+  ✔ sigue requiriendo oposicionId en modo simulacro (0.4675ms)
+  ✔ enum de modo incluye los 5 valores válidos (1.9397ms)
+✔ generateTestSchema — modo marcadas (17.2788ms)
+▶ testRepository — pickMarcadasQuestions
+  ✔ pickMarcadasQuestions está exportado (0.3819ms)
+✔ testRepository — pickMarcadasQuestions (0.9613ms)
+▶ testService — generate
+  ✔ generate está exportado (0.455ms)
+✔ testService — generate (0.6811ms)
+▶ marcadaParamsSchema
+  ✔ acepta preguntaId entero positivo desde string (5.1796ms)
+  ✔ rechaza preguntaId cero (1.4327ms)
+  ✔ rechaza preguntaId negativo (0.6667ms)
+  ✔ rechaza cuando falta preguntaId (0.8504ms)
+✔ marcadaParamsSchema (11.6573ms)
+▶ marcadasRepository
+  ✔ marcar está exportado (0.6386ms)
+  ✔ desmarcar está exportado (4.2018ms)
+  ✔ getMarcadas está exportado (0.5151ms)
+✔ marcadasRepository (6.7269ms)
+▶ marcadasService
+  ✔ marcar está exportado (0.9116ms)
+  ✔ desmarcar está exportado (0.2545ms)
+  ✔ getMarcadas está exportado (0.349ms)
+✔ marcadasService (2.2363ms)
+▶ updateProfileSchema
+  ✔ acepta solo nombre (4.4075ms)
+  ✔ acepta solo email (1.0906ms)
+  ✔ acepta nombre y email juntos (0.8697ms)
+  ✔ rechaza objeto vacío (necesita al menos uno) (1.0186ms)
+  ✔ rechaza email inválido (1.1169ms)
+  ✔ rechaza nombre menor de 2 caracteres (0.497ms)
+✔ updateProfileSchema (13.4344ms)
+▶ changePasswordSchema
+  ✔ acepta passwordActual y passwordNuevo válidos (0.4888ms)
+  ✔ rechaza si falta passwordActual (0.485ms)
+  ✔ rechaza passwordNuevo menor de 8 caracteres (0.5649ms)
+✔ changePasswordSchema (2.2303ms)
+▶ authRepository — profile methods
+  ✔ getUserById está exportado (0.4834ms)
+  ✔ updateProfile está exportado (0.2215ms)
+  ✔ updatePassword está exportado (0.203ms)
+✔ authRepository — profile methods (1.2456ms)
+▶ authService — profile methods
+  ✔ getProfile está exportado (0.4421ms)
+  ✔ updateProfile está exportado (0.1965ms)
+  ✔ changePassword está exportado (0.2904ms)
+✔ authService — profile methods (2.3128ms)
+▶ repasoPendientesQuerySchema
+  ✔ usa default limit=20 si no se envía query (3.171ms)
+  ✔ coacciona limit string a number (0.8665ms)
+  ✔ rechaza limit fuera de rango (3.1903ms)
+✔ repasoPendientesQuerySchema (10.3073ms)
+▶ repasoRepository
+  ✔ getPendientes está exportado (0.6151ms)
+✔ repasoRepository (1.4308ms)
+▶ repasoService
+  ✔ getPendientes está exportado (0.4355ms)
+✔ repasoService (0.8467ms)
+▶ reportarPreguntaParamsSchema
+  ✔ acepta preguntaId entero positivo desde string (4.5451ms)
+  ✔ rechaza preguntaId cero (1.7288ms)
+  ✔ rechaza preguntaId negativo (0.4585ms)
+  ✔ rechaza si falta preguntaId (0.4039ms)
+✔ reportarPreguntaParamsSchema (10.0946ms)
+▶ reportarPreguntaBodySchema
+  ✔ acepta motivo de 5 o más caracteres (1.4687ms)
+  ✔ rechaza motivo vacío (2.1016ms)
+  ✔ rechaza motivo menor de 5 caracteres (0.7879ms)
+  ✔ rechaza motivo de más de 500 caracteres (0.8497ms)
+  ✔ rechaza si falta motivo (0.4915ms)
+✔ reportarPreguntaBodySchema (7.2281ms)
+▶ reportesRepository
+  ✔ createReporte está exportado (0.3632ms)
+✔ reportesRepository (0.6254ms)
+▶ reportesService
+  ✔ reportar está exportado (0.266ms)
+✔ reportesService (0.4416ms)
+▶ generateTestSchema — modo 'simulacro'
+  ✔ modo 'simulacro' con oposicionId es válido (5.7587ms)
+  ✔ modo 'simulacro' sin oposicionId falla con error en oposicionId (1.5054ms)
+  ✔ modo 'normal' sin temaId falla con error en temaId (0.7396ms)
+  ✔ modo 'simulacro' acepta duracionSegundos opcional (0.383ms)
+  ✔ numeroPreguntas en simulacro acepta hasta 200 (0.3791ms)
+  ✔ modo con valor desconocido sigue fallando (1.8492ms)
+✔ generateTestSchema — modo 'simulacro' (13.367ms)
+▶ testRepository — simulacro
+  ✔ pickSimulacroQuestions está exportado (1.491ms)
+  ✔ createTest sigue exportado (0.3769ms)
+  ✔ createTest y pickSimulacroQuestions coexisten con los demás métodos (0.2871ms)
+✔ testRepository — simulacro (4.6603ms)
+▶ schema.sql — tabla tests ampliada para simulacros (Sprint 7 PR 01)
+  ✔ tema_id en tests es nullable (sin ON DELETE CASCADE — específico de tests) (3.6498ms)
+  ✔ tiene columna oposicion_id nullable (0.3262ms)
+  ✔ tiene columna duracion_segundos INTEGER (0.2608ms)
+  ✔ tiene índice idx_tests_usuario_oposicion (0.3864ms)
+  ✔ topic_test sigue presente en la tabla tests (0.2437ms)
+✔ schema.sql — tabla tests ampliada para simulacros (Sprint 7 PR 01) (7.6001ms)
+▶ spacedRepetitionRepository — exportaciones
+  ✔ upsertRepaso está exportado (0.9969ms)
+✔ spacedRepetitionRepository — exportaciones (2.402ms)
+▶ spacedRepetitionRepository — lógica de intervalos
+  ✔ acierto desde nivel 0 → intervalo 1 día (0.6443ms)
+  ✔ acierto desde nivel 2 → intervalo 3 días (0.2854ms)
+  ✔ acierto desde nivel 3 → intervalo 7 días (0.2649ms)
+  ✔ acierto desde nivel 4 → intervalo 14 días (0.3294ms)
+  ✔ nivel máximo (5) → intervalo 30 días (0.2605ms)
+  ✔ nivel por encima del máximo no supera el intervalo de 30 días (0.263ms)
+  ✔ fallo → nivel 0, intervalo 1 día (0.2921ms)
+  ✔ nivel máximo es 5 (0.2901ms)
+✔ spacedRepetitionRepository — lógica de intervalos (3.6626ms)
+▶ schema.sql — tabla repeticion_espaciada (Sprint 6 PR 01)
+  ✔ define la tabla repeticion_espaciada (3.3514ms)
+  ✔ tiene columna nivel_memoria SMALLINT (0.3528ms)
+  ✔ tiene columna proxima_revision TIMESTAMP (0.2774ms)
+  ✔ tiene UNIQUE (usuario_id, pregunta_id) (0.2581ms)
+  ✔ tiene índice idx_repaso_usuario_proxima (0.2446ms)
+  ✔ tiene índice idx_repaso_pregunta (0.2343ms)
+✔ schema.sql — tabla repeticion_espaciada (Sprint 6 PR 01) (7.3255ms)
+▶ statsRepository — getActividad14Dias
+  ✔ getActividad14Dias está exportado (1.3118ms)
+✔ statsRepository — getActividad14Dias (4.2929ms)
+▶ statsService — getActividad14Dias
+  ✔ getActividad14Dias está exportado (0.2306ms)
+✔ statsService — getActividad14Dias (0.4082ms)
+▶ statsRepository — getFocoHoy
+  ✔ getFocoHoy está exportado (1.7053ms)
+✔ statsRepository — getFocoHoy (3.9828ms)
+▶ statsService — getFocoHoy
+  ✔ getFocoHoy está exportado (0.3091ms)
+✔ statsService — getFocoHoy (0.5628ms)
+▶ statsRepository — getGamificacion
+  ✔ getGamificacion está exportado (1.3403ms)
+✔ statsRepository — getGamificacion (3.3855ms)
+▶ statsService — getGamificacion
+  ✔ getGamificacion está exportado (0.5624ms)
+✔ statsService — getGamificacion (1.2961ms)
+▶ statsRepository — getInsightMensual
+  ✔ getInsightMensual está exportado (1.4981ms)
+✔ statsRepository — getInsightMensual (4.056ms)
+▶ statsService — getInsightMensual
+  ✔ getInsightMensual está exportado (0.3253ms)
+✔ statsService — getInsightMensual (0.572ms)
+▶ statsRepository — getObjetivoDiario
+  ✔ getObjetivoDiario está exportado (3.329ms)
+✔ statsRepository — getObjetivoDiario (7.6204ms)
+▶ statsService — getObjetivoDiario
+  ✔ getObjetivoDiario está exportado (0.4949ms)
+✔ statsService — getObjetivoDiario (1.0121ms)
+▶ statsRepository — getRacha
+  ✔ getRacha está exportado (1.7489ms)
+✔ statsRepository — getRacha (6.949ms)
+▶ statsService — getRacha
+  ✔ getRacha está exportado (0.7445ms)
+✔ statsService — getRacha (1.0985ms)
+▶ repasoStatsQuerySchema
+  ✔ acepta tema_id entero positivo (7.8544ms)
+  ✔ rechaza tema_id no positivo (1.1948ms)
+  ✔ rechaza cuando falta tema_id (0.3939ms)
+✔ repasoStatsQuerySchema (11.8096ms)
+▶ statsRepository — getResumenSemana
+  ✔ getResumenSemana está exportado (1.4684ms)
+✔ statsRepository — getResumenSemana (4.2643ms)
+▶ statsService — getResumenSemana
+  ✔ getResumenSemana está exportado (0.8457ms)
+✔ statsService — getResumenSemana (1.6061ms)
+▶ simulacrosStatsQuerySchema
+  ✔ acepta oposicion_id entero positivo y lo coerce (2.8387ms)
+  ✔ rechaza oposicion_id no positivo (2.1766ms)
+  ✔ rechaza cuando falta oposicion_id (1.6853ms)
+✔ simulacrosStatsQuerySchema (9.0419ms)
+▶ statsRepository — simulacros
+  ✔ getSimulacrosStats está exportado (0.672ms)
+✔ statsRepository — simulacros (1.5682ms)
+▶ statsService — simulacros
+  ✔ getSimulacrosStats está exportado (0.3549ms)
+✔ statsService — simulacros (0.7323ms)
+▶ statsRepository — getTemasDebiles
+  ✔ getTemasDebiles está exportado (2.0568ms)
+✔ statsRepository — getTemasDebiles (4.9412ms)
+▶ statsService — getTemasDebiles
+  ✔ getTemasDebiles está exportado (0.4336ms)
+✔ statsService — getTemasDebiles (1.1205ms)
+✔ pickAdaptiveQuestions está exportado desde testRepository (2.5709ms)
+✔ pickAdaptiveQuestions acepta los mismos parámetros que pickFreshQuestions (2.4819ms)
+✔ pickAdaptiveQuestions usa excludePreguntaIds vacío por defecto (0.4756ms)
+✔ pickAdaptiveQuestions devuelve array (stub) (0.509ms)
+▶ generateTestSchema — campo dificultad
+  ✔ dificultad es opcional y toma "mixto" por defecto (5.4826ms)
+  ✔ dificultad "facil" es válido (0.6451ms)
+  ✔ dificultad "media" es válido (0.4781ms)
+  ✔ dificultad "dificil" es válido (0.3899ms)
+  ✔ dificultad con valor desconocido lanza ZodError (2.5113ms)
+✔ generateTestSchema — campo dificultad (12.8167ms)
+▶ testRepository — filtro nivelDificultad
+  ✔ pickFreshQuestions acepta parámetro nivelDificultad (1.6941ms)
+  ✔ pickAdaptiveQuestions acepta parámetro nivelDificultad (0.9681ms)
+  ✔ pickAnyQuestions acepta parámetro nivelDificultad (0.2672ms)
+✔ testRepository — filtro nivelDificultad (6.4857ms)
+▶ testService.generate — dificultad específica
+  ✔ en modo "facil" llama al picker con nivelDificultad = 1 (1.8069ms)
+  ✔ en modo "dificil" llama al picker con nivelDificultad = 3 (0.5886ms)
+✔ testService.generate — dificultad específica (3.1406ms)
+▶ testService.generate — dificultad mixto, distribución 40/30/30
+  ✔ para 10 preguntas: 4 media, 3 fácil, 3 difícil (1.3676ms)
+  ✔ la respuesta incluye campo dificultad (0.8212ms)
+✔ testService.generate — dificultad mixto, distribución 40/30/30 (2.6203ms)
+▶ generateTestSchema — campo modo
+  ✔ modo es opcional y toma "adaptativo" por defecto (3.8834ms)
+  ✔ modo "adaptativo" es válido (0.7526ms)
+  ✔ modo "normal" es válido (0.5745ms)
+  ✔ modo con valor desconocido lanza ZodError (2.3261ms)
+✔ generateTestSchema — campo modo (10.1989ms)
+▶ testService.generate — routing por modo
+  ✔ testRepository expone pickAdaptiveQuestions para modo adaptativo (1.4771ms)
+  ✔ testRepository expone pickFreshQuestions para modo normal (0.3016ms)
+  ✔ testRepository expone pickAnyQuestions para fallback (0.1987ms)
+  ✔ los tres métodos de selección aceptan los mismos parámetros base (0.4778ms)
+✔ testService.generate — routing por modo (4.7897ms)
+▶ historyQuerySchema
+  ✔ usa default limit=20 si no se envía query (2.5147ms)
+  ✔ coacciona limit string a number (0.279ms)
+  ✔ rechaza limit < 1 (1.2473ms)
+  ✔ rechaza limit > 100 (0.7358ms)
+✔ historyQuerySchema (7.776ms)
+▶ testRepository
+  ✔ getUserHistory está exportado (0.549ms)
+✔ testRepository (1.8026ms)
+▶ testService
+  ✔ getHistory está exportado (0.4884ms)
+  ✔ getConfig está exportado (0.4889ms)
+✔ testService (1.5669ms)
+▶ testRepository — recomendación
+  ✔ getRecommendationContext está exportado (2.8242ms)
+✔ testRepository — recomendación (5.1882ms)
+▶ testService — recomendación
+  ✔ getRecommended está exportado (0.4265ms)
+✔ testService — recomendación (1.1446ms)
+▶ generateRefuerzoSchema
+  ✔ valida payload mínimo (2.7062ms)
+  ✔ coacciona temaId string a number (0.5467ms)
+  ✔ rechaza numeroPreguntas fuera de rango (1.6318ms)
+✔ generateRefuerzoSchema (6.6906ms)
+▶ testRepository
+  ✔ pickRefuerzoQuestions está exportado (0.3342ms)
+✔ testRepository (0.6726ms)
+▶ testService
+  ✔ generateRefuerzo está exportado (0.2972ms)
+✔ testService (0.5487ms)
+▶ testRepository — modo repaso
+  ✔ pickDueQuestions está exportado (1.9068ms)
+  ✔ countDueQuestions está exportado (0.3464ms)
+  ✔ pickDueQuestions y pickAnyQuestions coexisten en el mismo repositorio (0.3282ms)
+✔ testRepository — modo repaso (5.1669ms)
+▶ generateTestSchema — modo 'repaso'
+  ✔ modo 'repaso' es válido (3.8774ms)
+  ✔ en modo 'repaso' dificultad por defecto es 'mixto' (0.8284ms)
+  ✔ modo con valor desconocido sigue lanzando ZodError (1.7972ms)
+✔ generateTestSchema — modo 'repaso' (9.2039ms)
+▶ reviewParamsSchema
+  ✔ acepta testId entero positivo y lo coerce desde string (1.7015ms)
+  ✔ rechaza testId cero (0.7584ms)
+  ✔ rechaza testId negativo (0.2498ms)
+  ✔ rechaza cuando falta testId (0.2368ms)
+✔ reviewParamsSchema (4.2766ms)
+▶ testRepository — review
+  ✔ getTestReview está exportado (0.1898ms)
+✔ testRepository — review (0.3417ms)
+▶ testService — review
+  ✔ getReview está exportado (0.1751ms)
+✔ testService — review (0.3501ms)
+✔ validate usa mensaje de error para query inválida (5.5954ms)
+✔ validate usa mensaje de error para parámetros inválidos (2.3191ms)
+✔ validate mantiene payload inválido para body (1.974ms)
+✔ validate parsea y sobrescribe request cuando es válido (0.5388ms)
+ℹ tests 237
+ℹ suites 77
+ℹ pass 237
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10830.3333

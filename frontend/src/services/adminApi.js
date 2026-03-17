@@ -10,4 +10,5 @@ export const adminApi = {
   listReportes: (token, query = {}) => apiRequest('/admin/reportes', { token, query }),
   updateReporteEstado: (token, reporteId, estado) =>
     apiRequest(`/admin/reportes/${reporteId}/estado`, { method: 'PATCH', body: { estado }, token }),
+  listAuditoria: (token, query = {}) => apiRequest('/admin/auditoria', { token, query }),
 };

@@ -18,7 +18,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminQuestionsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [data, setData] = useState({ items: [], pagination: {} });
   const [reportes, setReportes] = useState({ items: [], pagination: {} });
   const [form, setForm] = useState(EMPTY_FORM);
@@ -35,6 +35,14 @@ export default function AdminQuestionsPage() {
   const [csvText, setCsvText] = useState('');
   const [csvPreview, setCsvPreview] = useState([]);
   const [importResult, setImportResult] = useState(null);
+  const [auditoria, setAuditoria] = useState({ items: [], pagination: {} });
+  const [auditoriaFilters, setAuditoriaFilters] = useState({
+    preguntaId: '',
+    usuarioId: '',
+    accion: '',
+    page: 1,
+    pageSize: 20,
+  });
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
 
@@ -86,17 +94,38 @@ export default function AdminQuestionsPage() {
     setReportes(response);
   };
 
+  const loadAuditoria = async () => {
+    if (user?.role !== 'admin') return;
+    try {
+      const response = await adminApi.listAuditoria(token, {
+        pregunta_id: auditoriaFilters.preguntaId || undefined,
+        usuario_id: auditoriaFilters.usuarioId || undefined,
+        accion: auditoriaFilters.accion || undefined,
+        page: auditoriaFilters.page,
+        page_size: auditoriaFilters.pageSize,
+      });
+      setAuditoria(response);
+    } catch (e) {
+      setError(getErrorMessage(e));
+    }
+  };
+
   const load = async () => {
     try {
       await Promise.all([loadPreguntas(), loadReportes()]);
     } catch (e) {
       setError(getErrorMessage(e));
     }
+    loadAuditoria();
   };
 
   useEffect(() => {
     load();
   }, [filters.page, filters.pageSize, reportesEstado]);
+
+  useEffect(() => {
+    loadAuditoria();
+  }, [auditoriaFilters.page, auditoriaFilters.accion]);
 
   /* ---- CREATE ---- */
   const onCreate = async (event) => {
@@ -482,6 +511,101 @@ export default function AdminQuestionsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Auditoría de cambios en preguntas */}
+      {user?.role === 'admin' && (
+        <>
+          <h3 style={{ marginTop: '1.5rem' }}>Auditoría de cambios en preguntas</h3>
+          <div className="row" style={{ gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <input
+              placeholder="Pregunta ID"
+              value={auditoriaFilters.preguntaId}
+              onChange={(e) => setAuditoriaFilters((prev) => ({ ...prev, preguntaId: e.target.value, page: 1 }))}
+              style={{ width: '120px' }}
+            />
+            <input
+              placeholder="Usuario ID"
+              value={auditoriaFilters.usuarioId}
+              onChange={(e) => setAuditoriaFilters((prev) => ({ ...prev, usuarioId: e.target.value, page: 1 }))}
+              style={{ width: '120px' }}
+            />
+            <select
+              value={auditoriaFilters.accion}
+              onChange={(e) => setAuditoriaFilters((prev) => ({ ...prev, accion: e.target.value, page: 1 }))}
+            >
+              <option value="">Todas las acciones</option>
+              <option value="create">create</option>
+              <option value="update">update</option>
+              <option value="delete">delete</option>
+            </select>
+            <button type="button" onClick={loadAuditoria}>Buscar</button>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Acción</th>
+                  <th>Pregunta ID</th>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditoria.items.length === 0 && (
+                  <tr>
+                    <td colSpan={6}>Sin registros de auditoría</td>
+                  </tr>
+                )}
+                {auditoria.items.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.id}</td>
+                    <td>{item.accion}</td>
+                    <td>{item.pregunta_id}</td>
+                    <td>{item.usuario_email}</td>
+                    <td>{item.usuario_role}</td>
+                    <td>{new Date(item.fecha).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {(auditoria.pagination.total ?? 0) > 0 && (
+            <div className="row" style={{ marginTop: '0.75rem', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setAuditoriaFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                disabled={auditoriaFilters.page <= 1}
+              >
+                Anterior
+              </button>
+              <span>
+                Página {auditoriaFilters.page} de{' '}
+                {Math.max(1, Math.ceil((auditoria.pagination.total || 0) / auditoriaFilters.pageSize))}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setAuditoriaFilters((prev) => ({
+                    ...prev,
+                    page: Math.min(
+                      Math.max(1, Math.ceil((auditoria.pagination.total || 0) / auditoriaFilters.pageSize)),
+                      prev.page + 1,
+                    ),
+                  }))
+                }
+                disabled={
+                  auditoriaFilters.page >=
+                  Math.max(1, Math.ceil((auditoria.pagination.total || 0) / auditoriaFilters.pageSize))
+                }
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+        </>
+      )}
 
       {msg && <p className="success" style={{ color: 'green', marginTop: '0.75rem' }}>{msg}</p>}
       {error && <p className="error">{error}</p>}
