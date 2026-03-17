@@ -7,7 +7,11 @@ import { useAuth } from '../state/auth.jsx';
 export default function ProgressPage() {
   const { token } = useAuth();
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState('');
+  const [statsError, setStatsError] = useState('');
+  const [catalogError, setCatalogError] = useState('');
+  const [temaError, setTemaError] = useState('');
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
 
   // Cascading selectors for per-tema stats
   const [oposiciones, setOposiciones] = useState([]);
@@ -20,8 +24,45 @@ export default function ProgressPage() {
   const [loadingTema, setLoadingTema] = useState(false);
 
   useEffect(() => {
-    testApi.userStats(token).then(setStats).catch((e) => setError(getErrorMessage(e)));
-    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
+    let cancelled = false;
+
+    setLoadingStats(true);
+    setStatsError('');
+    testApi
+      .userStats(token)
+      .then((data) => {
+        if (cancelled) return;
+        setStats(data);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setStatsError(getErrorMessage(e, 'No se pudo cargar el progreso'));
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingStats(false);
+      });
+
+    setLoadingCatalog(true);
+    setCatalogError('');
+    catalogApi
+      .getOposiciones()
+      .then((data) => {
+        if (cancelled) return;
+        setOposiciones(data);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setCatalogError(getErrorMessage(e, 'No se pudo cargar el catálogo de progreso'));
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingCatalog(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   useEffect(() => {
@@ -30,39 +71,106 @@ export default function ProgressPage() {
       setSelMateria('');
       setTemas([]);
       setSelTema('');
+      setTemaStats(null);
+      setCatalogError('');
+      setTemaError('');
       return;
     }
-    catalogApi.getMaterias(selOposicion).then(setMaterias).catch(() => {});
+
+    let cancelled = false;
+
+    setCatalogError('');
+    catalogApi
+      .getMaterias(selOposicion)
+      .then((data) => {
+        if (cancelled) return;
+        setMaterias(data);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setMaterias([]);
+        setCatalogError(getErrorMessage(e, 'No se pudieron cargar las materias'));
+      });
+
     setSelMateria('');
     setTemas([]);
     setSelTema('');
+    setTemaStats(null);
+    setTemaError('');
+
+    return () => {
+      cancelled = true;
+    };
   }, [selOposicion]);
 
   useEffect(() => {
     if (!selMateria) {
       setTemas([]);
       setSelTema('');
+      setTemaStats(null);
+      setCatalogError('');
+      setTemaError('');
       return;
     }
-    catalogApi.getTemas(selMateria).then(setTemas).catch(() => {});
+
+    let cancelled = false;
+
+    setCatalogError('');
+    catalogApi
+      .getTemas(selMateria)
+      .then((data) => {
+        if (cancelled) return;
+        setTemas(data);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setTemas([]);
+        setCatalogError(getErrorMessage(e, 'No se pudieron cargar los temas'));
+      });
+
     setSelTema('');
+    setTemaStats(null);
+    setTemaError('');
+
+    return () => {
+      cancelled = true;
+    };
   }, [selMateria]);
 
   useEffect(() => {
     if (!selTema) {
       setTemaStats(null);
+      setTemaError('');
       return;
     }
+
+    let cancelled = false;
+
     setLoadingTema(true);
+    setTemaError('');
     testApi
       .temaStats(token, selTema)
-      .then(setTemaStats)
-      .catch(() => setTemaStats(null))
-      .finally(() => setLoadingTema(false));
+      .then((data) => {
+        if (cancelled) return;
+        setTemaStats(data);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setTemaStats(null);
+        setTemaError(getErrorMessage(e, 'No se pudieron cargar las estadísticas del tema'));
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingTema(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selTema, token]);
 
-  if (error) return <p className="error">{error}</p>;
-  if (!stats) return <p>Cargando progreso...</p>;
+  if (statsError) return <p className="error">{statsError}</p>;
+  if (loadingStats || !stats) return <p>Cargando progreso...</p>;
 
   const totalRespondidas = stats.aciertos + stats.errores + stats.blancos;
   const pctAcierto = totalRespondidas > 0
@@ -109,8 +217,10 @@ export default function ProgressPage() {
 
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h3>Estadísticas por tema</h3>
+        {loadingCatalog && <p>Cargando catálogo...</p>}
+        {catalogError && <p className="error">{catalogError}</p>}
         <div className="form-row">
-          <select value={selOposicion} onChange={(e) => setSelOposicion(e.target.value)}>
+          <select value={selOposicion} onChange={(e) => setSelOposicion(e.target.value)} disabled={loadingCatalog}>
             <option value="">— Oposición —</option>
             {oposiciones.map((o) => (
               <option key={o.id} value={o.id}>{o.nombre}</option>
@@ -139,6 +249,7 @@ export default function ProgressPage() {
         </div>
 
         {loadingTema && <p>Cargando...</p>}
+        {temaError && !loadingTema && <p className="error">{temaError}</p>}
 
         {temaStats && !loadingTema && (
           <div className="stats-cards" style={{ marginTop: '1rem' }}>
