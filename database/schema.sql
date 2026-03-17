@@ -113,3 +113,17 @@ CREATE INDEX IF NOT EXISTS idx_reportes_pregunta ON reportes_preguntas(pregunta_
 CREATE INDEX IF NOT EXISTS idx_reportes_estado_fecha_id ON reportes_preguntas(estado, fecha_creacion DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_progreso_usuario ON progreso_usuario(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_finalizados ON tests(usuario_id, id) WHERE estado = 'finalizado';
+
+CREATE TABLE IF NOT EXISTS auditoria_preguntas (
+  id BIGSERIAL PRIMARY KEY,
+  accion TEXT NOT NULL CHECK (accion IN ('create', 'update', 'delete')),
+  pregunta_id BIGINT NOT NULL,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  usuario_role TEXT NOT NULL,
+  fecha TIMESTAMP NOT NULL DEFAULT NOW(),
+  datos_anteriores JSONB
+);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_pregunta ON auditoria_preguntas(pregunta_id);
+CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON auditoria_preguntas(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON auditoria_preguntas(fecha DESC, id DESC);

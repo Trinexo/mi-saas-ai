@@ -6,6 +6,7 @@ import {
   deletePregunta,
   getPregunta,
   importPreguntasCsv,
+  listAuditoria,
   listPreguntas,
   listReportes,
   updateReporteEstado,
@@ -15,6 +16,7 @@ import {
   createPreguntaSchema,
   idParamSchema,
   importPreguntasCsvSchema,
+  listAuditoriaQuerySchema,
   listPreguntasQuerySchema,
   listReportesQuerySchema,
   updatePreguntaSchema,
@@ -33,5 +35,7 @@ router.post('/preguntas/import', validate(importPreguntasCsvSchema), importPregu
 
 router.get('/reportes', validate(listReportesQuerySchema, 'query'), listReportes);
 router.patch('/reportes/:id/estado', validate(idParamSchema, 'params'), validate(updateReporteEstadoSchema), updateReporteEstado);
+
+router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema, 'query'), listAuditoria);
 
 export default router;

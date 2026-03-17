@@ -51,3 +51,11 @@ export const listPreguntasQuerySchema = z.object({
   tema_id: z.coerce.number().int().positive().optional(),
   nivel_dificultad: z.coerce.number().int().min(1).max(5).optional(),
 });
+
+export const listAuditoriaQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).optional().default(50),
+  pregunta_id: z.coerce.number().int().positive().optional(),
+  usuario_id: z.coerce.number().int().positive().optional(),
+  accion: z.enum(['create', 'update', 'delete']).optional(),
+});
