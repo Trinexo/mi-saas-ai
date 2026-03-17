@@ -45,9 +45,11 @@ CREATE TABLE IF NOT EXISTS opciones_respuesta (
 CREATE TABLE IF NOT EXISTS tests (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  tema_id BIGINT NOT NULL REFERENCES temas(id),
+  tema_id BIGINT REFERENCES temas(id),
+  oposicion_id BIGINT REFERENCES oposiciones(id),
   tipo_test TEXT NOT NULL,
   numero_preguntas INTEGER NOT NULL,
+  duracion_segundos INTEGER,
   estado TEXT NOT NULL DEFAULT 'generado',
   fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
