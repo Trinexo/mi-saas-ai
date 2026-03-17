@@ -8,8 +8,25 @@ const calcNota = ({ aciertos, errores, total }) => {
 };
 
 export const testService = {
-  async generate({ userId, temaId, numeroPreguntas }) {
-    const preguntas = await testRepository.pickQuestions({ userId, temaId, numeroPreguntas });
+  async generate({ userId, temaId, numeroPreguntas, modo = 'adaptativo' }) {
+    let preguntas;
+
+    if (modo === 'adaptativo') {
+      preguntas = await testRepository.pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds: [] });
+    } else {
+      preguntas = await testRepository.pickFreshQuestions({ userId, temaId, numeroPreguntas });
+    }
+
+    if (preguntas.length < numeroPreguntas) {
+      const excludeIds = preguntas.map((p) => p.id);
+      const extra = await testRepository.pickAnyQuestions({
+        userId,
+        temaId,
+        numeroPreguntas: numeroPreguntas - preguntas.length,
+        excludePreguntaIds: excludeIds,
+      });
+      preguntas = [...preguntas, ...extra];
+    }
 
     if (preguntas.length < numeroPreguntas) {
       throw new ApiError(400, 'No hay preguntas suficientes para generar el test con el criterio solicitado');
@@ -22,6 +39,7 @@ export const testService = {
       testId: test.id,
       temaId,
       numeroPreguntas: preguntas.length,
+      modo,
       preguntas,
     };
   },
