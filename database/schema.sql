@@ -129,3 +129,4 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON auditoria_preguntas(usuario_
 CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON auditoria_preguntas(fecha DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_scoring ON respuestas_usuario(pregunta_id, test_id, correcta, fecha_respuesta DESC);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_tema ON tests(usuario_id, tema_id, fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS idx_preguntas_tema_dificultad ON preguntas(tema_id, nivel_dificultad);

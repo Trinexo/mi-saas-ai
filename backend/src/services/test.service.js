@@ -8,13 +8,32 @@ const calcNota = ({ aciertos, errores, total }) => {
 };
 
 export const testService = {
-  async generate({ userId, temaId, numeroPreguntas, modo = 'adaptativo' }) {
+  async generate({ userId, temaId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto' }) {
+    const NIVEL_MAP = { facil: 1, media: 2, dificil: 3 };
+
+    const calcCuotas = (n) => {
+      const facil = Math.floor(n * 0.3);
+      const dificil = Math.floor(n * 0.3);
+      return { facil, dificil, media: n - facil - dificil };
+    };
+
+    const pickPrimary = (params) =>
+      modo === 'adaptativo'
+        ? testRepository.pickAdaptiveQuestions({ ...params, excludePreguntaIds: [] })
+        : testRepository.pickFreshQuestions(params);
+
     let preguntas;
 
-    if (modo === 'adaptativo') {
-      preguntas = await testRepository.pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds: [] });
+    if (dificultad === 'mixto') {
+      const cuotas = calcCuotas(numeroPreguntas);
+      const [pMedia, pFacil, pDificil] = await Promise.all([
+        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.media, nivelDificultad: NIVEL_MAP.media }),
+        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.facil, nivelDificultad: NIVEL_MAP.facil }),
+        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.dificil, nivelDificultad: NIVEL_MAP.dificil }),
+      ]);
+      preguntas = [...pMedia, ...pFacil, ...pDificil];
     } else {
-      preguntas = await testRepository.pickFreshQuestions({ userId, temaId, numeroPreguntas });
+      preguntas = await pickPrimary({ userId, temaId, numeroPreguntas, nivelDificultad: NIVEL_MAP[dificultad] });
     }
 
     if (preguntas.length < numeroPreguntas) {
@@ -40,6 +59,7 @@ export const testService = {
       temaId,
       numeroPreguntas: preguntas.length,
       modo,
+      dificultad,
       preguntas,
     };
   },

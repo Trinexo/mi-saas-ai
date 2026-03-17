@@ -44,7 +44,8 @@ test('generate falla si no hay preguntas suficientes', async () => {
 
 test('generate falla si el repositorio devuelve menos preguntas que las solicitadas', async () => {
   const repoSnapshot = cloneRepoMethods();
-  testRepository.pickAdaptiveQuestions = async () => [{ id: 1 }, { id: 2 }, { id: 3 }];
+  // Con modo mixto (default) se hacen 3 llamadas por nivel; cada una retorna 1 pregunta → total 3 < 5
+  testRepository.pickAdaptiveQuestions = async () => [{ id: 1 }];
   testRepository.pickAnyQuestions = async () => [];
 
   await assert.rejects(
