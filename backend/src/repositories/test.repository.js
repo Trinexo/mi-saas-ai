@@ -144,6 +144,70 @@ export const testRepository = {
     return result.rows[0].total;
   },
 
+  async getUserHistory({ userId, limit }) {
+    const result = await pool.query(
+      `SELECT t.id, t.tema_id, te.nombre AS tema_nombre, t.numero_preguntas,
+              t.estado, t.fecha_creacion, t.tipo_test,
+              rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
+       FROM tests t
+       LEFT JOIN temas te ON te.id = t.tema_id
+       LEFT JOIN resultados_test rt ON rt.test_id = t.id
+       WHERE t.usuario_id = $1 AND t.estado = 'finalizado'
+       ORDER BY t.fecha_creacion DESC
+       LIMIT $2`,
+      [userId, limit],
+    );
+    return result.rows;
+  },
+
+  async getTestReview(userId, testId) {
+    const testResult = await pool.query(
+      `SELECT t.id, t.tema_id, te.nombre AS tema_nombre, t.numero_preguntas,
+              t.tipo_test, t.fecha_creacion,
+              rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
+       FROM tests t
+       LEFT JOIN temas te ON te.id = t.tema_id
+       LEFT JOIN resultados_test rt ON rt.test_id = t.id
+       WHERE t.id = $1 AND t.usuario_id = $2`,
+      [testId, userId],
+    );
+    if (!testResult.rows[0]) return null;
+
+    const preguntasResult = await pool.query(
+      `SELECT p.id AS pregunta_id, p.enunciado, p.explicacion,
+              ru.respuesta_id AS elegida_id, ru.correcta,
+              (SELECT o2.id FROM opciones_respuesta o2 WHERE o2.pregunta_id = p.id AND o2.correcta = TRUE LIMIT 1) AS correcta_id,
+              json_agg(json_build_object('id', o.id, 'texto', o.texto, 'correcta', o.correcta) ORDER BY o.id) AS opciones
+       FROM tests_preguntas tp
+       JOIN preguntas p ON p.id = tp.pregunta_id
+       JOIN opciones_respuesta o ON o.pregunta_id = p.id
+       LEFT JOIN respuestas_usuario ru ON ru.test_id = tp.test_id AND ru.pregunta_id = tp.pregunta_id
+       WHERE tp.test_id = $1
+       GROUP BY p.id, ru.respuesta_id, ru.correcta
+       ORDER BY tp.orden`,
+      [testId],
+    );
+    return { test: testResult.rows[0], preguntas: preguntasResult.rows };
+  },
+
+  async getTestConfig(userId, testId) {
+    const result = await pool.query(
+      `SELECT t.id, t.tema_id, t.numero_preguntas, t.tipo_test, t.estado,
+              json_agg(json_build_object('id', p.id, 'enunciado', p.enunciado, 'nivel_dificultad', p.nivel_dificultad,
+                'opciones', (
+                  SELECT json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id)
+                  FROM opciones_respuesta o WHERE o.pregunta_id = p.id
+                )) ORDER BY tp.orden) AS preguntas
+       FROM tests t
+       JOIN tests_preguntas tp ON tp.test_id = t.id
+       JOIN preguntas p ON p.id = tp.pregunta_id
+       WHERE t.id = $1 AND t.usuario_id = $2
+       GROUP BY t.id`,
+      [testId, userId],
+    );
+    return result.rows[0] ?? null;
+  },
+
   async createTest({ userId, temaId, numeroPreguntas }) {
     const result = await pool.query(
       `INSERT INTO tests (usuario_id, tema_id, tipo_test, numero_preguntas, estado)
