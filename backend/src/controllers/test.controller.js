@@ -1,5 +1,6 @@
 import { created, ok } from '../utils/response.js';
 import { testService } from '../services/test.service.js';
+import { historyQuerySchema, reviewParamsSchema } from '../schemas/test.schema.js';
 
 export const generateTest = async (req, res, next) => {
   try {
@@ -14,6 +15,36 @@ export const submitTest = async (req, res, next) => {
   try {
     const data = await testService.submit({ userId: req.user.userId, ...req.body });
     return ok(res, data, 'Test enviado y corregido');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getTestHistory = async (req, res, next) => {
+  try {
+    const { limit } = historyQuerySchema.parse(req.query);
+    const data = await testService.getHistory({ userId: req.user.userId, limit });
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getTestReview = async (req, res, next) => {
+  try {
+    const { testId } = reviewParamsSchema.parse(req.params);
+    const data = await testService.getReview({ userId: req.user.userId, testId });
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getTestConfig = async (req, res, next) => {
+  try {
+    const { testId } = reviewParamsSchema.parse(req.params);
+    const data = await testService.getConfig({ userId: req.user.userId, testId });
+    return ok(res, data);
   } catch (error) {
     return next(error);
   }

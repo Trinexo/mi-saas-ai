@@ -3,7 +3,7 @@ import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
 import { rateLimit } from '../../middleware/rate-limit.middleware.js';
 import { generateTestSchema, submitTestSchema } from '../../schemas/test.schema.js';
-import { generateTest, submitTest } from '../../controllers/test.controller.js';
+import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig } from '../../controllers/test.controller.js';
 
 const router = Router();
 
@@ -16,5 +16,8 @@ const submitRateLimit = rateLimit({
 
 router.post('/generate', requireAuth, validate(generateTestSchema), generateTest);
 router.post('/submit', requireAuth, submitRateLimit, validate(submitTestSchema), submitTest);
+router.get('/history', requireAuth, getTestHistory);
+router.get('/:testId/review', requireAuth, getTestReview);
+router.get('/:testId/config', requireAuth, getTestConfig);
 
 export default router;
