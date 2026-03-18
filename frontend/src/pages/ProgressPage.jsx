@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../services/api';
 import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
@@ -6,6 +7,7 @@ import { useAuth } from '../state/auth.jsx';
 
 export default function ProgressPage() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [statsError, setStatsError] = useState('');
   const [catalogError, setCatalogError] = useState('');
@@ -22,6 +24,8 @@ export default function ProgressPage() {
   const [selTema, setSelTema] = useState('');
   const [temaStats, setTemaStats] = useState(null);
   const [loadingTema, setLoadingTema] = useState(false);
+  const [repasoData, setRepasoData] = useState(null);
+  const [repasoLoading, setRepasoLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +145,7 @@ export default function ProgressPage() {
     if (!selTema) {
       setTemaStats(null);
       setTemaError('');
+      setRepasoData(null);
       return;
     }
 
@@ -148,6 +153,8 @@ export default function ProgressPage() {
 
     setLoadingTema(true);
     setTemaError('');
+    setRepasoLoading(true);
+    setRepasoData(null);
     testApi
       .temaStats(token, selTema)
       .then((data) => {
@@ -162,6 +169,21 @@ export default function ProgressPage() {
       .finally(() => {
         if (cancelled) return;
         setLoadingTema(false);
+      });
+
+    testApi
+      .repasoStats(token, selTema)
+      .then((data) => {
+        if (cancelled) return;
+        setRepasoData(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRepasoData(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setRepasoLoading(false);
       });
 
     return () => {
@@ -250,6 +272,29 @@ export default function ProgressPage() {
 
         {loadingTema && <p>Cargando...</p>}
         {temaError && !loadingTema && <p className="error">{temaError}</p>}
+
+        {!repasoLoading && repasoData && repasoData.pendientes > 0 && (
+          <div className="repaso-badge" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.75rem 0' }}>
+            <span className="badge badge--repaso">
+              {repasoData.pendientes} pendiente{repasoData.pendientes !== 1 ? 's' : ''} de repaso
+            </span>
+            <button
+              className="btn btn--sm"
+              onClick={async () => {
+                const test = await testApi.generate(token, {
+                  modo: 'repaso',
+                  temaId: Number(selTema),
+                  numeroPreguntas: Math.min(20, Math.max(5, repasoData.pendientes)),
+                  dificultad: 'mixto',
+                });
+                sessionStorage.setItem('active_test', JSON.stringify(test));
+                navigate('/test');
+              }}
+            >
+              Practicar repaso
+            </button>
+          </div>
+        )}
 
         {temaStats && !loadingTema && (
           <div className="stats-cards" style={{ marginTop: '1rem' }}>
