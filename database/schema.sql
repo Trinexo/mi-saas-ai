@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'alumno',
+  oposicion_preferida_id BIGINT REFERENCES oposiciones(id) ON DELETE SET NULL,
   fecha_registro TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
