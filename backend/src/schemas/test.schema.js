@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const generateTestSchema = z.object({
   temaId: z.number().int().positive(),
   numeroPreguntas: z.number().int().min(5).max(100),
-  modo: z.enum(['normal', 'adaptativo']).optional().default('adaptativo'),
+  modo: z.enum(['normal', 'adaptativo', 'repaso']).optional().default('adaptativo'),
   dificultad: z.enum(['facil', 'media', 'dificil', 'mixto']).optional().default('mixto'),
 });
 

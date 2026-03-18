@@ -52,6 +52,29 @@ const SELECT_ANY_QUESTIONS_SQL = `
   LIMIT $2
 `;
 
+const SELECT_DUE_QUESTIONS_SQL = `
+  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
+         json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
+  FROM repeticion_espaciada re
+  JOIN preguntas p ON p.id = re.pregunta_id
+  JOIN opciones_respuesta o ON o.pregunta_id = p.id
+  WHERE re.usuario_id = $1
+    AND p.tema_id = $2
+    AND re.proxima_revision <= NOW()
+  GROUP BY p.id, re.proxima_revision
+  ORDER BY re.proxima_revision ASC
+  LIMIT $3
+`;
+
+const COUNT_DUE_QUESTIONS_SQL = `
+  SELECT COUNT(*)::int AS total
+  FROM repeticion_espaciada re
+  JOIN preguntas p ON p.id = re.pregunta_id
+  WHERE re.usuario_id = $1
+    AND p.tema_id = $2
+    AND re.proxima_revision <= NOW()
+`;
+
 const SELECT_ADAPTIVE_QUESTIONS_SQL = `
   SELECT
     p.id,
@@ -109,6 +132,16 @@ export const testRepository = {
   async pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
     const result = await pool.query(SELECT_ADAPTIVE_QUESTIONS_SQL, [userId, temaId, excludePreguntaIds, numeroPreguntas, nivelDificultad]);
     return result.rows;
+  },
+
+  async pickDueQuestions({ userId, temaId, numeroPreguntas }) {
+    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, temaId, numeroPreguntas]);
+    return result.rows;
+  },
+
+  async countDueQuestions({ userId, temaId }) {
+    const result = await pool.query(COUNT_DUE_QUESTIONS_SQL, [userId, temaId]);
+    return result.rows[0].total;
   },
 
   async createTest({ userId, temaId, numeroPreguntas }) {
