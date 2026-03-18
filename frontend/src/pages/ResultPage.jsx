@@ -32,6 +32,8 @@ export default function ResultPage() {
       <div className="actions">
         <Link to="/">Nuevo test</Link>
         <Link to="/progreso">Ver progreso</Link>
+        {result.testId && <Link to={`/revision/${result.testId}`}>Ver revisión</Link>}
+        <Link to="/historial">Historial</Link>
       </div>
     </section>
   );
