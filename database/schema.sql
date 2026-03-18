@@ -130,3 +130,17 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON auditoria_preguntas(fecha DESC
 CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_scoring ON respuestas_usuario(pregunta_id, test_id, correcta, fecha_respuesta DESC);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_tema ON tests(usuario_id, tema_id, fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_preguntas_tema_dificultad ON preguntas(tema_id, nivel_dificultad);
+
+CREATE TABLE IF NOT EXISTS repeticion_espaciada (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  pregunta_id BIGINT NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+  nivel_memoria SMALLINT NOT NULL DEFAULT 0,
+  proxima_revision TIMESTAMP NOT NULL DEFAULT NOW(),
+  ultima_revision TIMESTAMP NOT NULL DEFAULT NOW(),
+  racha_aciertos SMALLINT NOT NULL DEFAULT 0,
+  UNIQUE (usuario_id, pregunta_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_repaso_usuario_proxima ON repeticion_espaciada(usuario_id, proxima_revision);
+CREATE INDEX IF NOT EXISTS idx_repaso_pregunta ON repeticion_espaciada(pregunta_id);
