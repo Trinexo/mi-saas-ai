@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import pool from '../../src/config/db.js';
 import { testService } from '../../src/services/test.service.js';
 import { testRepository } from '../../src/repositories/test.repository.js';
+import { spacedRepetitionRepository } from '../../src/repositories/spacedRepetition.repository.js';
 import { statsService } from '../../src/services/stats.service.js';
 import { ApiError } from '../../src/utils/api-error.js';
 
@@ -20,13 +21,16 @@ const cloneRepoMethods = () => {
     insertResultado: testRepository.insertResultado,
     markTestAsDone: testRepository.markTestAsDone,
     updateProgress: testRepository.updateProgress,
+    spacedUpsert: spacedRepetitionRepository.upsertRepaso,
   };
 };
 
 const restoreRepoMethods = (snapshot) => {
-  Object.entries(snapshot).forEach(([key, value]) => {
+  const { spacedUpsert, ...repoMethods } = snapshot;
+  Object.entries(repoMethods).forEach(([key, value]) => {
     testRepository[key] = value;
   });
+  spacedRepetitionRepository.upsertRepaso = spacedUpsert;
 };
 
 test('generate falla si no hay preguntas suficientes', async () => {

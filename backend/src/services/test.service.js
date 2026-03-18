@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import { ApiError } from '../utils/api-error.js';
 import { testRepository } from '../repositories/test.repository.js';
+import { spacedRepetitionRepository } from '../repositories/spacedRepetition.repository.js';
 
 const calcNota = ({ aciertos, errores, total }) => {
   const netas = aciertos - errores * 0.33;
@@ -135,6 +136,12 @@ export const testService = {
       await testRepository.updateProgress(client, { userId, testId });
 
       await client.query('COMMIT');
+
+      // fire-and-forget: actualizar repetición espaciada (no bloquea la respuesta)
+      respuestas.forEach((r) => {
+        const correcta = r.respuestaId != null && mapaRespuestasCorrectas.get(r.preguntaId) === r.respuestaId;
+        spacedRepetitionRepository.upsertRepaso({ userId, preguntaId: r.preguntaId, correcta }).catch(() => {});
+      });
 
       return {
         testId,
