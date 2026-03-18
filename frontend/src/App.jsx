@@ -10,6 +10,7 @@ import ProgressPage from './pages/ProgressPage.jsx';
 import HistorialPage from './pages/HistorialPage.jsx';
 import ReviewPage from './pages/ReviewPage.jsx';
 import MarcadasPage from './pages/MarcadasPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
 
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="historial" element={<HistorialPage />} />
         <Route path="revision/:testId" element={<ReviewPage />} />
         <Route path="marcadas" element={<MarcadasPage />} />
+        <Route path="perfil" element={<ProfilePage />} />
         <Route
           path="admin"
           element={

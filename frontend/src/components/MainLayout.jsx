@@ -19,6 +19,7 @@ function Shell() {
           <Link to="/progreso">Progreso</Link>
           <Link to="/historial">Historial</Link>
           <Link to="/marcadas">Marcadas</Link>
+          <Link to="/perfil">Perfil</Link>
           {user && ['admin', 'editor', 'revisor'].includes(user.role) && <Link to="/admin/preguntas">Admin</Link>}
         </nav>
         <button onClick={handleLogout}>Salir</button>
