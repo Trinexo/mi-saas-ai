@@ -6,7 +6,7 @@ import { useAsyncAction } from '../hooks/useAsyncAction.js';
 import DashboardWidget from '../components/DashboardWidget.jsx';
 
 export default function ProfilePage() {
-  const { token, user } = useAuth();
+  const { token, user, refreshUser } = useAuth();
 
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
@@ -47,6 +47,7 @@ export default function ProfilePage() {
         setNombre(res.data.nombre || '');
         setEmail(res.data.email || '');
         setOposicionPreferidaId(res.data.oposicionPreferidaId ? String(res.data.oposicionPreferidaId) : '');
+        refreshUser(res.data);
       }
     }, 'Error al actualizar el perfil');
   };
