@@ -5,3 +5,7 @@ export const ok = (res, data, message = 'ok') => {
 export const created = (res, data, message = 'created') => {
   return res.status(201).json({ success: true, message, data });
 };
+
+export const noContent = (res) => {
+  return res.status(204).send();
+};
