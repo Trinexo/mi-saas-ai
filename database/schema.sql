@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'alumno',
-  oposicion_preferida_id BIGINT REFERENCES oposiciones(id) ON DELETE SET NULL,
+  oposicion_preferida_id BIGINT,
   fecha_registro TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -145,3 +145,8 @@ CREATE TABLE IF NOT EXISTS repeticion_espaciada (
 
 CREATE INDEX IF NOT EXISTS idx_repaso_usuario_proxima ON repeticion_espaciada(usuario_id, proxima_revision);
 CREATE INDEX IF NOT EXISTS idx_repaso_pregunta ON repeticion_espaciada(pregunta_id);
+
+-- FK diferida: usuarios.oposicion_preferida_id -> oposiciones.id
+ALTER TABLE usuarios
+  ADD CONSTRAINT IF NOT EXISTS fk_usuarios_oposicion_preferida
+  FOREIGN KEY (oposicion_preferida_id) REFERENCES oposiciones(id) ON DELETE SET NULL;
