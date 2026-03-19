@@ -95,30 +95,26 @@ export default function ProfilePage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', marginBottom: '1.25rem', padding: '.5rem .75rem', borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
+            style={{ width: '100%', marginBottom: '1rem', padding: '.5rem .75rem', borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
           />
+          <label style={{ display: 'block', marginBottom: '.5rem', fontWeight: 600 }}>Oposición predeterminada</label>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0 0 .5rem' }}>Se preseleccionará automáticamente al entrar en la pantalla de inicio.</p>
+          <select
+            value={oposicionPreferidaId}
+            onChange={(e) => setOposicionPreferidaId(e.target.value)}
+            style={{ width: '100%', marginBottom: '1.25rem', padding: '.5rem .75rem', borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
+          >
+            <option value="">— Sin preferencia —</option>
+            {oposiciones.map((op) => (
+              <option key={op.id} value={String(op.id)}>{op.nombre}</option>
+            ))}
+          </select>
           {profileAction.error && <p style={{ color: '#c00', marginBottom: '.75rem' }}>{profileAction.error}</p>}
           {profileAction.message && <p style={{ color: '#2a7', marginBottom: '.75rem' }}>{profileAction.message}</p>}
           <button type="submit" disabled={profileAction.isLoading} className="btn-primary">
             {profileAction.isLoading ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </form>
-      </section>
-
-      <section style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: '2rem' }}>
-        <h3 style={{ marginTop: 0 }}>Oposición predeterminada</h3>
-        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>Se preseleccionará automáticamente al entrar en la pantalla de inicio.</p>
-        <label style={{ display: 'block', marginBottom: '.5rem', fontWeight: 600 }}>Oposición</label>
-        <select
-          value={oposicionPreferidaId}
-          onChange={(e) => setOposicionPreferidaId(e.target.value)}
-          style={{ width: '100%', marginBottom: '1.25rem', padding: '.5rem .75rem', borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
-        >
-          <option value="">— Sin preferencia —</option>
-          {oposiciones.map((op) => (
-            <option key={op.id} value={String(op.id)}>{op.nombre}</option>
-          ))}
-        </select>
       </section>
 
       <section style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
