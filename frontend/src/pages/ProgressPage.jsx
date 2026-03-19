@@ -5,6 +5,13 @@ import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
 
+function formatTime(segundos) {
+  if (!segundos) return '0:00';
+  const m = Math.floor(segundos / 60);
+  const s = Math.round(segundos % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 export default function ProgressPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -205,7 +212,7 @@ export default function ProgressPage() {
 
       <div className="stats-cards">
         <div className="stat-card">
-          <span className="stat-value">{stats.total_tests}</span>
+          <span className="stat-value">{stats.totalTests}</span>
           <span className="stat-label">Tests realizados</span>
         </div>
         <div className="stat-card">
@@ -221,12 +228,12 @@ export default function ProgressPage() {
           <span className="stat-label">En blanco</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{stats.nota_media}</span>
+          <span className="stat-value">{Number(stats.notaMedia).toFixed(2)}</span>
           <span className="stat-label">Nota media</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{stats.tiempo_medio} s</span>
-          <span className="stat-label">Tiempo medio</span>
+          <span className="stat-value">{formatTime(stats.tiempoMedio)}</span>
+          <span className="stat-label">Tiempo medio/test</span>
         </div>
       </div>
 
@@ -296,30 +303,44 @@ export default function ProgressPage() {
           </div>
         )}
 
-        {temaStats && !loadingTema && (
-          <div className="stats-cards" style={{ marginTop: '1rem' }}>
-            <div className="stat-card">
-              <span className="stat-value">{temaStats.preguntas_vistas}</span>
-              <span className="stat-label">Preguntas vistas</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{temaStats.aciertos}</span>
-              <span className="stat-label">Aciertos</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">{temaStats.errores}</span>
-              <span className="stat-label">Errores</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">
-                {temaStats.preguntas_vistas > 0
-                  ? Math.round((temaStats.aciertos / temaStats.preguntas_vistas) * 100)
-                  : 0}%
-              </span>
-              <span className="stat-label">Tasa de acierto</span>
-            </div>
-          </div>
-        )}
+        {temaStats && !loadingTema && (() => {
+          const pctTema = temaStats.preguntasVistas > 0
+            ? Math.round((temaStats.aciertos / temaStats.preguntasVistas) * 100)
+            : 0;
+          return (
+            <>
+              <div className="stats-cards" style={{ marginTop: '1rem' }}>
+                <div className="stat-card">
+                  <span className="stat-value">{temaStats.preguntasVistas}</span>
+                  <span className="stat-label">Preguntas vistas</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{temaStats.aciertos}</span>
+                  <span className="stat-label">Aciertos</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{temaStats.errores}</span>
+                  <span className="stat-label">Errores</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{pctTema}%</span>
+                  <span className="stat-label">Tasa de acierto</span>
+                </div>
+              </div>
+              {temaStats.preguntasVistas > 0 && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>
+                    <span>Tasa de acierto del tema</span>
+                    <span>{pctTema}%</span>
+                  </div>
+                  <div style={{ display: 'flex', height: '10px', borderRadius: '5px', overflow: 'hidden', background: '#e5e7eb' }}>
+                    <div style={{ width: `${pctTema}%`, background: pctTema >= 70 ? '#22c55e' : pctTema >= 50 ? '#f59e0b' : '#ef4444', transition: 'width 0.3s' }} />
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </section>
   );
