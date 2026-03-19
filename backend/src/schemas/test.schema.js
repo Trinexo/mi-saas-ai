@@ -1,10 +1,23 @@
 import { z } from 'zod';
 
 export const generateTestSchema = z.object({
-  temaId: z.number().int().positive(),
-  numeroPreguntas: z.number().int().min(5).max(100),
-  modo: z.enum(['normal', 'adaptativo', 'repaso']).optional().default('adaptativo'),
+  temaId: z.number().int().positive().optional(),
+  oposicionId: z.number().int().positive().optional(),
+  numeroPreguntas: z.number().int().min(1).max(200),
+  modo: z.enum(['normal', 'adaptativo', 'repaso', 'simulacro', 'marcadas']).optional().default('adaptativo'),
   dificultad: z.enum(['facil', 'media', 'dificil', 'mixto']).optional().default('mixto'),
+  duracionSegundos: z.number().int().positive().optional(),
+}).refine(
+  (d) => d.modo !== 'simulacro' || d.oposicionId != null,
+  { message: 'El modo simulacro requiere oposicionId', path: ['oposicionId'] },
+).refine(
+  (d) => ['simulacro', 'marcadas'].includes(d.modo) || d.temaId != null,
+  { message: 'Se requiere temaId para este modo', path: ['temaId'] },
+);
+
+export const generateRefuerzoSchema = z.object({
+  temaId: z.number().int().positive().optional(),
+  numeroPreguntas: z.number().int().min(1).max(100).default(10),
 });
 
 export const submitTestSchema = z.object({

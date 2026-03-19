@@ -11,6 +11,15 @@ export const generateTest = async (req, res, next) => {
   }
 };
 
+export const generateRefuerzo = async (req, res, next) => {
+  try {
+    const data = await testService.generateRefuerzo({ userId: req.user.userId, ...req.body });
+    return created(res, data, 'Test de refuerzo generado');
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const submitTest = async (req, res, next) => {
   try {
     const data = await testService.submit({ userId: req.user.userId, ...req.body });

@@ -9,7 +9,7 @@ const calcNota = ({ aciertos, errores, total }) => {
 };
 
 export const testService = {
-  async generate({ userId, temaId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto' }) {
+  async generate({ userId, temaId, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', duracionSegundos }) {
     const NIVEL_MAP = { facil: 1, media: 2, dificil: 3 };
 
     const calcCuotas = (n) => {
@@ -20,7 +20,11 @@ export const testService = {
 
     let preguntas;
 
-    if (modo === 'repaso') {
+    if (modo === 'marcadas') {
+      preguntas = await testRepository.pickMarcadasQuestions({ userId, numeroPreguntas });
+    } else if (modo === 'simulacro') {
+      preguntas = await testRepository.pickSimulacroQuestions({ oposicionId, numeroPreguntas });
+    } else if (modo === 'repaso') {
       preguntas = await testRepository.pickDueQuestions({ userId, temaId, numeroPreguntas });
     } else {
       const pickPrimary = (params) =>
@@ -41,7 +45,8 @@ export const testService = {
       }
     }
 
-    if (preguntas.length < numeroPreguntas) {
+    // Fallback solo para modos basados en tema
+    if (preguntas.length < numeroPreguntas && !['simulacro', 'marcadas'].includes(modo)) {
       const excludeIds = preguntas.map((p) => p.id);
       const extra = await testRepository.pickAnyQuestions({
         userId,
@@ -50,21 +55,74 @@ export const testService = {
         excludePreguntaIds: excludeIds,
       });
       preguntas = [...preguntas, ...extra];
+
+      if (preguntas.length < numeroPreguntas) {
+        throw new ApiError(400, 'No hay preguntas suficientes para generar el test con el criterio solicitado');
+      }
     }
 
-    if (preguntas.length < numeroPreguntas) {
-      throw new ApiError(400, 'No hay preguntas suficientes para generar el test con el criterio solicitado');
+    if (preguntas.length === 0) {
+      throw new ApiError(400, 'No hay preguntas disponibles para el test');
     }
 
-    const test = await testRepository.createTest({ userId, temaId, numeroPreguntas: preguntas.length });
+    const test = await testRepository.createTest({
+      userId,
+      temaId: temaId || null,
+      oposicionId: oposicionId || null,
+      tipoTest: modo,
+      numeroPreguntas: preguntas.length,
+      duracionSegundos: duracionSegundos || null,
+    });
     await testRepository.insertTestPreguntas(test.id, preguntas.map((item) => item.id));
 
     return {
       testId: test.id,
-      temaId,
+      temaId: temaId || null,
+      oposicionId: oposicionId || null,
       numeroPreguntas: preguntas.length,
       modo,
       dificultad,
+      duracionSegundos: duracionSegundos || null,
+      preguntas,
+    };
+  },
+
+  async generateRefuerzo({ userId, temaId, numeroPreguntas = 10 }) {
+    let preguntas = await testRepository.pickRefuerzoQuestions({ userId, numeroPreguntas, temaId: temaId || null });
+
+    // Completar con preguntas adaptativas si no hay suficientes falladas
+    if (preguntas.length < numeroPreguntas && temaId) {
+      const excludeIds = preguntas.map((p) => p.id);
+      const extra = await testRepository.pickAdaptiveQuestions({
+        userId,
+        temaId,
+        numeroPreguntas: numeroPreguntas - preguntas.length,
+        excludePreguntaIds: excludeIds,
+      });
+      preguntas = [...preguntas, ...extra];
+    }
+
+    if (preguntas.length === 0) {
+      throw new ApiError(400, 'No hay preguntas disponibles para el refuerzo');
+    }
+
+    const test = await testRepository.createTest({
+      userId,
+      temaId: temaId || null,
+      oposicionId: null,
+      tipoTest: 'refuerzo',
+      numeroPreguntas: preguntas.length,
+      duracionSegundos: null,
+    });
+    await testRepository.insertTestPreguntas(test.id, preguntas.map((item) => item.id));
+
+    return {
+      testId: test.id,
+      temaId: temaId || null,
+      numeroPreguntas: preguntas.length,
+      modo: 'refuerzo',
+      dificultad: 'mixto',
+      duracionSegundos: null,
       preguntas,
     };
   },
