@@ -275,7 +275,7 @@ export const testRepository = {
 
   async getTestConfig(userId, testId) {
     const result = await pool.query(
-      `SELECT t.id, t.tema_id, t.numero_preguntas, t.tipo_test, t.estado,
+      `SELECT t.id, t.tema_id, t.oposicion_id, t.numero_preguntas, t.tipo_test, t.estado,
               json_agg(json_build_object('id', p.id, 'enunciado', p.enunciado, 'nivel_dificultad', p.nivel_dificultad,
                 'opciones', (
                   SELECT json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id)
@@ -288,7 +288,17 @@ export const testRepository = {
        GROUP BY t.id`,
       [testId, userId],
     );
-    return result.rows[0] ?? null;
+    if (!result.rows[0]) return null;
+    const row = result.rows[0];
+    return {
+      id: Number(row.id),
+      temaId: row.tema_id ? Number(row.tema_id) : null,
+      oposicionId: row.oposicion_id ? Number(row.oposicion_id) : null,
+      tipoTest: row.tipo_test,
+      numeroPreguntas: Number(row.numero_preguntas),
+      estado: row.estado,
+      preguntas: row.preguntas,
+    };
   },
 
   async createTest({ userId, temaId, oposicionId, tipoTest, numeroPreguntas, duracionSegundos }) {
