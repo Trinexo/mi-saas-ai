@@ -118,13 +118,13 @@ test('SMOKE-U07B: generar test sin enviar no debe contar en estadísticas finali
 test('SMOKE-U08: estadísticas de usuario', async () => {
   const { status, data } = await api('/stats/user', { token: userToken });
   assert.equal(status, 200);
-  assert.equal(data.total_tests, 1);
+  assert.equal(data.totalTests, 1);
 });
 
 test('SMOKE-U09: estadísticas por tema', async () => {
   const { status, data } = await api('/stats/tema?tema_id=1', { token: userToken });
   assert.equal(status, 200);
-  assert.ok(typeof data.preguntas_vistas === 'number');
+  assert.ok(typeof data.preguntasVistas === 'number');
 });
 
 // ── Flujo admin ────────────────────────────────────────────────
