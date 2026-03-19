@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 
+const MODO_LABEL = { adaptativo: 'Adaptativo', normal: 'Normal', repaso: 'Repaso', marcadas: 'Marcadas', simulacro: 'Simulacro', refuerzo: 'Refuerzo' };
+
 export default function HistorialPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -29,23 +31,23 @@ export default function HistorialPage() {
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const testsLast7Days = items.filter((t) => new Date(t.fecha) > sevenDaysAgo).length;
-  const testsSemana = items.filter((t) => new Date(t.fecha) > sevenDaysAgo);
+  const testsLast7Days = (items ?? []).filter((t) => new Date(t.fecha) > sevenDaysAgo).length;
+  const testsSemana = (items ?? []).filter((t) => new Date(t.fecha) > sevenDaysAgo);
   const mejorTestSemana = testsSemana.reduce((best, t) => {
     if (!best) return t;
     return Number(t.nota ?? 0) > Number(best.nota ?? 0) ? t : best;
   }, null);
-  const bestNoteLast30Days = items
+  const bestNoteLast30Days = (items ?? [])
     .filter((t) => new Date(t.fecha) > thirtyDaysAgo)
     .reduce((max, t) => Math.max(max, t.nota ?? 0), 0);
 
-  const testsPorDia = items.reduce((acc, t) => {
+  const testsPorDia = (items ?? []).reduce((acc, t) => {
     const fechaKey = new Date(t.fecha).toISOString().slice(0, 10);
     acc[fechaKey] = (acc[fechaKey] || 0) + 1;
     return acc;
   }, {});
 
-  const itemsFiltrados = items.filter((t) => {
+  const itemsFiltrados = (items ?? []).filter((t) => {
     const fecha = new Date(t.fecha);
     const byPeriodo = periodoFiltro === 'todo'
       ? true
@@ -92,14 +94,14 @@ export default function HistorialPage() {
     try {
       const config = await testApi.getConfig(token, testId);
       const payload = {
-        numeroPreguntas: config.numero_preguntas,
-        modo: config.tipo_test === 'simulacro' ? 'simulacro' : 'adaptativo',
-        dificultad: 'mixto', // default
+        numeroPreguntas: config.numeroPreguntas,
+        modo: config.tipoTest === 'simulacro' ? 'simulacro' : 'adaptativo',
+        dificultad: 'mixto',
       };
-      if (config.tipo_test === 'simulacro') {
-        payload.oposicionId = config.oposicion_id;
+      if (config.tipoTest === 'simulacro') {
+        payload.oposicionId = config.oposicionId;
       } else {
-        payload.temaId = config.tema_id;
+        payload.temaId = config.temaId;
       }
       const test = await testApi.generate(token, payload);
       sessionStorage.setItem('active_test', JSON.stringify(test));
@@ -193,7 +195,7 @@ export default function HistorialPage() {
 
       <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
         <button
-          onClick={() => handleReintentar(mejorTestSemana.testId)}
+          onClick={() => handleReintentar(mejorTestSemana.id)}
           disabled={!mejorTestSemana}
         >
           Reintentar mejor test semanal
@@ -221,9 +223,9 @@ export default function HistorialPage() {
           </thead>
           <tbody>
             {itemsOrdenados.map((t) => (
-              <tr key={t.testId}>
+              <tr key={t.id}>
                 <td>{new Date(t.fecha).toLocaleDateString('es-ES')}</td>
-                <td>{t.tipoTest}</td>
+                <td>{MODO_LABEL[t.tipoTest] ?? t.tipoTest}</td>
                 <td>{t.oposicionNombre || '—'}</td>
                 <td>
                   {t.materiaNombre || '—'}
@@ -231,8 +233,8 @@ export default function HistorialPage() {
                 </td>
                 <td>{t.aciertos}A · {t.errores}E · {t.blancos}B</td>
                 <td><strong>{t.nota}</strong></td>
-                <td><Link to={`/revision/${t.testId}`}>Ver</Link></td>
-                <td><button onClick={() => handleReintentar(t.testId)}>Reintentar</button></td>
+                <td><Link to={`/revision/${t.id}`}>Ver</Link></td>
+                <td><button onClick={() => handleReintentar(t.id)}>Reintentar</button></td>
               </tr>
             ))}
           </tbody>
