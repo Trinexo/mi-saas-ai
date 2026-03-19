@@ -102,6 +102,35 @@ export default function TestPage() {
       <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: 0 }}>
         {answered} / {test.preguntas.length} respondidas
       </p>
+
+      {/* Panel de navegación numérica */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
+        {test.preguntas.map((pregunta, i) => {
+          const isAnswered = answers[pregunta.id] != null;
+          const isCurrent = i === index;
+          return (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 6,
+                border: isCurrent ? '2px solid #2563eb' : '1px solid #d1d5db',
+                background: isCurrent ? '#2563eb' : isAnswered ? '#dcfce7' : '#f9fafb',
+                color: isCurrent ? '#fff' : isAnswered ? '#15803d' : '#374151',
+                fontWeight: isCurrent ? 700 : 400,
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                padding: 0,
+              }}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+
       <p>{question.enunciado}</p>
       <div className="options">
         {question.opciones.map((option) => (
@@ -119,13 +148,12 @@ export default function TestPage() {
         <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
           Anterior
         </button>
-        {index < test.preguntas.length - 1 ? (
-          <button onClick={() => setIndex(index + 1)}>Siguiente</button>
-        ) : (
-          <button onClick={() => onSubmit(answers)} disabled={submitting}>
-            {submitting ? 'Enviando...' : 'Enviar test'}
-          </button>
-        )}
+        <button onClick={() => setIndex(Math.min(index + 1, test.preguntas.length - 1))} disabled={index === test.preguntas.length - 1}>
+          Siguiente
+        </button>
+        <button onClick={() => onSubmit(answers)} disabled={submitting}>
+          {submitting ? 'Enviando...' : `Enviar test (${answered}/${test.preguntas.length})`}
+        </button>
       </div>
 
       {error && <p className="error">{error}</p>}
