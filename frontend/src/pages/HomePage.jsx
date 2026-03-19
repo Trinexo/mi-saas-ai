@@ -3,12 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 import { catalogApi } from '../services/catalogApi';
 import { testApi } from '../services/testApi';
-import { authApi } from '../services/authApi.js';
 import { useAuth } from '../state/auth.jsx';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [oposiciones, setOposiciones] = useState([]);
   const [materias, setMaterias] = useState([]);
   const [temas, setTemas] = useState([]);
@@ -40,17 +39,14 @@ export default function HomePage() {
       .then(async (ops) => {
         if (cancelled) return;
         setOposiciones(ops);
-        // Autoseleccionar oposición preferida del perfil
-        try {
-          const profileRes = await authApi.getProfile(token);
-          const prefId = profileRes?.data?.oposicionPreferidaId;
-          if (prefId && !cancelled) {
-            const prefIdStr = String(prefId);
-            setSelection((prev) => ({ ...prev, oposicionId: prefIdStr }));
-            const materias = await catalogApi.getMaterias(prefIdStr);
-            if (!cancelled) setMaterias(materias);
-          }
-        } catch { /* perfil no crítico */ }
+        // Autoseleccionar oposición preferida del perfil (ya disponible en contexto)
+        const prefId = user?.oposicionPreferidaId;
+        if (prefId && !cancelled) {
+          const prefIdStr = String(prefId);
+          setSelection((prev) => ({ ...prev, oposicionId: prefIdStr }));
+          const materias = await catalogApi.getMaterias(prefIdStr);
+          if (!cancelled) setMaterias(materias);
+        }
       })
       .catch((e) => setErrorMessage(e, 'No se pudo cargar el catálogo'))
       .finally(() => { if (!cancelled) setLoading(false); });
