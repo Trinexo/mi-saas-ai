@@ -35,6 +35,8 @@ export default function ProgressPage() {
   const [repasoLoading, setRepasoLoading] = useState(false);
   const [simulacrosData, setSimulacrosData] = useState(null);
   const [simulacrosLoading, setSimulacrosLoading] = useState(false);
+  const [evolucionData, setEvolucionData] = useState(null);
+  const [evolucionLoading, setEvolucionLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +74,13 @@ export default function ProgressPage() {
         if (cancelled) return;
         setLoadingCatalog(false);
       });
+
+    setEvolucionLoading(true);
+    testApi
+      .evolucionStats(token, 30)
+      .then((data) => { if (!cancelled) setEvolucionData(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!cancelled) setEvolucionData([]); })
+      .finally(() => { if (!cancelled) setEvolucionLoading(false); });
 
     return () => {
       cancelled = true;
@@ -253,6 +262,42 @@ export default function ProgressPage() {
           <div className="progress-bar-fill" style={{ width: `${pctAcierto}%` }} />
         </div>
       </div>
+
+      {!evolucionLoading && evolucionData && evolucionData.length >= 2 && (
+        <div className="card" style={{ marginTop: '1.5rem' }}>
+          <h3>Evolución (últimos {evolucionData.length} tests)</h3>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Fecha</th>
+                  <th>Modo</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evolucionData.map((e, i) => (
+                  <tr key={i}>
+                    <td style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{evolucionData.length - i}</td>
+                    <td>{new Date(e.fecha).toLocaleDateString('es-ES')}</td>
+                    <td>
+                      <span className="badge" style={{ fontSize: '0.75rem' }}>
+                        {e.tipoTest ?? '—'}
+                      </span>
+                    </td>
+                    <td>
+                      <strong style={{ color: Number(e.nota) >= 5 ? '#22c55e' : '#ef4444' }}>
+                        {Number(e.nota).toFixed(2)}
+                      </strong>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h3>Estadísticas por tema</h3>
