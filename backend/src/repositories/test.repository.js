@@ -270,7 +270,31 @@ export const testRepository = {
        ORDER BY tp.orden`,
       [testId],
     );
-    return { test: testResult.rows[0], preguntas: preguntasResult.rows };
+    const t = testResult.rows[0];
+    return {
+      test: {
+        id: Number(t.id),
+        temaId: t.tema_id ? Number(t.tema_id) : null,
+        temaNombre: t.tema_nombre || null,
+        numeroPreguntas: Number(t.numero_preguntas),
+        tipoTest: t.tipo_test,
+        fechaCreacion: t.fecha_creacion,
+        aciertos: t.aciertos ?? 0,
+        errores: t.errores ?? 0,
+        blancos: t.blancos ?? 0,
+        nota: t.nota ?? 0,
+        tiempoSegundos: t.tiempo_segundos ?? 0,
+      },
+      preguntas: preguntasResult.rows.map(p => ({
+        preguntaId: Number(p.pregunta_id),
+        enunciado: p.enunciado,
+        explicacion: p.explicacion || null,
+        respuestaUsuarioId: p.elegida_id ? Number(p.elegida_id) : null,
+        esCorrecta: Boolean(p.correcta),
+        correctaId: Number(p.correcta_id),
+        opciones: p.opciones,
+      })),
+    };
   },
 
   async getTestConfig(userId, testId) {

@@ -125,15 +125,15 @@ export default function ReviewPage() {
       {testInfo && (
         <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem' }}>
-            {testInfo.tipo_test && (
-              <span className="badge">{MODO_LABEL[testInfo.tipo_test] ?? testInfo.tipo_test}</span>
+            {testInfo.tipoTest && (
+              <span className="badge">{MODO_LABEL[testInfo.tipoTest] ?? testInfo.tipoTest}</span>
             )}
-            {testInfo.tema_nombre && (
-              <span style={{ fontWeight: 600, color: '#374151' }}>{testInfo.tema_nombre}</span>
+            {testInfo.temaNombre && (
+              <span style={{ fontWeight: 600, color: '#374151' }}>{testInfo.temaNombre}</span>
             )}
-            {testInfo.fecha_creacion && (
+            {testInfo.fechaCreacion && (
               <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                {new Date(testInfo.fecha_creacion).toLocaleDateString('es-ES')}
+                {new Date(testInfo.fechaCreacion).toLocaleDateString('es-ES')}
               </span>
             )}
           </div>
@@ -144,8 +144,8 @@ export default function ReviewPage() {
                 <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#6b7280' }}> / 10</span>
               </span>
             )}
-            {formatTime(testInfo.tiempo_segundos) && (
-              <span style={{ color: '#6b7280', fontSize: '0.875rem', alignSelf: 'center' }}>⏱ {formatTime(testInfo.tiempo_segundos)}</span>
+            {formatTime(testInfo.tiempoSegundos) && (
+              <span style={{ color: '#6b7280', fontSize: '0.875rem', alignSelf: 'center' }}>⏱ {formatTime(testInfo.tiempoSegundos)}</span>
             )}
           </div>
         </div>
