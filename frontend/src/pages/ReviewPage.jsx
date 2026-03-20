@@ -6,6 +6,15 @@ import { marcadasApi } from '../services/marcadasApi';
 import { reportarApi } from '../services/reportarApi';
 import { useAuth } from '../state/auth.jsx';
 
+const MODO_LABEL = { adaptativo: 'Adaptativo', normal: 'Normal', repaso: 'Repaso', marcadas: 'Marcadas', simulacro: 'Simulacro', refuerzo: 'Refuerzo' };
+
+function formatTime(segundos) {
+  if (!segundos) return null;
+  const m = Math.floor(segundos / 60);
+  const s = segundos % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 const ESTADO_CLASE = {
   correcta: 'review-option correct',
   incorrecta: 'review-option incorrect',
@@ -36,6 +45,7 @@ export default function ReviewPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const [preguntas, setPreguntas] = useState(null);
+  const [testInfo, setTestInfo] = useState(null);
   const [marcadas, setMarcadas] = useState(new Set());
   const [reportadas, setReportadas] = useState(new Set());
   const [reportModal, setReportModal] = useState(null);
@@ -47,7 +57,10 @@ export default function ReviewPage() {
 
   useEffect(() => {
     runAction(() => testApi.getReview(token, testId)).then((data) => {
-      if (data) setPreguntas(data.preguntas);
+      if (data) {
+        setPreguntas(data.preguntas);
+        setTestInfo(data.test ?? null);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId, token]);
@@ -108,6 +121,35 @@ export default function ReviewPage() {
           ← Volver al resultado
         </button>
       </div>
+
+      {testInfo && (
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem' }}>
+            {testInfo.tipo_test && (
+              <span className="badge">{MODO_LABEL[testInfo.tipo_test] ?? testInfo.tipo_test}</span>
+            )}
+            {testInfo.tema_nombre && (
+              <span style={{ fontWeight: 600, color: '#374151' }}>{testInfo.tema_nombre}</span>
+            )}
+            {testInfo.fecha_creacion && (
+              <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+                {new Date(testInfo.fecha_creacion).toLocaleDateString('es-ES')}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+            {testInfo.nota != null && (
+              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: Number(testInfo.nota) >= 5 ? '#22c55e' : '#ef4444' }}>
+                {Number(testInfo.nota).toFixed(2)}
+                <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#6b7280' }}> / 10</span>
+              </span>
+            )}
+            {formatTime(testInfo.tiempo_segundos) && (
+              <span style={{ color: '#6b7280', fontSize: '0.875rem', alignSelf: 'center' }}>⏱ {formatTime(testInfo.tiempo_segundos)}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '0.75rem', margin: '1rem 0', flexWrap: 'wrap' }}>
         <span className="badge" style={{ background: '#dcfce7', color: '#166534' }}>✓ {correctas} correctas</span>

@@ -620,8 +620,15 @@ export const statsRepository = {
          AND t.estado = 'finalizado'`,
       [userId],
     );
-
-    return result.rows[0];
+    const row = result.rows[0];
+    return {
+      totalTests: Number(row.total_tests ?? 0),
+      aciertos: Number(row.aciertos ?? 0),
+      errores: Number(row.errores ?? 0),
+      blancos: Number(row.blancos ?? 0),
+      notaMedia: Number(row.nota_media ?? 0),
+      tiempoMedio: Number(row.tiempo_medio ?? 0),
+    };
   },
 
   async getTemaStats(userId, temaId) {
@@ -634,8 +641,13 @@ export const statsRepository = {
        WHERE usuario_id = $1 AND tema_id = $2`,
       [userId, temaId],
     );
-
-    return result.rows[0] ?? { tema_id: temaId, preguntas_vistas: 0, aciertos: 0, errores: 0 };
+    const row = result.rows[0];
+    return {
+      temaId: Number(row?.tema_id ?? temaId),
+      preguntasVistas: Number(row?.preguntas_vistas ?? 0),
+      aciertos: Number(row?.aciertos ?? 0),
+      errores: Number(row?.errores ?? 0),
+    };
   },
 
   async getRepasoStats(userId, temaId) {
