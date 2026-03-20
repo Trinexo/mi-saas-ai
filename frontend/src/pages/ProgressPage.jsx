@@ -33,6 +33,8 @@ export default function ProgressPage() {
   const [loadingTema, setLoadingTema] = useState(false);
   const [repasoData, setRepasoData] = useState(null);
   const [repasoLoading, setRepasoLoading] = useState(false);
+  const [simulacrosData, setSimulacrosData] = useState(null);
+  const [simulacrosLoading, setSimulacrosLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,12 +87,20 @@ export default function ProgressPage() {
       setTemaStats(null);
       setCatalogError('');
       setTemaError('');
+      setSimulacrosData(null);
       return;
     }
 
     let cancelled = false;
 
     setCatalogError('');
+    setSimulacrosLoading(true);
+    testApi
+      .simulacroStats(token, selOposicion)
+      .then((data) => { if (!cancelled) setSimulacrosData(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!cancelled) setSimulacrosData([]); })
+      .finally(() => { if (!cancelled) setSimulacrosLoading(false); });
+
     catalogApi
       .getMaterias(selOposicion)
       .then((data) => {
@@ -112,7 +122,7 @@ export default function ProgressPage() {
     return () => {
       cancelled = true;
     };
-  }, [selOposicion]);
+  }, [selOposicion, token]);
 
   useEffect(() => {
     if (!selMateria) {
@@ -342,6 +352,66 @@ export default function ProgressPage() {
           );
         })()}
       </div>
+
+      {selOposicion && (
+        <div className="card" style={{ marginTop: '1.5rem' }}>
+          <h3>Simulacros de esta oposición</h3>
+          {simulacrosLoading && <p>Cargando simulacros...</p>}
+          {!simulacrosLoading && simulacrosData !== null && simulacrosData.length === 0 && (
+            <p style={{ color: '#6b7280' }}>Aún no has hecho ningún simulacro para esta oposición.</p>
+          )}
+          {!simulacrosLoading && simulacrosData && simulacrosData.length > 0 && (() => {
+            const notaMedia = simulacrosData.reduce((s, r) => s + r.nota, 0) / simulacrosData.length;
+            const mejor = simulacrosData.reduce((b, r) => r.nota > b.nota ? r : b, simulacrosData[0]);
+            return (
+              <>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Simulacros realizados</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{simulacrosData.length}</div>
+                  </div>
+                  <div style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Nota media</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: notaMedia >= 5 ? '#22c55e' : '#ef4444' }}>{notaMedia.toFixed(2)}</div>
+                  </div>
+                  <div style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Mejor nota</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#22c55e' }}>{mejor.nota.toFixed(2)}</div>
+                  </div>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Nota</th>
+                        <th>Aciertos</th>
+                        <th>Errores</th>
+                        <th>En blanco</th>
+                        <th>Tiempo</th>
+                        <th>Revisión</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {simulacrosData.map((s) => (
+                        <tr key={s.testId}>
+                          <td>{new Date(s.fecha).toLocaleDateString('es-ES')}</td>
+                          <td><strong style={{ color: s.nota >= 5 ? '#22c55e' : '#ef4444' }}>{s.nota.toFixed(2)}</strong></td>
+                          <td>{s.aciertos}</td>
+                          <td>{s.errores}</td>
+                          <td>{s.blancos}</td>
+                          <td>{formatTime(s.tiempoRealSegundos)}</td>
+                          <td><a href={`/revision/${s.testId}`}>Ver</a></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
     </section>
   );
 }
