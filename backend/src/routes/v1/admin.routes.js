@@ -4,6 +4,7 @@ import { validate } from '../../middleware/validate.middleware.js';
 import {
   createPregunta,
   deletePregunta,
+  getAdminStats,
   getPregunta,
   importPreguntasCsv,
   listAuditoria,
@@ -75,5 +76,8 @@ router.patch('/reportes/:id/estado', validate(idParamSchema, 'params'), validate
 
 // --- Auditoría ---
 router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema, 'query'), listAuditoria);
+
+// --- Stats globales ---
+router.get('/stats', requireRole('admin'), getAdminStats);
 
 export default router;

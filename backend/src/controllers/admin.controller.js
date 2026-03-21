@@ -81,3 +81,12 @@ export const listAuditoria = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getAdminStats = async (req, res, next) => {
+  try {
+    const data = await adminService.getAdminStats();
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
