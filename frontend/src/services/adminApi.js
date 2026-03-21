@@ -26,4 +26,7 @@ export const adminApi = {
   createTema: (token, payload) => apiRequest('/admin/catalogo/temas', { method: 'POST', body: payload, token }),
   updateTema: (token, id, payload) => apiRequest(`/admin/catalogo/temas/${id}`, { method: 'PUT', body: payload, token }),
   deleteTema: (token, id) => apiRequest(`/admin/catalogo/temas/${id}`, { method: 'DELETE', token }),
+
+  // Stats globales
+  getAdminStats: (token) => apiRequest('/admin/stats', { token }),
 };

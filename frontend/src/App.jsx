@@ -11,8 +11,10 @@ import HistorialPage from './pages/HistorialPage.jsx';
 import ReviewPage from './pages/ReviewPage.jsx';
 import MarcadasPage from './pages/MarcadasPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
+import AdminCatalogPage from './pages/admin/AdminCatalogPage.jsx';
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -56,6 +58,8 @@ export default function App() {
           }
         >
           <Route path="preguntas" element={<AdminQuestionsPage />} />
+          <Route path="catalogo" element={<AdminCatalogPage />} />
+          <Route index element={<AdminDashboardPage />} />
         </Route>
       </Route>
     </Routes>
