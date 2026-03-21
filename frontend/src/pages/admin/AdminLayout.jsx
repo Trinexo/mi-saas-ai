@@ -31,6 +31,14 @@ export default function AdminLayout() {
               Catálogo
             </NavLink>
           </li>
+          <li>
+            <NavLink
+              to="/admin/usuarios"
+              className={({ isActive }) => (isActive ? 'active' : undefined)}
+            >
+              Usuarios
+            </NavLink>
+          </li>
         </ul>
       </nav>
       <div className="admin-content">
