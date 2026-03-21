@@ -8,10 +8,27 @@ export default function AdminLayout() {
         <ul>
           <li>
             <NavLink
+              to="/admin"
+              end
+              className={({ isActive }) => (isActive ? 'active' : undefined)}
+            >
+              Dashboard
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
               to="/admin/preguntas"
               className={({ isActive }) => (isActive ? 'active' : undefined)}
             >
               Preguntas
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/admin/catalogo"
+              className={({ isActive }) => (isActive ? 'active' : undefined)}
+            >
+              Catálogo
             </NavLink>
           </li>
         </ul>
