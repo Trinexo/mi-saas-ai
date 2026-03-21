@@ -275,4 +275,8 @@ export const adminService = {
   async getAdminStats() {
     return adminRepository.getAdminStats();
   },
+
+  async getTemasConMasErrores(limit = 10) {
+    return adminRepository.getTemasConMasErrores(limit);
+  },
 };
