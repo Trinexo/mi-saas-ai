@@ -271,4 +271,8 @@ export const adminService = {
 
     return { id: reporteId, estado };
   },
+
+  async getAdminStats() {
+    return adminRepository.getAdminStats();
+  },
 };

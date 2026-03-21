@@ -98,8 +98,11 @@ export const adminRepository = {
   async getFullPreguntaById(preguntaId) {
     const pregResult = await pool.query(
       `SELECT p.id, p.tema_id, p.enunciado, p.explicacion,
-              p.referencia_normativa, p.nivel_dificultad
+              p.referencia_normativa, p.nivel_dificultad,
+              t.materia_id, m.oposicion_id
        FROM preguntas p
+       JOIN temas t ON t.id = p.tema_id
+       JOIN materias m ON m.id = t.materia_id
        WHERE p.id = $1`,
       [preguntaId],
     );
@@ -274,5 +277,27 @@ export const adminRepository = {
     );
 
     return result.rows[0].total;
+  },
+
+  async getAdminStats() {
+    const result = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM preguntas)                                      AS total_preguntas,
+        (SELECT COUNT(*)::int FROM usuarios)                                       AS total_usuarios,
+        (SELECT COUNT(*)::int FROM tests WHERE estado = 'completado')              AS total_tests,
+        (SELECT COUNT(*)::int FROM tests
+          WHERE estado = 'completado'
+            AND created_at >= NOW() - INTERVAL '7 days')                          AS tests_esta_semana,
+        (SELECT ROUND(AVG(nota_total)::numeric, 2)
+          FROM tests WHERE estado = 'completado')                                  AS nota_media_global
+    `);
+    const row = result.rows[0];
+    return {
+      totalPreguntas: row.total_preguntas,
+      totalUsuarios: row.total_usuarios,
+      totalTests: row.total_tests,
+      testsEstaSemana: row.tests_esta_semana,
+      notaMediaGlobal: row.nota_media_global !== null ? Number(row.nota_media_global) : null,
+    };
   },
 };
