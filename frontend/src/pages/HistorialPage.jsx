@@ -22,7 +22,7 @@ export default function HistorialPage() {
   const [consistenciaFiltro, setConsistenciaFiltro] = useState('todos');
 
   useEffect(() => {
-    testApi.history(token, 30)
+    testApi.history(token, 100)
       .then((data) => setItems(Array.isArray(data) ? data : []))
       .catch((e) => setError(e.message || 'No se pudo cargar el historial'));
   }, [token]);
@@ -118,7 +118,7 @@ export default function HistorialPage() {
   return (
     <section>
       <h2>Historial de tests</h2>
-      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Últimos 30 tests finalizados</p>
+      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Últimos {items.length} tests finalizados · mostrando {itemsFiltrados.length} con los filtros activos</p>
 
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', margin: '0.75rem 0 1rem', flexWrap: 'wrap' }}>
         <select value={modoFiltro} onChange={(e) => setModoFiltro(e.target.value)}>
