@@ -307,4 +307,8 @@ export const adminService = {
     }
     return updated;
   },
+
+  async getTemasConMasErrores(limit = 10) {
+    return adminRepository.getTemasConMasErrores(limit);
+  },
 };

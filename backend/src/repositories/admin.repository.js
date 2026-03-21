@@ -342,4 +342,37 @@ export const adminRepository = {
     );
     return result.rows[0] ?? null;
   },
+
+  async getTemasConMasErrores(limit) {
+    const result = await pool.query(
+      `SELECT
+         t.id            AS tema_id,
+         t.nombre        AS tema_nombre,
+         m.nombre        AS materia_nombre,
+         COUNT(*)::int   AS total_respuestas,
+         SUM(CASE WHEN ru.correcta = false THEN 1 ELSE 0 END)::int  AS total_errores,
+         ROUND(
+           SUM(CASE WHEN ru.correcta = false THEN 1 ELSE 0 END)::numeric
+           / NULLIF(COUNT(*), 0) * 100, 1
+         ) AS pct_error
+       FROM respuestas_usuario ru
+       JOIN preguntas p ON p.id = ru.pregunta_id
+       JOIN temas t ON t.id = p.tema_id
+       JOIN materias m ON m.id = t.materia_id
+       WHERE ru.correcta IS NOT NULL
+       GROUP BY t.id, t.nombre, m.nombre
+       HAVING COUNT(*) >= 10
+       ORDER BY total_errores DESC
+       LIMIT $1`,
+      [limit],
+    );
+    return result.rows.map((r) => ({
+      temaId: r.tema_id,
+      temaNombre: r.tema_nombre,
+      materiaNombre: r.materia_nombre,
+      totalRespuestas: r.total_respuestas,
+      totalErrores: r.total_errores,
+      pctError: r.pct_error !== null ? Number(r.pct_error) : null,
+    }));
+  },
 };
