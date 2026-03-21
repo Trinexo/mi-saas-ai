@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getErrorMessage } from '../../services/api';
 import { adminApi } from '../../services/adminApi';
+import { catalogApi } from '../../services/catalogApi';
 import { useAuth } from '../../state/auth.jsx';
 
 const EMPTY_FORM = {
@@ -45,6 +46,32 @@ export default function AdminQuestionsPage() {
   });
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
+
+  // Cascading selectors para filtros
+  const [catOposiciones, setCatOposiciones] = useState([]);
+  const [catMaterias, setCatMaterias] = useState([]);
+  const [catTemas, setCatTemas] = useState([]);
+
+  useEffect(() => {
+    catalogApi.getOposiciones().then(setCatOposiciones).catch(() => {});
+  }, []);
+
+  const handleFiltroOposicion = (oposicionId) => {
+    setFilters((prev) => ({ ...prev, oposicionId, materiaId: '', temaId: '', page: 1 }));
+    setCatMaterias([]);
+    setCatTemas([]);
+    if (oposicionId) {
+      catalogApi.getMaterias(oposicionId).then(setCatMaterias).catch(() => {});
+    }
+  };
+
+  const handleFiltroMateria = (materiaId) => {
+    setFilters((prev) => ({ ...prev, materiaId, temaId: '', page: 1 }));
+    setCatTemas([]);
+    if (materiaId) {
+      catalogApi.getTemas(materiaId).then(setCatTemas).catch(() => {});
+    }
+  };
 
   const parseCsvPreview = (csv) => {
     const lines = csv
@@ -242,32 +269,53 @@ export default function AdminQuestionsPage() {
 
       {/* Filtros */}
       <div className="form-grid">
-        <input
-          placeholder="Filtro oposición ID"
+        <select
           value={filters.oposicionId}
-          onChange={(e) => setFilters((prev) => ({ ...prev, oposicionId: e.target.value, page: 1 }))}
-        />
-        <input
-          placeholder="Filtro materia ID"
+          onChange={(e) => handleFiltroOposicion(e.target.value)}
+        >
+          <option value="">— Oposición —</option>
+          {catOposiciones.map((o) => (
+            <option key={o.id} value={o.id}>{o.nombre}</option>
+          ))}
+        </select>
+        <select
           value={filters.materiaId}
-          onChange={(e) => setFilters((prev) => ({ ...prev, materiaId: e.target.value, page: 1 }))}
-        />
-        <input
-          placeholder="Filtro tema ID"
+          onChange={(e) => handleFiltroMateria(e.target.value)}
+          disabled={!filters.oposicionId}
+        >
+          <option value="">— Materia —</option>
+          {catMaterias.map((m) => (
+            <option key={m.id} value={m.id}>{m.nombre}</option>
+          ))}
+        </select>
+        <select
           value={filters.temaId}
           onChange={(e) => setFilters((prev) => ({ ...prev, temaId: e.target.value, page: 1 }))}
-        />
-        <input
-          type="number"
-          min="1"
-          max="5"
-          placeholder="Dificultad (1-5)"
+          disabled={!filters.materiaId}
+        >
+          <option value="">— Tema —</option>
+          {catTemas.map((t) => (
+            <option key={t.id} value={t.id}>{t.nombre}</option>
+          ))}
+        </select>
+        <select
           value={filters.nivelDificultad}
           onChange={(e) => setFilters((prev) => ({ ...prev, nivelDificultad: e.target.value, page: 1 }))}
-        />
+        >
+          <option value="">— Dificultad —</option>
+          <option value="1">1 — Muy fácil</option>
+          <option value="2">2 — Fácil</option>
+          <option value="3">3 — Media</option>
+          <option value="4">4 — Difícil</option>
+          <option value="5">5 — Muy difícil</option>
+        </select>
         <button
           type="button"
-          onClick={() => setFilters((prev) => ({ ...prev, oposicionId: '', materiaId: '', temaId: '', nivelDificultad: '', page: 1 }))}
+          onClick={() => {
+            setFilters((prev) => ({ ...prev, oposicionId: '', materiaId: '', temaId: '', nivelDificultad: '', page: 1 }));
+            setCatMaterias([]);
+            setCatTemas([]);
+          }}
         >
           Limpiar filtros
         </button>
