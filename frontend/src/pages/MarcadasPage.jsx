@@ -11,6 +11,7 @@ export default function MarcadasPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const [preguntas, setPreguntas] = useState(null);
+  const [filtroTema, setFiltroTema] = useState('');
   const { error, isLoading, runAction } = useAsyncAction();
 
   useEffect(() => {
@@ -36,13 +37,30 @@ export default function MarcadasPage() {
     }
   };
 
+  const preguntasFiltradas = preguntas
+    ? preguntas.filter((p) =>
+        filtroTema === '' ||
+        (p.temaNombre ?? '').toLowerCase().includes(filtroTema.toLowerCase()),
+      )
+    : [];
+
   if (error) return <p className="error">{error}</p>;
   if (!preguntas) return <p>Cargando preguntas marcadas...</p>;
 
   return (
     <section>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <h2>Preguntas marcadas ★</h2>
+        <div>
+          <h2 style={{ margin: 0 }}>Preguntas marcadas ★</h2>
+          {preguntas && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
+              {preguntas.length} {preguntas.length === 1 ? 'pregunta marcada' : 'preguntas marcadas'}
+              {filtroTema && preguntasFiltradas.length !== preguntas.length
+                ? ` · mostrando ${preguntasFiltradas.length} con el filtro activo`
+                : ''}
+            </p>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <button
             className="btn-primary"
@@ -56,13 +74,28 @@ export default function MarcadasPage() {
         </div>
       </div>
 
+      {preguntas && preguntas.length > 0 && (
+        <div style={{ marginBottom: '1rem' }}>
+          <input
+            type="text"
+            placeholder="Filtrar por tema..."
+            value={filtroTema}
+            onChange={(e) => setFiltroTema(e.target.value)}
+            style={{ padding: '0.4rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', width: '100%', maxWidth: 320, boxSizing: 'border-box' }}
+          />
+        </div>
+      )}
+
       {preguntas.length === 0 ? (
         <p style={{ color: '#6b7280' }}>
           No tienes preguntas marcadas. Puedes marcar preguntas desde la pantalla de revisión de un test.
         </p>
       ) : (
         <div className="review-list">
-          {preguntas.map((pregunta) => (
+          {preguntasFiltradas.length === 0 ? (
+            <p style={{ color: '#6b7280' }}>Ningún resultado para «{filtroTema}». Prueba con otro término.</p>
+          ) : (
+            preguntasFiltradas.map((pregunta) => (
             <div key={pregunta.id} className="review-question">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
@@ -85,7 +118,7 @@ export default function MarcadasPage() {
                 </div>
               )}
             </div>
-          ))}
+          )))}
         </div>
       )}
     </section>

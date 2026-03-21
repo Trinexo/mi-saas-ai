@@ -52,6 +52,12 @@ export default function AdminQuestionsPage() {
   const [catMaterias, setCatMaterias] = useState([]);
   const [catTemas, setCatTemas] = useState([]);
 
+  // Cascading selectors para el formulario crear/editar
+  const [formOposicionId, setFormOposicionId] = useState('');
+  const [formMateriaId, setFormMateriaId] = useState('');
+  const [formMaterias, setFormMaterias] = useState([]);
+  const [formTemas, setFormTemas] = useState([]);
+
   useEffect(() => {
     catalogApi.getOposiciones().then(setCatOposiciones).catch(() => {});
   }, []);
@@ -70,6 +76,26 @@ export default function AdminQuestionsPage() {
     setCatTemas([]);
     if (materiaId) {
       catalogApi.getTemas(materiaId).then(setCatTemas).catch(() => {});
+    }
+  };
+
+  const handleFormOposicion = (oposicionId) => {
+    setFormOposicionId(oposicionId);
+    setFormMateriaId('');
+    setFormMaterias([]);
+    setFormTemas([]);
+    setForm((prev) => ({ ...prev, temaId: '' }));
+    if (oposicionId) {
+      catalogApi.getMaterias(oposicionId).then(setFormMaterias).catch(() => {});
+    }
+  };
+
+  const handleFormMateria = (materiaId) => {
+    setFormMateriaId(materiaId);
+    setFormTemas([]);
+    setForm((prev) => ({ ...prev, temaId: '' }));
+    if (materiaId) {
+      catalogApi.getTemas(materiaId).then(setFormTemas).catch(() => {});
     }
   };
 
@@ -179,6 +205,19 @@ export default function AdminQuestionsPage() {
     setMsg('');
     try {
       const pregunta = await adminApi.getPregunta(token, id);
+      // Cargar cascada de selects para el formulario
+      const oposicionId = pregunta.oposicion_id ? String(pregunta.oposicion_id) : '';
+      const materiaId = pregunta.materia_id ? String(pregunta.materia_id) : '';
+      setFormOposicionId(oposicionId);
+      setFormMateriaId(materiaId);
+      if (oposicionId) {
+        const mats = await catalogApi.getMaterias(oposicionId).catch(() => []);
+        setFormMaterias(mats);
+      }
+      if (materiaId) {
+        const tms = await catalogApi.getTemas(materiaId).catch(() => []);
+        setFormTemas(tms);
+      }
       setForm({
         temaId: String(pregunta.tema_id),
         enunciado: pregunta.enunciado,
@@ -197,6 +236,10 @@ export default function AdminQuestionsPage() {
   const onCancelEdit = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormOposicionId('');
+    setFormMateriaId('');
+    setFormMaterias([]);
+    setFormTemas([]);
     setError('');
     setMsg('');
   };
@@ -386,12 +429,47 @@ export default function AdminQuestionsPage() {
         {editingId ? `Editando pregunta #${editingId}` : 'Nueva pregunta'}
       </h3>
       <form onSubmit={editingId ? onUpdate : onCreate} className="form-grid">
-        <input
-          placeholder="Tema ID *"
-          value={form.temaId}
-          required
-          onChange={(e) => setForm({ ...form, temaId: e.target.value })}
-        />
+        <label>
+          Oposición *
+          <select
+            value={formOposicionId}
+            required
+            onChange={(e) => handleFormOposicion(e.target.value)}
+          >
+            <option value="">— Selecciona oposición —</option>
+            {catOposiciones.map((o) => (
+              <option key={o.id} value={String(o.id)}>{o.nombre}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Materia *
+          <select
+            value={formMateriaId}
+            required
+            disabled={!formOposicionId}
+            onChange={(e) => handleFormMateria(e.target.value)}
+          >
+            <option value="">— Selecciona materia —</option>
+            {formMaterias.map((m) => (
+              <option key={m.id} value={String(m.id)}>{m.nombre}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Tema *
+          <select
+            value={form.temaId}
+            required
+            disabled={!formMateriaId}
+            onChange={(e) => setForm({ ...form, temaId: e.target.value })}
+          >
+            <option value="">— Selecciona tema —</option>
+            {formTemas.map((t) => (
+              <option key={t.id} value={String(t.id)}>{t.nombre}</option>
+            ))}
+          </select>
+        </label>
         <input
           placeholder="Enunciado *"
           value={form.enunciado}

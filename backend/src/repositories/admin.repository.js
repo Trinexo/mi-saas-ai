@@ -98,8 +98,11 @@ export const adminRepository = {
   async getFullPreguntaById(preguntaId) {
     const pregResult = await pool.query(
       `SELECT p.id, p.tema_id, p.enunciado, p.explicacion,
-              p.referencia_normativa, p.nivel_dificultad
+              p.referencia_normativa, p.nivel_dificultad,
+              t.materia_id, m.oposicion_id
        FROM preguntas p
+       JOIN temas t ON t.id = p.tema_id
+       JOIN materias m ON m.id = t.materia_id
        WHERE p.id = $1`,
       [preguntaId],
     );
