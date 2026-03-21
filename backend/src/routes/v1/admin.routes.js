@@ -5,6 +5,7 @@ import {
   createPregunta,
   deletePregunta,
   getAdminStats,
+  getTemasConMasErrores,
   getPregunta,
   importPreguntasCsv,
   listAuditoria,
@@ -79,5 +80,8 @@ router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema
 
 // --- Stats globales ---
 router.get('/stats', requireRole('admin'), getAdminStats);
+
+// --- Stats: temas con más errores ---
+router.get('/stats/temas-errores', requireRole('admin'), getTemasConMasErrores);
 
 export default router;
