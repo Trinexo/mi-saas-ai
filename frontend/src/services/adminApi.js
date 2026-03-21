@@ -29,4 +29,9 @@ export const adminApi = {
 
   // Stats globales
   getAdminStats: (token) => apiRequest('/admin/stats', { token }),
+
+  // Usuarios
+  listUsers: (token, query = {}) => apiRequest('/admin/users', { token, query }),
+  updateUserRole: (token, userId, role) =>
+    apiRequest(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role }, token }),
 };
