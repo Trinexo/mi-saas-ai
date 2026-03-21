@@ -10,8 +10,10 @@ import {
   listAuditoria,
   listPreguntas,
   listReportes,
+  listUsers,
   updateReporteEstado,
   updatePregunta,
+  updateUserRole,
 } from '../../controllers/admin.controller.js';
 import {
   createOposicion,
@@ -31,8 +33,10 @@ import {
   listAuditoriaQuerySchema,
   listPreguntasQuerySchema,
   listReportesQuerySchema,
+  listUsersQuerySchema,
   updatePreguntaSchema,
   updateReporteEstadoSchema,
+  updateUserRoleSchema,
 } from '../../schemas/admin.schema.js';
 import {
   createOposicionSchema,
@@ -79,5 +83,9 @@ router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema
 
 // --- Stats globales ---
 router.get('/stats', requireRole('admin'), getAdminStats);
+
+// --- Usuarios ---
+router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
+router.patch('/users/:id/role', requireRole('admin'), validate(idParamSchema, 'params'), validate(updateUserRoleSchema), updateUserRole);
 
 export default router;

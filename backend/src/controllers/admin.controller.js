@@ -90,3 +90,21 @@ export const getAdminStats = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const listUsers = async (req, res, next) => {
+  try {
+    const data = await adminService.listUsers(req.query);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateUserRole = async (req, res, next) => {
+  try {
+    const data = await adminService.updateUserRole(req.params.id, req.body.role, req.user);
+    return ok(res, data, 'Rol actualizado');
+  } catch (error) {
+    return next(error);
+  }
+};

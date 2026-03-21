@@ -59,3 +59,14 @@ export const listAuditoriaQuerySchema = z.object({
   usuario_id: z.coerce.number().int().positive().optional(),
   accion: z.enum(['create', 'update', 'delete']).optional(),
 });
+
+export const listUsersQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
+  role: z.enum(['alumno', 'editor', 'revisor', 'admin']).optional(),
+  q: z.string().optional(),
+});
+
+export const updateUserRoleSchema = z.object({
+  role: z.enum(['alumno', 'editor', 'revisor', 'admin']),
+});
