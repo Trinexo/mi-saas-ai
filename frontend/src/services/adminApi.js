@@ -11,4 +11,19 @@ export const adminApi = {
   updateReporteEstado: (token, reporteId, estado) =>
     apiRequest(`/admin/reportes/${reporteId}/estado`, { method: 'PATCH', body: { estado }, token }),
   listAuditoria: (token, query = {}) => apiRequest('/admin/auditoria', { token, query }),
+
+  // Catálogo: oposiciones
+  createOposicion: (token, payload) => apiRequest('/admin/catalogo/oposiciones', { method: 'POST', body: payload, token }),
+  updateOposicion: (token, id, payload) => apiRequest(`/admin/catalogo/oposiciones/${id}`, { method: 'PUT', body: payload, token }),
+  deleteOposicion: (token, id) => apiRequest(`/admin/catalogo/oposiciones/${id}`, { method: 'DELETE', token }),
+
+  // Catálogo: materias
+  createMateria: (token, payload) => apiRequest('/admin/catalogo/materias', { method: 'POST', body: payload, token }),
+  updateMateria: (token, id, payload) => apiRequest(`/admin/catalogo/materias/${id}`, { method: 'PUT', body: payload, token }),
+  deleteMateria: (token, id) => apiRequest(`/admin/catalogo/materias/${id}`, { method: 'DELETE', token }),
+
+  // Catálogo: temas
+  createTema: (token, payload) => apiRequest('/admin/catalogo/temas', { method: 'POST', body: payload, token }),
+  updateTema: (token, id, payload) => apiRequest(`/admin/catalogo/temas/${id}`, { method: 'PUT', body: payload, token }),
+  deleteTema: (token, id) => apiRequest(`/admin/catalogo/temas/${id}`, { method: 'DELETE', token }),
 };
