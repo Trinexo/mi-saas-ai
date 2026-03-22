@@ -275,4 +275,36 @@ export const adminService = {
   async getAdminStats() {
     return adminRepository.getAdminStats();
   },
+
+  async listUsers(query) {
+    const page = query.page ?? 1;
+    const pageSize = query.page_size ?? 20;
+    const offset = (page - 1) * pageSize;
+    const { rows, total } = await adminRepository.listUsers(
+      { role: query.role, q: query.q },
+      pageSize,
+      offset,
+    );
+    return {
+      items: rows.map((u) => ({
+        id: u.id,
+        nombre: u.nombre,
+        email: u.email,
+        role: u.role,
+        fechaRegistro: u.fecha_registro,
+      })),
+      pagination: { page, pageSize, total },
+    };
+  },
+
+  async updateUserRole(userId, role, requestingUser) {
+    if (Number(userId) === requestingUser.id) {
+      throw new ApiError(400, 'No puedes cambiar tu propio rol');
+    }
+    const updated = await adminRepository.updateUserRole(userId, role);
+    if (!updated) {
+      throw new ApiError(404, 'Usuario no encontrado');
+    }
+    return updated;
+  },
 };
