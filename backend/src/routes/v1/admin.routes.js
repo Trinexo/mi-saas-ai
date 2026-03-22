@@ -5,6 +5,7 @@ import {
   createPregunta,
   deletePregunta,
   getAdminStats,
+  getTemasConMasErrores,
   getPregunta,
   importPreguntasCsv,
   listAuditoria,
@@ -87,5 +88,8 @@ router.get('/stats', requireRole('admin'), getAdminStats);
 // --- Usuarios ---
 router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
 router.patch('/users/:id/role', requireRole('admin'), validate(idParamSchema, 'params'), validate(updateUserRoleSchema), updateUserRole);
+
+// --- Stats: temas con más errores ---
+router.get('/stats/temas-errores', requireRole('admin'), getTemasConMasErrores);
 
 export default router;
