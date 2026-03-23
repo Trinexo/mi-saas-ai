@@ -10,8 +10,10 @@ import {
   importPreguntasCsv,
   listAuditoria,
   listPreguntas,
+  listPreguntasSinRevisar,
   listReportes,
   listUsers,
+  updatePreguntaEstado,
   updateReporteEstado,
   updatePregunta,
   updateUserRole,
@@ -34,7 +36,9 @@ import {
   listAuditoriaQuerySchema,
   listPreguntasQuerySchema,
   listReportesQuerySchema,
+  listSinRevisarQuerySchema,
   listUsersQuerySchema,
+  updatePreguntaEstadoSchema,
   updatePreguntaSchema,
   updateReporteEstadoSchema,
   updateUserRoleSchema,
@@ -91,5 +95,9 @@ router.patch('/users/:id/role', requireRole('admin'), validate(idParamSchema, 'p
 
 // --- Stats: temas con más errores ---
 router.get('/stats/temas-errores', requireRole('admin'), getTemasConMasErrores);
+
+// --- Cola de revisión ---
+router.get('/preguntas/sin-revisar', requireRole('admin', 'revisor'), validate(listSinRevisarQuerySchema, 'query'), listPreguntasSinRevisar);
+router.patch('/preguntas/:id/estado', requireRole('admin', 'revisor'), validate(idParamSchema, 'params'), validate(updatePreguntaEstadoSchema), updatePreguntaEstado);
 
 export default router;
