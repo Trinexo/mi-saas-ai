@@ -245,7 +245,8 @@ export default function ProgressPage() {
     : 0;
 
   return (
-    <section>
+    <>
+      <section>
       <h2>Mi Progreso</h2>
 
       <div className="stats-cards">
@@ -617,5 +618,6 @@ export default function ProgressPage() {
           </div>
         )}
       </section>
+    </>
   );
 }
