@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useRevision } from '../../state/revisionContext.jsx';
 
 export default function AdminLayout() {
+  const { pendientes } = useRevision();
   return (
     <div className="admin-layout">
       <nav className="admin-sidebar">
@@ -44,7 +46,23 @@ export default function AdminLayout() {
               to="/admin/revision"
               className={({ isActive }) => (isActive ? 'active' : undefined)}
             >
-              Revisión
+              Revisi\u00f3n
+              {pendientes > 0 && (
+                <span
+                  style={{
+                    marginLeft: '0.5rem',
+                    background: '#dc2626',
+                    color: '#fff',
+                    borderRadius: 10,
+                    padding: '1px 7px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    verticalAlign: 'middle',
+                  }}
+                >
+                  {pendientes}
+                </span>
+              )}
             </NavLink>
           </li>
         </ul>
