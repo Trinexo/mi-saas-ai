@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
+import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
 
 const MODO_LABEL = { adaptativo: 'Adaptativo', normal: 'Normal', repaso: 'Repaso', marcadas: 'Marcadas', simulacro: 'Simulacro', refuerzo: 'Refuerzo' };
@@ -10,6 +11,11 @@ export default function HistorialPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState(null);
   const [error, setError] = useState('');
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+  const [oposicionId, setOposicionId] = useState('');
+  const [oposiciones, setOposiciones] = useState([]);
   const [modoFiltro, setModoFiltro] = useState('todos');
   const [textoFiltro, setTextoFiltro] = useState('');
   const [notaFiltro, setNotaFiltro] = useState('todas');
@@ -22,10 +28,32 @@ export default function HistorialPage() {
   const [consistenciaFiltro, setConsistenciaFiltro] = useState('todos');
 
   useEffect(() => {
-    testApi.history(token, 100)
-      .then((data) => setItems(Array.isArray(data) ? data : []))
+    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setItems(null);
+    const params = { limit: PAGE_SIZE, page };
+    if (oposicionId) params.oposicion_id = Number(oposicionId);
+    if (periodoFiltro === '7d') {
+      const d = new Date(); d.setDate(d.getDate() - 7);
+      params.desde = d.toISOString().slice(0, 10);
+    } else if (periodoFiltro === '30d') {
+      const d = new Date(); d.setDate(d.getDate() - 30);
+      params.desde = d.toISOString().slice(0, 10);
+    }
+    testApi.history(token, params)
+      .then((data) => {
+        if (data && data.items) {
+          setItems(data.items);
+          setTotal(data.total ?? data.items.length);
+        } else {
+          setItems(Array.isArray(data) ? data : []);
+          setTotal(Array.isArray(data) ? data.length : 0);
+        }
+      })
       .catch((e) => setError(e.message || 'No se pudo cargar el historial'));
-  }, [token]);
+  }, [token, page, oposicionId, periodoFiltro]);
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -49,9 +77,6 @@ export default function HistorialPage() {
 
   const itemsFiltrados = (items ?? []).filter((t) => {
     const fecha = new Date(t.fecha);
-    const byPeriodo = periodoFiltro === 'todo'
-      ? true
-      : (periodoFiltro === '7d' ? fecha > sevenDaysAgo : fecha > thirtyDaysAgo);
     const byModo = modoFiltro === 'todos' || String(t.tipoTest) === modoFiltro;
     const nota = Number(t.nota ?? 0);
     const byNota = notaFiltro === 'todas' || (notaFiltro === 'aprobados' ? nota >= 5 : nota < 5);
@@ -80,7 +105,7 @@ export default function HistorialPage() {
     const hayTexto = texto.length > 0;
     const compuesto = `${t.oposicionNombre || ''} ${t.materiaNombre || ''} ${t.temaNombre || ''}`.toLowerCase();
     const byTexto = !hayTexto || compuesto.includes(texto);
-    return byPeriodo && byModo && byNota && byErrores && byBlancos && byDuracion && byRitmo && byConsistencia && byTexto;
+    return byModo && byNota && byErrores && byBlancos && byDuracion && byRitmo && byConsistencia && byTexto;
   });
 
   const itemsOrdenados = [...itemsFiltrados].sort((a, b) => {
@@ -118,7 +143,7 @@ export default function HistorialPage() {
   return (
     <section>
       <h2>Historial de tests</h2>
-      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Últimos {items.length} tests finalizados · mostrando {itemsFiltrados.length} con los filtros activos</p>
+      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Total: {total} tests · mostrando {itemsFiltrados.length} con los filtros activos</p>
 
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', margin: '0.75rem 0 1rem', flexWrap: 'wrap' }}>
         <select value={modoFiltro} onChange={(e) => setModoFiltro(e.target.value)}>
@@ -129,6 +154,12 @@ export default function HistorialPage() {
           <option value="refuerzo">Refuerzo</option>
           <option value="simulacro">Simulacro</option>
           <option value="marcadas">Marcadas</option>
+        </select>
+        <select value={oposicionId} onChange={(e) => { setOposicionId(e.target.value); setPage(1); }}>
+          <option value="">Todas las oposiciones</option>
+          {oposiciones.map((op) => (
+            <option key={op.id} value={String(op.id)}>{op.nombre}</option>
+          ))}
         </select>
         <input
           type="text"
@@ -142,7 +173,7 @@ export default function HistorialPage() {
           <option value="aprobados">Aprobados (≥5)</option>
           <option value="suspensos">Suspensos (&lt;5)</option>
         </select>
-        <select value={periodoFiltro} onChange={(e) => setPeriodoFiltro(e.target.value)}>
+        <select value={periodoFiltro} onChange={(e) => { setPeriodoFiltro(e.target.value); setPage(1); }}>
           <option value="7d">Últimos 7 días</option>
           <option value="30d">Últimos 30 días</option>
           <option value="todo">Todo</option>
@@ -240,6 +271,14 @@ export default function HistorialPage() {
           </tbody>
         </table>
       </div>
+
+      {total > PAGE_SIZE && (
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
+          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Anterior</button>
+          <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Página {page} de {Math.ceil(total / PAGE_SIZE)}</span>
+          <button onClick={() => setPage((p) => p + 1)} disabled={page >= Math.ceil(total / PAGE_SIZE)}>Siguiente →</button>
+        </div>
+      )}
     </section>
   );
 }

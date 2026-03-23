@@ -16,7 +16,7 @@ export const testApi = {
   getRitmoPregunta: (token) => apiRequest('/stats/ritmo-pregunta', { token }),
   getBalancePrecision: (token) => apiRequest('/stats/balance-precision', { token }),
   submit: (token, payload) => apiRequest('/tests/submit', { method: 'POST', body: payload, token }),
-  history: (token, limit = 20) => apiRequest('/tests/history', { token, query: { limit } }),
+  history: (token, params = {}) => apiRequest('/tests/history', { token, query: params }),
   userStats: (token) => apiRequest('/stats/user', { token }),
   temaStats: (token, temaId) => apiRequest('/stats/tema', { token, query: { tema_id: temaId } }),
   repasoStats: (token, temaId) => apiRequest('/stats/repaso', { token, query: { tema_id: temaId } }),
