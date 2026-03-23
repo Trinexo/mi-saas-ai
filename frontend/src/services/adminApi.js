@@ -29,9 +29,17 @@ export const adminApi = {
 
   // Stats globales
   getAdminStats: (token) => apiRequest('/admin/stats', { token }),
+  getTemasConMasErrores: (token, limit = 10) =>
+    apiRequest('/admin/stats/temas-errores', { token, query: { limit } }),
 
   // Usuarios
   listUsers: (token, query = {}) => apiRequest('/admin/users', { token, query }),
   updateUserRole: (token, userId, role) =>
     apiRequest(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role }, token }),
+
+  // Cola de revisión
+  listPreguntasSinRevisar: (token, query = {}) =>
+    apiRequest('/admin/preguntas/sin-revisar', { token, query }),
+  updatePreguntaEstado: (token, preguntaId, estado) =>
+    apiRequest(`/admin/preguntas/${preguntaId}/estado`, { method: 'PATCH', body: { estado }, token }),
 };

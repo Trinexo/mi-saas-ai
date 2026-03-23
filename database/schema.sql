@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS preguntas (
   explicacion TEXT NOT NULL,
   referencia_normativa TEXT,
   nivel_dificultad SMALLINT NOT NULL,
+  estado TEXT NOT NULL DEFAULT 'aprobada' CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -105,6 +106,7 @@ CREATE TABLE IF NOT EXISTS reportes_preguntas (
 
 CREATE INDEX IF NOT EXISTS idx_preguntas_tema_id ON preguntas(tema_id);
 CREATE INDEX IF NOT EXISTS idx_preguntas_nivel_dificultad ON preguntas(nivel_dificultad);
+CREATE INDEX IF NOT EXISTS idx_preguntas_estado ON preguntas(estado);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_fecha ON tests(usuario_id, fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_pregunta ON respuestas_usuario(test_id, pregunta_id);
 CREATE INDEX IF NOT EXISTS idx_materias_oposicion ON materias(oposicion_id);
