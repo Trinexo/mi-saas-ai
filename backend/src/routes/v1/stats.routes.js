@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
 import { temaStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
 
 const router = Router();
@@ -15,6 +15,7 @@ router.get('/progreso-semanal', requireAuth, getProgresoSemanal);
 router.get('/rendimiento-modos', requireAuth, getRendimientoModos);
 router.get('/insight-mensual', requireAuth, getInsightMensual);
 router.get('/temas-debiles', requireAuth, getTemasDebiles);
+router.get('/progreso-temas', requireAuth, getProgresoTemas);
 router.get('/actividad-14dias', requireAuth, getActividad14Dias);
 router.get('/resumen-semana', requireAuth, getResumenSemana);
 router.get('/foco-hoy', requireAuth, getFocoHoy);

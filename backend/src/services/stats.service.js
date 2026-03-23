@@ -34,6 +34,10 @@ export const statsService = {
     return statsRepository.getTemasDebiles(userId);
   },
 
+  async getProgresoTemas(userId, oposicionId) {
+    return statsRepository.getProgresoTemas(userId, oposicionId ?? null);
+  },
+
   async getActividad14Dias(userId) {
     return statsRepository.getActividad14Dias(userId);
   },

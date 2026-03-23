@@ -73,6 +73,16 @@ export const getTemasDebiles = async (req, res, next) => {
   }
 };
 
+export const getProgresoTemas = async (req, res, next) => {
+  try {
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const data = await statsService.getProgresoTemas(req.user.userId, oposicionId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getActividad14Dias = async (req, res, next) => {
   try {
     const data = await statsService.getActividad14Dias(req.user.userId);
