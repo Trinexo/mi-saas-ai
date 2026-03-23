@@ -311,4 +311,44 @@ export const adminService = {
   async getTemasConMasErrores(limit = 10) {
     return adminRepository.getTemasConMasErrores(limit);
   },
+
+  async listPreguntasSinRevisar(query) {
+    const page = query.page ?? 1;
+    const pageSize = query.page_size ?? 20;
+    const offset = (page - 1) * pageSize;
+    const { rows, total } = await adminRepository.listPreguntasSinRevisar(
+      {
+        oposicionId: query.oposicion_id,
+        materiaId: query.materia_id,
+        temaId: query.tema_id,
+      },
+      pageSize,
+      offset,
+    );
+    return {
+      items: rows.map((p) => ({
+        id: p.id,
+        enunciado: p.enunciado,
+        nivelDificultad: p.nivel_dificultad,
+        estado: p.estado,
+        fechaActualizacion: p.fecha_actualizacion,
+        temaNombre: p.tema_nombre,
+        materiaNombre: p.materia_nombre,
+        oposicionNombre: p.oposicion_nombre,
+      })),
+      pagination: { page, pageSize, total },
+    };
+  },
+
+  async updatePreguntaEstado(preguntaId, estado, requestingUser) {
+    const allowed = ['revisor', 'admin'];
+    if (!allowed.includes(requestingUser.role)) {
+      throw new ApiError(403, 'Solo revisores y admins pueden cambiar el estado de preguntas');
+    }
+    const updated = await adminRepository.updatePreguntaEstado(preguntaId, estado);
+    if (!updated) {
+      throw new ApiError(404, 'Pregunta no encontrada');
+    }
+    return updated;
+  },
 };

@@ -118,3 +118,21 @@ export const getTemasConMasErrores = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const listPreguntasSinRevisar = async (req, res, next) => {
+  try {
+    const data = await adminService.listPreguntasSinRevisar(req.query);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updatePreguntaEstado = async (req, res, next) => {
+  try {
+    const data = await adminService.updatePreguntaEstado(req.params.id, req.body.estado, req.user);
+    return ok(res, data, 'Estado de pregunta actualizado');
+  } catch (error) {
+    return next(error);
+  }
+};

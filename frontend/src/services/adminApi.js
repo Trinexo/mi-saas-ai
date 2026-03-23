@@ -29,6 +29,8 @@ export const adminApi = {
 
   // Stats globales
   getAdminStats: (token) => apiRequest('/admin/stats', { token }),
+  getTemasConMasErrores: (token, limit = 10) =>
+    apiRequest('/admin/stats/temas-errores', { token, query: { limit } }),
 
   // Usuarios
   listUsers: (token, query = {}) => apiRequest('/admin/users', { token, query }),
