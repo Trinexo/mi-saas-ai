@@ -136,3 +136,12 @@ export const updatePreguntaEstado = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getPreguntasPorEstado = async (_req, res, next) => {
+  try {
+    const data = await adminService.getPreguntasPorEstado();
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
