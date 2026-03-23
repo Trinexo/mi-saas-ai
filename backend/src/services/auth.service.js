@@ -40,6 +40,7 @@ export const authService = {
       email: user.email,
       role: user.role,
       oposicionPreferidaId: user.oposicion_preferida_id ?? null,
+      objetivoDiarioPreguntas: user.objetivo_diario_preguntas ?? 10,
       fechaRegistro: user.fecha_registro,
     };
   },
@@ -59,6 +60,7 @@ export const authService = {
       email: updated.email,
       role: updated.role,
       oposicionPreferidaId: updated.oposicion_preferida_id ?? null,
+      objetivoDiarioPreguntas: updated.objetivo_diario_preguntas ?? 10,
     };
   },
 
