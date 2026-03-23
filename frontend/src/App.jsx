@@ -17,6 +17,7 @@ import AdminLayout from './pages/admin/AdminLayout.jsx';
 import AdminCatalogPage from './pages/admin/AdminCatalogPage.jsx';
 import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
 import AdminRevisionPage from './pages/admin/AdminRevisionPage.jsx';
+import { RevisionProvider } from './state/revisionContext.jsx';
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -55,7 +56,9 @@ export default function App() {
           path="admin"
           element={
             <AdminRoute>
-              <AdminLayout />
+              <RevisionProvider>
+                <AdminLayout />
+              </RevisionProvider>
             </AdminRoute>
           }
         >
