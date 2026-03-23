@@ -221,8 +221,8 @@ export const testService = {
     }
   },
 
-  async getHistory({ userId, limit = 20 }) {
-    return testRepository.getUserHistory({ userId, limit });
+  async getHistory({ userId, limit = 20, page = 1, oposicionId, desde, hasta }) {
+    return testRepository.getUserHistory({ userId, limit, page, oposicionId, desde, hasta });
   },
 
   async getReview({ userId, testId }) {
