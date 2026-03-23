@@ -856,4 +856,55 @@ export const statsRepository = {
       actividad7Dias,
     };
   },
+
+  async getRachaTemas(userId) {
+    const result = await pool.query(
+      `SELECT
+         t.tema_id,
+         te.nombre AS tema_nombre,
+         m.nombre AS materia_nombre,
+         (t.fecha_fin::date)::text AS dia
+       FROM tests t
+       JOIN temas te ON te.id = t.tema_id
+       JOIN materias m ON m.id = te.materia_id
+       WHERE t.usuario_id = $1
+         AND t.estado = 'finalizado'
+         AND t.tema_id IS NOT NULL
+         AND t.fecha_fin IS NOT NULL
+       GROUP BY t.tema_id, te.nombre, m.nombre, t.fecha_fin::date
+       ORDER BY t.tema_id, dia DESC`,
+      [userId],
+    );
+
+    const temasMap = new Map();
+    for (const row of result.rows) {
+      const key = Number(row.tema_id);
+      if (!temasMap.has(key)) {
+        temasMap.set(key, {
+          temaId: key,
+          temaNombre: row.tema_nombre,
+          materiaNombre: row.materia_nombre,
+          dias: [],
+        });
+      }
+      temasMap.get(key).dias.push(row.dia);
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayIndex = toDayIndex(today);
+
+    return Array.from(temasMap.values())
+      .map(({ temaId, temaNombre, materiaNombre, dias }) => {
+        const dayIndexes = dias.map(toDayIndex);
+        return {
+          temaId,
+          temaNombre,
+          materiaNombre,
+          diasActivos: dias.length,
+          ultimoDia: dias[0] ?? null,
+          rachaActual: calcCurrentStreak(dayIndexes, todayIndex),
+        };
+      })
+      .sort((a, b) => b.rachaActual - a.rachaActual || b.diasActivos - a.diasActivos);
+  },
 };

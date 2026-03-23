@@ -97,4 +97,8 @@ export const statsService = {
   async getRacha(userId) {
     return statsRepository.getRacha(userId);
   },
+
+  async getRachaTemas(userId) {
+    return statsRepository.getRachaTemas(userId);
+  },
 };
