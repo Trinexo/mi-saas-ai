@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'alumno',
   oposicion_preferida_id BIGINT,
+  objetivo_diario_preguntas INT NOT NULL DEFAULT 10,
   fecha_registro TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
