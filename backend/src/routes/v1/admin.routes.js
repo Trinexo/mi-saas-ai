@@ -74,10 +74,13 @@ router.delete('/catalogo/temas/:id', requireRole('admin'), validate(idParamSchem
 // --- Preguntas ---
 router.get('/preguntas', validate(listPreguntasQuerySchema, 'query'), listPreguntas);
 router.post('/preguntas', validate(createPreguntaSchema), createPregunta);
+router.post('/preguntas/import', validate(importPreguntasCsvSchema), importPreguntasCsv);
+// --- Cola de revisión (antes de :id para evitar conflictos) ---
+router.get('/preguntas/sin-revisar', requireRole('admin', 'revisor'), validate(listSinRevisarQuerySchema, 'query'), listPreguntasSinRevisar);
 router.get('/preguntas/:id', validate(idParamSchema, 'params'), getPregunta);
 router.put('/preguntas/:id', validate(idParamSchema, 'params'), validate(updatePreguntaSchema), updatePregunta);
 router.delete('/preguntas/:id', validate(idParamSchema, 'params'), deletePregunta);
-router.post('/preguntas/import', validate(importPreguntasCsvSchema), importPreguntasCsv);
+router.patch('/preguntas/:id/estado', requireRole('admin', 'revisor'), validate(idParamSchema, 'params'), validate(updatePreguntaEstadoSchema), updatePreguntaEstado);
 
 // --- Reportes ---
 router.get('/reportes', validate(listReportesQuerySchema, 'query'), listReportes);
@@ -95,9 +98,5 @@ router.patch('/users/:id/role', requireRole('admin'), validate(idParamSchema, 'p
 
 // --- Stats: temas con más errores ---
 router.get('/stats/temas-errores', requireRole('admin'), getTemasConMasErrores);
-
-// --- Cola de revisión ---
-router.get('/preguntas/sin-revisar', requireRole('admin', 'revisor'), validate(listSinRevisarQuerySchema, 'query'), listPreguntasSinRevisar);
-router.patch('/preguntas/:id/estado', requireRole('admin', 'revisor'), validate(idParamSchema, 'params'), validate(updatePreguntaEstadoSchema), updatePreguntaEstado);
 
 export default router;

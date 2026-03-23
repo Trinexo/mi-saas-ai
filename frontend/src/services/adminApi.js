@@ -39,7 +39,7 @@ export const adminApi = {
 
   // Cola de revisión
   listPreguntasSinRevisar: (token, query = {}) =>
-    apiRequest('/admin/preguntas/sin-revisar', { token, query }),
-  updatePreguntaEstado: (token, preguntaId, estado) =>
+    apiRequest('/admin/preguntas/sin-revisar', { token, query }),  getPregunta: (token, id) =>
+    apiRequest(`/admin/preguntas/${id}`, { token }),  updatePreguntaEstado: (token, preguntaId, estado) =>
     apiRequest(`/admin/preguntas/${preguntaId}/estado`, { method: 'PATCH', body: { estado }, token }),
 };
