@@ -34,4 +34,10 @@ export const adminApi = {
   listUsers: (token, query = {}) => apiRequest('/admin/users', { token, query }),
   updateUserRole: (token, userId, role) =>
     apiRequest(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role }, token }),
+
+  // Cola de revisión
+  listPreguntasSinRevisar: (token, query = {}) =>
+    apiRequest('/admin/preguntas/sin-revisar', { token, query }),
+  updatePreguntaEstado: (token, preguntaId, estado) =>
+    apiRequest(`/admin/preguntas/${preguntaId}/estado`, { method: 'PATCH', body: { estado }, token }),
 };
