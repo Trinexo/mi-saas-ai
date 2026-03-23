@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../services/adminApi';
 import { useAuth } from '../../state/auth.jsx';
+import { useRevision } from '../../state/revisionContext.jsx';
 
 const CARD_STYLE = {
   background: '#fff',
@@ -29,6 +30,7 @@ const TD = { padding: '0.5rem 0.75rem', color: '#111827' };
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();
+  const { setPendientes } = useRevision();
   const [stats, setStats] = useState(null);
   const [usersByRole, setUsersByRole] = useState(null);
   const [temasErrores, setTemasErrores] = useState(null);
@@ -38,7 +40,10 @@ export default function AdminDashboardPage() {
     adminApi
       .getAdminStats(token)
       .then((res) => {
-        if (res?.data) setStats(res.data);
+        if (res?.data) {
+          setStats(res.data);
+          setPendientes(res.data.pendientesRevision ?? 0);
+        }
       })
       .catch(() => setError('No se pudieron cargar las estad\u00edsticas.'));
 
@@ -69,6 +74,41 @@ export default function AdminDashboardPage() {
       {error && <p style={{ color: '#c00' }}>{error}</p>}
 
       {!stats && !error && <p style={{ color: '#6b7280' }}>Cargando estad\u00edsticas...</p>}
+
+      {stats && stats.pendientesRevision > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            background: '#fef3c7',
+            border: '1px solid #f59e0b',
+            borderRadius: 8,
+            padding: '0.875rem 1.25rem',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <span style={{ fontSize: '1.25rem' }}>&#9888;&#65039;</span>
+          <span style={{ color: '#92400e', fontWeight: 600 }}>
+            {stats.pendientesRevision} pregunta{stats.pendientesRevision !== 1 ? 's' : ''} pendiente{stats.pendientesRevision !== 1 ? 's' : ''} de revisi\u00f3n
+          </span>
+          <Link
+            to="/admin/revision"
+            style={{
+              marginLeft: 'auto',
+              background: '#f59e0b',
+              color: '#fff',
+              padding: '0.35rem 1rem',
+              borderRadius: 6,
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+            }}
+          >
+            Revisar ahora
+          </Link>
+        </div>
+      )}
 
       {stats && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
