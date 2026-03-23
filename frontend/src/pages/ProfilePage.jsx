@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [oposicionPreferidaId, setOposicionPreferidaId] = useState('');
+  const [objetivoDiario, setObjetivoDiario] = useState(10);
   const [oposiciones, setOposiciones] = useState([]);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
@@ -27,6 +28,7 @@ export default function ProfilePage() {
         setNombre(res.data.nombre || '');
         setEmail(res.data.email || '');
         setOposicionPreferidaId(res.data.oposicionPreferidaId ? String(res.data.oposicionPreferidaId) : '');
+        setObjetivoDiario(res.data.objetivoDiarioPreguntas ?? 10);
         setProfileLoaded(true);
       }
     });
@@ -40,6 +42,7 @@ export default function ProfilePage() {
     if (email.trim()) payload.email = email.trim();
     if (oposicionPreferidaId !== '') payload.oposicionPreferidaId = Number(oposicionPreferidaId);
     else payload.oposicionPreferidaId = null;
+    if (objetivoDiario) payload.objetivoDiarioPreguntas = Number(objetivoDiario);
     await profileAction.runAction(async () => {
       const res = await authApi.updateProfile(token, payload);
       profileAction.setSuccessMessage('Perfil actualizado correctamente');
@@ -47,6 +50,7 @@ export default function ProfilePage() {
         setNombre(res.data.nombre || '');
         setEmail(res.data.email || '');
         setOposicionPreferidaId(res.data.oposicionPreferidaId ? String(res.data.oposicionPreferidaId) : '');
+        setObjetivoDiario(res.data.objetivoDiarioPreguntas ?? 10);
         refreshUser(res.data);
       }
     }, 'Error al actualizar el perfil');
@@ -109,6 +113,16 @@ export default function ProfilePage() {
               <option key={op.id} value={String(op.id)}>{op.nombre}</option>
             ))}
           </select>
+          <label style={{ display: 'block', marginBottom: '.5rem', fontWeight: 600 }}>Objetivo diario de preguntas</label>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0 0 .5rem' }}>Número de preguntas que quieres responder cada día (1–200).</p>
+          <input
+            type="number"
+            min={1}
+            max={200}
+            value={objetivoDiario}
+            onChange={(e) => setObjetivoDiario(e.target.value)}
+            style={{ width: '100%', marginBottom: '1.25rem', padding: '.5rem .75rem', borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
+          />
           {profileAction.error && <p style={{ color: '#c00', marginBottom: '.75rem' }}>{profileAction.error}</p>}
           {profileAction.message && <p style={{ color: '#2a7', marginBottom: '.75rem' }}>{profileAction.message}</p>}
           <button type="submit" disabled={profileAction.isLoading} className="btn-primary">

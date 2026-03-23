@@ -31,8 +31,15 @@ export const submitTest = async (req, res, next) => {
 
 export const getTestHistory = async (req, res, next) => {
   try {
-    const { limit } = historyQuerySchema.parse(req.query);
-    const data = await testService.getHistory({ userId: req.user.userId, limit });
+    const { limit, page, oposicion_id, desde, hasta } = historyQuerySchema.parse(req.query);
+    const data = await testService.getHistory({
+      userId: req.user.userId,
+      limit,
+      page,
+      oposicionId: oposicion_id,
+      desde,
+      hasta,
+    });
     return ok(res, data);
   } catch (error) {
     return next(error);

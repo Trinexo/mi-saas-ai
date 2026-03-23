@@ -18,7 +18,7 @@ export const authRepository = {
 
   async getUserById(id) {
     const result = await pool.query(
-      'SELECT id, nombre, email, role, oposicion_preferida_id, fecha_registro FROM usuarios WHERE id = $1',
+      'SELECT id, nombre, email, role, oposicion_preferida_id, objetivo_diario_preguntas, fecha_registro FROM usuarios WHERE id = $1',
       [id],
     );
     return result.rows[0] ?? null;
@@ -31,9 +31,10 @@ export const authRepository = {
     if (fields.nombre !== undefined) { sets.push(`nombre = $${idx++}`); values.push(fields.nombre); }
     if (fields.email !== undefined) { sets.push(`email = $${idx++}`); values.push(fields.email); }
     if (fields.oposicionPreferidaId !== undefined) { sets.push(`oposicion_preferida_id = $${idx++}`); values.push(fields.oposicionPreferidaId); }
+    if (fields.objetivoDiarioPreguntas !== undefined) { sets.push(`objetivo_diario_preguntas = $${idx++}`); values.push(fields.objetivoDiarioPreguntas); }
     values.push(id);
     const result = await pool.query(
-      `UPDATE usuarios SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, nombre, email, role, oposicion_preferida_id`,
+      `UPDATE usuarios SET ${sets.join(', ')} WHERE id = $${idx} RETURNING id, nombre, email, role, oposicion_preferida_id, objetivo_diario_preguntas`,
       values,
     );
     return result.rows[0] ?? null;
