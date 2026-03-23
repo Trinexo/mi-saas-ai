@@ -28,3 +28,27 @@ describe('generateTestSchema — campo modo', () => {
     );
   });
 });
+
+describe('generateTestSchema — modo oposición completa (sin temaId)', () => {
+  it('acepta oposicionId sin temaId en modo normal', () => {
+    const result = generateTestSchema.parse({ oposicionId: 1, numeroPreguntas: 20, modo: 'normal' });
+    assert.equal(result.oposicionId, 1);
+    assert.equal(result.temaId, undefined);
+  });
+
+  it('acepta oposicionId sin temaId en modo adaptativo', () => {
+    const result = generateTestSchema.parse({ oposicionId: 2, numeroPreguntas: 10 });
+    assert.equal(result.oposicionId, 2);
+  });
+
+  it('rechaza cuando ni temaId ni oposicionId están presentes en modo normal', () => {
+    assert.throws(
+      () => generateTestSchema.parse({ numeroPreguntas: 10, modo: 'normal' }),
+      (err) => {
+        assert.ok(err.constructor.name === 'ZodError');
+        return true;
+      },
+    );
+  });
+});
+
