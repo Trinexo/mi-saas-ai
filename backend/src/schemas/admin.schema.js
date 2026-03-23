@@ -70,3 +70,16 @@ export const listUsersQuerySchema = z.object({
 export const updateUserRoleSchema = z.object({
   role: z.enum(['alumno', 'editor', 'revisor', 'admin']),
 });
+
+export const listSinRevisarQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
+  oposicion_id: z.coerce.number().int().positive().optional(),
+  materia_id: z.coerce.number().int().positive().optional(),
+  tema_id: z.coerce.number().int().positive().optional(),
+});
+
+export const updatePreguntaEstadoSchema = z.object({
+  estado: z.enum(['aprobada', 'rechazada']),
+  motivo: z.string().max(500).optional(),
+});
