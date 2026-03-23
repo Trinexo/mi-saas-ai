@@ -65,8 +65,8 @@ export const adminRepository = {
 
   async createPregunta(client, payload) {
     const result = await client.query(
-      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad, estado)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id`,
       [
         payload.temaId,
@@ -74,6 +74,7 @@ export const adminRepository = {
         payload.explicacion,
         payload.referenciaNormativa ?? null,
         payload.nivelDificultad,
+        payload.estado ?? 'aprobada',
       ],
     );
 
@@ -283,6 +284,7 @@ export const adminRepository = {
     const result = await pool.query(`
       SELECT
         (SELECT COUNT(*)::int FROM preguntas)                                      AS total_preguntas,
+        (SELECT COUNT(*)::int FROM preguntas WHERE estado = 'pendiente')           AS pendientes_revision,
         (SELECT COUNT(*)::int FROM usuarios)                                       AS total_usuarios,
         (SELECT COUNT(*)::int FROM tests WHERE estado = 'completado')              AS total_tests,
         (SELECT COUNT(*)::int FROM tests
@@ -294,6 +296,7 @@ export const adminRepository = {
     const row = result.rows[0];
     return {
       totalPreguntas: row.total_preguntas,
+      pendientesRevision: row.pendientes_revision,
       totalUsuarios: row.total_usuarios,
       totalTests: row.total_tests,
       testsEstaSemana: row.tests_esta_semana,
