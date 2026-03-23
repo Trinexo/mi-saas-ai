@@ -100,6 +100,7 @@ export const adminRepository = {
     const pregResult = await pool.query(
       `SELECT p.id, p.tema_id, p.enunciado, p.explicacion,
               p.referencia_normativa, p.nivel_dificultad,
+              p.estado, p.fecha_actualizacion,
               t.materia_id, m.oposicion_id
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
