@@ -29,6 +29,7 @@ export default function HomePage() {
   const [ritmoPregunta, setRitmoPregunta] = useState(null);
   const [balancePrecision, setBalancePrecision] = useState(null);
   const [selection, setSelection] = useState({ oposicionId: '', materiaId: '', temaId: '', numeroPreguntas: 10, modo: 'adaptativo', dificultad: 'mixto' });
+  const [oposicionCompleta, setOposicionCompleta] = useState(false);
   const [simulacro, setSimulacro] = useState({ oposicionId: '', numeroPreguntas: 60, duracion: '' });
   const { error, isLoading, clearError, runAction, setErrorMessage } = useAsyncAction();
 
@@ -188,7 +189,11 @@ export default function HomePage() {
 
     const payload = { numeroPreguntas, modo: selection.modo, dificultad: selection.dificultad };
     if (selection.modo !== 'marcadas') {
-      payload.temaId = Number(selection.temaId);
+      if (oposicionCompleta && selection.oposicionId && !selection.temaId) {
+        payload.oposicionId = Number(selection.oposicionId);
+      } else {
+        payload.temaId = Number(selection.temaId);
+      }
     }
 
     const test = await runAction(() => testApi.generate(token, payload));
@@ -698,8 +703,21 @@ export default function HomePage() {
         </select>
       </div>
 
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', userSelect: 'none', marginTop: 8 }}>
+        <input
+          type="checkbox"
+          checked={oposicionCompleta}
+          disabled={!selection.oposicionId || selection.modo === 'marcadas'}
+          onChange={(e) => {
+            setOposicionCompleta(e.target.checked);
+            if (e.target.checked) setSelection((prev) => ({ ...prev, materiaId: '', temaId: '' }));
+          }}
+        />
+        Oposición completa (sin filtrar por tema)
+      </label>
+
       <button
-        disabled={(selection.modo !== 'marcadas' && !selection.temaId) || isLoading}
+        disabled={(selection.modo !== 'marcadas' && !selection.temaId && !(oposicionCompleta && selection.oposicionId)) || isLoading}
         onClick={onGenerate}
       >
         {isLoading ? 'Generando...' : 'Generar test'}
