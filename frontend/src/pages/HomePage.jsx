@@ -69,7 +69,7 @@ export default function HomePage() {
   useEffect(() => {
     testApi.getObjetivoDiario(token)
       .then((data) => setObjetivoDiario(data))
-      .catch(() => setObjetivoDiario({ objetivoPreguntasDia: 30, preguntasRespondidasHoy: 0, porcentajeCumplido: 0, cumplido: false }));
+      .catch(() => setObjetivoDiario({ objetivoPreguntasDia: 10, preguntasRespondidasHoy: 0, porcentajeCumplido: 0, cumplido: false }));
   }, [token]);
 
   useEffect(() => {
@@ -356,7 +356,7 @@ export default function HomePage() {
   if (error) return <p className="error">{error}</p>;
 
   const diasActivos7 = racha?.actividad7Dias?.filter((d) => d.activo).length || 0;
-  const faltanObjetivo = Math.max(0, Number(objetivoDiario?.objetivoPreguntasDia || 30) - Number(objetivoDiario?.preguntasRespondidasHoy || 0));
+  const faltanObjetivo = Math.max(0, Number(objetivoDiario?.objetivoPreguntasDia || 10) - Number(objetivoDiario?.preguntasRespondidasHoy || 0));
   const xpNivelBase = Math.max(0, (Number(gamificacion?.nivelActual || 1) - 1) * 100);
   const xpEnNivel = Math.max(0, Number(gamificacion?.xpTotal || 0) - xpNivelBase);
   const tiempoMedioMinSemana = Math.round(Number(resumenSemana?.tiempoMedioSegundosUltimos7Dias || 0) / 60);
@@ -588,19 +588,30 @@ export default function HomePage() {
 
       <section className="card">
         <h2>Objetivo de hoy</h2>
-        <p>
-          <strong>{objetivoDiario?.preguntasRespondidasHoy ?? 0}</strong> / {objetivoDiario?.objetivoPreguntasDia ?? 30} preguntas
-        </p>
-        <progress
-          max={100}
-          value={objetivoDiario?.porcentajeCumplido ?? 0}
-          style={{ width: '100%' }}
-        />
-        <p className="hint" style={{ marginTop: '0.5rem' }}>
-          {objetivoDiario?.cumplido
-            ? 'Objetivo del día completado ✅'
-            : `Te faltan ${faltanObjetivo} preguntas para completar tu objetivo`}
-        </p>
+        {(() => {
+          const respondidas = Number(objetivoDiario?.preguntasRespondidasHoy ?? 0);
+          const objetivo = Number(objetivoDiario?.objetivoPreguntasDia ?? 10);
+          const pct = Math.min(100, objetivo > 0 ? Math.round((respondidas / objetivo) * 100) : 0);
+          const color = pct >= 100 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+          return (
+            <>
+              <p style={{ display: 'flex', justifyContent: 'space-between', margin: '0 0 0.4rem' }}>
+                <span><strong style={{ fontSize: '1.25rem' }}>{respondidas}</strong> / {objetivo} preguntas</span>
+                <span style={{ fontWeight: 700, color }}>{pct}%</span>
+              </p>
+              <div style={{ background: '#e5e7eb', borderRadius: 999, height: 12, overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.4s ease' }} />
+              </div>
+              <p className="hint" style={{ marginTop: '0.5rem' }}>
+                {objetivoDiario?.cumplido
+                  ? '¡Objetivo del día completado! ✅'
+                  : faltanObjetivo > 0
+                    ? `Te faltan ${faltanObjetivo} preguntas para completar tu objetivo`
+                    : 'Empieza un test para sumar progreso'}
+              </p>
+            </>
+          );
+        })()}
       </section>
 
       <section className="card">
