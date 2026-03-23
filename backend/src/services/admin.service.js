@@ -85,13 +85,16 @@ export const adminService = {
   async createPregunta(payload, userId, userRole) {
     const client = await pool.connect();
 
+    // Editores crean preguntas en estado pendiente; admins las crean directamente aprobadas
+    const estadoInicial = userRole === 'editor' ? 'pendiente' : 'aprobada';
+
     try {
       await client.query('BEGIN');
-      const pregunta = await adminRepository.createPregunta(client, payload);
+      const pregunta = await adminRepository.createPregunta(client, { ...payload, estado: estadoInicial });
       await adminRepository.createOpciones(client, pregunta.id, payload.opciones);
       await client.query('COMMIT');
       adminRepository.insertAuditoria({ accion: 'create', preguntaId: pregunta.id, userId, userRole }).catch(() => {});
-      return { id: pregunta.id };
+      return { id: pregunta.id, estado: estadoInicial };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
