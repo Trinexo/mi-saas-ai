@@ -9,6 +9,7 @@ export const testApi = {
   getResumenSemana: (token) => apiRequest('/stats/resumen-semana', { token }),
   getActividad14Dias: (token) => apiRequest('/stats/actividad-14dias', { token }),
   getTemasDebiles: (token) => apiRequest('/stats/temas-debiles', { token }),
+  getProgresoTemas: (token, oposicionId) => apiRequest('/stats/progreso-temas', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getInsightMensual: (token) => apiRequest('/stats/insight-mensual', { token }),
   getRendimientoModos: (token) => apiRequest('/stats/rendimiento-modos', { token }),
   getProgresoSemanal: (token) => apiRequest('/stats/progreso-semanal', { token }),
