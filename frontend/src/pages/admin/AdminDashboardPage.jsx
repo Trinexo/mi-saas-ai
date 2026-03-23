@@ -24,10 +24,14 @@ const QUICK_LINKS = [
 const ROL_LABELS = { alumno: 'Alumnos', editor: 'Editores', revisor: 'Revisores', admin: 'Admins' };
 const ROL_COLOR = { alumno: '#374151', editor: '#1d4ed8', revisor: '#a16207', admin: '#b91c1c' };
 
+const TH = { padding: '0.5rem 0.75rem', fontWeight: 600, color: '#374151', borderBottom: '2px solid #e5e7eb' };
+const TD = { padding: '0.5rem 0.75rem', color: '#111827' };
+
 export default function AdminDashboardPage() {
   const { token } = useAuth();
   const [stats, setStats] = useState(null);
   const [usersByRole, setUsersByRole] = useState(null);
+  const [temasErrores, setTemasErrores] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -50,6 +54,12 @@ export default function AdminDashboardPage() {
       results.forEach(({ role, total }) => { byRole[role] = total; });
       setUsersByRole(byRole);
     });
+
+    // Cargar top temas con más errores
+    adminApi
+      .getTemasConMasErrores(token, 10)
+      .then((res) => { if (res?.data) setTemasErrores(res.data); })
+      .catch(() => setTemasErrores([]));
   }, [token]);
 
   return (
@@ -104,6 +114,48 @@ export default function AdminDashboardPage() {
                 <div style={LABEL}>{ROL_LABELS[role]}</div>
               </div>
             ))}
+          </div>
+        </>
+      )}
+
+      {temasErrores && temasErrores.length > 0 && (
+        <>
+          <h3 style={{ marginBottom: '0.75rem' }}>Top temas con m\u00e1s errores</h3>
+          <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
+                  <th style={TH}>Tema</th>
+                  <th style={TH}>Materia</th>
+                  <th style={{ ...TH, textAlign: 'right' }}>Respuestas</th>
+                  <th style={{ ...TH, textAlign: 'right' }}>Errores</th>
+                  <th style={{ ...TH, textAlign: 'right' }}>% Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                {temasErrores.map((t) => (
+                  <tr key={t.temaId} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={TD}>{t.temaNombre}</td>
+                    <td style={{ ...TD, color: '#6b7280' }}>{t.materiaNombre}</td>
+                    <td style={{ ...TD, textAlign: 'right' }}>{t.totalRespuestas.toLocaleString()}</td>
+                    <td style={{ ...TD, textAlign: 'right', color: '#b91c1c', fontWeight: 600 }}>{t.totalErrores.toLocaleString()}</td>
+                    <td style={{ ...TD, textAlign: 'right' }}>
+                      <span
+                        style={{
+                          background: t.pctError >= 60 ? '#fee2e2' : t.pctError >= 40 ? '#fef3c7' : '#dcfce7',
+                          color: t.pctError >= 60 ? '#991b1b' : t.pctError >= 40 ? '#92400e' : '#166534',
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {t.pctError !== null ? `${t.pctError}%` : '\u2014'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </>
       )}
