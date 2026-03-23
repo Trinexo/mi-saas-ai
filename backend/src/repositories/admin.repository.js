@@ -438,4 +438,14 @@ export const adminRepository = {
     );
     return result.rows[0] ?? null;
   },
+
+  async getPreguntasPorEstado() {
+    const result = await pool.query(
+      `SELECT estado, COUNT(*)::int AS total
+       FROM preguntas
+       GROUP BY estado
+       ORDER BY estado`,
+    );
+    return result.rows;
+  },
 };

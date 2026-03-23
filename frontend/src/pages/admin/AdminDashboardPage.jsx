@@ -34,6 +34,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [usersByRole, setUsersByRole] = useState(null);
   const [temasErrores, setTemasErrores] = useState(null);
+  const [preguntasPorEstado, setPreguntasPorEstado] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -65,7 +66,11 @@ export default function AdminDashboardPage() {
       .getTemasConMasErrores(token, 10)
       .then((res) => { if (res?.data) setTemasErrores(res.data); })
       .catch(() => setTemasErrores([]));
-  }, [token]);
+    // Cargar desglose por estado de preguntas
+    adminApi
+      .getPreguntasPorEstado(token)
+      .then((res) => { if (res?.data) setPreguntasPorEstado(res.data); })
+      .catch(() => setPreguntasPorEstado([]));  }, [token]);
 
   return (
     <section className="card">
@@ -196,6 +201,36 @@ export default function AdminDashboardPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </>
+      )}
+
+      {preguntasPorEstado && preguntasPorEstado.length > 0 && (
+        <>
+          <h3 style={{ marginBottom: '0.75rem' }}>Estado del banco de preguntas</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '2rem' }}>
+            {preguntasPorEstado.map((row) => {
+              const colors = {
+                pendiente: { bg: '#fef3c7', border: '#f59e0b', num: '#92400e', label: 'Pendientes' },
+                aprobada:  { bg: '#dcfce7', border: '#059669', num: '#166534', label: 'Aprobadas' },
+                rechazada: { bg: '#fee2e2', border: '#dc2626', num: '#991b1b', label: 'Rechazadas' },
+              };
+              const c = colors[row.estado] ?? { bg: '#f3f4f6', border: '#9ca3af', num: '#374151', label: row.estado };
+              return (
+                <div
+                  key={row.estado}
+                  style={{
+                    ...CARD_STYLE,
+                    flex: '1 1 130px',
+                    borderTop: `3px solid ${c.border}`,
+                    background: c.bg,
+                  }}
+                >
+                  <div style={{ ...BIG_NUM, color: c.num }}>{row.total.toLocaleString()}</div>
+                  <div style={LABEL}>{c.label}</div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}

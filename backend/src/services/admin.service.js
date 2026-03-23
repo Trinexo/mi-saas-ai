@@ -354,4 +354,8 @@ export const adminService = {
     }
     return updated;
   },
+
+  async getPreguntasPorEstado() {
+    return adminRepository.getPreguntasPorEstado();
+  },
 };
