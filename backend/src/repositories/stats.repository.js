@@ -579,7 +579,8 @@ export const statsRepository = {
   async getObjetivoDiario(userId) {
     const result = await pool.query(
       `WITH objetivo AS (
-         SELECT 30::int AS valor
+         SELECT COALESCE(objetivo_diario_preguntas, 10)::int AS valor
+         FROM usuarios WHERE id = $1
        ),
        respondidas AS (
          SELECT COUNT(*)::int AS valor
