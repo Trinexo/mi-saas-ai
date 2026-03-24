@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaTemas, getResumenOposicion, getProgresoMaterias, getProgresoTemasByMateria, getDetalleTema, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaTemas, getResumenOposicion, getProgresoMaterias, getProgresoTemasByMateria, getDetalleTema, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
 import { temaStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
 
 const router = Router();
@@ -32,5 +32,6 @@ router.get('/resumen-oposicion', requireAuth, getResumenOposicion);
 router.get('/progreso-materias', requireAuth, getProgresoMaterias);
 router.get('/progreso-temas-materia', requireAuth, getProgresoTemasByMateria);
 router.get('/tema/:id/detalle', requireAuth, getDetalleTema);
+router.get('/mis-oposiciones', requireAuth, getMisOposiciones);
 
 export default router;

@@ -131,4 +131,8 @@ export const statsService = {
     if (!data) throw new ApiError(404, 'Tema no encontrado');
     return data;
   },
+
+  async getMisOposiciones(userId) {
+    return statsRepository.getMisOposiciones(userId);
+  },
 };
