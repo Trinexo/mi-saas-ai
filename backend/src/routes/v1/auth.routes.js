@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { validate } from '../../middleware/validate.middleware.js';
 import { rateLimit } from '../../middleware/rate-limit.middleware.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
-import { loginSchema, registerSchema, updateProfileSchema, updatePasswordSchema } from '../../schemas/auth.schema.js';
-import { login, register, getMe, updateProfile, updatePassword } from '../../controllers/auth.controller.js';
+import { loginSchema, registerSchema, updateProfileSchema, updatePasswordSchema, patchOposicionPreferidaSchema } from '../../schemas/auth.schema.js';
+import { login, register, getMe, updateProfile, updatePassword, patchOposicionPreferida } from '../../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -18,5 +18,6 @@ router.post('/login', authRateLimit, validate(loginSchema), login);
 router.get('/me', requireAuth, getMe);
 router.put('/me', requireAuth, validate(updateProfileSchema), updateProfile);
 router.put('/password', requireAuth, validate(updatePasswordSchema), updatePassword);
+router.patch('/me/oposicion-preferida', requireAuth, validate(patchOposicionPreferidaSchema), patchOposicionPreferida);
 
 export default router;

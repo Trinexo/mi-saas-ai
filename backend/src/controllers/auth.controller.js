@@ -45,3 +45,14 @@ export const updatePassword = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const patchOposicionPreferida = async (req, res, next) => {
+  try {
+    const data = await authService.updateProfile(req.user.userId, {
+      oposicionPreferidaId: req.body.oposicionPreferidaId ?? null,
+    });
+    return ok(res, data, 'Oposición preferida actualizada');
+  } catch (error) {
+    return next(error);
+  }
+};
