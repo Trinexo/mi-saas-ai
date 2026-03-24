@@ -12,6 +12,7 @@ import ReviewPage from './pages/ReviewPage.jsx';
 import MarcadasPage from './pages/MarcadasPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import OposicionPage from './pages/OposicionPage.jsx';
+import MateriaPage from './pages/MateriaPage.jsx';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="marcadas" element={<MarcadasPage />} />
         <Route path="perfil" element={<ProfilePage />} />
         <Route path="oposicion/:id" element={<OposicionPage />} />
+        <Route path="materia/:id" element={<MateriaPage />} />
         <Route
           path="admin"
           element={
