@@ -31,6 +31,7 @@ export default function HomePage() {
   const [balancePrecision, setBalancePrecision] = useState(null);
   const [selectorOposicionId, setSelectorOposicionId] = useState('');
   const [savingOposicion, setSavingOposicion] = useState(false);
+  const [resumenOposicion, setResumenOposicion] = useState(null);
   const [selection, setSelection] = useState({ oposicionId: '', materiaId: '', temaId: '', numeroPreguntas: 10, modo: 'adaptativo', dificultad: 'mixto' });
   const [oposicionCompleta, setOposicionCompleta] = useState(false);
   const [simulacro, setSimulacro] = useState({ oposicionId: '', numeroPreguntas: 60, duracion: '' });
@@ -153,6 +154,14 @@ export default function HomePage() {
       .then((data) => setBalancePrecision(data))
       .catch(() => setBalancePrecision({ aciertosTotales: 0, erroresTotales: 0, blancosTotales: 0, porcentajeAcierto: 0, porcentajeError: 0, porcentajeBlanco: 0 }));
   }, [token]);
+
+  useEffect(() => {
+    const prefId = user?.oposicionPreferidaId;
+    if (!prefId) { setResumenOposicion(null); return; }
+    testApi.getResumenOposicion(token, Number(prefId))
+      .then((data) => setResumenOposicion(data))
+      .catch(() => setResumenOposicion(null));
+  }, [token, user?.oposicionPreferidaId]);
 
   const onGuardarOposicionPreferida = async () => {
     if (!selectorOposicionId) return;
@@ -382,6 +391,39 @@ export default function HomePage() {
 
   return (
     <>
+      {user?.oposicionPreferidaId && resumenOposicion && (() => {
+        const mc = resumenOposicion.maestria >= 70 ? '#22c55e' : resumenOposicion.maestria >= 40 ? '#f59e0b' : '#ef4444';
+        return (
+          <section className="card" style={{ borderLeft: `4px solid ${mc}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <h2 style={{ margin: 0 }}>Tu oposición</h2>
+                <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{resumenOposicion.oposicionNombre}</p>
+              </div>
+              <a
+                href={`/oposicion/${user.oposicionPreferidaId}`}
+                onClick={(e) => { e.preventDefault(); navigate(`/oposicion/${user.oposicionPreferidaId}`); }}
+                style={{ fontSize: 13, color: '#6366f1', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
+              >
+                Ver detalle →
+              </a>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', marginBottom: 4 }}>
+                <span>Maestría global</span>
+                <span style={{ fontWeight: 700, color: mc }}>{resumenOposicion.maestria}%</span>
+              </div>
+              <div style={{ background: '#f1f5f9', borderRadius: 999, height: 8, overflow: 'hidden' }}>
+                <div style={{ width: `${resumenOposicion.maestria}%`, height: '100%', background: mc, borderRadius: 999, transition: 'width .4s' }} />
+              </div>
+              <p className="hint" style={{ marginTop: 6 }}>
+                {resumenOposicion.temasPracticados} de {resumenOposicion.totalTemas} temas practicados · {resumenOposicion.porcentajeAcierto}% acierto
+              </p>
+            </div>
+          </section>
+        );
+      })()}
+
       {!user?.oposicionPreferidaId && (
         <section className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
           <h2>Configura tu oposición</h2>
