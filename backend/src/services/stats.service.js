@@ -108,4 +108,11 @@ export const statsService = {
     }
     return statsRepository.getResumenOposicion(userId, oposicionId);
   },
+
+  async getProgresoMaterias(userId, oposicionId) {
+    if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
+      throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
+    }
+    return statsRepository.getProgresoMaterias(userId, oposicionId);
+  },
 };
