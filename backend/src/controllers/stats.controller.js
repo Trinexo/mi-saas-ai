@@ -211,3 +211,14 @@ export const getResumenOposicion = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getProgresoMaterias = async (req, res, next) => {
+  try {
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    if (!oposicionId) return next(new ApiError(400, 'Se requiere oposicion_id'));
+    const data = await statsService.getProgresoMaterias(req.user.userId, oposicionId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
