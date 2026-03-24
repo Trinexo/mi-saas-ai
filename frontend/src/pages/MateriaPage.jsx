@@ -77,7 +77,9 @@ export default function MateriaPage() {
                   const color = t.maestria >= 70 ? '#22c55e' : t.maestria >= 40 ? '#f59e0b' : '#ef4444';
                   return (
                     <tr key={t.temaId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1e293b' }}>{t.temaNombre}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1e293b' }}>
+                        <Link to={`/tema/${t.temaId}`} style={{ color: '#1e293b', textDecoration: 'none' }}>{t.temaNombre}</Link>
+                      </td>
                       <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>
                         {t.respondidas}/{t.totalPreguntas}
                       </td>
