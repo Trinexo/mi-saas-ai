@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAsyncAction } from '../hooks/useAsyncAction';
+import { authApi } from '../services/authApi';
 import { catalogApi } from '../services/catalogApi';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { token, user, refreshUser } = useAuth();
   const [oposiciones, setOposiciones] = useState([]);
   const [materias, setMaterias] = useState([]);
   const [temas, setTemas] = useState([]);
@@ -28,6 +29,8 @@ export default function HomePage() {
   const [consistenciaDiaria, setConsistenciaDiaria] = useState(null);
   const [ritmoPregunta, setRitmoPregunta] = useState(null);
   const [balancePrecision, setBalancePrecision] = useState(null);
+  const [selectorOposicionId, setSelectorOposicionId] = useState('');
+  const [savingOposicion, setSavingOposicion] = useState(false);
   const [selection, setSelection] = useState({ oposicionId: '', materiaId: '', temaId: '', numeroPreguntas: 10, modo: 'adaptativo', dificultad: 'mixto' });
   const [oposicionCompleta, setOposicionCompleta] = useState(false);
   const [simulacro, setSimulacro] = useState({ oposicionId: '', numeroPreguntas: 60, duracion: '' });
@@ -150,6 +153,17 @@ export default function HomePage() {
       .then((data) => setBalancePrecision(data))
       .catch(() => setBalancePrecision({ aciertosTotales: 0, erroresTotales: 0, blancosTotales: 0, porcentajeAcierto: 0, porcentajeError: 0, porcentajeBlanco: 0 }));
   }, [token]);
+
+  const onGuardarOposicionPreferida = async () => {
+    if (!selectorOposicionId) return;
+    setSavingOposicion(true);
+    try {
+      const res = await authApi.patchOposicionPreferida(token, Number(selectorOposicionId));
+      if (res?.data) refreshUser(res.data);
+    } finally {
+      setSavingOposicion(false);
+    }
+  };
 
   const onOposicion = async (id) => {
     setSelection({ ...selection, oposicionId: id, materiaId: '', temaId: '' });
@@ -368,6 +382,31 @@ export default function HomePage() {
 
   return (
     <>
+      {!user?.oposicionPreferidaId && (
+        <section className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+          <h2>Configura tu oposición</h2>
+          <p className="hint">Selecciona la oposición a la que te preparas para personalizar tu experiencia.</p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.5rem' }}>
+            <select
+              value={selectorOposicionId}
+              onChange={(e) => setSelectorOposicionId(e.target.value)}
+              disabled={savingOposicion || oposiciones.length === 0}
+            >
+              <option value="">-- Selecciona oposición --</option>
+              {oposiciones.map((op) => (
+                <option key={op.id} value={String(op.id)}>{op.nombre}</option>
+              ))}
+            </select>
+            <button
+              onClick={onGuardarOposicionPreferida}
+              disabled={savingOposicion || !selectorOposicionId}
+            >
+              {savingOposicion ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </section>
+      )}
+
       <section className="card">
         <h2>Test recomendado</h2>
         <button disabled={isLoading} onClick={onStartRecommended}>

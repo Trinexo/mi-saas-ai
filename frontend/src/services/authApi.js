@@ -6,4 +6,6 @@ export const authApi = {
   getProfile: (token) => apiRequest('/auth/me', { token }),
   updateProfile: (token, payload) => apiRequest('/auth/me', { method: 'PUT', body: payload, token }),
   changePassword: (token, payload) => apiRequest('/auth/password', { method: 'PUT', body: payload, token }),
+  patchOposicionPreferida: (token, oposicionPreferidaId) =>
+    apiRequest('/auth/me/oposicion-preferida', { method: 'PATCH', body: { oposicionPreferidaId }, token }),
 };
