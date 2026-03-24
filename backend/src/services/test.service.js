@@ -26,6 +26,8 @@ export const testService = {
       preguntas = await testRepository.pickSimulacroQuestions({ oposicionId, numeroPreguntas });
     } else if (modo === 'repaso') {
       preguntas = await testRepository.pickDueQuestions({ userId, temaId, numeroPreguntas });
+    } else if (!temaId && oposicionId) {
+      preguntas = await testRepository.pickSimulacroQuestions({ oposicionId, numeroPreguntas });
     } else {
       const pickPrimary = (params) =>
         modo === 'adaptativo'
@@ -45,8 +47,8 @@ export const testService = {
       }
     }
 
-    // Fallback solo para modos basados en tema
-    if (preguntas.length < numeroPreguntas && !['simulacro', 'marcadas'].includes(modo)) {
+    // Fallback solo para modos basados en tema concreto
+    if (preguntas.length < numeroPreguntas && !['simulacro', 'marcadas'].includes(modo) && temaId) {
       const excludeIds = preguntas.map((p) => p.id);
       const extra = await testRepository.pickAnyQuestions({
         userId,
