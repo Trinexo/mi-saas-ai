@@ -115,4 +115,11 @@ export const statsService = {
     }
     return statsRepository.getProgresoMaterias(userId, oposicionId);
   },
+
+  async getProgresoTemasByMateria(userId, materiaId) {
+    if (!Number.isInteger(materiaId) || materiaId <= 0) {
+      throw new ApiError(400, 'materia_id debe ser un entero positivo');
+    }
+    return statsRepository.getProgresoTemasByMateria(userId, materiaId);
+  },
 };
