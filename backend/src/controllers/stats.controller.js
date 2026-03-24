@@ -1,5 +1,6 @@
 import { ok } from '../utils/response.js';
 import { statsService } from '../services/stats.service.js';
+import { ApiError } from '../utils/api-error.js';
 
 export const getConsistenciaDiaria = async (req, res, next) => {
   try {
@@ -198,4 +199,16 @@ export const getRachaTemas = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
+
+export const getResumenOposicion = async (req, res, next) => {
+  try {
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    if (!oposicionId) return next(new ApiError(400, 'Se requiere oposicion_id'));
+    const data = await statsService.getResumenOposicion(req.user.userId, oposicionId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
 };
