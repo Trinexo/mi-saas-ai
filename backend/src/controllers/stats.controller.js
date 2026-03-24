@@ -211,4 +211,3 @@ export const getResumenOposicion = async (req, res, next) => {
     return next(error);
   }
 };
-};
