@@ -222,3 +222,14 @@ export const getProgresoMaterias = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getProgresoTemasByMateria = async (req, res, next) => {
+  try {
+    const materiaId = req.query.materia_id ? Number(req.query.materia_id) : null;
+    if (!materiaId) return next(new ApiError(400, 'Se requiere materia_id'));
+    const data = await statsService.getProgresoTemasByMateria(req.user.userId, materiaId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};

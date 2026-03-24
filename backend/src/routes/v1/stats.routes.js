@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaTemas, getResumenOposicion, getProgresoMaterias, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaTemas, getResumenOposicion, getProgresoMaterias, getProgresoTemasByMateria, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
 import { temaStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
 
 const router = Router();
@@ -30,5 +30,6 @@ router.get('/racha', requireAuth, getRacha);
 router.get('/racha-temas', requireAuth, getRachaTemas);
 router.get('/resumen-oposicion', requireAuth, getResumenOposicion);
 router.get('/progreso-materias', requireAuth, getProgresoMaterias);
+router.get('/progreso-temas-materia', requireAuth, getProgresoTemasByMateria);
 
 export default router;

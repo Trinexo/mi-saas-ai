@@ -973,6 +973,47 @@ export const statsRepository = {
     };
   },
 
+  async getProgresoTemasByMateria(userId, materiaId) {
+    const result = await pool.query(
+      `SELECT
+         t.id AS tema_id,
+         t.nombre AS tema_nombre,
+         COUNT(DISTINCT p.id)::int AS total_preguntas,
+         COALESCE((pu.aciertos + pu.errores), 0)::int AS respondidas,
+         COALESCE(pu.aciertos, 0)::int AS aciertos,
+         COALESCE(
+           ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
+           0
+         ) AS porcentaje_acierto,
+         pu.ultima_practica
+       FROM temas t
+       LEFT JOIN preguntas p ON p.tema_id = t.id AND p.activo = true
+       LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
+       WHERE t.materia_id = $2
+       GROUP BY t.id, t.nombre, pu.aciertos, pu.errores, pu.ultima_practica
+       ORDER BY t.nombre ASC`,
+      [userId, materiaId],
+    );
+
+    return result.rows.map((row) => {
+      const totalPreguntas = Number(row.total_preguntas ?? 0);
+      const respondidas = Number(row.respondidas ?? 0);
+      const maestria = totalPreguntas > 0
+        ? Number(((respondidas / totalPreguntas) * 100).toFixed(1))
+        : 0;
+      return {
+        temaId: Number(row.tema_id),
+        temaNombre: row.tema_nombre,
+        totalPreguntas,
+        respondidas,
+        aciertos: Number(row.aciertos ?? 0),
+        maestria,
+        porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
+        ultimaPractica: row.ultima_practica ?? null,
+      };
+    });
+  },
+
   async getProgresoMaterias(userId, oposicionId) {
     const result = await pool.query(
       `SELECT
