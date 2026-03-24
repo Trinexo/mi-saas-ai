@@ -449,9 +449,18 @@ export default function HomePage() {
               <div style={{ background: '#f1f5f9', borderRadius: 999, height: 8, overflow: 'hidden' }}>
                 <div style={{ width: `${resumenOposicion.maestria}%`, height: '100%', background: mc, borderRadius: 999, transition: 'width .4s' }} />
               </div>
-              <p className="hint" style={{ marginTop: 6 }}>
-                {resumenOposicion.temasPracticados} de {resumenOposicion.totalTemas} temas practicados · {resumenOposicion.porcentajeAcierto}% acierto
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                <p className="hint" style={{ margin: 0 }}>
+                  {resumenOposicion.temasPracticados} de {resumenOposicion.totalTemas} temas practicados · {resumenOposicion.porcentajeAcierto}% acierto
+                </p>
+                <a
+                  href="/mis-oposiciones"
+                  onClick={(e) => { e.preventDefault(); navigate('/mis-oposiciones'); }}
+                  style={{ fontSize: 12, color: '#64748b', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}
+                >
+                  Ver todas →
+                </a>
+              </div>
             </div>
           </section>
         );
