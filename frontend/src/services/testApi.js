@@ -31,6 +31,7 @@ export const testApi = {
   getProgresoMaterias: (token, oposicionId) => apiRequest('/stats/progreso-materias', { token, query: { oposicion_id: oposicionId } }),
   getProgresoTemasByMateria: (token, materiaId) => apiRequest('/stats/progreso-temas-materia', { token, query: { materia_id: materiaId } }),
   getDetalleTema: (token, temaId) => apiRequest(`/stats/tema/${temaId}/detalle`, { token }),
+  getMisOposiciones: (token) => apiRequest('/stats/mis-oposiciones', { token }),
   evolucionStats: (token, limit = 30) => apiRequest('/stats/evolucion', { token, query: { limit } }),
   getRepasoPendientes: (token, limit = 20) => apiRequest('/repaso/pendientes', { token, query: { limit } }),
   getReview: (token, testId) => apiRequest(`/tests/${testId}/review`, { token }),
