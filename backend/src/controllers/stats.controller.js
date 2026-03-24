@@ -233,3 +233,14 @@ export const getProgresoTemasByMateria = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getDetalleTema = async (req, res, next) => {
+  try {
+    const temaId = req.params.id ? Number(req.params.id) : null;
+    if (!temaId) return next(new ApiError(400, 'Se requiere id de tema'));
+    const data = await statsService.getDetalleTema(req.user.userId, temaId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};

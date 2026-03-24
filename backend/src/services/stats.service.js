@@ -122,4 +122,13 @@ export const statsService = {
     }
     return statsRepository.getProgresoTemasByMateria(userId, materiaId);
   },
+
+  async getDetalleTema(userId, temaId) {
+    if (!Number.isInteger(temaId) || temaId <= 0) {
+      throw new ApiError(400, 'tema_id debe ser un entero positivo');
+    }
+    const data = await statsRepository.getDetalleTema(userId, temaId);
+    if (!data) throw new ApiError(404, 'Tema no encontrado');
+    return data;
+  },
 };
