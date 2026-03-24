@@ -101,4 +101,11 @@ export const statsService = {
   async getRachaTemas(userId) {
     return statsRepository.getRachaTemas(userId);
   },
+
+  async getResumenOposicion(userId, oposicionId) {
+    if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
+      throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
+    }
+    return statsRepository.getResumenOposicion(userId, oposicionId);
+  },
 };
