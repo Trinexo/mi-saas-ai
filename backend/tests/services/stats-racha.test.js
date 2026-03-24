@@ -14,3 +14,15 @@ describe('statsService — getRacha', () => {
     assert.equal(typeof statsService.getRacha, 'function');
   });
 });
+
+describe('statsRepository — getRachaTemas', () => {
+  it('getRachaTemas está exportado', () => {
+    assert.equal(typeof statsRepository.getRachaTemas, 'function');
+  });
+});
+
+describe('statsService — getRachaTemas', () => {
+  it('getRachaTemas está exportado', () => {
+    assert.equal(typeof statsService.getRachaTemas, 'function');
+  });
+});

@@ -190,3 +190,12 @@ export const getRacha = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getRachaTemas = async (req, res, next) => {
+  try {
+    const data = await statsService.getRachaTemas(req.user.userId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
