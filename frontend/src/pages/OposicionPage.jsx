@@ -112,7 +112,11 @@ export default function OposicionPage() {
                   const color = m.maestria >= 70 ? '#22c55e' : m.maestria >= 40 ? '#f59e0b' : '#ef4444';
                   return (
                     <tr key={m.materiaId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1e293b' }}>{m.materiaNombre}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1e293b' }}>
+                        <Link to={`/materia/${m.materiaId}`} style={{ color: '#1e293b', textDecoration: 'none' }}>
+                          {m.materiaNombre}
+                        </Link>
+                      </td>
                       <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>
                         {m.temasPracticados}/{m.totalTemas}
                       </td>

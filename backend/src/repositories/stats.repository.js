@@ -978,6 +978,7 @@ export const statsRepository = {
       `SELECT
          t.id AS tema_id,
          t.nombre AS tema_nombre,
+         m.nombre AS materia_nombre,
          COUNT(DISTINCT p.id)::int AS total_preguntas,
          COALESCE((pu.aciertos + pu.errores), 0)::int AS respondidas,
          COALESCE(pu.aciertos, 0)::int AS aciertos,
@@ -987,10 +988,11 @@ export const statsRepository = {
          ) AS porcentaje_acierto,
          pu.ultima_practica
        FROM temas t
+       JOIN materias m ON m.id = t.materia_id
        LEFT JOIN preguntas p ON p.tema_id = t.id AND p.activo = true
        LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
        WHERE t.materia_id = $2
-       GROUP BY t.id, t.nombre, pu.aciertos, pu.errores, pu.ultima_practica
+       GROUP BY t.id, t.nombre, m.nombre, pu.aciertos, pu.errores, pu.ultima_practica
        ORDER BY t.nombre ASC`,
       [userId, materiaId],
     );
@@ -1004,6 +1006,7 @@ export const statsRepository = {
       return {
         temaId: Number(row.tema_id),
         temaNombre: row.tema_nombre,
+        materiaNombre: row.materia_nombre,
         totalPreguntas,
         respondidas,
         aciertos: Number(row.aciertos ?? 0),
