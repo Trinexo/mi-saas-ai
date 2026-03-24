@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 import { authApi } from '../services/authApi';
 import { catalogApi } from '../services/catalogApi';
@@ -8,6 +8,8 @@ import { useAuth } from '../state/auth.jsx';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationStateApplied = useRef(false);
   const { token, user, refreshUser } = useAuth();
   const [oposiciones, setOposiciones] = useState([]);
   const [materias, setMaterias] = useState([]);
@@ -44,14 +46,45 @@ export default function HomePage() {
       .then(async (ops) => {
         if (cancelled) return;
         setOposiciones(ops);
-        // Autoseleccionar oposición preferida del perfil (ya disponible en contexto)
-        const prefId = user?.oposicionPreferidaId;
-        if (prefId && !cancelled) {
-          const prefIdStr = String(prefId);
-          setSelection((prev) => ({ ...prev, oposicionId: prefIdStr }));
-          const materias = await catalogApi.getMaterias(prefIdStr);
-          if (!cancelled) setMaterias(materias);
+
+        // Determinar oposición a preseleccionar: location.state tiene prioridad sobre preferida
+        const stateOposicionId = location.state?.oposicionId
+          ? String(location.state.oposicionId)
+          : null;
+        const prefId = user?.oposicionPreferidaId
+          ? String(user.oposicionPreferidaId)
+          : null;
+        const targetOposicionId = stateOposicionId || prefId;
+
+        if (targetOposicionId && !cancelled) {
+          setSelection((prev) => ({ ...prev, oposicionId: targetOposicionId, materiaId: '', temaId: '' }));
+          const materiasData = await catalogApi.getMaterias(targetOposicionId);
+          if (!cancelled) {
+            setMaterias(materiasData);
+
+            // Preseleccionar materia desde location.state
+            const stateMateriaId = location.state?.materiaId
+              ? String(location.state.materiaId)
+              : null;
+            if (stateMateriaId && !locationStateApplied.current) {
+              setSelection((prev) => ({ ...prev, materiaId: stateMateriaId, temaId: '' }));
+              const temasData = await catalogApi.getTemas(stateMateriaId);
+              if (!cancelled) {
+                setTemas(temasData);
+
+                // Preseleccionar tema desde location.state
+                const stateTemaId = location.state?.temaId
+                  ? String(location.state.temaId)
+                  : null;
+                if (stateTemaId) {
+                  setSelection((prev) => ({ ...prev, temaId: stateTemaId }));
+                }
+              }
+            }
+          }
         }
+
+        locationStateApplied.current = true;
       })
       .catch((e) => setErrorMessage(e, 'No se pudo cargar el catálogo'))
       .finally(() => { if (!cancelled) setLoading(false); });
