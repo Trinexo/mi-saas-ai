@@ -26,6 +26,7 @@ export const testApi = {
   getObjetivoDiario: (token) => apiRequest('/stats/objetivo-diario', { token }),
   getGamificacion: (token) => apiRequest('/stats/gamificacion', { token }),
   getRacha: (token) => apiRequest('/stats/racha', { token }),
+  getRachaTemas: (token) => apiRequest('/stats/racha-temas', { token }),
   evolucionStats: (token, limit = 30) => apiRequest('/stats/evolucion', { token, query: { limit } }),
   getRepasoPendientes: (token, limit = 20) => apiRequest('/repaso/pendientes', { token, query: { limit } }),
   getReview: (token, testId) => apiRequest(`/tests/${testId}/review`, { token }),
