@@ -85,6 +85,8 @@ export default function ResultPage() {
         <Link to="/">Nuevo test</Link>
         <Link to="/progreso">Ver progreso</Link>
         {result.testId && <Link to={`/revision/${result.testId}`}>Ver revisión</Link>}
+        {activeTest?.temaId && <Link to={`/tema/${activeTest.temaId}`}>Ver tema</Link>}
+        {activeTest?.oposicionId && !activeTest?.temaId && <Link to={`/oposicion/${activeTest.oposicionId}`}>Ver oposición</Link>}
         <Link to="/historial">Historial</Link>
       </div>
     </section>
