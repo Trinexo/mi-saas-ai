@@ -653,7 +653,9 @@ export default function ProgressPage() {
                   const rachaColor = t.rachaActual >= 7 ? '#22c55e' : t.rachaActual >= 3 ? '#f59e0b' : '#64748b';
                   return (
                     <tr key={t.temaId} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                      <td style={{ padding: '9px 12px', maxWidth: 240 }}>{t.temaNombre}</td>
+                      <td style={{ padding: '9px 12px', maxWidth: 240 }}>
+                        <Link to={`/tema/${t.temaId}`} style={{ color: '#1e293b', textDecoration: 'none', fontWeight: 500 }}>{t.temaNombre}</Link>
+                      </td>
                       <td style={{ padding: '9px 12px', color: '#666', fontSize: 13 }}>{t.materiaNombre}</td>
                       <td style={{ padding: '9px 12px', textAlign: 'center' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: `${rachaColor}18`, color: rachaColor, fontWeight: 700, borderRadius: 20, padding: '2px 10px', fontSize: 13 }}>
