@@ -244,3 +244,12 @@ export const getDetalleTema = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const getMisOposiciones = async (req, res, next) => {
+  try {
+    const data = await statsService.getMisOposiciones(req.user.userId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
