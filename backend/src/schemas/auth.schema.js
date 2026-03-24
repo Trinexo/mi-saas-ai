@@ -22,3 +22,7 @@ export const updatePasswordSchema = z.object({
   passwordActual: z.string().min(1),
   passwordNuevo: z.string().min(8),
 });
+
+export const patchOposicionPreferidaSchema = z.object({
+  oposicionPreferidaId: z.coerce.number().int().positive().nullable(),
+});
