@@ -16,6 +16,7 @@ function Shell() {
         <h1>Plataforma Test</h1>
         <nav>
           <Link to="/">Inicio</Link>
+          <Link to="/mis-oposiciones">Mis oposiciones</Link>
           <Link to="/progreso">Progreso</Link>
           <Link to="/historial">Historial</Link>
           <Link to="/marcadas">Marcadas</Link>
