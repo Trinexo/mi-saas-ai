@@ -242,7 +242,7 @@ export default function ProgressPage() {
     };
   }, [selTema, token]);
 
-  if (statsError) return <p className="error">{statsError}</p>;
+  if (statsError) return <p style={{ color: '#dc2626', padding: '1rem' }}>{statsError}</p>;
   if (loadingStats || !stats) return <p>Cargando progreso...</p>;
 
   const totalRespondidas = stats.aciertos + stats.errores + stats.blancos;
@@ -260,44 +260,26 @@ export default function ProgressPage() {
       <section>
       <h2>Mi Progreso</h2>
 
-      <div className="stats-cards">
-        <div className="stat-card">
-          <span className="stat-value">{stats.totalTests}</span>
-          <span className="stat-label">Tests realizados</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{stats.aciertos}</span>
-          <span className="stat-label">Aciertos</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{stats.errores}</span>
-          <span className="stat-label">Errores</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{stats.blancos}</span>
-          <span className="stat-label">En blanco</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{Number(stats.notaMedia).toFixed(2)}</span>
-          <span className="stat-label">Nota media</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{formatTime(stats.tiempoMedio)}</span>
-          <span className="stat-label">Tiempo medio/test</span>
-        </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: '1.25rem' }}>
+        {[{ value: stats.totalTests, label: 'Tests realizados' }, { value: stats.aciertos, label: 'Aciertos' }, { value: stats.errores, label: 'Errores' }, { value: stats.blancos, label: 'En blanco' }, { value: Number(stats.notaMedia).toFixed(2), label: 'Nota media' }, { value: formatTime(stats.tiempoMedio), label: 'Tiempo medio/test' }].map(({ value, label }) => (
+          <div key={label} style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 18px', textAlign: 'center', minWidth: 110, flex: '1 1 110px' }}>
+            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#1e293b' }}>{value}</span>
+            <span style={{ display: 'block', fontSize: 12, color: '#64748b', marginTop: 2 }}>{label}</span>
+          </div>
+        ))}
       </div>
 
-      <div className="progress-bar-container">
-        <div className="progress-bar-label">Tasa de acierto global: {pctAcierto}%</div>
-        <div className="progress-bar">
-          <div className="progress-bar-fill" style={{ width: `${pctAcierto}%` }} />
+      <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{ fontSize: '0.875rem', color: '#475569', marginBottom: 6 }}>Tasa de acierto global: {pctAcierto}%</div>
+        <div style={{ background: '#e5e7eb', borderRadius: 999, height: 10, overflow: 'hidden' }}>
+          <div style={{ width: `${pctAcierto}%`, height: '100%', background: pctAcierto >= 70 ? '#22c55e' : pctAcierto >= 50 ? '#f59e0b' : '#ef4444', borderRadius: 999, transition: 'width 0.3s' }} />
         </div>
       </div>
 
       {(rachaData || objetivoData) && (
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
           {rachaData && (
-            <div className="card" style={{ flex: '1 1 200px' }}>
+            <div style={{ flex: '1 1 200px', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
               <h3 style={{ marginTop: 0 }}>Racha de estudio</h3>
               <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <div>
@@ -341,7 +323,7 @@ export default function ProgressPage() {
             </div>
           )}
           {objetivoData && (
-            <div className="card" style={{ flex: '1 1 200px' }}>
+            <div style={{ flex: '1 1 200px', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
               <h3 style={{ marginTop: 0 }}>Objetivo diario</h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                 <span>{objetivoData.preguntasRespondidasHoy} preguntas hoy</span>
@@ -365,9 +347,9 @@ export default function ProgressPage() {
       )}
 
       {!evolucionLoading && evolucionData && evolucionData.length >= 2 && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
+        <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
           <h3>Evolución (últimos {evolucionData.length} tests)</h3>
-          <div className="table-wrap">
+          <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
                 <tr>
@@ -383,7 +365,7 @@ export default function ProgressPage() {
                     <td style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{evolucionData.length - i}</td>
                     <td>{new Date(e.fecha).toLocaleDateString('es-ES')}</td>
                     <td>
-                      <span className="badge" style={{ fontSize: '0.75rem' }}>
+                      <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 999, background: '#f1f5f9', color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>
                         {e.tipoTest ?? '—'}
                       </span>
                     </td>
@@ -400,11 +382,11 @@ export default function ProgressPage() {
         </div>
       )}
 
-      <div className="card" style={{ marginTop: '1.5rem' }}>
+      <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
         <h3>Estadísticas por tema</h3>
         {loadingCatalog && <p>Cargando catálogo...</p>}
-        {catalogError && <p className="error">{catalogError}</p>}
-        <div className="form-row">
+        {catalogError && <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{catalogError}</p>}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0.75rem 0' }}>
           <select value={selOposicion} onChange={(e) => setSelOposicion(e.target.value)} disabled={loadingCatalog}>
             <option value="">— Oposición —</option>
             {oposiciones.map((o) => (
@@ -434,15 +416,14 @@ export default function ProgressPage() {
         </div>
 
         {loadingTema && <p>Cargando...</p>}
-        {temaError && !loadingTema && <p className="error">{temaError}</p>}
+        {temaError && !loadingTema && <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{temaError}</p>}
 
         {!repasoLoading && repasoData && repasoData.pendientes > 0 && (
-          <div className="repaso-badge" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.75rem 0' }}>
-            <span className="badge badge--repaso">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.75rem 0' }}>
+            <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600 }}>
               {repasoData.pendientes} pendiente{repasoData.pendientes !== 1 ? 's' : ''} de repaso
             </span>
             <button
-              className="btn btn--sm"
               onClick={async () => {
                 const test = await testApi.generate(token, {
                   modo: 'repaso',
@@ -465,23 +446,13 @@ export default function ProgressPage() {
             : 0;
           return (
             <>
-              <div className="stats-cards" style={{ marginTop: '1rem' }}>
-                <div className="stat-card">
-                  <span className="stat-value">{temaStats.preguntasVistas}</span>
-                  <span className="stat-label">Preguntas vistas</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-value">{temaStats.aciertos}</span>
-                  <span className="stat-label">Aciertos</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-value">{temaStats.errores}</span>
-                  <span className="stat-label">Errores</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-value">{pctTema}%</span>
-                  <span className="stat-label">Tasa de acierto</span>
-                </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: '1rem' }}>
+                {[{ value: temaStats.preguntasVistas, label: 'Preguntas vistas' }, { value: temaStats.aciertos, label: 'Aciertos' }, { value: temaStats.errores, label: 'Errores' }, { value: `${pctTema}%`, label: 'Tasa de acierto' }].map(({ value, label }) => (
+                  <div key={label} style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 16px', textAlign: 'center', minWidth: 100, flex: '1 1 100px' }}>
+                    <span style={{ display: 'block', fontSize: 20, fontWeight: 800, color: '#1e293b' }}>{value}</span>
+                    <span style={{ display: 'block', fontSize: 12, color: '#64748b', marginTop: 2 }}>{label}</span>
+                  </div>
+                ))}
               </div>
               {temaStats.preguntasVistas > 0 && (
                 <div style={{ marginTop: '0.75rem' }}>
@@ -500,7 +471,7 @@ export default function ProgressPage() {
       </div>
 
       {selOposicion && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
+        <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
           <h3>Simulacros de esta oposición</h3>
           {simulacrosLoading && <p>Cargando simulacros...</p>}
           {!simulacrosLoading && simulacrosData !== null && simulacrosData.length === 0 && (
@@ -525,7 +496,7 @@ export default function ProgressPage() {
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#22c55e' }}>{mejor.nota.toFixed(2)}</div>
                   </div>
                 </div>
-                <div className="table-wrap">
+                <div style={{ overflowX: 'auto' }}>
                   <table>
                     <thead>
                       <tr>
@@ -588,7 +559,7 @@ export default function ProgressPage() {
         ) : progresoTemas.length === 0 ? (
           <p style={{ color: '#6b7280' }}>Aún no tienes progreso registrado. Completa algunos tests para ver tus estadísticas por tema.</p>
         ) : (
-          <div className="table-wrap">
+          <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
                 <tr>
