@@ -607,7 +607,11 @@ export default function ProgressPage() {
                         <td>
                           <Link to={`/tema/${t.temaId}`} style={{ color: '#1e293b', textDecoration: 'none', fontWeight: 500 }}>{t.temaNombre}</Link>
                         </td>
-                        <td>{t.materiaNombre}</td>
+                        <td>
+                          {t.materiaId
+                            ? <Link to={`/materia/${t.materiaId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{t.materiaNombre}</Link>
+                            : (t.materiaNombre || '—')}
+                        </td>
                         <td>
                           <Link to={`/oposicion/${t.oposicionId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{t.oposicionNombre}</Link>
                         </td>
