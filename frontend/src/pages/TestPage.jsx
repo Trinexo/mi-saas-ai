@@ -87,7 +87,7 @@ export default function TestPage() {
     : `⏱ ${formatTime(elapsed)}`;
 
   return (
-    <section className="card">
+    <section style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <h2 style={{ margin: 0 }}>Pregunta {index + 1} / {test.preguntas.length}</h2>
         <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '1rem', color: timerColor, fontWeight: isWarning ? 700 : 400 }}>
@@ -132,31 +132,56 @@ export default function TestPage() {
       </div>
 
       <p>{question.enunciado}</p>
-      <div className="options">
-        {question.opciones.map((option) => (
-          <button
-            key={option.id}
-            className={answers[question.id] === option.id ? 'selected' : ''}
-            onClick={() => selectAnswer(question.id, option.id)}
-          >
-            {option.texto}
-          </button>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '1rem 0' }}>
+        {question.opciones.map((option) => {
+          const isSelected = answers[question.id] === option.id;
+          return (
+            <button
+              key={option.id}
+              onClick={() => selectAnswer(question.id, option.id)}
+              style={{
+                textAlign: 'left',
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: isSelected ? '2px solid #6366f1' : '1px solid #e2e8f0',
+                background: isSelected ? '#eef2ff' : '#f8fafc',
+                color: isSelected ? '#4338ca' : '#334155',
+                fontWeight: isSelected ? 600 : 400,
+                cursor: 'pointer',
+                fontSize: '0.95rem',
+              }}
+            >
+              {option.texto}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="actions">
-        <button disabled={index === 0} onClick={() => setIndex(index - 1)}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: '1.5rem' }}>
+        <button
+          disabled={index === 0}
+          onClick={() => setIndex(index - 1)}
+          style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', cursor: 'pointer', opacity: index === 0 ? 0.5 : 1 }}
+        >
           Anterior
         </button>
-        <button onClick={() => setIndex(Math.min(index + 1, test.preguntas.length - 1))} disabled={index === test.preguntas.length - 1}>
+        <button
+          onClick={() => setIndex(Math.min(index + 1, test.preguntas.length - 1))}
+          disabled={index === test.preguntas.length - 1}
+          style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', cursor: 'pointer', opacity: index === test.preguntas.length - 1 ? 0.5 : 1 }}
+        >
           Siguiente
         </button>
-        <button onClick={() => onSubmit(answers)} disabled={submitting}>
+        <button
+          onClick={() => onSubmit(answers)}
+          disabled={submitting}
+          style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}
+        >
           {submitting ? 'Enviando...' : `Enviar test (${answered}/${test.preguntas.length})`}
         </button>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginTop: '0.75rem' }}>{error}</p>}
     </section>
   );
 }
