@@ -115,9 +115,14 @@ export default function ReviewPage() {
 
   return (
     <section>
-      <div className="review-header">
-        <h2>Revisión del test</h2>
-        <button className="btn-secondary" onClick={() => navigate('/resultado')}>
+      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
+        <span>›</span>
+        <span style={{ color: '#1e293b', fontWeight: 600 }}>Revisión</span>
+      </nav>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Revisión del test</h2>
+        <button style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, cursor: 'pointer', fontSize: 13 }} onClick={() => navigate('/resultado')}>
           ← Volver al resultado
         </button>
       </div>
@@ -126,7 +131,7 @@ export default function ReviewPage() {
         <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.5rem' }}>
             {testInfo.tipoTest && (
-              <span className="badge">{MODO_LABEL[testInfo.tipoTest] ?? testInfo.tipoTest}</span>
+              <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#f1f5f9', color: '#475569', fontSize: 12, fontWeight: 600 }}>{MODO_LABEL[testInfo.tipoTest] ?? testInfo.tipoTest}</span>
             )}
             {testInfo.temaId
               ? <Link to={`/tema/${testInfo.temaId}`} style={{ fontWeight: 600, color: '#374151', textDecoration: 'none' }}>{testInfo.temaNombre}</Link>
@@ -153,9 +158,9 @@ export default function ReviewPage() {
       )}
 
       <div style={{ display: 'flex', gap: '0.75rem', margin: '1rem 0', flexWrap: 'wrap' }}>
-        <span className="badge" style={{ background: '#dcfce7', color: '#166534' }}>✓ {correctas} correctas</span>
-        <span className="badge" style={{ background: '#fee2e2', color: '#991b1b' }}>✗ {errores} errores</span>
-        <span className="badge" style={{ background: '#f3f4f6', color: '#374151' }}>— {blancos} en blanco</span>
+        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#dcfce7', color: '#166534', fontSize: 12, fontWeight: 600 }}>✓ {correctas} correctas</span>
+        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#fee2e2', color: '#991b1b', fontSize: 12, fontWeight: 600 }}>✗ {errores} errores</span>
+        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#f3f4f6', color: '#374151', fontSize: 12, fontWeight: 600 }}>— {blancos} en blanco</span>
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -183,11 +188,11 @@ export default function ReviewPage() {
         )}
       </div>
 
-      <div className="review-list">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {preguntasFiltradas.map((pregunta, idx) => (
-          <div key={pregunta.preguntaId} className="review-question">
+          <div key={pregunta.preguntaId} style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <p className="review-question-number" style={{ margin: 0, flex: 1 }}>
+              <p style={{ margin: 0, flex: 1, fontWeight: 500, fontSize: 14, color: '#1e293b' }}>
                 <strong>{idx + 1}.</strong> {pregunta.enunciado}
               </p>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -209,48 +214,52 @@ export default function ReviewPage() {
               </div>
             </div>
 
-            <ul className="review-options">
-              {pregunta.opciones.map((opcion) => (
-                <li
-                  key={opcion.id}
-                  className={getOptionClass(opcion, pregunta.respuestaUsuarioId, pregunta.esCorrecta)}
-                >
-                  {opcion.texto}
-                  {opcion.correcta && <span className="review-badge"> ✓</span>}
-                  {pregunta.respuestaUsuarioId === opcion.id && !pregunta.esCorrecta && (
-                    <span className="review-badge"> ✗ (tu respuesta)</span>
-                  )}
-                  {pregunta.respuestaUsuarioId === opcion.id && pregunta.esCorrecta && (
-                    <span className="review-badge"> ✓ (tu respuesta)</span>
-                  )}
-                </li>
-              ))}
+            <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {pregunta.opciones.map((opcion) => {
+                const cls = getOptionClass(opcion, pregunta.respuestaUsuarioId, pregunta.esCorrecta);
+                const bg = cls === 'review-option correcta' || cls === 'review-option correcta_no_elegida'
+                  ? '#f0fdf4' : cls === 'review-option incorrecta' ? '#fef2f2' : '#f8fafc';
+                const border = cls === 'review-option correcta' || cls === 'review-option correcta_no_elegida'
+                  ? '1px solid #bbf7d0' : cls === 'review-option incorrecta' ? '1px solid #fecaca' : '1px solid #e2e8f0';
+                return (
+                  <li key={opcion.id} style={{ padding: '8px 12px', borderRadius: 8, background: bg, border, fontSize: 13, color: '#334155' }}>
+                    {opcion.texto}
+                    {opcion.correcta && <span style={{ marginLeft: 6, color: '#16a34a', fontWeight: 700 }}> ✓</span>}
+                    {pregunta.respuestaUsuarioId === opcion.id && !pregunta.esCorrecta && (
+                      <span style={{ marginLeft: 6, color: '#dc2626', fontWeight: 600 }}> ✗ (tu respuesta)</span>
+                    )}
+                    {pregunta.respuestaUsuarioId === opcion.id && pregunta.esCorrecta && (
+                      <span style={{ marginLeft: 6, color: '#16a34a', fontWeight: 600 }}> ✓ (tu respuesta)</span>
+                    )}
+                  </li>
+                );
+              })}
               {pregunta.respuestaUsuarioId === null && (
-                <li className="review-option blank-chosen">En blanco</li>
+                <li style={{ padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>En blanco</li>
               )}
             </ul>
 
             {pregunta.explicacion && (
-              <div className="review-explanation">
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0f9ff', borderRadius: 8, fontSize: 13, color: '#0369a1', border: '1px solid #bae6fd' }}>
                 <strong>Explicación:</strong> {pregunta.explicacion}
               </div>
             )}
 
             {pregunta.referenciaNormativa && (
-              <p className="review-reference">📖 {pregunta.referenciaNormativa}</p>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: '#64748b' }}>📖 {pregunta.referenciaNormativa}</p>
             )}
           </div>
         ))}
       </div>
 
-      <div className="actions" style={{ marginTop: '2rem' }}>
-        <button onClick={() => navigate('/')}>Nuevo test</button>
-        <button className="btn-secondary" onClick={() => navigate('/progreso')}>Ver progreso</button>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: '2rem' }}>
+        <button style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/')}>Nuevo test</button>
+        <button style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/progreso')}>Ver progreso</button>
         {testInfo?.temaId && (
-          <Link to={`/tema/${testInfo.temaId}`} className="btn-secondary" style={{ textDecoration: 'none' }}>Ver tema</Link>
+          <Link to={`/tema/${testInfo.temaId}`} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>Ver tema</Link>
         )}
         {testInfo?.oposicionId && (
-          <Link to={`/oposicion/${testInfo.oposicionId}`} className="btn-secondary" style={{ textDecoration: 'none' }}>Ver oposición</Link>
+          <Link to={`/oposicion/${testInfo.oposicionId}`} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>Ver oposición</Link>
         )}
       </div>
 
@@ -267,7 +276,7 @@ export default function ReviewPage() {
         />
         {reportError && <p style={{ color: 'red', fontSize: '0.85rem', margin: '4px 0' }}>{reportError}</p>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '1rem' }}>
-          <button className="btn-secondary" onClick={closeReportModal}>Cancelar</button>
+          <button style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, cursor: 'pointer', fontSize: 13 }} onClick={closeReportModal}>Cancelar</button>
           <button onClick={submitReporte}>Enviar reporte</button>
         </div>
       </dialog>
