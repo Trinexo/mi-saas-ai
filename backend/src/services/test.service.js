@@ -77,10 +77,14 @@ export const testService = {
     });
     await testRepository.insertTestPreguntas(test.id, preguntas.map((item) => item.id));
 
+    const { temaNombre, oposicionNombre } = await testRepository.getContextoNombres(temaId || null, oposicionId || null);
+
     return {
       testId: test.id,
       temaId: temaId || null,
       oposicionId: oposicionId || null,
+      temaNombre,
+      oposicionNombre,
       numeroPreguntas: preguntas.length,
       modo,
       dificultad,
