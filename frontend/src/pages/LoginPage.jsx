@@ -23,7 +23,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="center-card">
+    <div style={{ maxWidth: 400, margin: '4rem auto', padding: '2rem', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       <h2>Iniciar sesión</h2>
       <form onSubmit={onSubmit}>
         <input placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -33,7 +33,7 @@ export default function LoginPage() {
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
-        {error && <p className="error">{error}</p>}
+        {error && <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{error}</p>}
         <button type="submit">Entrar</button>
       </form>
       <p>

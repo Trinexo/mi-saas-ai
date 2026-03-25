@@ -99,7 +99,7 @@ export default function ReviewPage() {
     }
   };
 
-  if (error) return <p className="error">{error}</p>;
+  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
   if (!preguntas) return <p>Cargando revisión...</p>;
 
   const correctas = preguntas.filter((p) => p.esCorrecta).length;

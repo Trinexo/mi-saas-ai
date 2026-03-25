@@ -136,7 +136,7 @@ export default function HistorialPage() {
     }
   };
 
-  if (error) return <p className="error">{error}</p>;
+  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
   if (!items) return <p>Cargando historial...</p>;
   if (items.length === 0) return <p>Aún no tienes tests finalizados.</p>;
 
@@ -243,7 +243,7 @@ export default function HistorialPage() {
         </span>
       </div>
 
-      <div className="table-wrap" style={{ marginTop: '1rem' }}>
+      <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
         <table>
           <thead>
             <tr>

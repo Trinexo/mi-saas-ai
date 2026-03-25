@@ -125,7 +125,7 @@ export default function ProfilePage() {
           />
           {profileAction.error && <p style={{ color: '#c00', marginBottom: '.75rem' }}>{profileAction.error}</p>}
           {profileAction.message && <p style={{ color: '#2a7', marginBottom: '.75rem' }}>{profileAction.message}</p>}
-          <button type="submit" disabled={profileAction.isLoading} className="btn-primary">
+          <button type="submit" disabled={profileAction.isLoading} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: profileAction.isLoading ? 0.7 : 1 }}>
             {profileAction.isLoading ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </form>
@@ -157,7 +157,7 @@ export default function ProfilePage() {
           />
           {passwordAction.error && <p style={{ color: '#c00', marginBottom: '.75rem' }}>{passwordAction.error}</p>}
           {passwordAction.message && <p style={{ color: '#2a7', marginBottom: '.75rem' }}>{passwordAction.message}</p>}
-          <button type="submit" disabled={passwordAction.isLoading} className="btn-primary">
+          <button type="submit" disabled={passwordAction.isLoading} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: passwordAction.isLoading ? 0.7 : 1 }}>
             {passwordAction.isLoading ? 'Actualizando...' : 'Cambiar contraseña'}
           </button>
         </form>

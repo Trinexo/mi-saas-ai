@@ -44,7 +44,7 @@ export default function MarcadasPage() {
       )
     : [];
 
-  if (error) return <p className="error">{error}</p>;
+  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
   if (!preguntas) return <p>Cargando preguntas marcadas...</p>;
 
   return (
@@ -68,10 +68,10 @@ export default function MarcadasPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <button
-            className="btn-primary"
             onClick={onPracticar}
             disabled={preguntas.length === 0 || isLoading}
             title={preguntas.length === 0 ? 'Marca primero alguna pregunta' : `Practicar con ${Math.min(preguntas.length, 20)} preguntas`}
+            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: preguntas.length === 0 || isLoading ? 0.6 : 1 }}
           >
             {isLoading ? 'Generando...' : '▶ Practicar'}
           </button>
@@ -96,12 +96,12 @@ export default function MarcadasPage() {
           No tienes preguntas marcadas. Puedes marcar preguntas desde la pantalla de revisión de un test.
         </p>
       ) : (
-        <div className="review-list">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {preguntasFiltradas.length === 0 ? (
             <p style={{ color: '#6b7280' }}>Ningún resultado para «{filtroTema}». Prueba con otro término.</p>
           ) : (
             preguntasFiltradas.map((pregunta) => (
-            <div key={pregunta.id} className="review-question">
+            <div key={pregunta.id} style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0 }}>{pregunta.enunciado}</p>
@@ -116,15 +116,15 @@ export default function MarcadasPage() {
                   </p>
                 </div>
                 <button
-                  className="btn-secondary"
                   onClick={() => onDesmarcar(pregunta.id)}
                   title="Quitar marca"
+                  style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', cursor: 'pointer', fontSize: '0.875rem' }}
                 >
                   ☆ Quitar
                 </button>
               </div>
               {pregunta.explicacion && (
-                <div className="review-explanation" style={{ marginTop: '0.75rem' }}>
+                <div style={{ marginTop: '0.75rem', padding: '10px 14px', background: '#f0f9ff', borderRadius: 8, fontSize: 13, color: '#0369a1', border: '1px solid #bae6fd' }}>
                   {pregunta.explicacion}
                 </div>
               )}
