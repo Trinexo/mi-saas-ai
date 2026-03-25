@@ -49,6 +49,11 @@ export default function MarcadasPage() {
 
   return (
     <section>
+      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
+        <span>›</span>
+        <span style={{ color: '#1e293b', fontWeight: 600 }}>Marcadas</span>
+      </nav>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <div>
           <h2 style={{ margin: 0 }}>Preguntas marcadas ★</h2>
@@ -70,7 +75,7 @@ export default function MarcadasPage() {
           >
             {isLoading ? 'Generando...' : '▶ Practicar'}
           </button>
-          <Link to="/progreso">← Volver al progreso</Link>
+          <Link to="/progreso" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>Ver progreso →</Link>
         </div>
       </div>
 
