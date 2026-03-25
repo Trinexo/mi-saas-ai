@@ -33,9 +33,21 @@ export default function ResultPage() {
   const modoLabel = MODO_LABEL[activeTest?.modo] ?? activeTest?.modo ?? null;
   const dificultadLabel = DIFICULTAD_LABEL[activeTest?.dificultad] ?? activeTest?.dificultad ?? null;
 
+  const temaNombre = activeTest?.temaNombre ?? null;
+  const oposicionNombre = activeTest?.oposicionNombre ?? null;
+  const contexto = temaNombre ?? oposicionNombre ?? null;
+
   return (
     <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 20px' }}>Resultado del test</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Resultado del test</h1>
+      {contexto && (
+        <p style={{ margin: '0 0 20px', fontSize: 13, color: '#64748b' }}>
+          {temaNombre && oposicionNombre
+            ? <>{temaNombre} <span style={{ color: '#cbd5e1' }}>·</span> {oposicionNombre}</>
+            : contexto}
+        </p>
+      )}
+      {!contexto && <div style={{ marginBottom: 20 }} />}
 
       <section style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20 }}>
         {/* Badges de modo/dificultad */}
