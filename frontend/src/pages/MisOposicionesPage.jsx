@@ -26,7 +26,11 @@ export default function MisOposicionesPage() {
 
   return (
     <main style={{ maxWidth: 860, margin: '0 auto', padding: '32px 16px' }}>
-      <Link to="/" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>← Inicio</Link>
+      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
+        <span>›</span>
+        <span style={{ color: '#1e293b', fontWeight: 600 }}>Mis oposiciones</span>
+      </nav>
 
       <h1 style={{ fontSize: 24, fontWeight: 800, margin: '16px 0 4px' }}>Mis oposiciones</h1>
       <p style={{ color: '#64748b', margin: '0 0 28px', fontSize: 13 }}>
