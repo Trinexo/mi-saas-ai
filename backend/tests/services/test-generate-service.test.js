@@ -21,4 +21,8 @@ describe('testService.generate — routing por modo', () => {
     assert.ok(paramasFresh, 'pickFreshQuestions debe aceptar userId');
     assert.ok(paramsAdaptive, 'pickAdaptiveQuestions debe aceptar userId');
   });
+
+  it('testRepository expone getContextoNombres para enriquecer la respuesta del generate', () => {
+    assert.equal(typeof testRepository.getContextoNombres, 'function');
+  });
 });

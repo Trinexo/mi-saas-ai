@@ -364,6 +364,20 @@ export const testRepository = {
     await pool.query(`INSERT INTO tests_preguntas (test_id, pregunta_id, orden) VALUES ${values}`, [testId]);
   },
 
+  async getContextoNombres(temaId, oposicionId) {
+    let temaNombre = null;
+    let oposicionNombre = null;
+    if (temaId) {
+      const r = await pool.query('SELECT nombre FROM temas WHERE id = $1', [temaId]);
+      if (r.rows[0]) temaNombre = r.rows[0].nombre;
+    }
+    if (oposicionId) {
+      const r = await pool.query('SELECT nombre FROM oposiciones WHERE id = $1', [oposicionId]);
+      if (r.rows[0]) oposicionNombre = r.rows[0].nombre;
+    }
+    return { temaNombre, oposicionNombre };
+  },
+
   async getTestById(client, testId) {
     const result = await client.query('SELECT id, usuario_id, estado FROM tests WHERE id = $1', [testId]);
     return result.rows[0] ?? null;
