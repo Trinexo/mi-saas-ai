@@ -252,6 +252,11 @@ export default function ProgressPage() {
 
   return (
     <>
+      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', maxWidth: 900, margin: '0 auto 16px', padding: '0 16px' }}>
+        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
+        <span>›</span>
+        <span style={{ color: '#1e293b', fontWeight: 600 }}>Mi progreso</span>
+      </nav>
       <section>
       <h2>Mi Progreso</h2>
 
