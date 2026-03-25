@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../services/api';
 import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
@@ -604,9 +604,13 @@ export default function ProgressPage() {
                     const color = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
                     return (
                       <tr key={t.temaId}>
-                        <td>{t.temaNombre}</td>
+                        <td>
+                          <Link to={`/tema/${t.temaId}`} style={{ color: '#1e293b', textDecoration: 'none', fontWeight: 500 }}>{t.temaNombre}</Link>
+                        </td>
                         <td>{t.materiaNombre}</td>
-                        <td>{t.oposicionNombre}</td>
+                        <td>
+                          <Link to={`/oposicion/${t.oposicionId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{t.oposicionNombre}</Link>
+                        </td>
                         <td>{t.totalRespondidas}</td>
                         <td>{t.aciertos}</td>
                         <td>{t.errores}</td>
