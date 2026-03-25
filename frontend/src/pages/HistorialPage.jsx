@@ -142,6 +142,11 @@ export default function HistorialPage() {
 
   return (
     <section>
+      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
+        <span>›</span>
+        <span style={{ color: '#1e293b', fontWeight: 600 }}>Historial</span>
+      </nav>
       <h2>Historial de tests</h2>
       <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Total: {total} tests · mostrando {itemsFiltrados.length} con los filtros activos</p>
 
