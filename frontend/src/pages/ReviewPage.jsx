@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 import { testApi } from '../services/testApi';
 import { marcadasApi } from '../services/marcadasApi';
@@ -128,9 +128,10 @@ export default function ReviewPage() {
             {testInfo.tipoTest && (
               <span className="badge">{MODO_LABEL[testInfo.tipoTest] ?? testInfo.tipoTest}</span>
             )}
-            {testInfo.temaNombre && (
-              <span style={{ fontWeight: 600, color: '#374151' }}>{testInfo.temaNombre}</span>
-            )}
+            {testInfo.temaId
+              ? <Link to={`/tema/${testInfo.temaId}`} style={{ fontWeight: 600, color: '#374151', textDecoration: 'none' }}>{testInfo.temaNombre}</Link>
+              : testInfo.temaNombre && <span style={{ fontWeight: 600, color: '#374151' }}>{testInfo.temaNombre}</span>
+            }
             {testInfo.fechaCreacion && (
               <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>
                 {new Date(testInfo.fechaCreacion).toLocaleDateString('es-ES')}
@@ -245,6 +246,12 @@ export default function ReviewPage() {
       <div className="actions" style={{ marginTop: '2rem' }}>
         <button onClick={() => navigate('/')}>Nuevo test</button>
         <button className="btn-secondary" onClick={() => navigate('/progreso')}>Ver progreso</button>
+        {testInfo?.temaId && (
+          <Link to={`/tema/${testInfo.temaId}`} className="btn-secondary" style={{ textDecoration: 'none' }}>Ver tema</Link>
+        )}
+        {testInfo?.oposicionId && (
+          <Link to={`/oposicion/${testInfo.oposicionId}`} className="btn-secondary" style={{ textDecoration: 'none' }}>Ver oposición</Link>
+        )}
       </div>
 
       <dialog ref={dialogRef} style={{ borderRadius: '8px', padding: '1.5rem', maxWidth: '460px', width: '90%', border: '1px solid #ccc' }}>

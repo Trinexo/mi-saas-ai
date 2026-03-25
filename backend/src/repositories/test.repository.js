@@ -265,11 +265,13 @@ export const testRepository = {
 
   async getTestReview(userId, testId) {
     const testResult = await pool.query(
-      `SELECT t.id, t.tema_id, te.nombre AS tema_nombre, t.numero_preguntas,
-              t.tipo_test, t.fecha_creacion,
+      `SELECT t.id, t.tema_id, te.nombre AS tema_nombre,
+              t.oposicion_id, op.nombre AS oposicion_nombre,
+              t.numero_preguntas, t.tipo_test, t.fecha_creacion,
               rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
        FROM tests t
        LEFT JOIN temas te ON te.id = t.tema_id
+       LEFT JOIN oposiciones op ON op.id = t.oposicion_id
        LEFT JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.id = $1 AND t.usuario_id = $2`,
       [testId, userId],
@@ -296,6 +298,8 @@ export const testRepository = {
         id: Number(t.id),
         temaId: t.tema_id ? Number(t.tema_id) : null,
         temaNombre: t.tema_nombre || null,
+        oposicionId: t.oposicion_id ? Number(t.oposicion_id) : null,
+        oposicionNombre: t.oposicion_nombre || null,
         numeroPreguntas: Number(t.numero_preguntas),
         tipoTest: t.tipo_test,
         fechaCreacion: t.fecha_creacion,
