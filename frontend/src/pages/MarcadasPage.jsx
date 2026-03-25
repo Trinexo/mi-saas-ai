@@ -101,7 +101,13 @@ export default function MarcadasPage() {
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0 }}>{pregunta.enunciado}</p>
                   <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '4px 0 0' }}>
-                    {pregunta.temaNombre} · {DIFICULTAD_LABEL[pregunta.nivelDificultad] ?? '—'}
+                    {pregunta.temaId
+                      ? <Link to={`/tema/${pregunta.temaId}`} style={{ color: '#6b7280', textDecoration: 'none' }}>{pregunta.temaNombre}</Link>
+                      : pregunta.temaNombre}
+                    {pregunta.oposicionNombre && (
+                      <> · <Link to={`/oposicion/${pregunta.oposicionId}`} style={{ color: '#94a3b8', textDecoration: 'none' }}>{pregunta.oposicionNombre}</Link></>
+                    )}
+                    {' · '}{DIFICULTAD_LABEL[pregunta.nivelDificultad] ?? '—'}
                   </p>
                 </div>
                 <button
