@@ -9,47 +9,9 @@ body {
   color: #1f2937;
 }
 
-.app-shell {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.topbar nav {
-  display: flex;
-  gap: 10px;
-}
-
-.card,
-.center-card {
-  background: white;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.center-card {
-  max-width: 420px;
-  margin: 40px auto;
-}
-
 form {
   display: grid;
   gap: 10px;
-}
-
-.form-grid {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 12px;
 }
 
 input,
@@ -67,30 +29,6 @@ button {
   border: none;
 }
 
-button.selected {
-  background: #2563eb;
-}
-
-.options {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.error {
-  color: #dc2626;
-}
-
-.table-wrap {
-  overflow: auto;
-  margin-bottom: 16px;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -101,10 +39,4 @@ td {
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   padding: 8px;
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
 }
