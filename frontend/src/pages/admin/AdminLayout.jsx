@@ -4,15 +4,15 @@ import { useRevision } from '../../state/revisionContext.jsx';
 export default function AdminLayout() {
   const { pendientes } = useRevision();
   return (
-    <div className="admin-layout">
-      <nav className="admin-sidebar">
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <nav style={{ width: 220, background: '#1f2937', color: '#f9fafb', padding: '24px 16px', flexShrink: 0 }}>
         <h3>Panel Admin</h3>
         <ul>
           <li>
             <NavLink
               to="/admin"
               end
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
+              style={({ isActive }) => isActive ? { fontWeight: 700, color: '#60a5fa' } : { color: '#d1d5db' }}
             >
               Dashboard
             </NavLink>
@@ -20,7 +20,7 @@ export default function AdminLayout() {
           <li>
             <NavLink
               to="/admin/preguntas"
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
+              style={({ isActive }) => isActive ? { fontWeight: 700, color: '#60a5fa' } : { color: '#d1d5db' }}
             >
               Preguntas
             </NavLink>
@@ -28,7 +28,7 @@ export default function AdminLayout() {
           <li>
             <NavLink
               to="/admin/catalogo"
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
+              style={({ isActive }) => isActive ? { fontWeight: 700, color: '#60a5fa' } : { color: '#d1d5db' }}
             >
               Catálogo
             </NavLink>
@@ -36,7 +36,7 @@ export default function AdminLayout() {
           <li>
             <NavLink
               to="/admin/usuarios"
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
+              style={({ isActive }) => isActive ? { fontWeight: 700, color: '#60a5fa' } : { color: '#d1d5db' }}
             >
               Usuarios
             </NavLink>
@@ -44,7 +44,7 @@ export default function AdminLayout() {
           <li>
             <NavLink
               to="/admin/revision"
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
+              style={({ isActive }) => isActive ? { fontWeight: 700, color: '#60a5fa' } : { color: '#d1d5db' }}
             >
               Revisi\u00f3n
               {pendientes > 0 && (
@@ -67,7 +67,7 @@ export default function AdminLayout() {
           </li>
         </ul>
       </nav>
-      <div className="admin-content">
+      <div style={{ flex: 1, padding: 24, overflow: 'auto' }}>
         <Outlet />
       </div>
     </div>

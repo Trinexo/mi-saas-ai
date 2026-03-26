@@ -73,7 +73,7 @@ export default function AdminDashboardPage() {
       .catch(() => setPreguntasPorEstado([]));  }, [token]);
 
   return (
-    <section className="card">
+    <section style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
       <h2 style={{ marginTop: 0 }}>Dashboard del sistema</h2>
 
       {error && <p style={{ color: '#c00' }}>{error}</p>}
