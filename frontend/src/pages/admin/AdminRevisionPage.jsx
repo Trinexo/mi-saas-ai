@@ -77,7 +77,7 @@ export default function AdminRevisionPage() {
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
   return (
-    <section className="card">
+    <section style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
       <h2 style={{ marginTop: 0 }}>Cola de revisi\u00f3n</h2>
 
       {error && <p style={{ color: '#c00' }}>{error}</p>}

@@ -11,8 +11,8 @@ function Shell() {
   };
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16 }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
         <h1>Plataforma Test</h1>
         <nav>
           <Link to="/">Inicio</Link>

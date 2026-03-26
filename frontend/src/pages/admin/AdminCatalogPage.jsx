@@ -15,7 +15,7 @@ function InlineForm({ placeholder, onSave, onCancel, initialValue = '' }) {
         maxLength={200}
       />
       <button onClick={() => onSave(value.trim())} disabled={value.trim().length < 2}>Guardar</button>
-      <button className="btn-secondary" onClick={onCancel}>Cancelar</button>
+      <button style={{ background: '#6b7280' }} onClick={onCancel}>Cancelar</button>
     </div>
   );
 }
@@ -133,7 +133,7 @@ export default function AdminCatalogPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', alignItems: 'start' }}>
         {/* OPOSICIONES */}
-        <div className="card">
+        <div style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>Oposiciones</h3>
             <button onClick={() => { setAddingOposicion(true); setEditingOposicion(null); }}>+ Nueva</button>
@@ -183,7 +183,7 @@ export default function AdminCatalogPage() {
         </div>
 
         {/* MATERIAS */}
-        <div className="card">
+        <div style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>Materias</h3>
             {selOposicion && (
@@ -236,7 +236,7 @@ export default function AdminCatalogPage() {
         </div>
 
         {/* TEMAS */}
-        <div className="card">
+        <div style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0 }}>Temas</h3>
             {selMateria && (

@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
   const totalPages = Math.max(1, Math.ceil((data.pagination.total || 0) / (data.pagination.pageSize || filters.page_size)));
 
   return (
-    <section className="card">
+    <section style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
       <h2>Gestión de usuarios</h2>
 
       {/* Filtros */}
@@ -108,7 +108,7 @@ export default function AdminUsersPage() {
       {msg && <p style={{ color: '#2a7', marginBottom: '0.75rem' }}>{msg}</p>}
 
       {/* Tabla */}
-      <div className="table-wrap">
+      <div style={{ overflow: 'auto', marginBottom: 16 }}>
         <table>
           <thead>
             <tr>
@@ -170,7 +170,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Paginación */}
-      <div className="row" style={{ marginTop: '0.75rem', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.75rem', gap: '0.5rem' }}>
         <button
           type="button"
           onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}

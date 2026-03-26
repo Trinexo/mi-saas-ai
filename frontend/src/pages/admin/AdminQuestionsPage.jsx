@@ -307,11 +307,11 @@ export default function AdminQuestionsPage() {
   const totalPages = Math.max(1, Math.ceil((data.pagination.total || 0) / (data.pagination.pageSize || filters.pageSize)));
 
   return (
-    <section className="card">
+    <section style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
       <h2>Admin preguntas</h2>
 
       {/* Filtros */}
-      <div className="form-grid">
+      <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
         <select
           value={filters.oposicionId}
           onChange={(e) => handleFiltroOposicion(e.target.value)}
@@ -368,7 +368,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Tabla */}
-      <div className="table-wrap">
+      <div style={{ overflow: 'auto', marginBottom: 16 }}>
         <table>
           <thead>
             <tr>
@@ -391,11 +391,11 @@ export default function AdminQuestionsPage() {
                 <td>{item.enunciado}</td>
                 <td>{item.tema_nombre}</td>
                 <td>{item.nivel_dificultad}</td>
-                <td className="row" style={{ gap: '0.25rem' }}>
+                <td style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <button type="button" onClick={() => onEdit(item.id)}>
                     Editar
                   </button>
-                  <button type="button" className="btn-danger" onClick={() => onDelete(item.id)}>
+                  <button type="button" style={{ background: '#dc2626' }} onClick={() => onDelete(item.id)}>
                     Eliminar
                   </button>
                 </td>
@@ -404,7 +404,7 @@ export default function AdminQuestionsPage() {
           </tbody>
         </table>
       </div>
-      <div className="row" style={{ marginTop: '0.75rem', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.75rem', gap: '0.5rem' }}>
         <button
           type="button"
           onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
@@ -428,7 +428,7 @@ export default function AdminQuestionsPage() {
       <h3 id="pregunta-form" style={{ marginTop: '1.5rem' }}>
         {editingId ? `Editando pregunta #${editingId}` : 'Nueva pregunta'}
       </h3>
-      <form onSubmit={editingId ? onUpdate : onCreate} className="form-grid">
+      <form onSubmit={editingId ? onUpdate : onCreate} style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
         <label>
           Oposición *
           <select
@@ -499,7 +499,7 @@ export default function AdminQuestionsPage() {
         </label>
 
         {form.opciones.map((item, index) => (
-          <div key={index} className="row" style={{ gap: '0.5rem' }}>
+          <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <input
               placeholder={`Opción ${index + 1} *`}
               value={item.texto}
@@ -525,7 +525,7 @@ export default function AdminQuestionsPage() {
           </div>
         ))}
 
-        <div className="row" style={{ gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button type="submit">{editingId ? 'Guardar cambios' : 'Crear pregunta'}</button>
           {editingId && (
             <button type="button" onClick={onCancelEdit}>
@@ -537,7 +537,7 @@ export default function AdminQuestionsPage() {
 
       {/* Importador CSV */}
       <h3 style={{ marginTop: '1.5rem' }}>Importador CSV</h3>
-      <form onSubmit={onImportCsv} className="form-grid">
+      <form onSubmit={onImportCsv} style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
         <textarea
           rows={8}
           placeholder="tema_id,enunciado,explicacion,referencia_normativa,nivel_dificultad,opcion_1,opcion_2,opcion_3,opcion_4,opcion_correcta"
@@ -553,7 +553,7 @@ export default function AdminQuestionsPage() {
       {csvPreview.length > 0 && (
         <>
           <h4>Previsualización (máx. 5 filas)</h4>
-          <div className="table-wrap">
+          <div style={{ overflow: 'auto', marginBottom: 16 }}>
             <table>
               <thead>
                 <tr>
@@ -591,7 +591,7 @@ export default function AdminQuestionsPage() {
 
       {/* Moderación de reportes */}
       <h3 style={{ marginTop: '1.5rem' }}>Moderación de reportes</h3>
-      <div className="row" style={{ marginBottom: '0.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
         <select value={reportesEstado} onChange={(e) => setReportesEstado(e.target.value)}>
           <option value="">Todos</option>
           <option value="abierto">Abierto</option>
@@ -601,7 +601,7 @@ export default function AdminQuestionsPage() {
         </select>
       </div>
 
-      <div className="table-wrap">
+      <div style={{ overflow: 'auto', marginBottom: 16 }}>
         <table>
           <thead>
             <tr>
@@ -642,7 +642,7 @@ export default function AdminQuestionsPage() {
       {user?.role === 'admin' && (
         <>
           <h3 style={{ marginTop: '1.5rem' }}>Auditoría de cambios en preguntas</h3>
-          <div className="row" style={{ gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
             <input
               placeholder="Pregunta ID"
               value={auditoriaFilters.preguntaId}
@@ -666,7 +666,7 @@ export default function AdminQuestionsPage() {
             </select>
             <button type="button" onClick={loadAuditoria}>Buscar</button>
           </div>
-          <div className="table-wrap">
+          <div style={{ overflow: 'auto', marginBottom: 16 }}>
             <table>
               <thead>
                 <tr>
@@ -698,7 +698,7 @@ export default function AdminQuestionsPage() {
             </table>
           </div>
           {(auditoria.pagination.total ?? 0) > 0 && (
-            <div className="row" style={{ marginTop: '0.75rem', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.75rem', gap: '0.5rem' }}>
               <button
                 type="button"
                 onClick={() => setAuditoriaFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
@@ -733,8 +733,8 @@ export default function AdminQuestionsPage() {
         </>
       )}
 
-      {msg && <p className="success" style={{ color: 'green', marginTop: '0.75rem' }}>{msg}</p>}
-      {error && <p className="error">{error}</p>}
+      {msg && <p style={{ color: 'green', marginTop: '0.75rem' }}>{msg}</p>}
+      {error && <p style={{ color: '#dc2626' }}>{error}</p>}
     </section>
   );
 }
