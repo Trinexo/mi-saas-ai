@@ -414,7 +414,7 @@ export default function HomePage() {
   };
 
   if (loading) return <p>Cargando catálogo...</p>;
-  if (error) return <p className="error">{error}</p>;
+  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
 
   const diasActivos7 = racha?.actividad7Dias?.filter((d) => d.activo).length || 0;
   const faltanObjetivo = Math.max(0, Number(objetivoDiario?.objetivoPreguntasDia || 10) - Number(objetivoDiario?.preguntasRespondidasHoy || 0));
@@ -427,7 +427,7 @@ export default function HomePage() {
       {user?.oposicionPreferidaId && resumenOposicion && (() => {
         const mc = resumenOposicion.maestria >= 70 ? '#22c55e' : resumenOposicion.maestria >= 40 ? '#f59e0b' : '#ef4444';
         return (
-          <section className="card" style={{ borderLeft: `4px solid ${mc}` }}>
+          <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16, borderLeft: `4px solid ${mc}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
               <div>
                 <h2 style={{ margin: 0 }}>Tu oposición</h2>
@@ -450,7 +450,7 @@ export default function HomePage() {
                 <div style={{ width: `${resumenOposicion.maestria}%`, height: '100%', background: mc, borderRadius: 999, transition: 'width .4s' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                <p className="hint" style={{ margin: 0 }}>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
                   {resumenOposicion.temasPracticados} de {resumenOposicion.totalTemas} temas practicados · {resumenOposicion.porcentajeAcierto}% acierto
                 </p>
                 <a
@@ -467,9 +467,9 @@ export default function HomePage() {
       })()}
 
       {!user?.oposicionPreferidaId && (
-        <section className="card" style={{ borderLeft: '4px solid #f59e0b' }}>
+        <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16, borderLeft: '4px solid #f59e0b' }}>
           <h2>Configura tu oposición</h2>
-          <p className="hint">Selecciona la oposición a la que te preparas para personalizar tu experiencia.</p>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Selecciona la oposición a la que te preparas para personalizar tu experiencia.</p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.5rem' }}>
             <select
               value={selectorOposicionId}
@@ -491,27 +491,27 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Test recomendado</h2>
         <button disabled={isLoading} onClick={onStartRecommended}>
           {isLoading ? 'Generando...' : 'Hacer test ahora'}
         </button>
-        <p className="hint" style={{ marginTop: '0.5rem' }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
           {recomendado?.motivo || 'Empieza con un test rápido de 10 preguntas'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Foco de hoy</h2>
-        <p className="hint" style={{ marginTop: '0.25rem' }}>{focoHoy?.motivo || 'Activa tu sesión con 10 preguntas'}</p>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>{focoHoy?.motivo || 'Activa tu sesión con 10 preguntas'}</p>
         <button disabled={isLoading} onClick={onStartFocoHoy}>
           {isLoading ? 'Generando...' : 'Empezar foco'}
         </button>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Resumen semanal</h2>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           {Number(resumenSemana?.testsUltimos7Dias || 0) === 0
             ? 'Aún no tienes actividad esta semana'
             : `Llevas ${resumenSemana?.testsUltimos7Dias || 0} tests esta semana, ¡buen ritmo!`}
@@ -524,9 +524,9 @@ export default function HomePage() {
         </ul>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Continuidad 14 días</h2>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           Días activos: <strong>{actividad14?.diasActivos14 ?? 0}/14</strong>
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14, 1fr)', gap: 4, marginBottom: '0.5rem' }}>
@@ -538,21 +538,21 @@ export default function HomePage() {
             />
           ))}
         </div>
-        <p className="hint">
+        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
           {actividad14?.estudioHoy
             ? 'Hoy ya has sumado actividad ✅'
             : 'Haz un test rápido para mantener la racha'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Tema a reforzar</h2>
         {temasDebiles[0] ? (
           <>
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
               <strong>{temasDebiles[0].temaNombre}</strong> · {temasDebiles[0].materiaNombre} · {temasDebiles[0].oposicionNombre}
             </p>
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
               Acierto actual: {temasDebiles[0].porcentajeAcierto}% ({temasDebiles[0].aciertos}A · {temasDebiles[0].errores}E)
             </p>
             <button disabled={isLoading} onClick={onRefuerzoTemaDebil}>
@@ -560,13 +560,13 @@ export default function HomePage() {
             </button>
           </>
         ) : (
-          <p className="hint" style={{ marginTop: 0 }}>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
             Aún no hay datos suficientes para identificar un tema débil.
           </p>
         )}
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Insight mensual</h2>
         <ul>
           <li>Tests (30 días): <strong>{insightMensual?.testsUltimos30Dias ?? 0}</strong></li>
@@ -574,23 +574,23 @@ export default function HomePage() {
           <li>Nota media (30 días): <strong>{Number(insightMensual?.notaMediaUltimos30Dias ?? 0).toFixed(2)}</strong></li>
           <li>Delta nota 7d: <strong>{Number(insightMensual?.deltaNota7Dias ?? 0).toFixed(2)}</strong></li>
         </ul>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           {insightMensual?.tendencia === 'subiendo' && 'Tu nota va en tendencia positiva.'}
           {insightMensual?.tendencia === 'bajando' && 'Conviene reforzar temas débiles esta semana.'}
           {insightMensual?.tendencia === 'estable' && 'Mantén la constancia para subir tu media.'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Rendimiento por modo</h2>
         {rendimientoModos.length === 0 ? (
-          <p className="hint" style={{ marginTop: 0 }}>Aún no hay datos suficientes por modo en los últimos 30 días.</p>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>Aún no hay datos suficientes por modo en los últimos 30 días.</p>
         ) : (
           <>
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
               Mejor modo actual: <strong>{rendimientoModos[0].modo}</strong> (nota media {Number(rendimientoModos[0].notaMedia).toFixed(2)})
             </p>
-            <div className="table-wrap" style={{ marginTop: '0.5rem' }}>
+            <div style={{ overflowX: 'auto', marginTop: '0.5rem' }}>
               <table>
                 <thead>
                   <tr>
@@ -618,9 +618,9 @@ export default function HomePage() {
         )}
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Progreso semanal</h2>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           Tests semana: <strong>{progresoSemanal?.testsSemana ?? 0}</strong> · Nota media: <strong>{Number(progresoSemanal?.notaMediaSemana ?? 0).toFixed(2)}</strong>
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: '0.5rem' }}>
@@ -636,70 +636,70 @@ export default function HomePage() {
             );
           })}
         </div>
-        <p className="hint">
+        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
           {(progresoSemanal?.testsSemana ?? 0) === 0
             ? 'Empieza hoy con un test rápido.'
             : 'Has mantenido actividad esta semana.'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Eficiencia</h2>
         <ul>
           <li>Tests analizados: <strong>{eficienciaTiempo?.testsAnalizados ?? 0}</strong></li>
           <li>Tiempo medio/test: <strong>{Math.round(Number(eficienciaTiempo?.tiempoMedioPorTestSegundos ?? 0) / 60)} min</strong></li>
           <li>Aciertos por minuto: <strong>{Number(eficienciaTiempo?.aciertosPorMinuto ?? 0).toFixed(2)}</strong></li>
         </ul>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           {eficienciaTiempo?.tendenciaTiempo === 'mejorando' && 'Tu ritmo de resolución está mejorando.'}
           {eficienciaTiempo?.tendenciaTiempo === 'empeorando' && 'Tu tiempo medio ha subido; conviene practicar bloques cortos.'}
           {eficienciaTiempo?.tendenciaTiempo === 'estable' && 'Mantienes un ritmo estable de resolución.'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Consistencia diaria</h2>
         <ul>
           <li>Días activos (30): <strong>{consistenciaDiaria?.diasActivos30 ?? 0}</strong></li>
           <li>Días inactivos (30): <strong>{consistenciaDiaria?.diasInactivos30 ?? 30}</strong></li>
           <li>Constancia: <strong>{Number(consistenciaDiaria?.porcentajeConstancia ?? 0).toFixed(2)}%</strong></li>
         </ul>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           {consistenciaDiaria?.tendenciaConstancia === 'mejorando' && 'Tu constancia diaria está subiendo, sigue así.'}
           {consistenciaDiaria?.tendenciaConstancia === 'empeorando' && 'Recupera hábito con bloques cortos diarios.'}
           {consistenciaDiaria?.tendenciaConstancia === 'estable' && 'Mantienes un ritmo constante de estudio.'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Ritmo de resolución</h2>
         <ul>
           <li>Segundos por pregunta: <strong>{Number(ritmoPregunta?.segundosMediosPorPregunta ?? 0).toFixed(2)} s</strong></li>
           <li>Preguntas analizadas: <strong>{ritmoPregunta?.preguntasAnalizadas ?? 0}</strong></li>
           <li>Tests analizados: <strong>{ritmoPregunta?.testsAnalizados ?? 0}</strong></li>
         </ul>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           {ritmoPregunta?.tendenciaRitmo === 'mejorando' && 'Tu ritmo está mejorando, mantén la constancia.'}
           {ritmoPregunta?.tendenciaRitmo === 'empeorando' && 'Haz bloques más cortos para recuperar velocidad.'}
           {ritmoPregunta?.tendenciaRitmo === 'estable' && 'Ritmo estable, puedes subir intensidad progresivamente.'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Balance de precisión</h2>
         <ul>
           <li>Acierto: <strong>{Number(balancePrecision?.porcentajeAcierto ?? 0).toFixed(2)}%</strong> ({balancePrecision?.aciertosTotales ?? 0})</li>
           <li>Error: <strong>{Number(balancePrecision?.porcentajeError ?? 0).toFixed(2)}%</strong> ({balancePrecision?.erroresTotales ?? 0})</li>
           <li>Blanco: <strong>{Number(balancePrecision?.porcentajeBlanco ?? 0).toFixed(2)}%</strong> ({balancePrecision?.blancosTotales ?? 0})</li>
         </ul>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
           {Number(balancePrecision?.porcentajeBlanco ?? 0) > 20 && 'Reduce blancos con tests más cortos.'}
           {Number(balancePrecision?.porcentajeBlanco ?? 0) <= 20 && Number(balancePrecision?.porcentajeError ?? 0) > 35 && 'Conviene reforzar conceptos clave.'}
           {Number(balancePrecision?.porcentajeBlanco ?? 0) <= 20 && Number(balancePrecision?.porcentajeError ?? 0) <= 35 && 'Buen equilibrio de respuesta.'}
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Tu nivel</h2>
         <p>
           Nivel <strong>{gamificacion?.nivelActual ?? 1}</strong> · <strong>{gamificacion?.xpTotal ?? 0} XP</strong>
@@ -709,12 +709,12 @@ export default function HomePage() {
           value={xpEnNivel}
           style={{ width: '100%' }}
         />
-        <p className="hint" style={{ marginTop: '0.5rem' }}>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
           Siguiente nivel: {gamificacion?.xpSiguienteNivel ?? 100} XP
         </p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Objetivo de hoy</h2>
         {(() => {
           const respondidas = Number(objetivoDiario?.preguntasRespondidasHoy ?? 0);
@@ -730,7 +730,7 @@ export default function HomePage() {
               <div style={{ background: '#e5e7eb', borderRadius: 999, height: 12, overflow: 'hidden' }}>
                 <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.4s ease' }} />
               </div>
-              <p className="hint" style={{ marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
                 {objetivoDiario?.cumplido
                   ? '¡Objetivo del día completado! ✅'
                   : faltanObjetivo > 0
@@ -742,20 +742,20 @@ export default function HomePage() {
         })()}
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Tu racha</h2>
         <p>
           <strong>{racha?.rachaActual ?? 0} días</strong> seguidos
         </p>
-        <p className="hint">
+        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
           Mejor racha: {racha?.mejorRacha ?? 0} días · Últimos 7 días activos: {diasActivos7}/7
         </p>
-        <p className="hint">{racha?.estudioHoy ? 'Racha activa' : 'No rompas tu racha de estudio'}</p>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{racha?.estudioHoy ? 'Racha activa' : 'No rompas tu racha de estudio'}</p>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
         <h2>Repaso pendiente hoy</h2>
-        <p className="hint">
+        <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
           {repasoPendiente?.totalPendientes
             ? `Tienes ${repasoPendiente.totalPendientes} preguntas pendientes de repetición espaciada.`
             : 'No tienes preguntas pendientes hoy.'}
@@ -769,9 +769,9 @@ export default function HomePage() {
         </button>
       </section>
 
-      <section className="card">
+      <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
       <h2>Generar test</h2>
-      <div className="form-grid">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', margin: '0.75rem 0' }}>
         <select value={selection.oposicionId} onChange={(e) => onOposicion(e.target.value)} disabled={selection.modo === 'marcadas'}>
           <option value="">{selection.modo === 'marcadas' ? '(no aplica en modo marcadas)' : 'Selecciona oposición'}</option>
           {oposiciones.map((item) => (
@@ -851,10 +851,10 @@ export default function HomePage() {
       </button>
     </section>
 
-    <section className="card">
+    <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 }}>
       <h2>Simulacro de examen</h2>
-      <p className="hint">Preguntas proporcionales de toda la oposición. Opcionalmente con tiempo límite.</p>
-      <div className="form-grid">
+      <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Preguntas proporcionales de toda la oposición. Opcionalmente con tiempo límite.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', margin: '0.75rem 0' }}>
         <select
           value={simulacro.oposicionId}
           onChange={(e) => setSimulacro({ ...simulacro, oposicionId: e.target.value })}
