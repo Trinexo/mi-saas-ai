@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
-
-const MODO_LABEL = { adaptativo: 'Adaptativo', normal: 'Normal', repaso: 'Repaso', marcadas: 'Marcadas', simulacro: 'Simulacro', refuerzo: 'Refuerzo' };
+import HistorialFiltros from '../components/historial/HistorialFiltros';
+import HistorialStats from '../components/historial/HistorialStats';
+import HistorialTabla from '../components/historial/HistorialTabla';
+import HistorialPaginacion from '../components/historial/HistorialPaginacion';
 
 export default function HistorialPage() {
   const { token } = useAuth();
@@ -138,158 +140,52 @@ export default function HistorialPage() {
 
   if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
   if (!items) return <p>Cargando historial...</p>;
-  if (items.length === 0) return <p>Aún no tienes tests finalizados.</p>;
+  if (items.length === 0) return <p>AÃºn no tienes tests finalizados.</p>;
 
   return (
     <section>
       <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
         <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
-        <span>›</span>
+        <span>â€º</span>
         <span style={{ color: '#1e293b', fontWeight: 600 }}>Historial</span>
       </nav>
       <h2>Historial de tests</h2>
-      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Total: {total} tests · mostrando {itemsFiltrados.length} con los filtros activos</p>
+      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Total: {total} tests Â· mostrando {itemsFiltrados.length} con los filtros activos</p>
 
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', margin: '0.75rem 0 1rem', flexWrap: 'wrap' }}>
-        <select value={modoFiltro} onChange={(e) => setModoFiltro(e.target.value)}>
-          <option value="todos">Todos los modos</option>
-          <option value="adaptativo">Adaptativo</option>
-          <option value="normal">Normal</option>
-          <option value="repaso">Repaso</option>
-          <option value="refuerzo">Refuerzo</option>
-          <option value="simulacro">Simulacro</option>
-          <option value="marcadas">Marcadas</option>
-        </select>
-        <select value={oposicionId} onChange={(e) => { setOposicionId(e.target.value); setPage(1); }}>
-          <option value="">Todas las oposiciones</option>
-          {oposiciones.map((op) => (
-            <option key={op.id} value={String(op.id)}>{op.nombre}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          value={textoFiltro}
-          onChange={(e) => setTextoFiltro(e.target.value)}
-          placeholder="Buscar por oposición, materia o tema"
-          style={{ minWidth: 260 }}
-        />
-        <select value={notaFiltro} onChange={(e) => setNotaFiltro(e.target.value)}>
-          <option value="todas">Todas las notas</option>
-          <option value="aprobados">Aprobados (≥5)</option>
-          <option value="suspensos">Suspensos (&lt;5)</option>
-        </select>
-        <select value={periodoFiltro} onChange={(e) => { setPeriodoFiltro(e.target.value); setPage(1); }}>
-          <option value="7d">Últimos 7 días</option>
-          <option value="30d">Últimos 30 días</option>
-          <option value="todo">Todo</option>
-        </select>
-        <select value={ordenFiltro} onChange={(e) => setOrdenFiltro(e.target.value)}>
-          <option value="fecha_desc">Fecha (reciente primero)</option>
-          <option value="nota_desc">Nota (alta primero)</option>
-        </select>
-        <select value={erroresFiltro} onChange={(e) => setErroresFiltro(e.target.value)}>
-          <option value="todos">Errores: todos</option>
-          <option value="con">Con errores</option>
-          <option value="sin">Sin errores</option>
-        </select>
-        <select value={duracionFiltro} onChange={(e) => setDuracionFiltro(e.target.value)}>
-          <option value="todos">Duración: todos</option>
-          <option value="cortos">Cortos (&lt;10 min)</option>
-          <option value="medios">Medios (10–30 min)</option>
-          <option value="largos">Largos (&gt;30 min)</option>
-        </select>
-        <select value={blancosFiltro} onChange={(e) => setBlancosFiltro(e.target.value)}>
-          <option value="todos">Blancos: todos</option>
-          <option value="con">Con blancos</option>
-          <option value="sin">Sin blancos</option>
-        </select>
-        <select value={ritmoFiltro} onChange={(e) => setRitmoFiltro(e.target.value)}>
-          <option value="todos">Ritmo: todos</option>
-          <option value="rapidos">Rápidos (&lt;45s/pregunta)</option>
-          <option value="medios">Medios (45–90s/pregunta)</option>
-          <option value="pausados">Pausados (&gt;90s/pregunta)</option>
-        </select>
-        <select value={consistenciaFiltro} onChange={(e) => setConsistenciaFiltro(e.target.value)}>
-          <option value="todos">Constancia diaria: todos</option>
-          <option value="alta">Alta (≥3 tests en el día)</option>
-          <option value="media">Media (2 tests en el día)</option>
-          <option value="baja">Baja (1 test en el día)</option>
-        </select>
-        <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Mostrando {itemsFiltrados.length} de {items.length}</span>
-      </div>
+      <HistorialFiltros
+        oposiciones={oposiciones}
+        modoFiltro={modoFiltro} setModoFiltro={setModoFiltro}
+        oposicionId={oposicionId} setOposicionId={setOposicionId}
+        textoFiltro={textoFiltro} setTextoFiltro={setTextoFiltro}
+        notaFiltro={notaFiltro} setNotaFiltro={setNotaFiltro}
+        periodoFiltro={periodoFiltro} setPeriodoFiltro={setPeriodoFiltro}
+        ordenFiltro={ordenFiltro} setOrdenFiltro={setOrdenFiltro}
+        erroresFiltro={erroresFiltro} setErroresFiltro={setErroresFiltro}
+        duracionFiltro={duracionFiltro} setDuracionFiltro={setDuracionFiltro}
+        blancosFiltro={blancosFiltro} setBlancosFiltro={setBlancosFiltro}
+        ritmoFiltro={ritmoFiltro} setRitmoFiltro={setRitmoFiltro}
+        consistenciaFiltro={consistenciaFiltro} setConsistenciaFiltro={setConsistenciaFiltro}
+        filtradosCount={itemsFiltrados.length}
+        totalCount={items.length}
+        onResetPage={() => setPage(1)}
+      />
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <div style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Tests últimos 7 días</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{testsLast7Days}</div>
-        </div>
-        <div style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Mejor nota últimos 30 días</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{bestNoteLast30Days.toFixed(2)}</div>
-        </div>
-      </div>
+      <HistorialStats
+        testsLast7Days={testsLast7Days}
+        bestNoteLast30Days={bestNoteLast30Days}
+        mejorTestSemana={mejorTestSemana}
+        onReintentar={handleReintentar}
+      />
 
-      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => handleReintentar(mejorTestSemana.id)}
-          disabled={!mejorTestSemana}
-        >
-          Reintentar mejor test semanal
-        </button>
-        <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-          {mejorTestSemana
-            ? `Mejor nota 7 días: ${Number(mejorTestSemana.nota).toFixed(2)}`
-            : 'No hay tests esta semana'}
-        </span>
-      </div>
+      <HistorialTabla itemsOrdenados={itemsOrdenados} onReintentar={handleReintentar} />
 
-      <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Modo</th>
-              <th>Oposición</th>
-              <th>Materia/Tema</th>
-              <th>Resultado</th>
-              <th>Nota</th>
-              <th>Revisión</th>
-              <th>Reintentar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {itemsOrdenados.map((t) => (
-              <tr key={t.id}>
-                <td>{new Date(t.fecha).toLocaleDateString('es-ES')}</td>
-                <td>{MODO_LABEL[t.tipoTest] ?? t.tipoTest}</td>
-                <td>
-                  {t.oposicionId
-                    ? <Link to={`/oposicion/${t.oposicionId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{t.oposicionNombre}</Link>
-                    : (t.oposicionNombre || '—')}
-                </td>
-                <td>
-                  {t.materiaNombre || '—'}
-                  {t.temaId
-                    ? <> / <Link to={`/tema/${t.temaId}`} style={{ color: '#1e293b', textDecoration: 'none', fontWeight: 500 }}>{t.temaNombre}</Link></>
-                    : (t.temaNombre ? ` / ${t.temaNombre}` : '')}
-                </td>
-                <td>{t.aciertos}A · {t.errores}E · {t.blancos}B</td>
-                <td><strong>{t.nota}</strong></td>
-                <td><Link to={`/revision/${t.id}`}>Ver</Link></td>
-                <td><button onClick={() => handleReintentar(t.id)}>Reintentar</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {total > PAGE_SIZE && (
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
-          <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>← Anterior</button>
-          <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>Página {page} de {Math.ceil(total / PAGE_SIZE)}</span>
-          <button onClick={() => setPage((p) => p + 1)} disabled={page >= Math.ceil(total / PAGE_SIZE)}>Siguiente →</button>
-        </div>
-      )}
+      <HistorialPaginacion
+        page={page}
+        total={total}
+        pageSize={PAGE_SIZE}
+        onPrev={() => setPage((p) => Math.max(1, p - 1))}
+        onNext={() => setPage((p) => p + 1)}
+      />
     </section>
   );
 }
