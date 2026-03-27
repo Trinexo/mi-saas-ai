@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../services/api';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
+import TestControles from '../components/test/TestControles';
+import TestNavGrid from '../components/test/TestNavGrid';
+import TestPregunta from '../components/test/TestPregunta';
+import TestTimer from '../components/test/TestTimer';
 
 export default function TestPage() {
   const navigate = useNavigate();
@@ -23,7 +21,6 @@ export default function TestPage() {
 
   const duracion = test?.duracionSegundos ?? null;
   const remaining = duracion != null ? Math.max(0, duracion - elapsed) : null;
-  const isWarning = remaining != null && remaining <= 60 && remaining > 0;
   const isExpired = remaining === 0;
 
   const onSubmit = useCallback(async (answersSnapshot) => {
@@ -81,107 +78,36 @@ export default function TestPage() {
 
   const answered = Object.keys(answers).length;
 
-  const timerColor = isExpired ? '#dc2626' : isWarning ? '#d97706' : '#6b7280';
-  const timerLabel = remaining != null
-    ? `⏳ ${formatTime(remaining)}`
-    : `⏱ ${formatTime(elapsed)}`;
-
   return (
     <section style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <h2 style={{ margin: 0 }}>Pregunta {index + 1} / {test.preguntas.length}</h2>
-        <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '1rem', color: timerColor, fontWeight: isWarning ? 700 : 400 }}>
-          {timerLabel}
-        </span>
-      </div>
-      {isWarning && !isExpired && (
-        <p style={{ color: '#d97706', fontSize: '0.82rem', margin: '0 0 0.5rem', fontWeight: 600 }}>
-          ⚠ Menos de 1 minuto. El test se enviará automáticamente al terminar.
-        </p>
-      )}
-      <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: 0 }}>
-        {answered} / {test.preguntas.length} respondidas
-      </p>
-
-      {/* Panel de navegación numérica */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
-        {test.preguntas.map((pregunta, i) => {
-          const isAnswered = answers[pregunta.id] != null;
-          const isCurrent = i === index;
-          return (
-            <button
-              key={i}
-              onClick={() => setIndex(i)}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 6,
-                border: isCurrent ? '2px solid #2563eb' : '1px solid #d1d5db',
-                background: isCurrent ? '#2563eb' : isAnswered ? '#dcfce7' : '#f9fafb',
-                color: isCurrent ? '#fff' : isAnswered ? '#15803d' : '#374151',
-                fontWeight: isCurrent ? 700 : 400,
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                padding: 0,
-              }}
-            >
-              {i + 1}
-            </button>
-          );
-        })}
-      </div>
-
-      <p>{question.enunciado}</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '1rem 0' }}>
-        {question.opciones.map((option) => {
-          const isSelected = answers[question.id] === option.id;
-          return (
-            <button
-              key={option.id}
-              onClick={() => selectAnswer(question.id, option.id)}
-              style={{
-                textAlign: 'left',
-                padding: '10px 16px',
-                borderRadius: 8,
-                border: isSelected ? '2px solid #6366f1' : '1px solid #e2e8f0',
-                background: isSelected ? '#eef2ff' : '#f8fafc',
-                color: isSelected ? '#4338ca' : '#334155',
-                fontWeight: isSelected ? 600 : 400,
-                cursor: 'pointer',
-                fontSize: '0.95rem',
-              }}
-            >
-              {option.texto}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: '1.5rem' }}>
-        <button
-          disabled={index === 0}
-          onClick={() => setIndex(index - 1)}
-          style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', cursor: 'pointer', opacity: index === 0 ? 0.5 : 1 }}
-        >
-          Anterior
-        </button>
-        <button
-          onClick={() => setIndex(Math.min(index + 1, test.preguntas.length - 1))}
-          disabled={index === test.preguntas.length - 1}
-          style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', cursor: 'pointer', opacity: index === test.preguntas.length - 1 ? 0.5 : 1 }}
-        >
-          Siguiente
-        </button>
-        <button
-          onClick={() => onSubmit(answers)}
-          disabled={submitting}
-          style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: submitting ? 0.7 : 1 }}
-        >
-          {submitting ? 'Enviando...' : `Enviar test (${answered}/${test.preguntas.length})`}
-        </button>
-      </div>
-
-      {error && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginTop: '0.75rem' }}>{error}</p>}
+      <TestTimer
+        index={index}
+        total={test.preguntas.length}
+        answered={answered}
+        elapsed={elapsed}
+        remaining={remaining}
+      />
+      <TestNavGrid
+        preguntas={test.preguntas}
+        answers={answers}
+        index={index}
+        setIndex={setIndex}
+      />
+      <TestPregunta
+        question={question}
+        answers={answers}
+        onSelect={selectAnswer}
+      />
+      <TestControles
+        index={index}
+        total={test.preguntas.length}
+        onPrev={() => setIndex(index - 1)}
+        onNext={() => setIndex(Math.min(index + 1, test.preguntas.length - 1))}
+        onSubmit={() => onSubmit(answers)}
+        submitting={submitting}
+        answered={answered}
+        error={error}
+      />
     </section>
   );
 }
