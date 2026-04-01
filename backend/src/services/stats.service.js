@@ -1,69 +1,70 @@
-import { statsRepository } from '../repositories/stats.repository.js';
+import { widgetStatsRepository } from '../repositories/widgetStats.repository.js';
+import { progressStatsRepository } from '../repositories/progressStats.repository.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const statsService = {
   async getConsistenciaDiaria(userId) {
-    return statsRepository.getConsistenciaDiaria(userId);
+    return widgetStatsRepository.getConsistenciaDiaria(userId);
   },
 
   async getRitmoPregunta(userId) {
-    return statsRepository.getRitmoPregunta(userId);
+    return widgetStatsRepository.getRitmoPregunta(userId);
   },
 
   async getBalancePrecision(userId) {
-    return statsRepository.getBalancePrecision(userId);
+    return widgetStatsRepository.getBalancePrecision(userId);
   },
 
   async getEficienciaTiempo(userId) {
-    return statsRepository.getEficienciaTiempo(userId);
+    return widgetStatsRepository.getEficienciaTiempo(userId);
   },
 
   async getProgresoSemanal(userId) {
-    return statsRepository.getProgresoSemanal(userId);
+    return widgetStatsRepository.getProgresoSemanal(userId);
   },
 
   async getRendimientoModos(userId) {
-    return statsRepository.getRendimientoModos(userId);
+    return widgetStatsRepository.getRendimientoModos(userId);
   },
 
   async getInsightMensual(userId) {
-    return statsRepository.getInsightMensual(userId);
+    return widgetStatsRepository.getInsightMensual(userId);
   },
 
   async getTemasDebiles(userId) {
-    return statsRepository.getTemasDebiles(userId);
+    return widgetStatsRepository.getTemasDebiles(userId);
   },
 
   async getProgresoTemas(userId, oposicionId) {
-    return statsRepository.getProgresoTemas(userId, oposicionId ?? null);
+    return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null);
   },
 
   async getActividad14Dias(userId) {
-    return statsRepository.getActividad14Dias(userId);
+    return widgetStatsRepository.getActividad14Dias(userId);
   },
 
   async getResumenSemana(userId) {
-    return statsRepository.getResumenSemana(userId);
+    return widgetStatsRepository.getResumenSemana(userId);
   },
 
   async getFocoHoy(userId) {
-    return statsRepository.getFocoHoy(userId);
+    return widgetStatsRepository.getFocoHoy(userId);
   },
 
   async getGamificacion(userId) {
-    return statsRepository.getGamificacion(userId);
+    return widgetStatsRepository.getGamificacion(userId);
   },
 
   async getObjetivoDiario(userId) {
-    return statsRepository.getObjetivoDiario(userId);
+    return widgetStatsRepository.getObjetivoDiario(userId);
   },
 
   async getDashboard(userId) {
-    return statsRepository.getDashboard(userId);
+    return progressStatsRepository.getDashboard(userId);
   },
 
   async getUserStats(userId) {
-    return statsRepository.getUserStats(userId);
+    return progressStatsRepository.getUserStats(userId);
   },
 
   async getTemaStats(userId, temaId) {
@@ -71,7 +72,7 @@ export const statsService = {
       throw new ApiError(400, 'tema_id debe ser un entero positivo');
     }
 
-    return statsRepository.getTemaStats(userId, temaId);
+    return progressStatsRepository.getTemaStats(userId, temaId);
   },
 
   async getRepasoStats(userId, temaId) {
@@ -79,7 +80,7 @@ export const statsService = {
       throw new ApiError(400, 'tema_id debe ser un entero positivo');
     }
 
-    return statsRepository.getRepasoStats(userId, temaId);
+    return progressStatsRepository.getRepasoStats(userId, temaId);
   },
 
   async getSimulacrosStats(userId, oposicionId) {
@@ -87,52 +88,52 @@ export const statsService = {
       throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
     }
 
-    return statsRepository.getSimulacrosStats(userId, oposicionId);
+    return progressStatsRepository.getSimulacrosStats(userId, oposicionId);
   },
 
   async getEvolucion(userId, limit = 30) {
-    return statsRepository.getEvolucion(userId, limit);
+    return progressStatsRepository.getEvolucion(userId, limit);
   },
 
   async getRacha(userId) {
-    return statsRepository.getRacha(userId);
+    return widgetStatsRepository.getRacha(userId);
   },
 
   async getRachaTemas(userId) {
-    return statsRepository.getRachaTemas(userId);
+    return widgetStatsRepository.getRachaTemas(userId);
   },
 
   async getResumenOposicion(userId, oposicionId) {
     if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
       throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
     }
-    return statsRepository.getResumenOposicion(userId, oposicionId);
+    return progressStatsRepository.getResumenOposicion(userId, oposicionId);
   },
 
   async getProgresoMaterias(userId, oposicionId) {
     if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
       throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
     }
-    return statsRepository.getProgresoMaterias(userId, oposicionId);
+    return progressStatsRepository.getProgresoMaterias(userId, oposicionId);
   },
 
   async getProgresoTemasByMateria(userId, materiaId) {
     if (!Number.isInteger(materiaId) || materiaId <= 0) {
       throw new ApiError(400, 'materia_id debe ser un entero positivo');
     }
-    return statsRepository.getProgresoTemasByMateria(userId, materiaId);
+    return progressStatsRepository.getProgresoTemasByMateria(userId, materiaId);
   },
 
   async getDetalleTema(userId, temaId) {
     if (!Number.isInteger(temaId) || temaId <= 0) {
       throw new ApiError(400, 'tema_id debe ser un entero positivo');
     }
-    const data = await statsRepository.getDetalleTema(userId, temaId);
+    const data = await progressStatsRepository.getDetalleTema(userId, temaId);
     if (!data) throw new ApiError(404, 'Tema no encontrado');
     return data;
   },
 
   async getMisOposiciones(userId) {
-    return statsRepository.getMisOposiciones(userId);
+    return progressStatsRepository.getMisOposiciones(userId);
   },
 };
