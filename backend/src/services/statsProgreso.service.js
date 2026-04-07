@@ -1,68 +1,10 @@
-import { progressStatsRepository } from '../repositories/progressStats.repository.js';
-import { ApiError } from '../utils/api-error.js';
+// Barrel de compatibilidad - los metodos se han dividido en statsProgresoResumen y statsProgresoDetalle.
+import { statsProgresoResumenService } from './statsProgresoResumen.service.js';
+import { statsProgresoDetalleService } from './statsProgresoDetalle.service.js';
 
 export const statsProgresoService = {
-  async getProgresoTemas(userId, oposicionId) {
-    return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null);
-  },
-
-  async getDashboard(userId) {
-    return progressStatsRepository.getDashboard(userId);
-  },
-
-  async getUserStats(userId) {
-    return progressStatsRepository.getUserStats(userId);
-  },
-
-  async getTemaStats(userId, temaId) {
-    if (!Number.isInteger(temaId) || temaId <= 0)
-      throw new ApiError(400, 'tema_id debe ser un entero positivo');
-    return progressStatsRepository.getTemaStats(userId, temaId);
-  },
-
-  async getRepasoStats(userId, temaId) {
-    if (!Number.isInteger(temaId) || temaId <= 0)
-      throw new ApiError(400, 'tema_id debe ser un entero positivo');
-    return progressStatsRepository.getRepasoStats(userId, temaId);
-  },
-
-  async getSimulacrosStats(userId, oposicionId) {
-    if (!Number.isInteger(oposicionId) || oposicionId <= 0)
-      throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
-    return progressStatsRepository.getSimulacrosStats(userId, oposicionId);
-  },
-
-  async getEvolucion(userId, limit = 30) {
-    return progressStatsRepository.getEvolucion(userId, limit);
-  },
-
-  async getResumenOposicion(userId, oposicionId) {
-    if (!Number.isInteger(oposicionId) || oposicionId <= 0)
-      throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
-    return progressStatsRepository.getResumenOposicion(userId, oposicionId);
-  },
-
-  async getProgresoMaterias(userId, oposicionId) {
-    if (!Number.isInteger(oposicionId) || oposicionId <= 0)
-      throw new ApiError(400, 'oposicion_id debe ser un entero positivo');
-    return progressStatsRepository.getProgresoMaterias(userId, oposicionId);
-  },
-
-  async getProgresoTemasByMateria(userId, materiaId) {
-    if (!Number.isInteger(materiaId) || materiaId <= 0)
-      throw new ApiError(400, 'materia_id debe ser un entero positivo');
-    return progressStatsRepository.getProgresoTemasByMateria(userId, materiaId);
-  },
-
-  async getDetalleTema(userId, temaId) {
-    if (!Number.isInteger(temaId) || temaId <= 0)
-      throw new ApiError(400, 'tema_id debe ser un entero positivo');
-    const data = await progressStatsRepository.getDetalleTema(userId, temaId);
-    if (!data) throw new ApiError(404, 'Tema no encontrado');
-    return data;
-  },
-
-  async getMisOposiciones(userId) {
-    return progressStatsRepository.getMisOposiciones(userId);
-  },
+  ...statsProgresoResumenService,
+  ...statsProgresoDetalleService,
 };
+
+export { statsProgresoResumenService, statsProgresoDetalleService };
