@@ -1,27 +1,38 @@
+const CARD = {
+  background: '#fff', borderRadius: 12, padding: '16px 20px',
+  boxShadow: '0 1px 4px rgba(0,0,0,.08)', flex: '1 1 160px',
+};
+const LABEL = { margin: '0 0 4px', fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' };
+
 export default function HistorialStats({ testsLast7Days, bestNoteLast30Days, mejorTestSemana, onReintentar }) {
   return (
-    <>
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <div style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Tests últimos 7 días</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{testsLast7Days}</div>
-        </div>
-        <div style={{ padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Mejor nota últimos 30 días</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{bestNoteLast30Days.toFixed(2)}</div>
-        </div>
+    <div style={{ display: 'flex', gap: 12, marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+      <div style={CARD}>
+        <p style={LABEL}>Tests esta semana</p>
+        <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#1e293b' }}>{testsLast7Days}</p>
       </div>
-
-      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <button onClick={() => onReintentar(mejorTestSemana.id)} disabled={!mejorTestSemana}>
-          Reintentar mejor test semanal
-        </button>
-        <span style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-          {mejorTestSemana
-            ? `Mejor nota 7 días: ${Number(mejorTestSemana.nota).toFixed(2)}`
-            : 'No hay tests esta semana'}
-        </span>
+      <div style={CARD}>
+        <p style={LABEL}>Mejor nota (30 d)</p>
+        <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: bestNoteLast30Days >= 5 ? '#16a34a' : (bestNoteLast30Days > 0 ? '#dc2626' : '#94a3b8') }}>
+          {bestNoteLast30Days > 0 ? bestNoteLast30Days.toFixed(2) : '—'}
+        </p>
       </div>
-    </>
+      <div style={{ ...CARD, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <p style={LABEL}>Mejor test semanal</p>
+        {mejorTestSemana ? (
+          <>
+            <p style={{ margin: '0 0 10px', fontSize: 24, fontWeight: 800, color: '#6366f1' }}>{Number(mejorTestSemana.nota).toFixed(2)}</p>
+            <button
+              onClick={() => onReintentar(mejorTestSemana.id)}
+              style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: 7, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+            >
+              Repetir
+            </button>
+          </>
+        ) : (
+          <p style={{ margin: 0, fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>Sin tests esta semana</p>
+        )}
+      </div>
+    </div>
   );
 }

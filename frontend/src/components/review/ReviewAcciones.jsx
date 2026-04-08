@@ -1,34 +1,35 @@
 import { Link } from 'react-router-dom';
 
-export default function ReviewAcciones({ testInfo, onNuevoTest, onVerProgreso }) {
+const BTN = { padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'none', display: 'inline-block' };
+const BTN_PRIMARY = { ...BTN, background: '#6366f1', color: '#fff', border: 'none' };
+const BTN_WARN = { ...BTN, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
+
+export default function ReviewAcciones({ testInfo, errores = 0, onNuevoTest, onVerProgreso }) {
   return (
     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: '2rem' }}>
-      <button
-        style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-        onClick={onNuevoTest}
-      >
+      <button style={BTN_PRIMARY} onClick={onNuevoTest}>
         Nuevo test
       </button>
-      <button
-        style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-        onClick={onVerProgreso}
-      >
+      <button style={BTN} onClick={onVerProgreso}>
         Ver progreso
       </button>
-      {testInfo?.temaId && (
+      {errores > 0 && (
         <Link
-          to={`/tema/${testInfo.temaId}`}
-          style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
+          to="/configurar-test"
+          state={{ modoSugerido: 'marcadas' }}
+          style={BTN_WARN}
         >
+          Repetir errores ({errores})
+        </Link>
+      )}
+      {testInfo?.temaId && (
+        <Link to={`/tema/${testInfo.temaId}`} style={BTN}>
           Ver tema
         </Link>
       )}
       {testInfo?.oposicionId && (
-        <Link
-          to={`/oposicion/${testInfo.oposicionId}`}
-          style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
-        >
-          Ver oposición
+        <Link to={`/oposicion/${testInfo.oposicionId}`} style={BTN}>
+          Ver oposici&oacute;n
         </Link>
       )}
     </div>

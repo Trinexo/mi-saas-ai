@@ -49,14 +49,20 @@ export default function RachaObjetivoSection() {
             </div>
           </div>
           {rachaData.actividad7Dias && (
-            <div style={{ display: 'flex', gap: '4px', marginTop: '0.75rem' }}>
-              {rachaData.actividad7Dias.map((d) => (
-                <div
-                  key={d.fecha}
-                  title={`${d.fecha}: ${d.tests} test${d.tests !== 1 ? 's' : ''}`}
-                  style={{ flex: 1, height: 28, borderRadius: 4, background: d.activo ? '#22c55e' : '#e5e7eb' }}
-                />
-              ))}
+            <div style={{ marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {rachaData.actividad7Dias.map((d) => (
+                  <div key={d.fecha} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div
+                      title={`${d.fecha}: ${d.tests} test${d.tests !== 1 ? 's' : ''}`}
+                      style={{ width: '100%', height: 28, borderRadius: 4, background: d.activo ? '#22c55e' : '#e5e7eb' }}
+                    />
+                    <span style={{ fontSize: 9, color: '#94a3b8' }}>
+                      {new Date(d.fecha).toLocaleDateString('es-ES', { weekday: 'narrow' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

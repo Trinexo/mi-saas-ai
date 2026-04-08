@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 import TemaAcciones from '../components/tema/TemaAcciones';
@@ -10,7 +10,6 @@ import TemaTestsTable from '../components/tema/TemaTestsTable';
 export default function TemaPage() {
   const { id } = useParams();
   const { token } = useAuth();
-  const navigate = useNavigate();
   const [tema, setTema] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,8 +50,9 @@ export default function TemaPage() {
       <TemaMaestriaBar tema={tema} />
       <TemaTestsTable tests={tema.ultimosTests} />
       <TemaAcciones
-        onPracticar={() => navigate('/', { state: { temaId: Number(id), materiaId: tema.materiaId, oposicionId: tema.oposicionId } })}
+        temaId={Number(id)}
         materiaId={tema.materiaId}
+        oposicionId={tema.oposicionId}
       />
     </main>
   );
