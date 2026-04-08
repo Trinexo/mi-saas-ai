@@ -1,20 +1,10 @@
-import { ApiError } from '../utils/api-error.js';
-import { testRepository } from '../repositories/test.repository.js';
+// Barrel de compatibilidad - los metodos se han dividido en testQueryHistory y testQueryDetail.
+import { testQueryHistoryService } from './testQueryHistory.service.js';
+import { testQueryDetailService } from './testQueryDetail.service.js';
 
 export const testQueryService = {
-  async getHistory({ userId, limit = 20, page = 1, oposicionId, desde, hasta }) {
-    return testRepository.getUserHistory({ userId, limit, page, oposicionId, desde, hasta });
-  },
-
-  async getReview({ userId, testId }) {
-    const data = await testRepository.getTestReview(userId, testId);
-    if (!data) throw new ApiError(404, 'Test no encontrado');
-    return data;
-  },
-
-  async getConfig({ userId, testId }) {
-    const data = await testRepository.getTestConfig(userId, testId);
-    if (!data) throw new ApiError(404, 'Test no encontrado');
-    return data;
-  },
+  ...testQueryHistoryService,
+  ...testQueryDetailService,
 };
+
+export { testQueryHistoryService, testQueryDetailService };
