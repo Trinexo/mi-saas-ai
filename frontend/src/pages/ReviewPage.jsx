@@ -25,8 +25,12 @@ export default function ReviewPage() {
   const [reportMotivo, setReportMotivo] = useState('');
   const [reportError, setReportError] = useState('');
   const [filtro, setFiltro] = useState('todas');
+  const [modoUnoUno, setModoUnoUno] = useState(false);
+  const [indexActivo, setIndexActivo] = useState(0);
   const dialogRef = useRef(null);
   const { error, runAction } = useAsyncAction();
+
+  useEffect(() => { setIndexActivo(0); }, [filtro, modoUnoUno]);
 
   useEffect(() => {
     runAction(() => testApi.getReview(token, testId)).then((data) => {
@@ -104,22 +108,79 @@ export default function ReviewPage() {
         totalCount={preguntas.length}
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {preguntasFiltradas.map((pregunta, idx) => (
-          <ReviewPreguntaCard
-            key={pregunta.preguntaId}
-            pregunta={pregunta}
-            idx={idx}
-            marcadas={marcadas}
-            reportadas={reportadas}
-            onToggleMarcada={toggleMarcada}
-            onOpenReport={openReportModal}
-          />
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+        {['lista', 'una-a-una'].map((m) => (
+          <button
+            key={m}
+            onClick={() => setModoUnoUno(m === 'una-a-una')}
+            style={{
+              padding: '5px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+              border: '1px solid #d1d5db',
+              background: (m === 'una-a-una') === modoUnoUno ? '#6366f1' : '#fff',
+              color: (m === 'una-a-una') === modoUnoUno ? '#fff' : '#374151',
+              fontWeight: (m === 'una-a-una') === modoUnoUno ? 700 : 400,
+            }}
+          >
+            {m === 'lista' ? 'Vista lista' : 'Pregunta a pregunta'}
+          </button>
         ))}
       </div>
 
+      {modoUnoUno ? (
+        preguntasFiltradas.length === 0 ? (
+          <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>No hay preguntas en este filtro.</p>
+        ) : (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+                Pregunta {indexActivo + 1} de {preguntasFiltradas.length}
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  disabled={indexActivo === 0}
+                  onClick={() => setIndexActivo((i) => i - 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: indexActivo === 0 ? 'not-allowed' : 'pointer', opacity: indexActivo === 0 ? 0.4 : 1, fontSize: 13, color: '#334155' }}
+                >
+                  ← Anterior
+                </button>
+                <button
+                  disabled={indexActivo === preguntasFiltradas.length - 1}
+                  onClick={() => setIndexActivo((i) => i + 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: indexActivo === preguntasFiltradas.length - 1 ? 'not-allowed' : 'pointer', opacity: indexActivo === preguntasFiltradas.length - 1 ? 0.4 : 1, fontSize: 13, color: '#334155' }}
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+            <ReviewPreguntaCard
+              pregunta={preguntasFiltradas[indexActivo]}
+              idx={indexActivo}
+              marcadas={marcadas}
+              reportadas={reportadas}
+              onToggleMarcada={toggleMarcada}
+              onOpenReport={openReportModal}
+            />
+          </div>
+        )
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {preguntasFiltradas.map((pregunta, idx) => (
+            <ReviewPreguntaCard
+              key={pregunta.preguntaId}
+              pregunta={pregunta}
+              idx={idx}
+              marcadas={marcadas}
+              reportadas={reportadas}
+              onToggleMarcada={toggleMarcada}
+              onOpenReport={openReportModal}
+            />
+          ))}
+        </div>
+      )}
+
       <ReviewAcciones
         testInfo={testInfo}
+        errores={errores}
         onNuevoTest={() => navigate('/')}
         onVerProgreso={() => navigate('/progreso')}
       />

@@ -47,41 +47,62 @@ export default function SimulacroForm() {
 
   return (
     <section style={SECTION}>
-      <h2>Simulacro de examen</h2>
-      <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Preguntas proporcionales de toda la oposición. Opcionalmente con tiempo límite.</p>
+      <div style={{ marginBottom: 12 }}>
+        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Simulacro de examen</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Preguntas proporcionales de toda la oposicion. Opcionalmente con tiempo limite. Las respuestas no se muestran hasta el final.</p>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', margin: '0.75rem 0' }}>
-        <select
-          value={simulacro.oposicionId}
-          onChange={(e) => setSimulacro({ ...simulacro, oposicionId: e.target.value })}
-        >
-          <option value="">Selecciona oposición</option>
-          {oposiciones.map((item) => (
-            <option key={item.id} value={item.id}>{item.nombre}</option>
-          ))}
-        </select>
-        <label>
-          Nº preguntas (máx. 200)
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Oposicion</label>
+          <select
+            value={simulacro.oposicionId}
+            onChange={(e) => setSimulacro({ ...simulacro, oposicionId: e.target.value })}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.875rem', background: 'white' }}
+          >
+            <option value="">Selecciona oposicion</option>
+            {oposiciones.map((item) => (
+              <option key={item.id} value={item.id}>{item.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Num. preguntas (max. 200)</label>
           <input
             type="number"
             min="1"
             max="200"
             value={simulacro.numeroPreguntas}
             onChange={(e) => setSimulacro({ ...simulacro, numeroPreguntas: e.target.value })}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box' }}
           />
-        </label>
-        <label>
-          Duración (min, opcional)
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Duracion (min, opcional)</label>
           <input
             type="number"
             min="1"
             max="300"
-            placeholder="Sin límite"
+            placeholder="Sin limite"
             value={simulacro.duracion}
             onChange={(e) => setSimulacro({ ...simulacro, duracion: e.target.value })}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box' }}
           />
-        </label>
+        </div>
       </div>
-      <button disabled={!simulacro.oposicionId || isLoading} onClick={onGenerate}>
+      <button
+        disabled={!simulacro.oposicionId || isLoading}
+        onClick={onGenerate}
+        style={{
+          background: simulacro.oposicionId && !isLoading ? '#1e293b' : '#d1d5db',
+          color: simulacro.oposicionId && !isLoading ? 'white' : '#9ca3af',
+          border: 'none',
+          borderRadius: 8,
+          padding: '10px 24px',
+          fontWeight: 700,
+          fontSize: '0.9rem',
+          cursor: simulacro.oposicionId && !isLoading ? 'pointer' : 'not-allowed',
+        }}
+      >
         {isLoading ? 'Generando...' : 'Iniciar simulacro'}
       </button>
     </section>

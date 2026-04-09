@@ -11,10 +11,12 @@ import HistorialPage from './pages/HistorialPage.jsx';
 import ReviewPage from './pages/ReviewPage.jsx';
 import MarcadasPage from './pages/MarcadasPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import PlanesPage from './pages/PlanesPage.jsx';
 import OposicionPage from './pages/OposicionPage.jsx';
 import MateriaPage from './pages/MateriaPage.jsx';
 import TemaPage from './pages/TemaPage.jsx';
 import MisOposicionesPage from './pages/MisOposicionesPage.jsx';
+import ConfigurarTestPage from './pages/ConfigurarTestPage.jsx';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage.jsx';
 import AdminLayout from './pages/admin/AdminLayout.jsx';
@@ -60,6 +62,8 @@ export default function App() {
         <Route path="materia/:id" element={<MateriaPage />} />
         <Route path="tema/:id" element={<TemaPage />} />
         <Route path="mis-oposiciones" element={<MisOposicionesPage />} />
+        <Route path="configurar-test" element={<ConfigurarTestPage />} />
+        <Route path="planes" element={<PlanesPage />} />
         <Route
           path="admin"
           element={

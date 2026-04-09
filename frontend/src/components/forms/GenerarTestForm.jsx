@@ -7,7 +7,7 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function GenerarTestForm() {
+export default function GenerarTestForm({ modoSugerido = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const locationStateApplied = useRef(false);
@@ -17,8 +17,9 @@ export default function GenerarTestForm() {
   const [materias, setMaterias] = useState([]);
   const [temas, setTemas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selection, setSelection] = useState({ oposicionId: '', materiaId: '', temaId: '', numeroPreguntas: 10, modo: 'adaptativo', dificultad: 'mixto' });
+  const [selection, setSelection] = useState({ oposicionId: '', materiaId: '', temaId: '', numeroPreguntas: 10, modo: modoSugerido ?? 'adaptativo', dificultad: 'mixto' });
   const [oposicionCompleta, setOposicionCompleta] = useState(false);
+  const [feedbackInmediato, setFeedbackInmediato] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +90,7 @@ export default function GenerarTestForm() {
       setErrorMessage('Indica un número de preguntas entre 1 y 100');
       return;
     }
-    const payload = { numeroPreguntas, modo: selection.modo, dificultad: selection.dificultad };
+    const payload = { numeroPreguntas, modo: selection.modo, dificultad: selection.dificultad, feedbackInmediato };
     if (selection.modo !== 'marcadas') {
       if (oposicionCompleta && selection.oposicionId && !selection.temaId) {
         payload.oposicionId = Number(selection.oposicionId);
@@ -122,6 +123,20 @@ export default function GenerarTestForm() {
 
   if (loading) return <p>Cargando catálogo...</p>;
   if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
+
+  if (isLoading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '1.25rem' }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: '50%',
+        border: '4px solid #e0e7ff',
+        borderTopColor: '#6366f1',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ margin: 0, color: '#6366f1', fontWeight: 600 }}>Generando tu test…</p>
+      <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Seleccionando las preguntas más adecuadas para ti</p>
+    </div>
+  );
 
   return (
     <section style={SECTION}>
@@ -180,6 +195,14 @@ export default function GenerarTestForm() {
           }}
         />
         Oposición completa (sin filtrar por tema)
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', userSelect: 'none', marginTop: 8 }}>
+        <input
+          type="checkbox"
+          checked={feedbackInmediato}
+          onChange={(e) => setFeedbackInmediato(e.target.checked)}
+        />
+        Feedback inmediato (ver respuesta correcta al contestar)
       </label>
       <button
         disabled={(selection.modo !== 'marcadas' && !selection.temaId && !(oposicionCompleta && selection.oposicionId)) || isLoading}

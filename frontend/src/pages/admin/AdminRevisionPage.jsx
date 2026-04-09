@@ -77,26 +77,31 @@ export default function AdminRevisionPage() {
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
 
   return (
-    <section style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-      <h2 style={{ marginTop: 0 }}>Cola de revisi\u00f3n</h2>
+    <div>
+      {/* Cabecera */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Cola de revisión</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+            Preguntas <strong>pendientes</strong> antes de publicarse · {pagination.total} en espera
+          </p>
+        </div>
+      </div>
 
-      {error && <p style={{ color: '#c00' }}>{error}</p>}
+      {error && <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.875rem', marginBottom: 16 }}>{error}</div>}
 
-      <p style={{ color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-        Preguntas en estado <strong>pendiente</strong> que requieren revisi\u00f3n antes de ser publicadas.
-        Total pendientes: <strong>{pagination.total}</strong>
-      </p>
-
-      {loading && <p style={{ color: '#6b7280' }}>Cargando cola de revisi\u00f3n...</p>}
+      {loading && <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando cola de revisión...</p>}
 
       {!loading && items.length === 0 && (
-        <p style={{ color: '#059669', fontWeight: 600 }}>
-          âœ“ No hay preguntas pendientes de revisi\u00f3n.
-        </p>
+        <div style={{ background: 'white', borderRadius: 10, padding: '2.5rem', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+          <div style={{ fontSize: '2rem', marginBottom: 8 }}>✓</div>
+          <p style={{ color: '#059669', fontWeight: 600, margin: 0 }}>No hay preguntas pendientes de revisión.</p>
+        </div>
       )}
 
       {!loading && items.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ background: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ background: '#f9fafb' }}>
@@ -199,27 +204,28 @@ export default function AdminRevisionPage() {
             </tbody>
           </table>
         </div>
-      )}
 
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1.25rem' }}>
-          <button
-            disabled={pagination.page <= 1}
-            onClick={() => loadData(pagination.page - 1)}
-            style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #e5e7eb', cursor: 'pointer' }}
-          >
-            \u2190 Anterior
-          </button>
-          <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-            P\u00e1gina {pagination.page} de {totalPages}
-          </span>
-          <button
-            disabled={pagination.page >= totalPages}
-            onClick={() => loadData(pagination.page + 1)}
-            style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #e5e7eb', cursor: 'pointer' }}
-          >
-            Siguiente \u2192
-          </button>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+            <button
+              disabled={pagination.page <= 1}
+              onClick={() => loadData(pagination.page - 1)}
+              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer', background: 'white', color: '#374151', fontSize: '0.85rem', opacity: pagination.page <= 1 ? 0.5 : 1 }}
+            >
+              ← Anterior
+            </button>
+            <span style={{ fontSize: '0.85rem', color: '#6b7280', flex: 1, textAlign: 'center' }}>
+              Página {pagination.page} de {totalPages}
+            </span>
+            <button
+              disabled={pagination.page >= totalPages}
+              onClick={() => loadData(pagination.page + 1)}
+              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', cursor: pagination.page >= totalPages ? 'not-allowed' : 'pointer', background: 'white', color: '#374151', fontSize: '0.85rem', opacity: pagination.page >= totalPages ? 0.5 : 1 }}
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
         </div>
       )}
 
@@ -329,6 +335,6 @@ export default function AdminRevisionPage() {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

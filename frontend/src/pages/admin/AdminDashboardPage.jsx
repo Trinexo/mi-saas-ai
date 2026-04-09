@@ -25,8 +25,12 @@ const QUICK_LINKS = [
 const ROL_LABELS = { alumno: 'Alumnos', editor: 'Editores', revisor: 'Revisores', admin: 'Admins' };
 const ROL_COLOR = { alumno: '#374151', editor: '#1d4ed8', revisor: '#a16207', admin: '#b91c1c' };
 
-const TH = { padding: '0.5rem 0.75rem', fontWeight: 600, color: '#374151', borderBottom: '2px solid #e5e7eb' };
-const TD = { padding: '0.5rem 0.75rem', color: '#111827' };
+const TH = {
+  padding: '0.5rem 0.75rem', fontWeight: 600, color: '#6b7280',
+  borderBottom: '2px solid #e5e7eb', textAlign: 'left',
+  fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em',
+};
+const TD = { padding: '0.5rem 0.75rem', color: '#111827', borderBottom: '1px solid #f3f4f6', fontSize: '0.875rem' };
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();
@@ -73,12 +77,18 @@ export default function AdminDashboardPage() {
       .catch(() => setPreguntasPorEstado([]));  }, [token]);
 
   return (
-    <section style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-      <h2 style={{ marginTop: 0 }}>Dashboard del sistema</h2>
+    <div>
+      {/* Cabecera */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Dashboard</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Resumen global del sistema</p>
+      </div>
 
-      {error && <p style={{ color: '#c00' }}>{error}</p>}
+      {error && <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.875rem', marginBottom: 16 }}>{error}</div>}
 
-      {!stats && !error && <p style={{ color: '#6b7280' }}>Cargando estad\u00edsticas...</p>}
+      {!stats && !error && (
+        <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando estadísticas...</p>
+      )}
 
       {stats && stats.pendientesRevision > 0 && (
         <div
@@ -143,9 +153,9 @@ export default function AdminDashboardPage() {
       )}
 
       {usersByRole && (
-        <>
-          <h3 style={{ marginBottom: '0.75rem' }}>Usuarios por rol</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 600, color: '#111827' }}>Usuarios por rol</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
             {['alumno', 'editor', 'revisor', 'admin'].map((role) => (
               <div
                 key={role}
@@ -160,16 +170,16 @@ export default function AdminDashboardPage() {
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {temasErrores && temasErrores.length > 0 && (
-        <>
-          <h3 style={{ marginBottom: '0.75rem' }}>Top temas con m\u00e1s errores</h3>
-          <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
+        <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 600, color: '#111827' }}>Top temas con más errores</h3>
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
-                <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
+                <tr style={{ background: '#f9fafb' }}>
                   <th style={TH}>Tema</th>
                   <th style={TH}>Materia</th>
                   <th style={{ ...TH, textAlign: 'right' }}>Respuestas</th>
@@ -179,7 +189,7 @@ export default function AdminDashboardPage() {
               </thead>
               <tbody>
                 {temasErrores.map((t) => (
-                  <tr key={t.temaId} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <tr key={t.temaId}>
                     <td style={TD}>{t.temaNombre}</td>
                     <td style={{ ...TD, color: '#6b7280' }}>{t.materiaNombre}</td>
                     <td style={{ ...TD, textAlign: 'right' }}>{t.totalRespuestas.toLocaleString()}</td>
@@ -189,12 +199,10 @@ export default function AdminDashboardPage() {
                         style={{
                           background: t.pctError >= 60 ? '#fee2e2' : t.pctError >= 40 ? '#fef3c7' : '#dcfce7',
                           color: t.pctError >= 60 ? '#991b1b' : t.pctError >= 40 ? '#92400e' : '#166534',
-                          padding: '2px 8px',
-                          borderRadius: 12,
-                          fontWeight: 600,
+                          padding: '2px 8px', borderRadius: 12, fontWeight: 600, fontSize: '0.8rem',
                         }}
                       >
-                        {t.pctError !== null ? `${t.pctError}%` : '\u2014'}
+                        {t.pctError !== null ? `${t.pctError}%` : '—'}
                       </span>
                     </td>
                   </tr>
@@ -202,13 +210,13 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
 
       {preguntasPorEstado && preguntasPorEstado.length > 0 && (
-        <>
-          <h3 style={{ marginBottom: '0.75rem' }}>Estado del banco de preguntas</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 600, color: '#111827' }}>Estado del banco de preguntas</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
             {preguntasPorEstado.map((row) => {
               const colors = {
                 pendiente: { bg: '#fef3c7', border: '#f59e0b', num: '#92400e', label: 'Pendientes' },
@@ -219,12 +227,7 @@ export default function AdminDashboardPage() {
               return (
                 <div
                   key={row.estado}
-                  style={{
-                    ...CARD_STYLE,
-                    flex: '1 1 130px',
-                    borderTop: `3px solid ${c.border}`,
-                    background: c.bg,
-                  }}
+                  style={{ ...CARD_STYLE, flex: '1 1 130px', borderTop: `3px solid ${c.border}`, background: c.bg }}
                 >
                   <div style={{ ...BIG_NUM, color: c.num }}>{row.total.toLocaleString()}</div>
                   <div style={LABEL}>{c.label}</div>
@@ -232,10 +235,10 @@ export default function AdminDashboardPage() {
               );
             })}
           </div>
-        </>
+        </div>
       )}
 
-      <h3 style={{ marginBottom: '0.75rem' }}>Accesos r\u00e1pidos</h3>
+      <h3 style={{ marginBottom: '0.75rem', fontSize: '1rem', fontWeight: 600, color: '#111827' }}>Accesos rápidos</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
         {QUICK_LINKS.map(({ to, label }) => (
           <Link
@@ -255,6 +258,6 @@ export default function AdminDashboardPage() {
           </Link>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

@@ -140,17 +140,17 @@ export default function HistorialPage() {
 
   if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
   if (!items) return <p>Cargando historial...</p>;
-  if (items.length === 0) return <p>AÃºn no tienes tests finalizados.</p>;
+  if (items.length === 0) return <p style={{ color: '#94a3b8', fontStyle: 'italic', padding: '1rem' }}>Aún no tienes tests finalizados.</p>;
 
   return (
     <section>
       <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
         <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
-        <span>â€º</span>
+        <span>›</span>
         <span style={{ color: '#1e293b', fontWeight: 600 }}>Historial</span>
       </nav>
-      <h2>Historial de tests</h2>
-      <p style={{ color: '#6b7280', marginTop: '0.25rem' }}>Total: {total} tests Â· mostrando {itemsFiltrados.length} con los filtros activos</p>
+      <h2 style={{ margin: '0 0 2px', fontSize: 22, fontWeight: 800 }}>Historial de tests</h2>
+      <p style={{ color: '#64748b', marginTop: '0.25rem', fontSize: 13 }}>Total: {total} tests</p>
 
       <HistorialFiltros
         oposiciones={oposiciones}

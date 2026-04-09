@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import ResultCard from '../components/result/ResultCard';
 import ResultAcciones from '../components/result/ResultAcciones';
+import ResultErroresPreview from '../components/result/ResultErroresPreview';
 
 export default function ResultPage() {
   const result = JSON.parse(sessionStorage.getItem('last_result') || 'null');
@@ -26,6 +27,7 @@ export default function ResultPage() {
       )}
       {!contexto && <div style={{ marginBottom: 20 }} />}
       <ResultCard result={result} activeTest={activeTest} />
+      <ResultErroresPreview result={result} activeTest={activeTest} />
       <ResultAcciones activeTest={activeTest} />
     </main>
   );
