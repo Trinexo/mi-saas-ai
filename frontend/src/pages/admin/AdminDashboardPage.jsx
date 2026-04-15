@@ -5,6 +5,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { adminApi } from '../../services/adminApi';
+import { subscriptionApi } from '../../services/subscriptionApi';
 import { useAuth } from '../../state/auth.jsx';
 import { useRevision } from '../../state/revisionContext.jsx';
 
@@ -56,6 +57,15 @@ function relTime(fecha) {
   if (d < 1440) return `${Math.round(d / 60)}h`;
   return `${Math.round(d / 1440)}d`;
 }
+
+const ESTADO_COLOR = {
+  pendiente: { bg: '#fef3c7', border: '#f59e0b', num: '#92400e', label: 'Pendientes' },
+  aprobada:  { bg: '#dcfce7', border: '#059669', num: '#166534', label: 'Aprobadas'  },
+  rechazada: { bg: '#fee2e2', border: '#dc2626', num: '#991b1b', label: 'Rechazadas' },
+};
+
+const PLAN_SUB_COLOR = { free: '#6b7280', pro: '#1d4ed8', elite: '#7c3aed' };
+const PLAN_SUB_BG    = { free: '#f9fafb', pro: '#eff6ff', elite: '#f5f3ff' };
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();

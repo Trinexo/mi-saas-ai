@@ -114,6 +114,35 @@ function SidebarLink({ to, label, exact, icon, badge }) {
   );
 }
 
+const NAV_LINKS = [
+  { to: '/', label: 'Inicio', exact: true },
+  { to: '/mis-oposiciones', label: 'Oposiciones' },
+  { to: '/progreso', label: 'Progreso' },
+  { to: '/historial', label: 'Historial' },
+  { to: '/marcadas', label: 'Marcadas' },
+];
+
+function NavLink({ to, label, exact }) {
+  const { pathname } = useLocation();
+  const active = exact ? pathname === to : pathname.startsWith(to);
+  return (
+    <Link
+      to={to}
+      style={{
+        textDecoration: 'none',
+        fontSize: '0.875rem',
+        fontWeight: active ? 700 : 500,
+        color: active ? '#1d4ed8' : '#374151',
+        padding: '4px 2px',
+        borderBottom: active ? '2px solid #1d4ed8' : '2px solid transparent',
+        transition: 'color 0.15s',
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
+
 function Shell() {
   const { user, logout, token } = useAuth();
   const { plan } = useUserPlan();

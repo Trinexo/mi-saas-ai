@@ -45,6 +45,8 @@ export default function RepasoPendienteWidget() {
 
   const tienePro = hasAccess('pro');
 
+  const tienePro = hasAccess('pro');
+
   useEffect(() => {
     if (planLoading || !tienePro) return;
     testApi.getRepasoPendientes(token, 20)
