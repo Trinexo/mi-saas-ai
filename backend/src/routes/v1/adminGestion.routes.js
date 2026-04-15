@@ -66,7 +66,8 @@ router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema
 // --- Stats globales ---
 router.get('/stats', requireRole('admin'), getAdminStats);
 
-// --- Usuarios ---router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
+// --- Usuarios ---
+router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
 router.patch('/users/:id/role', requireRole('admin'), validate(idParamSchema, 'params'), validate(updateUserRoleSchema), updateUserRole);
 router.delete('/users/:id', requireRole('admin'), validate(idParamSchema, 'params'), deleteUser);
 router.post('/users/bulk', requireRole('admin'), validate(bulkUsersSchema), bulkUsers);
