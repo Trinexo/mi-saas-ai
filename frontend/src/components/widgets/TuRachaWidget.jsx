@@ -17,8 +17,8 @@ export default function TuRachaWidget() {
   const diasActivos7 = data?.actividad7Dias?.filter((d) => d.activo).length || 0;
 
   return (
-    <section style={SECTION}>
-      <h2>Tu racha</h2>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Tu racha</h2>
       <p>
         <strong>{data?.rachaActual ?? 0} días</strong> seguidos
       </p>
@@ -28,6 +28,6 @@ export default function TuRachaWidget() {
       <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
         {data?.estudioHoy ? 'Racha activa' : 'No rompas tu racha de estudio'}
       </p>
-    </section>
+    </div>
   );
 }

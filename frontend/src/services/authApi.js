@@ -6,6 +6,8 @@ export const authApi = {
   getProfile: (token) => apiRequest('/auth/me', { token }),
   updateProfile: (token, payload) => apiRequest('/auth/me', { method: 'PUT', body: payload, token }),
   changePassword: (token, payload) => apiRequest('/auth/password', { method: 'PUT', body: payload, token }),
-  patchOposicionPreferida: (token, oposicionPreferidaId) =>
-    apiRequest('/auth/me/oposicion-preferida', { method: 'PATCH', body: { oposicionPreferidaId }, token }),
+  forgotPassword: (email) =>
+    apiRequest('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token, passwordNuevo) =>
+    apiRequest('/auth/reset-password', { method: 'POST', body: { token, passwordNuevo } }),
 };

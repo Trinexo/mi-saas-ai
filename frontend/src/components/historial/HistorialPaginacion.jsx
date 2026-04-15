@@ -1,6 +1,6 @@
 const BTN = (disabled) => ({
-  padding: '7px 16px', borderRadius: 8, border: '1px solid #e2e8f0',
-  background: disabled ? '#f8fafc' : '#fff', color: disabled ? '#cbd5e1' : '#334155',
+  padding: '7px 16px', borderRadius: 8, border: '1px solid #e5e7eb',
+  background: disabled ? '#f9fafb' : '#fff', color: disabled ? '#cbd5e1' : '#374151',
   fontWeight: 600, fontSize: 13, cursor: disabled ? 'not-allowed' : 'pointer',
 });
 

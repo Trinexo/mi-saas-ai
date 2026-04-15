@@ -21,8 +21,8 @@ export default function ObjetivoDiarioWidget() {
   const faltan = Math.max(0, objetivo - respondidas);
 
   return (
-    <section style={SECTION}>
-      <h2>Objetivo de hoy</h2>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Objetivo de hoy</h2>
       <p style={{ display: 'flex', justifyContent: 'space-between', margin: '0 0 0.4rem' }}>
         <span><strong style={{ fontSize: '1.25rem' }}>{respondidas}</strong> / {objetivo} preguntas</span>
         <span style={{ fontWeight: 700, color }}>{pct}%</span>
@@ -37,6 +37,6 @@ export default function ObjetivoDiarioWidget() {
             ? `Te faltan ${faltan} preguntas para completar tu objetivo`
             : 'Empieza un test para sumar progreso'}
       </p>
-    </section>
+    </div>
   );
 }

@@ -11,29 +11,30 @@ export const progressTemarioDetalleDetailRepository = {
          o.id AS oposicion_id,
          o.nombre AS oposicion_nombre,
          COUNT(DISTINCT p.id)::int AS total_preguntas,
-         COALESCE((pu.aciertos + pu.errores), 0)::int AS respondidas,
          COALESCE(pu.aciertos, 0)::int AS aciertos,
          COALESCE(
            ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
            0
          ) AS porcentaje_acierto,
-         pu.ultima_practica
+         COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas
        FROM temas t
        JOIN materias m ON m.id = t.materia_id
        JOIN oposiciones o ON o.id = m.oposicion_id
-       LEFT JOIN preguntas p ON p.tema_id = t.id AND p.activo = true
+       LEFT JOIN preguntas p ON p.tema_id = t.id
        LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
+       LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.tema_id = t.id AND ts.estado = 'finalizado'
+       LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
        WHERE t.materia_id = $2
-       GROUP BY t.id, t.nombre, m.id, m.nombre, o.id, o.nombre, pu.aciertos, pu.errores, pu.ultima_practica
+       GROUP BY t.id, t.nombre, m.id, m.nombre, o.id, o.nombre, pu.aciertos, pu.errores
        ORDER BY t.nombre ASC`,
       [userId, materiaId],
     );
 
     return result.rows.map((row) => {
       const totalPreguntas = Number(row.total_preguntas ?? 0);
-      const respondidas = Number(row.respondidas ?? 0);
-      const maestria = totalPreguntas > 0
-        ? Number(((respondidas / totalPreguntas) * 100).toFixed(1))
+      const dominadas = Number(row.dominadas ?? 0);
+      const dominio = totalPreguntas > 0
+        ? Number(((dominadas / totalPreguntas) * 100).toFixed(1))
         : 0;
       return {
         temaId: Number(row.tema_id),
@@ -43,11 +44,10 @@ export const progressTemarioDetalleDetailRepository = {
         oposicionId: Number(row.oposicion_id),
         oposicionNombre: row.oposicion_nombre,
         totalPreguntas,
-        respondidas,
+        dominadas,
+        dominio,
         aciertos: Number(row.aciertos ?? 0),
-        maestria,
         porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
-        ultimaPractica: row.ultima_practica ?? null,
       };
     });
   },
@@ -65,19 +65,21 @@ export const progressTemarioDetalleDetailRepository = {
            COUNT(DISTINCT p.id)::int AS total_preguntas,
            COALESCE(pu.aciertos, 0)::int AS aciertos,
            COALESCE(pu.errores, 0)::int AS errores,
-           COALESCE((pu.aciertos + pu.errores), 0)::int AS respondidas,
+           COUNT(DISTINCT ru.pregunta_id)::int AS respondidas_unicas,
+           COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas,
            COALESCE(
              ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
              0
-           ) AS porcentaje_acierto,
-           pu.ultima_practica
+           ) AS porcentaje_acierto
          FROM temas t
          JOIN materias m ON m.id = t.materia_id
          JOIN oposiciones o ON o.id = m.oposicion_id
-         LEFT JOIN preguntas p ON p.tema_id = t.id AND p.activo = true
+         LEFT JOIN preguntas p ON p.tema_id = t.id
          LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
+         LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.tema_id = t.id AND ts.estado = 'finalizado'
+         LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
          WHERE t.id = $2
-         GROUP BY t.id, t.nombre, m.id, m.nombre, o.id, o.nombre, pu.aciertos, pu.errores, pu.ultima_practica`,
+         GROUP BY t.id, t.nombre, m.id, m.nombre, o.id, o.nombre, pu.aciertos, pu.errores`,
         [userId, temaId],
       ),
       pool.query(
@@ -98,9 +100,10 @@ export const progressTemarioDetalleDetailRepository = {
 
     const row = progresoResult.rows[0];
     const totalPreguntas = Number(row.total_preguntas ?? 0);
-    const respondidas = Number(row.respondidas ?? 0);
-    const maestria = totalPreguntas > 0
-      ? Number(((respondidas / totalPreguntas) * 100).toFixed(1))
+    const respondidas = Number(row.respondidas_unicas ?? 0);
+    const dominadas = Number(row.dominadas ?? 0);
+    const dominio = totalPreguntas > 0
+      ? Number(((dominadas / totalPreguntas) * 100).toFixed(1))
       : 0;
 
     return {
@@ -112,11 +115,11 @@ export const progressTemarioDetalleDetailRepository = {
       oposicionNombre: row.oposicion_nombre,
       totalPreguntas,
       respondidas,
+      dominadas,
+      dominio,
       aciertos: Number(row.aciertos ?? 0),
       errores: Number(row.errores ?? 0),
-      maestria,
       porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
-      ultimaPractica: row.ultima_practica ?? null,
       ultimosTests: historialResult.rows.map((h) => ({
         testId: Number(h.test_id),
         fecha: h.fecha_creacion,

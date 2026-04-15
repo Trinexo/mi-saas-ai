@@ -15,8 +15,8 @@ export default function Actividad14Widget() {
   }, [token]);
 
   return (
-    <section style={SECTION}>
-      <h2>Continuidad 14 días</h2>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Continuidad 14 días</h2>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
         Días activos: <strong>{data?.diasActivos14 ?? 0}/14</strong>
       </p>
@@ -34,6 +34,6 @@ export default function Actividad14Widget() {
           ? 'Hoy ya has sumado actividad ✅'
           : 'Haz un test rápido para mantener la racha'}
       </p>
-    </section>
+    </div>
   );
 }

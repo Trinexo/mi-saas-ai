@@ -20,24 +20,49 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <p style={{ margin: 0, flex: 1, fontWeight: 500, fontSize: 14, color: '#1e293b' }}>
+        <p style={{ margin: 0, flex: 1, fontWeight: 500, fontSize: 14, color: '#111827' }}>
           <strong>{idx + 1}.</strong> {pregunta.enunciado}
         </p>
         <div style={{ display: 'flex', gap: '4px' }}>
           <button
             onClick={() => onToggleMarcada(pregunta.preguntaId)}
             title={marcadas.has(pregunta.preguntaId) ? 'Quitar marca' : 'Marcar para estudiar'}
-            style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer' }}
+            style={{
+              background: marcadas.has(pregunta.preguntaId) ? '#fffbeb' : 'none',
+              border: marcadas.has(pregunta.preguntaId) ? '1px solid #f59e0b' : '1px solid #e5e7eb',
+              borderRadius: 6,
+              padding: '3px 8px',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              color: marcadas.has(pregunta.preguntaId) ? '#d97706' : '#6b7280',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+            }}
           >
-            {marcadas.has(pregunta.preguntaId) ? '★' : '☆'}
+            🔖 {marcadas.has(pregunta.preguntaId) ? 'Marcada' : 'Marcar'}
           </button>
           <button
             onClick={() => onOpenReport(pregunta.preguntaId)}
             disabled={reportadas.has(pregunta.preguntaId)}
-            title={reportadas.has(pregunta.preguntaId) ? '✓ Reportada' : 'Reportar pregunta errónea'}
-            style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: reportadas.has(pregunta.preguntaId) ? 'default' : 'pointer', opacity: reportadas.has(pregunta.preguntaId) ? 0.4 : 1 }}
+            title={reportadas.has(pregunta.preguntaId) ? 'Ya reportada' : 'Reportar pregunta errónea'}
+            style={{
+              background: reportadas.has(pregunta.preguntaId) ? '#f9fafb' : 'none',
+              border: '1px solid #e5e7eb',
+              borderRadius: 6,
+              padding: '3px 8px',
+              fontSize: '0.75rem',
+              cursor: reportadas.has(pregunta.preguntaId) ? 'default' : 'pointer',
+              opacity: reportadas.has(pregunta.preguntaId) ? 0.5 : 1,
+              color: reportadas.has(pregunta.preguntaId) ? '#9ca3af' : '#ef4444',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+            }}
           >
-            ⚑
+            ⚠️ {reportadas.has(pregunta.preguntaId) ? 'Reportada' : 'Reportar'}
           </button>
         </div>
       </div>
@@ -46,11 +71,11 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
         {pregunta.opciones.map((opcion) => {
           const cls = getOptionClass(opcion, pregunta.respuestaUsuarioId, pregunta.esCorrecta);
           const bg = cls === 'review-option correcta' || cls === 'review-option correcta_no_elegida'
-            ? '#f0fdf4' : cls === 'review-option incorrecta' ? '#fef2f2' : '#f8fafc';
+            ? '#f0fdf4' : cls === 'review-option incorrecta' ? '#fef2f2' : '#f9fafb';
           const border = cls === 'review-option correcta' || cls === 'review-option correcta_no_elegida'
-            ? '1px solid #bbf7d0' : cls === 'review-option incorrecta' ? '1px solid #fecaca' : '1px solid #e2e8f0';
+            ? '1px solid #bbf7d0' : cls === 'review-option incorrecta' ? '1px solid #fecaca' : '1px solid #e5e7eb';
           return (
-            <li key={opcion.id} style={{ padding: '8px 12px', borderRadius: 8, background: bg, border, fontSize: 13, color: '#334155' }}>
+            <li key={opcion.id} style={{ padding: '8px 12px', borderRadius: 8, background: bg, border, fontSize: 13, color: '#374151' }}>
               {opcion.texto}
               {opcion.correcta && <span style={{ marginLeft: 6, color: '#16a34a', fontWeight: 700 }}> ✓</span>}
               {pregunta.respuestaUsuarioId === opcion.id && !pregunta.esCorrecta && (
@@ -63,7 +88,7 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
           );
         })}
         {pregunta.respuestaUsuarioId === null && (
-          <li style={{ padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>
+          <li style={{ padding: '8px 12px', borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb', fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>
             En blanco
           </li>
         )}

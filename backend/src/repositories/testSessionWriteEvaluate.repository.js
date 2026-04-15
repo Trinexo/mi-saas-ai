@@ -33,7 +33,7 @@ export const testSessionWriteEvaluateRepository = {
   },
 
   async markTestAsDone(client, testId) {
-    await client.query('UPDATE tests SET estado = $2 WHERE id = $1', [testId, 'finalizado']);
+    await client.query('UPDATE tests SET estado = $2, fecha_fin = NOW() WHERE id = $1', [testId, 'finalizado']);
   },
 
   async updateProgress(client, { testId }) {

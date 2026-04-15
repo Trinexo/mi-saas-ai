@@ -11,15 +11,20 @@ export default function ReviewReportDialog({ dialogRef, reportMotivo, setReportM
         style={{ width: '100%', boxSizing: 'border-box', padding: '8px', fontSize: '0.9rem' }}
         placeholder="Ejemplo: la respuesta correcta marcada es incorrecta..."
       />
-      {reportError && <p style={{ color: 'red', fontSize: '0.85rem', margin: '4px 0' }}>{reportError}</p>}
+      {reportError && <div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '6px 10px', background: '#fef2f2', borderRadius: 7, color: '#dc2626', fontSize: '0.85rem', margin: '4px 0' }}><span>⚠️</span>{reportError}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '1rem' }}>
         <button
-          style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+          style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
           onClick={onClose}
         >
           Cancelar
         </button>
-        <button onClick={onSubmit}>Enviar reporte</button>
+        <button
+          onClick={onSubmit}
+          style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+        >
+          Enviar reporte
+        </button>
       </div>
     </dialog>
   );

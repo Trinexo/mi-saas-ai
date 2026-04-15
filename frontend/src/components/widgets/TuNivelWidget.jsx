@@ -14,19 +14,26 @@ export default function TuNivelWidget() {
       .catch(() => setData({ xpTotal: 0, nivelActual: 1, xpSiguienteNivel: 100, progresoNivel: 0 }));
   }, [token]);
 
-  const xpNivelBase = Math.max(0, (Number(data?.nivelActual || 1) - 1) * 100);
-  const xpEnNivel = Math.max(0, Number(data?.xpTotal || 0) - xpNivelBase);
+  const progresoNivel = Number(data?.progresoNivel ?? 0);
+  const xpSiguienteNivel = Number(data?.xpSiguienteNivel ?? 100);
+  const nivelActual = Number(data?.nivelActual ?? 1);
+  const xpFaltan = Math.max(0, xpSiguienteNivel - (Number(data?.xpTotal ?? 0)));
+  const pctNivel = Math.min(100, xpSiguienteNivel > 0 ? Math.round((progresoNivel / 100) * 100) : 0);
 
   return (
-    <section style={SECTION}>
-      <h2>Tu nivel</h2>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Tu nivel</h2>
       <p>
-        Nivel <strong>{data?.nivelActual ?? 1}</strong> · <strong>{data?.xpTotal ?? 0} XP</strong>
+        Nivel <strong>{nivelActual}</strong> · <strong>{data?.xpTotal ?? 0} XP</strong>
       </p>
-      <progress max={100} value={xpEnNivel} style={{ width: '100%' }} />
+      <div style={{ background: '#e5e7eb', borderRadius: 999, height: 10, overflow: 'hidden', margin: '8px 0' }}>
+        <div style={{ width: `${pctNivel}%`, height: '100%', background: '#1d4ed8', borderRadius: 999, transition: 'width .4s' }} />
+      </div>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
-        Siguiente nivel: {data?.xpSiguienteNivel ?? 100} XP
+        {xpFaltan > 0
+          ? `Te faltan ${xpFaltan} XP para el nivel ${nivelActual + 1}`
+          : `¡Nivel ${nivelActual} alcanzado!`}
       </p>
-    </section>
+    </div>
   );
 }

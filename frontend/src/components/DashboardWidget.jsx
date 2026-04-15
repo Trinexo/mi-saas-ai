@@ -22,15 +22,15 @@ export default function DashboardWidget() {
 
   useEffect(() => {
     testApi.getDashboard(token).then((res) => {
-      if (res?.data) setData(res.data);
+      if (res) setData(res);
     });
   }, [token]);
 
   if (!data) return null;
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h3 style={{ marginTop: 0, marginBottom: '0.75rem' }}>Resumen de actividad</h3>
+    <div>
+      <h3 style={{ margin: '0 0 12px', fontSize: '0.9rem', fontWeight: 700, color: '#111827' }}>Resumen de actividad</h3>
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={CARD_STYLE}>
           <div style={BIG_NUM}>{data.totalTests}</div>

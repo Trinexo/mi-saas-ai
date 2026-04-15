@@ -3,7 +3,7 @@ import { useAuth } from '../../state/auth.jsx';
 import { testApi } from '../../services/testApi';
 
 const MODO_COLOR = {
-  adaptativo: '#6366f1', normal: '#3b82f6', repaso: '#f59e0b',
+  adaptativo: '#1d4ed8', normal: '#3b82f6', repaso: '#f59e0b',
   simulacro: '#ef4444', refuerzo: '#22c55e', marcadas: '#ec4899',
 };
 
@@ -31,14 +31,14 @@ export default function EvolucionSection() {
   return (
     <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Evoluci\u00f3n de nota ({data.length} \u00faltimos tests)</h3>
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>Nota media: <strong style={{ color: '#1e293b' }}>{(notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2)}</strong></span>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Evolución de nota ({data.length} últimos tests)</h3>
+        <span style={{ fontSize: 12, color: '#94a3b8' }}>Nota media: <strong style={{ color: '#111827' }}>{(notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2)}</strong></span>
       </div>
 
-      {/* L\u00ednea de aprobado */}
+      {/* Línea de aprobado */}
       <div style={{ position: 'relative', overflowX: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, minWidth: data.length * (BAR_W + 4), height: 160, paddingBottom: 28, position: 'relative' }}>
-          {/* L\u00ednea de 5 (aprobado) */}
+          {/* Línea de 5 (aprobado) */}
           <div style={{
             position: 'absolute', left: 0, right: 0,
             bottom: 28 + (5 / max) * 132,
@@ -51,13 +51,13 @@ export default function EvolucionSection() {
           {data.map((e, i) => {
             const nota = Number(e.nota);
             const barH = Math.round((nota / max) * 132);
-            const color = nota >= 7 ? '#22c55e' : nota >= 5 ? '#6366f1' : '#ef4444';
+            const color = nota >= 7 ? '#22c55e' : nota >= 5 ? '#3b82f6' : '#ef4444';
             const modoColor = MODO_COLOR[e.tipoTest] ?? '#94a3b8';
             const fecha = new Date(e.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
             return (
               <div
                 key={i}
-                title={`${fecha} \u00b7 ${e.tipoTest ?? ''} \u00b7 Nota: ${nota.toFixed(2)}`}
+                title={`${fecha} · ${e.tipoTest ?? ''} · Nota: ${nota.toFixed(2)}`}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', position: 'relative', zIndex: 2 }}
               >
                 {/* Valor encima */}
@@ -91,7 +91,7 @@ export default function EvolucionSection() {
           <span style={{ width: 8, height: 8, borderRadius: 2, background: '#22c55e', display: 'inline-block' }} /> &ge;7
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#6366f1', display: 'inline-block' }} /> 5–7
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#3b82f6', display: 'inline-block' }} /> 5–7
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
           <span style={{ width: 8, height: 8, borderRadius: 2, background: '#ef4444', display: 'inline-block' }} /> &lt;5

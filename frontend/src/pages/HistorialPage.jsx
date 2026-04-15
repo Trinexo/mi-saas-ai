@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
+import { useUserPlan } from '../hooks/useUserPlan';
 import HistorialFiltros from '../components/historial/HistorialFiltros';
 import HistorialStats from '../components/historial/HistorialStats';
 import HistorialTabla from '../components/historial/HistorialTabla';
@@ -11,9 +12,11 @@ import HistorialPaginacion from '../components/historial/HistorialPaginacion';
 export default function HistorialPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { hasAccess } = useUserPlan();
   const [items, setItems] = useState(null);
   const [error, setError] = useState('');
   const [total, setTotal] = useState(0);
+  const [planLimit, setPlanLimit] = useState(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
   const [oposicionId, setOposicionId] = useState('');
@@ -49,6 +52,7 @@ export default function HistorialPage() {
         if (data && data.items) {
           setItems(data.items);
           setTotal(data.total ?? data.items.length);
+          if (data.planLimit != null) setPlanLimit(data.planLimit);
         } else {
           setItems(Array.isArray(data) ? data : []);
           setTotal(Array.isArray(data) ? data.length : 0);
@@ -138,37 +142,75 @@ export default function HistorialPage() {
     }
   };
 
-  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
-  if (!items) return <p>Cargando historial...</p>;
-  if (items.length === 0) return <p style={{ color: '#94a3b8', fontStyle: 'italic', padding: '1rem' }}>Aún no tienes tests finalizados.</p>;
+  if (error) return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+      <div style={{ fontSize: '2rem', marginBottom: 8 }}>⚠️</div>
+      <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
+    </div>
+  );
+  if (!items) return (
+    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Cargando historial…</p>
+    </div>
+  );
+  if (items.length === 0) return (
+    <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', padding: '3rem 1rem' }}>
+      <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📋</div>
+      <p style={{ margin: 0, fontWeight: 700, color: '#111827', fontSize: '1rem' }}>Aún no tienes tests finalizados</p>
+      <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: '0.875rem' }}>Completa tu primer test para ver el historial aquí.</p>
+    </div>
+  );
 
   return (
-    <section>
-      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
-        <span>›</span>
-        <span style={{ color: '#1e293b', fontWeight: 600 }}>Historial</span>
-      </nav>
-      <h2 style={{ margin: '0 0 2px', fontSize: 22, fontWeight: 800 }}>Historial de tests</h2>
-      <p style={{ color: '#64748b', marginTop: '0.25rem', fontSize: 13 }}>Total: {total} tests</p>
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Historial de tests</h2>
+          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Tu actividad de los últimos tests completados</p>
+        </div>
+        <span style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 20, padding: '4px 14px', fontSize: '0.8rem', fontWeight: 700, color: '#1d4ed8' }}>
+          {total} tests
+        </span>
+      </div>
 
-      <HistorialFiltros
-        oposiciones={oposiciones}
-        modoFiltro={modoFiltro} setModoFiltro={setModoFiltro}
-        oposicionId={oposicionId} setOposicionId={setOposicionId}
-        textoFiltro={textoFiltro} setTextoFiltro={setTextoFiltro}
-        notaFiltro={notaFiltro} setNotaFiltro={setNotaFiltro}
-        periodoFiltro={periodoFiltro} setPeriodoFiltro={setPeriodoFiltro}
-        ordenFiltro={ordenFiltro} setOrdenFiltro={setOrdenFiltro}
-        erroresFiltro={erroresFiltro} setErroresFiltro={setErroresFiltro}
-        duracionFiltro={duracionFiltro} setDuracionFiltro={setDuracionFiltro}
-        blancosFiltro={blancosFiltro} setBlancosFiltro={setBlancosFiltro}
-        ritmoFiltro={ritmoFiltro} setRitmoFiltro={setRitmoFiltro}
-        consistenciaFiltro={consistenciaFiltro} setConsistenciaFiltro={setConsistenciaFiltro}
-        filtradosCount={itemsFiltrados.length}
-        totalCount={items.length}
-        onResetPage={() => setPage(1)}
-      />
+      {/* Banner plan free */}
+      {!hasAccess('pro') && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, padding: '10px 16px', marginBottom: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.82rem', color: '#92400e' }}>
+            📋 Con el plan gratuito ves los últimos <strong>{planLimit ?? 5} tests</strong>. Actualiza a Pro para acceder a todo tu historial.
+          </span>
+          <button
+            onClick={() => navigate('/planes')}
+            style={{ padding: '5px 14px', borderRadius: 7, border: '1px solid #d97706', background: '#fff', color: '#92400e', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            Ver planes
+          </button>
+        </div>
+      )}
+
+      {/* Filtros */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.07)', marginBottom: 16 }}>
+        <HistorialFiltros
+          oposiciones={oposiciones}
+          modoFiltro={modoFiltro} setModoFiltro={setModoFiltro}
+          oposicionId={oposicionId} setOposicionId={setOposicionId}
+          textoFiltro={textoFiltro} setTextoFiltro={setTextoFiltro}
+          notaFiltro={notaFiltro} setNotaFiltro={setNotaFiltro}
+          periodoFiltro={periodoFiltro} setPeriodoFiltro={setPeriodoFiltro}
+          ordenFiltro={ordenFiltro} setOrdenFiltro={setOrdenFiltro}
+          erroresFiltro={erroresFiltro} setErroresFiltro={setErroresFiltro}
+          duracionFiltro={duracionFiltro} setDuracionFiltro={setDuracionFiltro}
+          blancosFiltro={blancosFiltro} setBlancosFiltro={setBlancosFiltro}
+          ritmoFiltro={ritmoFiltro} setRitmoFiltro={setRitmoFiltro}
+          consistenciaFiltro={consistenciaFiltro} setConsistenciaFiltro={setConsistenciaFiltro}
+          filtradosCount={itemsFiltrados.length}
+          totalCount={items.length}
+          onResetPage={() => setPage(1)}
+        />
+      </div>
 
       <HistorialStats
         testsLast7Days={testsLast7Days}
@@ -186,6 +228,6 @@ export default function HistorialPage() {
         onPrev={() => setPage((p) => Math.max(1, p - 1))}
         onNext={() => setPage((p) => p + 1)}
       />
-    </section>
+    </div>
   );
 }

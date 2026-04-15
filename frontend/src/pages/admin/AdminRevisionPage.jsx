@@ -2,10 +2,11 @@
 import { adminApi } from '../../services/adminApi';
 import { useAuth } from '../../state/auth.jsx';
 
-const ESTADO_COLOR = {
-  pendiente: { bg: '#fef3c7', color: '#92400e', label: 'Pendiente' },
-  aprobada:  { bg: '#dcfce7', color: '#166534', label: 'Aprobada' },
-  rechazada: { bg: '#fee2e2', color: '#991b1b', label: 'Rechazada' },
+const REPORTE_ESTADO_COLOR = {
+  abierto:     { bg: '#fef3c7', color: '#92400e',  label: 'Abierto'     },
+  en_revision: { bg: '#eff6ff', color: '#1d4ed8',  label: 'En revisión' },
+  resuelto:    { bg: '#dcfce7', color: '#166534',  label: 'Resuelto'    },
+  descartado:  { bg: '#f3f4f6', color: '#6b7280',  label: 'Descartado'  },
 };
 
 const TH = { padding: '0.5rem 0.75rem', fontWeight: 600, color: '#374151', borderBottom: '2px solid #e5e7eb', textAlign: 'left' };
@@ -17,324 +18,189 @@ const OVERLAY = {
 };
 const MODAL = {
   background: '#fff', borderRadius: 10, padding: '2rem',
-  maxWidth: 680, width: '90%', maxHeight: '85vh', overflowY: 'auto',
+  maxWidth: 500, width: '90%', maxHeight: '85vh', overflowY: 'auto',
   boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
 };
 
 export default function AdminRevisionPage() {
   const { token } = useAuth();
-  const [items, setItems] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [updating, setUpdating] = useState(null);
-  const [detalle, setDetalle] = useState(null);
-  const [detalleLoading, setDetalleLoading] = useState(false);
 
-  const loadData = (page = 1) => {
-    setLoading(true);
+  const [reportes, setReportes] = useState([]);
+  const [reportesPag, setReportesPag] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [reportesLoading, setReportesLoading] = useState(false);
+  const [reportesError, setReportesError] = useState('');
+  const [updatingReporte, setUpdatingReporte] = useState(null);
+  const [reporteModal, setReporteModal] = useState(null);
+  const [mensajeModal, setMensajeModal] = useState('');
+
+  const loadReportes = (page = 1) => {
+    setReportesLoading(true);
     adminApi
-      .listPreguntasSinRevisar(token, { page, page_size: 20 })
+      .listReportes(token, { page, page_size: 20 })
       .then((res) => {
-        if (res?.data) {
-          setItems(res.data.items);
-          setPagination(res.data.pagination);
+        if (res) {
+          setReportes(res.items ?? []);
+          setReportesPag(res.pagination ?? { page: 1, pageSize: 20, total: res.items?.length ?? 0 });
         }
       })
-      .catch(() => setError('No se pudo cargar la cola de revisi\u00f3n.'))
-      .finally(() => setLoading(false));
+      .catch(() => setReportesError('No se pudieron cargar los reportes.'))
+      .finally(() => setReportesLoading(false));
   };
 
-  useEffect(() => { loadData(1); }, [token]);
+  useEffect(() => { loadReportes(1); }, [token]);
 
-  const openDetalle = async (preguntaId) => {
-    setDetalleLoading(true);
-    setDetalle(null);
+  const handleReporteEstado = async (reporteId, estado, mensajeAdmin) => {
+    setUpdatingReporte(reporteId);
     try {
-      const res = await adminApi.getPregunta(token, preguntaId);
-      if (res?.data) setDetalle(res.data);
+      await adminApi.updateReporteEstado(token, reporteId, estado, mensajeAdmin || undefined);
+      setReportes((prev) => prev.map((r) => r.id === reporteId ? { ...r, estado } : r));
     } catch {
-      setError('No se pudo cargar el detalle de la pregunta.');
+      setReportesError('No se pudo actualizar el estado del reporte.');
     } finally {
-      setDetalleLoading(false);
+      setUpdatingReporte(null);
+      setReporteModal(null);
+      setMensajeModal('');
     }
   };
 
-  const handleDecision = async (preguntaId, estado) => {
-    setUpdating(preguntaId);
-    try {
-      await adminApi.updatePreguntaEstado(token, preguntaId, estado);
-      setItems((prev) => prev.filter((p) => p.id !== preguntaId));
-      setPagination((prev) => ({ ...prev, total: Math.max(0, prev.total - 1) }));
-      setDetalle(null);
-    } catch {
-      setError('No se pudo actualizar el estado de la pregunta.');
-    } finally {
-      setUpdating(null);
-    }
+  const openReporteModal = (id, estadoPendiente, enunciado) => {
+    setMensajeModal('');
+    setReporteModal({ id, estadoPendiente, enunciado });
   };
 
-  const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+  const reportesTotalPages = Math.ceil((reportesPag.total ?? 0) / (reportesPag.pageSize ?? 20));
 
   return (
     <div>
-      {/* Cabecera */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Cola de revisión</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-            Preguntas <strong>pendientes</strong> antes de publicarse · {pagination.total} en espera
-          </p>
-        </div>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Reportes de usuarios</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+          Preguntas reportadas por los usuarios durante los tests
+        </p>
       </div>
 
-      {error && <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.875rem', marginBottom: 16 }}>{error}</div>}
+      {reportesError && <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.875rem', marginBottom: 16 }}>{reportesError}</div>}
+      {reportesLoading && <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando reportes...</p>}
 
-      {loading && <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando cola de revisión...</p>}
-
-      {!loading && items.length === 0 && (
-        <div style={{ background: 'white', borderRadius: 10, padding: '2.5rem', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+      {!reportesLoading && reportes.length === 0 && (
+        <div style={{ background: '#fff', borderRadius: 10, padding: '2.5rem', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.07)' }}>
           <div style={{ fontSize: '2rem', marginBottom: 8 }}>✓</div>
-          <p style={{ color: '#059669', fontWeight: 600, margin: 0 }}>No hay preguntas pendientes de revisión.</p>
+          <p style={{ color: '#059669', fontWeight: 600, margin: 0 }}>No hay reportes de usuarios.</p>
         </div>
       )}
 
-      {!loading && items.length > 0 && (
-        <div style={{ background: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+      {!reportesLoading && reportes.length > 0 && (
+        <div style={{ background: '#fff', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.07)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ background: '#f9fafb' }}>
-                <th style={TH}>ID</th>
-                <th style={TH}>Enunciado</th>
-                <th style={TH}>Oposici\u00f3n / Materia / Tema</th>
-                <th style={TH}>Dificultad</th>
-                <th style={{ ...TH, textAlign: 'center' }}>Estado</th>
-                <th style={{ ...TH, textAlign: 'center' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ ...TD, color: '#6b7280', fontSize: '0.8rem' }}>{p.id}</td>
-                  <td style={{ ...TD, maxWidth: 400 }}>
-                    <button
-                      onClick={() => openDetalle(p.id)}
-                      style={{
-                        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                        textAlign: 'left', color: '#1d4ed8', fontWeight: 500,
-                        fontSize: '0.875rem', lineHeight: '1.4',
-                        display: '-webkit-box', WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 3, overflow: 'hidden',
-                      }}
-                    >
-                      {p.enunciado}
-                    </button>
-                  </td>
-                  <td style={{ ...TD, fontSize: '0.8rem', color: '#6b7280' }}>
-                    <div>{p.oposicionNombre}</div>
-                    <div>{p.materiaNombre}</div>
-                    <div style={{ color: '#374151', fontWeight: 500 }}>{p.temaNombre}</div>
-                  </td>
-                  <td style={{ ...TD, textAlign: 'center' }}>{p.nivelDificultad}</td>
-                  <td style={{ ...TD, textAlign: 'center' }}>
-                    <span
-                      style={{
-                        background: ESTADO_COLOR[p.estado]?.bg ?? '#f3f4f6',
-                        color: ESTADO_COLOR[p.estado]?.color ?? '#374151',
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {ESTADO_COLOR[p.estado]?.label ?? p.estado}
-                    </span>
-                  </td>
-                  <td style={{ ...TD, textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                      <button
-                        onClick={() => openDetalle(p.id)}
-                        style={{
-                          padding: '4px 10px', background: '#f3f4f6', color: '#374151',
-                          border: '1px solid #e5e7eb', borderRadius: 4, cursor: 'pointer',
-                          fontWeight: 600, fontSize: '0.8rem',
-                        }}
-                      >
-                        Ver
-                      </button>
-                      <button
-                        disabled={updating === p.id}
-                        onClick={() => handleDecision(p.id, 'aprobada')}
-                        style={{
-                          padding: '4px 12px',
-                          background: '#059669',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: updating === p.id ? 'not-allowed' : 'pointer',
-                          fontWeight: 600,
-                          fontSize: '0.8rem',
-                          opacity: updating === p.id ? 0.6 : 1,
-                        }}
-                      >
-                        Aprobar
-                      </button>
-                      <button
-                        disabled={updating === p.id}
-                        onClick={() => handleDecision(p.id, 'rechazada')}
-                        style={{
-                          padding: '4px 12px',
-                          background: '#dc2626',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: updating === p.id ? 'not-allowed' : 'pointer',
-                          fontWeight: 600,
-                          fontSize: '0.8rem',
-                          opacity: updating === p.id ? 0.6 : 1,
-                        }}
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  </td>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={TH}>ID</th>
+                  <th style={TH}>Pregunta</th>
+                  <th style={TH}>Motivo</th>
+                  <th style={TH}>Usuario</th>
+                  <th style={TH}>Fecha</th>
+                  <th style={{ ...TH, textAlign: 'center' }}>Estado</th>
+                  <th style={{ ...TH, textAlign: 'center' }}>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
-            <button
-              disabled={pagination.page <= 1}
-              onClick={() => loadData(pagination.page - 1)}
-              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer', background: 'white', color: '#374151', fontSize: '0.85rem', opacity: pagination.page <= 1 ? 0.5 : 1 }}
-            >
-              ← Anterior
-            </button>
-            <span style={{ fontSize: '0.85rem', color: '#6b7280', flex: 1, textAlign: 'center' }}>
-              Página {pagination.page} de {totalPages}
-            </span>
-            <button
-              disabled={pagination.page >= totalPages}
-              onClick={() => loadData(pagination.page + 1)}
-              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', cursor: pagination.page >= totalPages ? 'not-allowed' : 'pointer', background: 'white', color: '#374151', fontSize: '0.85rem', opacity: pagination.page >= totalPages ? 0.5 : 1 }}
-            >
-              Siguiente →
-            </button>
+              </thead>
+              <tbody>
+                {reportes.map((r) => (
+                  <tr key={r.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ ...TD, color: '#6b7280', fontSize: '0.8rem' }}>{r.id}</td>
+                    <td style={{ ...TD, maxWidth: 280 }}>
+                      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>#{r.pregunta_id}</span>
+                      <div style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden', lineHeight: '1.4' }}>
+                        {r.pregunta_enunciado}
+                      </div>
+                    </td>
+                    <td style={{ ...TD, maxWidth: 220, color: '#374151' }}>{r.motivo}</td>
+                    <td style={{ ...TD, fontSize: '0.8rem', color: '#6b7280' }}>{r.usuario_email}</td>
+                    <td style={{ ...TD, fontSize: '0.8rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                      {new Date(r.fecha_creacion).toLocaleDateString('es-ES')}
+                    </td>
+                    <td style={{ ...TD, textAlign: 'center' }}>
+                      <span style={{ background: REPORTE_ESTADO_COLOR[r.estado]?.bg ?? '#f3f4f6', color: REPORTE_ESTADO_COLOR[r.estado]?.color ?? '#374151', padding: '2px 8px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600 }}>
+                        {REPORTE_ESTADO_COLOR[r.estado]?.label ?? r.estado}
+                      </span>
+                    </td>
+                    <td style={{ ...TD, textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {r.estado !== 'resuelto' && (
+                          <button
+                            disabled={updatingReporte === r.id}
+                            onClick={() => openReporteModal(r.id, 'resuelto', r.pregunta_enunciado)}
+                            style={{ padding: '3px 10px', background: '#059669', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: '0.78rem', opacity: updatingReporte === r.id ? 0.6 : 1 }}
+                          >
+                            Resolver
+                          </button>
+                        )}
+                        {r.estado !== 'descartado' && (
+                          <button
+                            disabled={updatingReporte === r.id}
+                            onClick={() => openReporteModal(r.id, 'descartado', r.pregunta_enunciado)}
+                            style={{ padding: '3px 10px', background: '#6b7280', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: '0.78rem', opacity: updatingReporte === r.id ? 0.6 : 1 }}
+                          >
+                            Descartar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+          {reportesTotalPages > 1 && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
+              <button disabled={reportesPag.page <= 1} onClick={() => loadReportes(reportesPag.page - 1)} style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', cursor: reportesPag.page <= 1 ? 'not-allowed' : 'pointer', background: '#fff', color: '#374151', fontSize: '0.85rem', opacity: reportesPag.page <= 1 ? 0.5 : 1 }}>← Anterior</button>
+              <span style={{ fontSize: '0.85rem', color: '#6b7280', flex: 1, textAlign: 'center' }}>Página {reportesPag.page} de {reportesTotalPages}</span>
+              <button disabled={reportesPag.page >= reportesTotalPages} onClick={() => loadReportes(reportesPag.page + 1)} style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', cursor: reportesPag.page >= reportesTotalPages ? 'not-allowed' : 'pointer', background: '#fff', color: '#374151', fontSize: '0.85rem', opacity: reportesPag.page >= reportesTotalPages ? 0.5 : 1 }}>Siguiente →</button>
+            </div>
+          )}
         </div>
       )}
 
-      {(detalleLoading || detalle) && (
-        <div style={OVERLAY} onClick={() => setDetalle(null)}>
-          <div style={MODAL} onClick={(e) => e.stopPropagation()}>
-            {detalleLoading && (
-              <p style={{ color: '#6b7280', textAlign: 'center' }}>Cargando detalle...</p>
-            )}
-            {detalle && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1rem', color: '#111827' }}>
-                    Detalle de pregunta #{detalle.id}
-                  </h3>
-                  <button
-                    onClick={() => setDetalle(null)}
-                    style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}
-                    aria-label="Cerrar"
-                  >
-                    &#x2715;
-                  </button>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                  <span
-                    style={{
-                      background: ESTADO_COLOR[detalle.estado]?.bg ?? '#f3f4f6',
-                      color: ESTADO_COLOR[detalle.estado]?.color ?? '#374151',
-                      padding: '2px 10px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600,
-                    }}
-                  >
-                    {ESTADO_COLOR[detalle.estado]?.label ?? detalle.estado}
-                  </span>
-                  {detalle.nivel_dificultad && (
-                    <span style={{ marginLeft: '0.5rem', color: '#6b7280', fontSize: '0.8rem' }}>
-                      Dificultad: {detalle.nivel_dificultad}
-                    </span>
-                  )}
-                </div>
-
-                <p style={{ fontWeight: 600, fontSize: '0.9375rem', lineHeight: '1.5', marginBottom: '1rem', color: '#111827' }}>
-                  {detalle.enunciado}
-                </p>
-
-                {detalle.opciones && detalle.opciones.length > 0 && (
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {detalle.opciones.map((op) => (
-                      <li
-                        key={op.id}
-                        style={{
-                          padding: '0.5rem 0.875rem',
-                          borderRadius: 6,
-                          border: op.correcta ? '1.5px solid #059669' : '1px solid #e5e7eb',
-                          background: op.correcta ? '#f0fdf4' : '#fafafa',
-                          color: op.correcta ? '#166534' : '#374151',
-                          fontWeight: op.correcta ? 600 : 400,
-                          fontSize: '0.875rem',
-                          display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        }}
-                      >
-                        {op.correcta && <span style={{ fontSize: '0.75rem' }}>&#10003;</span>}
-                        {op.texto}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {detalle.explicacion && (
-                  <div style={{ background: '#f9fafb', borderRadius: 6, padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.875rem', color: '#374151' }}>
-                    <strong>Explicaci\u00f3n:</strong> {detalle.explicacion}
-                  </div>
-                )}
-
-                {detalle.referencia_normativa && (
-                  <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '1rem' }}>
-                    <strong>Referencia:</strong> {detalle.referencia_normativa}
-                  </p>
-                )}
-
-                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                  <button
-                    disabled={updating === detalle.id}
-                    onClick={() => handleDecision(detalle.id, 'rechazada')}
-                    style={{
-                      padding: '0.5rem 1.25rem', background: '#dc2626', color: '#fff',
-                      border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
-                      opacity: updating === detalle.id ? 0.6 : 1,
-                    }}
-                  >
-                    Rechazar
-                  </button>
-                  <button
-                    disabled={updating === detalle.id}
-                    onClick={() => handleDecision(detalle.id, 'aprobada')}
-                    style={{
-                      padding: '0.5rem 1.25rem', background: '#059669', color: '#fff',
-                      border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
-                      opacity: updating === detalle.id ? 0.6 : 1,
-                    }}
-                  >
-                    Aprobar
-                  </button>
-                </div>
-              </>
-            )}
+      {reporteModal && (
+        <div style={OVERLAY}>
+          <div style={MODAL}>
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', fontWeight: 700, color: '#111827' }}>
+              {reporteModal.estadoPendiente === 'resuelto' ? '✅ Marcar como resuelto' : '⚠️ Descartar reporte'}
+            </h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280', lineHeight: 1.4 }}>
+              {reporteModal.enunciado?.length > 100 ? reporteModal.enunciado.slice(0, 100) + '…' : reporteModal.enunciado}
+            </p>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>
+              Mensaje para el usuario <span style={{ fontWeight: 400, color: '#9ca3af' }}>(opcional)</span>
+            </label>
+            <textarea
+              value={mensajeModal}
+              onChange={(e) => setMensajeModal(e.target.value)}
+              maxLength={1000}
+              rows={4}
+              placeholder="Explica al usuario el motivo de la resolución o cualquier información relevante..."
+              style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.75rem', border: '1.5px solid #d1d5db', borderRadius: 6, fontSize: '0.875rem', resize: 'vertical', color: '#111827', outline: 'none' }}
+            />
+            <p style={{ margin: '0.25rem 0 1rem', fontSize: '0.78rem', color: '#9ca3af', textAlign: 'right' }}>{mensajeModal.length}/1000</p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setReporteModal(null); setMensajeModal(''); }}
+                style={{ padding: '0.5rem 1.25rem', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={updatingReporte === reporteModal.id}
+                onClick={() => handleReporteEstado(reporteModal.id, reporteModal.estadoPendiente, mensajeModal.trim())}
+                style={{ padding: '0.5rem 1.25rem', background: reporteModal.estadoPendiente === 'resuelto' ? '#059669' : '#6b7280', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, opacity: updatingReporte === reporteModal.id ? 0.6 : 1 }}
+              >
+                {updatingReporte === reporteModal.id ? 'Guardando…' : 'Confirmar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+

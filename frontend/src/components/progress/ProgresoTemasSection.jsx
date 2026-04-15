@@ -42,7 +42,7 @@ export default function ProgresoTemasSection() {
     });
 
   return (
-    <section style={{ marginTop: '2rem' }}>
+    <div style={{ marginTop: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Progreso por tema</h2>
         <span style={{ fontSize: 12, color: '#94a3b8' }}>{temasFiltrados.length} temas</span>
@@ -55,7 +55,7 @@ export default function ProgresoTemasSection() {
         <select
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, color: '#334155' }}
+          style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151' }}
         >
           <option value="">Todas las oposiciones</option>
           {oposicionesUnicas.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -63,18 +63,18 @@ export default function ProgresoTemasSection() {
         <select
           value={orden}
           onChange={(e) => setOrden(e.target.value)}
-          style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, color: '#334155' }}
+          style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151' }}
         >
           <option value="pct_asc">Peor primero (a reforzar)</option>
           <option value="pct_desc">Mejor primero</option>
-          <option value="actividad">M\u00e1s practicado</option>
+          <option value="actividad">Más practicado</option>
         </select>
       </div>
 
       {progresoTemas === null ? (
         <p style={{ color: '#94a3b8' }}>Cargando progreso...</p>
       ) : progresoTemas.length === 0 ? (
-        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>A\u00fan no tienes progreso registrado. Completa algunos tests para ver tus estad\u00edsticas por tema.</p>
+        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Aún no tienes progreso registrado. Completa algunos tests para ver tus estadísticas por tema.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {temasFiltrados.map((t) => {
@@ -87,7 +87,7 @@ export default function ProgresoTemasSection() {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <Link to={`/tema/${t.temaId}`} style={{ fontWeight: 600, fontSize: 14, color: '#1e293b', textDecoration: 'none' }}>{t.temaNombre}</Link>
+                    <Link to={`/tema/${t.temaId}`} style={{ fontWeight: 600, fontSize: 14, color: '#111827', textDecoration: 'none' }}>{t.temaNombre}</Link>
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>&rsaquo;</span>
                     <span style={{ fontSize: 12, color: '#64748b' }}>{t.materiaNombre}</span>
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>&rsaquo;</span>
@@ -104,6 +104,6 @@ export default function ProgresoTemasSection() {
           })}
         </div>
       )}
-    </section>
+    </div>
   );
 }

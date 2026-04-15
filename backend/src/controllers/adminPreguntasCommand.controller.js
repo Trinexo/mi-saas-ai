@@ -3,7 +3,7 @@ import { adminService } from '../services/admin.service.js';
 
 export const createPregunta = async (req, res, next) => {
   try {
-    const data = await adminService.createPregunta(req.body, req.user.id, req.user.role);
+    const data = await adminService.createPregunta(req.body, { userId: req.user.id, role: req.user.role });
     return created(res, data, 'Pregunta creada');
   } catch (error) {
     return next(error);
@@ -32,15 +32,6 @@ export const importPreguntasCsv = async (req, res, next) => {
   try {
     const data = await adminService.importPreguntasCsv(req.body);
     return ok(res, data, 'Importación procesada');
-  } catch (error) {
-    return next(error);
-  }
-};
-
-export const updatePreguntaEstado = async (req, res, next) => {
-  try {
-    const data = await adminService.updatePreguntaEstado(req.params.id, req.body.estado, req.user);
-    return ok(res, data, 'Estado de pregunta actualizado');
   } catch (error) {
     return next(error);
   }

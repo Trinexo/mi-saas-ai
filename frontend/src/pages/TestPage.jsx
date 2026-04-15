@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../services/api';
 import { testApi } from '../services/testApi';
+import { marcadasApi } from '../services/marcadasApi';
+import { reportarApi } from '../services/reportarApi';
 import { useAuth } from '../state/auth.jsx';
 import TestControles from '../components/test/TestControles';
 import TestNavGrid from '../components/test/TestNavGrid';
 import TestPregunta from '../components/test/TestPregunta';
 import TestTimer from '../components/test/TestTimer';
+import ReviewReportDialog from '../components/review/ReviewReportDialog';
 
 export default function TestPage() {
   const navigate = useNavigate();
@@ -21,26 +24,32 @@ export default function TestPage() {
   const startTimeRef = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
 
+  const [marcadas, setMarcadas] = useState(new Set());
+  const [reportPreguntaId, setReportPreguntaId] = useState(null);
+  const [reportMotivo, setReportMotivo] = useState('');
+  const [reportError, setReportError] = useState('');
+  const dialogRef = useRef(null);
+
   const duracion = test?.duracionSegundos ?? null;
   const remaining = duracion != null ? Math.max(0, duracion - elapsed) : null;
   const isExpired = remaining === 0;
 
-  const onSubmit = useCallback(async (answersSnapshot) => {
+  const onSubmit = useCallback(async (answersSnapshot, { timeout = false } = {}) => {
     setError('');
     setSubmitting(true);
     try {
       const tiempoSegundos = Math.floor((Date.now() - startTimeRef.current) / 1000);
       const payload = {
-        testId: test.testId,
+        testId: Number(test.testId),
         tiempoSegundos,
         respuestas: test.preguntas.map((item) => ({
-          preguntaId: item.id,
-          respuestaId: answersSnapshot[item.id] || null,
+          preguntaId: Number(item.id),
+          respuestaId: answersSnapshot[item.id] != null ? Number(answersSnapshot[item.id]) : null,
         })),
       };
 
       const result = await testApi.submit(token, payload);
-      sessionStorage.setItem('last_result', JSON.stringify(result));
+      sessionStorage.setItem('last_result', JSON.stringify({ ...result, timeoutSubmit: timeout }));
       navigate('/resultado');
     } catch (e) {
       setError(getErrorMessage(e));
@@ -48,6 +57,49 @@ export default function TestPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, test]);
+
+  useEffect(() => {
+    marcadasApi.getMarcadas(token)
+      .then((data) => setMarcadas(new Set((data || []).map((m) => m.id))))
+      .catch(() => {});
+  }, [token]);
+
+  const toggleMarcada = async (preguntaId) => {
+    try {
+      if (marcadas.has(preguntaId)) {
+        await marcadasApi.desmarcar(token, preguntaId);
+        setMarcadas((prev) => { const next = new Set(prev); next.delete(preguntaId); return next; });
+      } else {
+        await marcadasApi.marcar(token, preguntaId);
+        setMarcadas((prev) => new Set([...prev, preguntaId]));
+      }
+    } catch { /* silent */ }
+  };
+
+  const openReport = (preguntaId) => {
+    setReportPreguntaId(preguntaId);
+    setReportMotivo('');
+    setReportError('');
+    dialogRef.current?.showModal();
+  };
+
+  const closeReport = () => {
+    dialogRef.current?.close();
+    setReportPreguntaId(null);
+  };
+
+  const submitReport = async () => {
+    if (reportMotivo.trim().length < 5) {
+      setReportError('El motivo debe tener al menos 5 caracteres.');
+      return;
+    }
+    try {
+      await reportarApi.reportar(token, reportPreguntaId, reportMotivo.trim());
+      closeReport();
+    } catch {
+      setReportError('Error al enviar el reporte. Inténtalo de nuevo.');
+    }
+  };
 
   // Referencia estable a answers para el auto-submit
   const answersRef = useRef(answers);
@@ -63,7 +115,7 @@ export default function TestPage() {
   // Auto-submit cuando el countdown llega a 0
   useEffect(() => {
     if (isExpired && !submitting) {
-      onSubmit(answersRef.current);
+      onSubmit(answersRef.current, { timeout: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExpired]);
@@ -78,11 +130,9 @@ export default function TestPage() {
   const selectAnswer = (preguntaId, opcionId) => {
     if (feedbackMode && confirmed[preguntaId]) return;
     setAnswers((prev) => ({ ...prev, [preguntaId]: opcionId }));
-  };
-
-  const onComprobar = () => {
-    if (!answers[question.id]) return;
-    setConfirmed((prev) => ({ ...prev, [question.id]: true }));
+    if (feedbackMode) {
+      setConfirmed((prev) => ({ ...prev, [preguntaId]: true }));
+    }
   };
 
   const onNextFeedback = () => {
@@ -92,11 +142,25 @@ export default function TestPage() {
   const answered = Object.keys(answers).length;
 
   return (
-    <section style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       {test?.modo === 'simulacro' && (
-        <div style={{ background: '#1e293b', color: '#f1f5f9', padding: '8px 14px', borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 600 }}>
-          <span>🎯</span>
-          <span>Simulacro en curso — Las respuestas no se muestran hasta el final</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)',
+          color: '#fff', padding: '10px 16px', borderRadius: 10,
+          marginBottom: 18, fontSize: '0.875rem', fontWeight: 600,
+          boxShadow: '0 2px 8px rgba(29,78,216,.25)',
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>🎯</span>
+          <div>
+            <span style={{ fontWeight: 700 }}>Simulacro en curso</span>
+            <span style={{ fontWeight: 400, opacity: 0.85, marginLeft: 8 }}>Las respuestas no se muestran hasta el final</span>
+          </div>
+          {remaining !== null && (
+            <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,.15)', borderRadius: 6, padding: '3px 10px', fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700 }}>
+              ⏱ {Math.floor(remaining / 60).toString().padStart(2,'0')}:{(remaining % 60).toString().padStart(2,'0')}
+            </span>
+          )}
         </div>
       )}
       <TestTimer
@@ -113,6 +177,7 @@ export default function TestPage() {
           answers={answers}
           index={index}
           setIndex={setIndex}
+          marcadas={marcadas}
         />
       )}
       <TestPregunta
@@ -123,6 +188,9 @@ export default function TestPage() {
         confirmed={isCurrentConfirmed}
         index={index}
         total={test.preguntas.length}
+        marcada={marcadas.has(question.id)}
+        onToggleMarcada={() => toggleMarcada(question.id)}
+        onReportar={() => openReport(question.id)}
       />
       <TestControles
         index={index}
@@ -136,8 +204,15 @@ export default function TestPage() {
         feedbackMode={feedbackMode}
         confirmed={isCurrentConfirmed}
         hasAnswer={!!answers[question.id]}
-        onComprobar={onComprobar}
       />
-    </section>
+      <ReviewReportDialog
+        dialogRef={dialogRef}
+        reportMotivo={reportMotivo}
+        setReportMotivo={setReportMotivo}
+        reportError={reportError}
+        onSubmit={submitReport}
+        onClose={closeReport}
+      />
+    </div>
   );
 }

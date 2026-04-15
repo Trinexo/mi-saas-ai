@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const SEL = { padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, color: '#334155', background: '#fff' };
+const SEL = { padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' };
 
 export default function HistorialFiltros({
   oposiciones,
@@ -29,7 +29,7 @@ export default function HistorialFiltros({
           <option value="30d">&Uacute;ltimos 30 d&iacute;as</option>
           <option value="todo">Todo el historial</option>
         </select>
-        <select style={SEL} value={modoFiltro} onChange={(e) => setModoFiltro(e.target.value)}>
+        <select style={SEL} value={modoFiltro} onChange={(e) => { setModoFiltro(e.target.value); onResetPage(); }}>
           <option value="todos">Todos los modos</option>
           <option value="adaptativo">Adaptativo</option>
           <option value="normal">Normal</option>
@@ -44,7 +44,7 @@ export default function HistorialFiltros({
             <option key={op.id} value={String(op.id)}>{op.nombre}</option>
           ))}
         </select>
-        <select style={SEL} value={notaFiltro} onChange={(e) => setNotaFiltro(e.target.value)}>
+        <select style={SEL} value={notaFiltro} onChange={(e) => { setNotaFiltro(e.target.value); onResetPage(); }}>
           <option value="todas">Todas las notas</option>
           <option value="aprobados">Aprobados (&ge;5)</option>
           <option value="suspensos">Suspensos (&lt;5)</option>
@@ -56,13 +56,13 @@ export default function HistorialFiltros({
         <input
           type="text"
           value={textoFiltro}
-          onChange={(e) => setTextoFiltro(e.target.value)}
+          onChange={(e) => { setTextoFiltro(e.target.value); onResetPage(); }}
           placeholder="Buscar por oposici&oacute;n, materia o tema&hellip;"
           style={{ ...SEL, minWidth: 220 }}
         />
         <button
           onClick={() => setExpanded((v) => !v)}
-          style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: expanded ? '#f1f5f9' : '#fff', fontSize: 13, color: '#64748b', cursor: 'pointer' }}
+          style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: expanded ? '#f1f5f9' : '#fff', fontSize: 13, color: '#64748b', cursor: 'pointer' }}
         >
           {expanded ? 'Menos filtros \u25b2' : 'M\u00e1s filtros \u25bc'}
         </button>
@@ -70,30 +70,30 @@ export default function HistorialFiltros({
 
       {/* Filtros avanzados colapsables */}
       {expanded && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '10px 12px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-          <select style={SEL} value={erroresFiltro} onChange={(e) => setErroresFiltro(e.target.value)}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '10px 12px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb' }}>
+          <select style={SEL} value={erroresFiltro} onChange={(e) => { setErroresFiltro(e.target.value); onResetPage(); }}>
             <option value="todos">Errores: todos</option>
             <option value="con">Con errores</option>
             <option value="sin">Sin errores</option>
           </select>
-          <select style={SEL} value={blancosFiltro} onChange={(e) => setBlancosFiltro(e.target.value)}>
+          <select style={SEL} value={blancosFiltro} onChange={(e) => { setBlancosFiltro(e.target.value); onResetPage(); }}>
             <option value="todos">Blancos: todos</option>
             <option value="con">Con blancos</option>
             <option value="sin">Sin blancos</option>
           </select>
-          <select style={SEL} value={duracionFiltro} onChange={(e) => setDuracionFiltro(e.target.value)}>
+          <select style={SEL} value={duracionFiltro} onChange={(e) => { setDuracionFiltro(e.target.value); onResetPage(); }}>
             <option value="todos">Duraci\u00f3n: todos</option>
             <option value="cortos">Cortos (&lt;10 min)</option>
             <option value="medios">Medios (10\u201330 min)</option>
             <option value="largos">Largos (&gt;30 min)</option>
           </select>
-          <select style={SEL} value={ritmoFiltro} onChange={(e) => setRitmoFiltro(e.target.value)}>
+          <select style={SEL} value={ritmoFiltro} onChange={(e) => { setRitmoFiltro(e.target.value); onResetPage(); }}>
             <option value="todos">Ritmo: todos</option>
             <option value="rapidos">R\u00e1pidos (&lt;45s/preg)</option>
             <option value="medios">Medios (45\u201390s/preg)</option>
             <option value="pausados">Pausados (&gt;90s/preg)</option>
           </select>
-          <select style={SEL} value={consistenciaFiltro} onChange={(e) => setConsistenciaFiltro(e.target.value)}>
+          <select style={SEL} value={consistenciaFiltro} onChange={(e) => { setConsistenciaFiltro(e.target.value); onResetPage(); }}>
             <option value="todos">Constancia: todos</option>
             <option value="alta">Alta (\u22653 tests/d\u00eda)</option>
             <option value="media">Media (2 tests/d\u00eda)</option>
@@ -104,7 +104,7 @@ export default function HistorialFiltros({
 
       {/* Contador */}
       <p style={{ margin: '6px 0 0', fontSize: 12, color: '#94a3b8' }}>
-        Mostrando <strong style={{ color: '#334155' }}>{filtradosCount}</strong> de {totalCount} tests
+        Mostrando <strong style={{ color: '#374151' }}>{filtradosCount}</strong> de {totalCount} tests
       </p>
     </div>
   );

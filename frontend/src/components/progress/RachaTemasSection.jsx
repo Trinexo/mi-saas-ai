@@ -32,30 +32,30 @@ export default function RachaTemasSection() {
   if (!rachaTemas || rachaTemas.length === 0) return null;
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 32 }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 32 }}>
       <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700 }}>Racha por tema</h2>
-      <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b' }}>D\u00edas consecutivos practicando cada tema</p>
+      <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b' }}>Días consecutivos practicando cada tema</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rachaTemas.slice(0, 15).map((t) => (
           <div key={t.temaId} style={{
             display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-            padding: '10px 14px', borderRadius: 8, background: '#f8fafc', border: '1px solid #f1f5f9',
+            padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid #f1f5f9',
           }}>
             <RachaBadge racha={t.rachaActual} />
             <div style={{ flex: 1, minWidth: 140 }}>
-              <Link to={`/tema/${t.temaId}`} style={{ fontWeight: 600, fontSize: 14, color: '#1e293b', textDecoration: 'none' }}>
+              <Link to={`/tema/${t.temaId}`} style={{ fontWeight: 600, fontSize: 14, color: '#111827', textDecoration: 'none' }}>
                 {t.temaNombre}
               </Link>
               <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 6 }}>{t.materiaNombre}</span>
             </div>
             <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#64748b' }}>
-              <span>{t.diasActivos} d\u00edas activos</span>
-              {t.ultimoDia && <span>\u00daltimo: {t.ultimoDia}</span>}
+              <span>{t.diasActivos} días activos</span>
+              {t.ultimoDia && <span>Último: {t.ultimoDia}</span>}
             </div>
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

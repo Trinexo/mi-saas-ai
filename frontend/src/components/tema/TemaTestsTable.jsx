@@ -11,8 +11,8 @@ export default function TemaTestsTable({ tests }) {
   if (tests.length === 0) return null;
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 24 }}>
-      <h2 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>Últimos tests en este tema</h2>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 24 }}>
+      <h2 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Últimos tests en este tema</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
@@ -44,7 +44,7 @@ export default function TemaTestsTable({ tests }) {
                   <td style={{ padding: '8px 10px', textAlign: 'right' }}>
                     <Link
                       to={`/revision/${t.testId}`}
-                      style={{ fontSize: 12, color: '#6366f1', textDecoration: 'none', fontWeight: 600 }}
+                      style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none', fontWeight: 600 }}
                     >
                       Revisar
                     </Link>
@@ -55,6 +55,6 @@ export default function TemaTestsTable({ tests }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }

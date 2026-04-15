@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
+import { useUserPlan } from '../../hooks/useUserPlan';
 import { testApi } from '../../services/testApi';
 import { catalogApi } from '../../services/catalogApi';
 import { getErrorMessage } from '../../services/api';
@@ -12,9 +13,13 @@ function formatTime(segundos) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+const TH = { textAlign: 'left', padding: '6px 10px', borderBottom: '2px solid #e5e7eb', color: '#374151', fontWeight: 600, fontSize: 12 };
+const TD = { padding: '6px 10px', borderBottom: '1px solid #e5e7eb', color: '#111827', fontSize: 14 };
+
 export default function EstadisticasPorTemaSection() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { hasAccess } = useUserPlan();
 
   const [catalogError, setCatalogError] = useState('');
   const [temaError, setTemaError] = useState('');
@@ -126,23 +131,38 @@ export default function EstadisticasPorTemaSection() {
     <>
       {/* ── Estadísticas por tema ── */}
       <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-        <h3>Estadísticas por tema</h3>
+        <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#111827' }}>Estadísticas por tema</h3>
         {loadingCatalog && <p>Cargando catálogo...</p>}
         {catalogError && <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{catalogError}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0.75rem 0' }}>
-          <select value={selOposicion} onChange={(e) => setSelOposicion(e.target.value)} disabled={loadingCatalog}>
+          <select
+            value={selOposicion}
+            onChange={(e) => setSelOposicion(e.target.value)}
+            disabled={loadingCatalog}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' }}
+          >
             <option value="">— Oposición —</option>
             {oposiciones.map((o) => (
               <option key={o.id} value={o.id}>{o.nombre}</option>
             ))}
           </select>
-          <select value={selMateria} onChange={(e) => setSelMateria(e.target.value)} disabled={!materias.length}>
+          <select
+            value={selMateria}
+            onChange={(e) => setSelMateria(e.target.value)}
+            disabled={!materias.length}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' }}
+          >
             <option value="">— Materia —</option>
             {materias.map((m) => (
               <option key={m.id} value={m.id}>{m.nombre}</option>
             ))}
           </select>
-          <select value={selTema} onChange={(e) => setSelTema(e.target.value)} disabled={!temas.length}>
+          <select
+            value={selTema}
+            onChange={(e) => setSelTema(e.target.value)}
+            disabled={!temas.length}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' }}
+          >
             <option value="">— Tema —</option>
             {temas.map((t) => (
               <option key={t.id} value={t.id}>{t.nombre}</option>
@@ -158,20 +178,29 @@ export default function EstadisticasPorTemaSection() {
             <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600 }}>
               {repasoData.pendientes} pendiente{repasoData.pendientes !== 1 ? 's' : ''} de repaso
             </span>
-            <button
-              onClick={async () => {
-                const test = await testApi.generate(token, {
-                  modo: 'repaso',
-                  temaId: Number(selTema),
-                  numeroPreguntas: Math.min(20, Math.max(5, repasoData.pendientes)),
-                  dificultad: 'mixto',
-                });
-                sessionStorage.setItem('active_test', JSON.stringify(test));
-                navigate('/test');
-              }}
-            >
-              Practicar repaso
-            </button>
+            {hasAccess('pro') ? (
+              <button
+                onClick={async () => {
+                  const test = await testApi.generate(token, {
+                    modo: 'repaso',
+                    temaId: Number(selTema),
+                    numeroPreguntas: Math.min(20, Math.max(5, repasoData.pendientes)),
+                    dificultad: 'mixto',
+                  });
+                  sessionStorage.setItem('active_test', JSON.stringify(test));
+                  navigate('/test');
+                }}
+              >
+                Practicar repaso
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/planes')}
+                style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #1d4ed8', background: '#fff', color: '#1d4ed8', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+              >
+                🔒 Pro
+              </button>
+            )}
           </div>
         )}
 
@@ -188,8 +217,8 @@ export default function EstadisticasPorTemaSection() {
                   { value: temaStats.errores, label: 'Errores' },
                   { value: `${pctTema}%`, label: 'Tasa de acierto' },
                 ].map(({ value, label }) => (
-                  <div key={label} style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 16px', textAlign: 'center', minWidth: 100, flex: '1 1 100px' }}>
-                    <span style={{ display: 'block', fontSize: 20, fontWeight: 800, color: '#1e293b' }}>{value}</span>
+                  <div key={label} style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 16px', textAlign: 'center', minWidth: 100, flex: '1 1 100px' }}>
+                    <span style={{ display: 'block', fontSize: 20, fontWeight: 800, color: '#111827' }}>{value}</span>
                     <span style={{ display: 'block', fontSize: 12, color: '#64748b', marginTop: 2 }}>{label}</span>
                   </div>
                 ))}
@@ -213,7 +242,7 @@ export default function EstadisticasPorTemaSection() {
       {/* ── Simulacros de esta oposición ── */}
       {selOposicion && (
         <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-          <h3>Simulacros de esta oposición</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#111827' }}>Simulacros de esta oposición</h3>
           {simulacrosLoading && <p>Cargando simulacros...</p>}
           {!simulacrosLoading && simulacrosData !== null && simulacrosData.length === 0 && (
             <p style={{ color: '#6b7280' }}>Aún no has hecho ningún simulacro para esta oposición.</p>
@@ -229,35 +258,35 @@ export default function EstadisticasPorTemaSection() {
                     { label: 'Nota media', value: notaMedia.toFixed(2), color: notaMedia >= 5 ? '#22c55e' : '#ef4444' },
                     { label: 'Mejor nota', value: mejor.nota.toFixed(2), color: '#22c55e' },
                   ].map(({ label, value, color }) => (
-                    <div key={label} style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: 6 }}>
+                    <div key={label} style={{ padding: '0.5rem 1rem', border: '1px solid #e5e7eb', borderRadius: 6 }}>
                       <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{label}</div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 700, color: color ?? undefined }}>{value}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{ overflowX: 'auto' }}>
-                  <table>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                     <thead>
                       <tr>
-                        <th>Fecha</th>
-                        <th>Nota</th>
-                        <th>Aciertos</th>
-                        <th>Errores</th>
-                        <th>En blanco</th>
-                        <th>Tiempo</th>
-                        <th>Revisión</th>
+                        <th style={TH}>Fecha</th>
+                        <th style={TH}>Nota</th>
+                        <th style={TH}>Aciertos</th>
+                        <th style={TH}>Errores</th>
+                        <th style={TH}>En blanco</th>
+                        <th style={TH}>Tiempo</th>
+                        <th style={TH}>Revisión</th>
                       </tr>
                     </thead>
                     <tbody>
                       {simulacrosData.map((s) => (
                         <tr key={s.testId}>
-                          <td>{new Date(s.fecha).toLocaleDateString('es-ES')}</td>
-                          <td><strong style={{ color: s.nota >= 5 ? '#22c55e' : '#ef4444' }}>{s.nota.toFixed(2)}</strong></td>
-                          <td>{s.aciertos}</td>
-                          <td>{s.errores}</td>
-                          <td>{s.blancos}</td>
-                          <td>{formatTime(s.tiempoRealSegundos)}</td>
-                          <td><a href={`/revision/${s.testId}`}>Ver</a></td>
+                          <td style={TD}>{new Date(s.fecha).toLocaleDateString('es-ES')}</td>
+                          <td style={TD}><strong style={{ color: s.nota >= 5 ? '#22c55e' : '#ef4444' }}>{s.nota.toFixed(2)}</strong></td>
+                          <td style={TD}>{s.aciertos}</td>
+                          <td style={TD}>{s.errores}</td>
+                          <td style={TD}>{s.blancos}</td>
+                          <td style={TD}>{formatTime(s.tiempoRealSegundos)}</td>
+                          <td style={TD}><a href={`/revision/${s.testId}`} style={{ color: '#1d4ed8', textDecoration: 'none', fontWeight: 500 }}>Ver</a></td>
                         </tr>
                       ))}
                     </tbody>

@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import ResultCard from '../components/result/ResultCard';
 import ResultAcciones from '../components/result/ResultAcciones';
 import ResultErroresPreview from '../components/result/ResultErroresPreview';
@@ -8,27 +7,47 @@ export default function ResultPage() {
   const activeTest = JSON.parse(sessionStorage.getItem('active_test') || 'null');
 
   if (!result) {
-    return <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 16px' }}><p style={{ color: '#64748b' }}>No hay resultados para mostrar.</p></main>;
+    return (
+      <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center', padding: '3rem 1rem' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📊</div>
+        <p style={{ margin: 0, fontWeight: 700, color: '#111827' }}>No hay resultados para mostrar</p>
+        <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: '0.875rem' }}>Completa un test primero.</p>
+      </div>
+    );
   }
 
   const temaNombre = activeTest?.temaNombre ?? null;
   const oposicionNombre = activeTest?.oposicionNombre ?? null;
   const contexto = temaNombre ?? oposicionNombre ?? null;
 
+  const aprobado = Number(result?.nota ?? 0) >= 5;
+
   return (
-    <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Resultado del test</h1>
-      {contexto && (
-        <p style={{ margin: '0 0 20px', fontSize: 13, color: '#64748b' }}>
-          {temaNombre && oposicionNombre
-            ? <>{temaNombre} <span style={{ color: '#cbd5e1' }}>&middot;</span> {oposicionNombre}</>
-            : contexto}
-        </p>
-      )}
-      {!contexto && <div style={{ marginBottom: 20 }} />}
+    <div style={{ maxWidth: 820, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '1.5rem', flexShrink: 0,
+          background: aprobado ? '#dcfce7' : '#fee2e2',
+        }}>
+          {aprobado ? '🏆' : '💪'}
+        </div>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>
+            {aprobado ? '¡Bien hecho!' : 'Sigue practicando'}
+          </h2>
+          {contexto && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+              {temaNombre && oposicionNombre
+                ? <>{temaNombre} <span style={{ color: '#cbd5e1' }}>&middot;</span> {oposicionNombre}</>
+                : contexto}
+            </p>
+          )}
+        </div>
+      </div>
       <ResultCard result={result} activeTest={activeTest} />
       <ResultErroresPreview result={result} activeTest={activeTest} />
-      <ResultAcciones activeTest={activeTest} />
-    </main>
+      <ResultAcciones activeTest={activeTest} result={result} />
+    </div>
   );
 }

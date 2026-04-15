@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const adminDashboardUsersRepository = {
-  async listUsers({ role, q }, limit, offset) {
+  async listUsers({ role, q, excludeRole }, limit, offset) {
     const args = [];
     const where = [];
 
@@ -9,17 +9,32 @@ export const adminDashboardUsersRepository = {
       args.push(role);
       where.push(`u.role = $${args.length}`);
     }
+    if (excludeRole) {
+      args.push(excludeRole);
+      where.push(`u.role != $${args.length}`);
+    }
     if (q) {
       args.push(`%${q}%`);
       where.push(`(u.nombre ILIKE $${args.length} OR u.email ILIKE $${args.length})`);
     }
 
+    // Excluir usuarios eliminados (soft-delete)
+    where.push('u.deleted_at IS NULL');
     const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     args.push(limit, offset);
 
     const result = await pool.query(
-      `SELECT u.id, u.nombre, u.email, u.role, u.fecha_registro
+      `SELECT u.id, u.nombre, u.email, u.role, u.fecha_registro,
+              COALESCE(s.plan, 'free') AS plan
        FROM usuarios u
+       LEFT JOIN LATERAL (
+         SELECT plan FROM suscripciones
+         WHERE usuario_id = u.id
+           AND estado = 'activa'
+           AND (fecha_fin IS NULL OR fecha_fin > NOW())
+         ORDER BY fecha_inicio DESC
+         LIMIT 1
+       ) s ON true
        ${whereClause}
        ORDER BY u.fecha_registro DESC
        LIMIT $${args.length - 1} OFFSET $${args.length}`,
@@ -37,9 +52,37 @@ export const adminDashboardUsersRepository = {
 
   async updateUserRole(userId, role) {
     const result = await pool.query(
-      `UPDATE usuarios SET role = $2 WHERE id = $1 RETURNING id, nombre, email, role`,
+      `UPDATE usuarios SET role = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id, nombre, email, role`,
       [userId, role],
     );
     return result.rows[0] ?? null;
+  },
+
+  async deleteUser(userId) {
+    const result = await pool.query(
+      `UPDATE usuarios SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, email`,
+      [userId],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async bulkUpdateRole(userIds, role) {
+    const result = await pool.query(
+      `UPDATE usuarios SET role = $1
+       WHERE id = ANY($2::int[]) AND deleted_at IS NULL
+       RETURNING id`,
+      [role, userIds],
+    );
+    return result.rowCount;
+  },
+
+  async bulkDeleteUsers(userIds) {
+    const result = await pool.query(
+      `UPDATE usuarios SET deleted_at = NOW()
+       WHERE id = ANY($1::int[]) AND deleted_at IS NULL
+       RETURNING id`,
+      [userIds],
+    );
+    return result.rowCount;
   },
 };

@@ -48,4 +48,38 @@ export const authRepository = {
   async updatePasswordHash(id, passwordHash) {
     await pool.query('UPDATE usuarios SET password_hash = $1 WHERE id = $2', [passwordHash, id]);
   },
+
+  // ── Password resets ──────────────────────────────────────────────────────
+
+  async createPasswordReset({ userId, tokenHash, expiresAt }) {
+    // Invalida resets previos del usuario antes de crear uno nuevo
+    await pool.query(
+      `DELETE FROM password_resets WHERE usuario_id = $1`,
+      [userId],
+    );
+    await pool.query(
+      `INSERT INTO password_resets (usuario_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, tokenHash, expiresAt],
+    );
+  },
+
+  async getPasswordReset(tokenHash) {
+    const result = await pool.query(
+      `SELECT pr.id, pr.usuario_id, pr.expires_at, pr.usado_en,
+              u.nombre, u.email
+       FROM password_resets pr
+       JOIN usuarios u ON u.id = pr.usuario_id
+       WHERE pr.token_hash = $1`,
+      [tokenHash],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async markPasswordResetUsed(id) {
+    await pool.query(
+      `UPDATE password_resets SET usado_en = NOW() WHERE id = $1`,
+      [id],
+    );
+  },
 };

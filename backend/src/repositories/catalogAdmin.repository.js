@@ -15,9 +15,10 @@ export const catalogAdminRepository = {
     const values = [];
     if (fields.nombre !== undefined) { values.push(fields.nombre); setClauses.push(`nombre = $${values.length}`); }
     if (fields.descripcion !== undefined) { values.push(fields.descripcion); setClauses.push(`descripcion = $${values.length}`); }
+    if (fields.tiempo_limite_minutos !== undefined) { values.push(fields.tiempo_limite_minutos); setClauses.push(`tiempo_limite_minutos = $${values.length}`); }
     values.push(id);
     const r = await pool.query(
-      `UPDATE oposiciones SET ${setClauses.join(', ')} WHERE id = $${values.length} RETURNING id, nombre, descripcion`,
+      `UPDATE oposiciones SET ${setClauses.join(', ')} WHERE id = $${values.length} RETURNING id, nombre, descripcion, tiempo_limite_minutos`,
       values,
     );
     return r.rows[0] ?? null;

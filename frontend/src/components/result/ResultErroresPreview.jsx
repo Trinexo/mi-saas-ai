@@ -13,8 +13,8 @@ export default function ResultErroresPreview({ result, activeTest }) {
   const items = erroneas.slice(0, MAX_PREVIEW);
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '20px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px', color: '#1e293b' }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 16px', color: '#111827' }}>
         Preguntas erróneas
         <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 13, color: '#64748b' }}>({erroneas.length} en total)</span>
       </h2>
@@ -26,7 +26,7 @@ export default function ResultErroresPreview({ result, activeTest }) {
           const correcta = pregunta.opciones?.find((o) => o.id === pregunta.opcionCorrectaId);
           return (
             <div key={preguntaId} style={{ padding: '12px 14px', borderRadius: 8, border: '1px solid #fee2e2', background: '#fef2f2' }}>
-              <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#1e293b' }}>{pregunta.enunciado}</p>
+              <p style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#111827' }}>{pregunta.enunciado}</p>
               {tuRespuesta && (
                 <p style={{ margin: '0 0 4px', fontSize: 13, color: '#dc2626' }}>
                   <strong>Tu respuesta:</strong> {tuRespuesta}
@@ -46,6 +46,6 @@ export default function ResultErroresPreview({ result, activeTest }) {
           …y {erroneas.length - MAX_PREVIEW} más. Revisa todas en la revisión completa.
         </p>
       )}
-    </section>
+    </div>
   );
 }
