@@ -15,18 +15,27 @@ export default function RitmoPreguntaWidget() {
   }, [token]);
 
   return (
-    <section style={SECTION}>
-      <h2>Ritmo de resolución</h2>
-      <ul>
-        <li>Segundos por pregunta: <strong>{Number(data?.segundosMediosPorPregunta ?? 0).toFixed(2)} s</strong></li>
-        <li>Preguntas analizadas: <strong>{data?.preguntasAnalizadas ?? 0}</strong></li>
-        <li>Tests analizados: <strong>{data?.testsAnalizados ?? 0}</strong></li>
-      </ul>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Ritmo de resolución</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#111827' }}>{Number(data?.segundosMediosPorPregunta ?? 0).toFixed(2)} s</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Seg/pregunta</span>
+        </div>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#111827' }}>{data?.preguntasAnalizadas ?? 0}</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Preguntas</span>
+        </div>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#111827' }}>{data?.testsAnalizados ?? 0}</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Tests</span>
+        </div>
+      </div>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
         {data?.tendenciaRitmo === 'mejorando' && 'Tu ritmo está mejorando, mantén la constancia.'}
         {data?.tendenciaRitmo === 'empeorando' && 'Haz bloques más cortos para recuperar velocidad.'}
         {(!data?.tendenciaRitmo || data?.tendenciaRitmo === 'estable') && 'Ritmo estable, puedes subir intensidad progresivamente.'}
       </p>
-    </section>
+    </div>
   );
 }

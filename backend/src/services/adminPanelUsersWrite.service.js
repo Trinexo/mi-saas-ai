@@ -1,15 +1,8 @@
-import { ApiError } from '../utils/api-error.js';
-import { adminRepository } from '../repositories/admin.repository.js';
+// Barrel de compatibilidad - los metodos se han dividido en adminPanelUsersRole.
+import { adminPanelUsersRoleService } from './adminPanelUsersRole.service.js';
 
 export const adminPanelUsersWriteService = {
-  async updateUserRole(userId, role, requestingUser) {
-    if (Number(userId) === requestingUser.id) {
-      throw new ApiError(400, 'No puedes cambiar tu propio rol');
-    }
-    const updated = await adminRepository.updateUserRole(userId, role);
-    if (!updated) {
-      throw new ApiError(404, 'Usuario no encontrado');
-    }
-    return updated;
-  },
+  ...adminPanelUsersRoleService,
 };
+
+export { adminPanelUsersRoleService };

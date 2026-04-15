@@ -11,7 +11,7 @@ export default function TemaStatsGrid({ tema }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14, marginBottom: 24 }}>
       {stats.map(({ label, value, color }) => (
         <div key={label} style={{ background: '#fff', borderRadius: 12, padding: '18px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: color || '#1e293b' }}>{value}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: color || '#111827' }}>{value}</div>
           <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{label}</div>
         </div>
       ))}

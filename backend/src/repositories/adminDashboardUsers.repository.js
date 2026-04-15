@@ -18,8 +18,17 @@ export const adminDashboardUsersRepository = {
     args.push(limit, offset);
 
     const result = await pool.query(
-      `SELECT u.id, u.nombre, u.email, u.role, u.fecha_registro
+      `SELECT u.id, u.nombre, u.email, u.role, u.fecha_registro,
+              COALESCE(s.plan, 'free') AS plan
        FROM usuarios u
+       LEFT JOIN LATERAL (
+         SELECT plan FROM suscripciones
+         WHERE usuario_id = u.id
+           AND estado = 'activa'
+           AND (fecha_fin IS NULL OR fecha_fin > NOW())
+         ORDER BY fecha_inicio DESC
+         LIMIT 1
+       ) s ON true
        ${whereClause}
        ORDER BY u.fecha_registro DESC
        LIMIT $${args.length - 1} OFFSET $${args.length}`,

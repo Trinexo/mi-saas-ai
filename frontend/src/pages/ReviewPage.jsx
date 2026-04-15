@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 import { testApi } from '../services/testApi';
 import { marcadasApi } from '../services/marcadasApi';
@@ -76,8 +76,19 @@ export default function ReviewPage() {
     }
   };
 
-  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
-  if (!preguntas) return <p>Cargando revisión...</p>;
+  if (error) return (
+    <div style={{ maxWidth: 860, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+      <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>⚠️</div>
+      <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
+    </div>
+  );
+  if (!preguntas) return (
+    <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+      <div style={{ width: 38, height: 38, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>Cargando revisión…</p>
+    </div>
+  );
 
   const correctas = preguntas.filter((p) => p.esCorrecta).length;
   const errores = preguntas.filter((p) => !p.esCorrecta && p.respuestaUsuarioId !== null).length;
@@ -91,13 +102,7 @@ export default function ReviewPage() {
   });
 
   return (
-    <section>
-      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
-        <span>›</span>
-        <span style={{ color: '#1e293b', fontWeight: 600 }}>Revisión</span>
-      </nav>
-
+    <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <ReviewHeader onVolver={() => navigate('/resultado')} />
       <ReviewTestInfo testInfo={testInfo} />
       <ReviewResumen correctas={correctas} errores={errores} blancos={blancos} />
@@ -115,8 +120,8 @@ export default function ReviewPage() {
             onClick={() => setModoUnoUno(m === 'una-a-una')}
             style={{
               padding: '5px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
-              border: '1px solid #d1d5db',
-              background: (m === 'una-a-una') === modoUnoUno ? '#6366f1' : '#fff',
+              border: '1px solid #e5e7eb',
+              background: (m === 'una-a-una') === modoUnoUno ? '#1d4ed8' : '#fff',
               color: (m === 'una-a-una') === modoUnoUno ? '#fff' : '#374151',
               fontWeight: (m === 'una-a-una') === modoUnoUno ? 700 : 400,
             }}
@@ -139,14 +144,14 @@ export default function ReviewPage() {
                 <button
                   disabled={indexActivo === 0}
                   onClick={() => setIndexActivo((i) => i - 1)}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: indexActivo === 0 ? 'not-allowed' : 'pointer', opacity: indexActivo === 0 ? 0.4 : 1, fontSize: 13, color: '#334155' }}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', cursor: indexActivo === 0 ? 'not-allowed' : 'pointer', opacity: indexActivo === 0 ? 0.4 : 1, fontSize: 13, color: '#374151' }}
                 >
                   ← Anterior
                 </button>
                 <button
                   disabled={indexActivo === preguntasFiltradas.length - 1}
                   onClick={() => setIndexActivo((i) => i + 1)}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: indexActivo === preguntasFiltradas.length - 1 ? 'not-allowed' : 'pointer', opacity: indexActivo === preguntasFiltradas.length - 1 ? 0.4 : 1, fontSize: 13, color: '#334155' }}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', cursor: indexActivo === preguntasFiltradas.length - 1 ? 'not-allowed' : 'pointer', opacity: indexActivo === preguntasFiltradas.length - 1 ? 0.4 : 1, fontSize: 13, color: '#374151' }}
                 >
                   Siguiente →
                 </button>
@@ -193,6 +198,6 @@ export default function ReviewPage() {
         onSubmit={submitReporte}
         onClose={closeReportModal}
       />
-    </section>
+    </div>
   );
 }

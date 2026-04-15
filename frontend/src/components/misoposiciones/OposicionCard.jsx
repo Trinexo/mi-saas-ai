@@ -16,7 +16,7 @@ export default function OposicionCard({ op, onNavigate, onPracticar }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1e293b' }}>{op.nombre}</h2>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#111827' }}>{op.nombre}</h2>
           {op.ultimaPractica && (
             <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>
               Última práctica: {formatDate(op.ultimaPractica)}
@@ -25,7 +25,7 @@ export default function OposicionCard({ op, onNavigate, onPracticar }) {
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onPracticar(op.oposicionId); }}
-          style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}
+          style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}
         >
           Practicar
         </button>
@@ -47,7 +47,7 @@ export default function OposicionCard({ op, onNavigate, onPracticar }) {
         ].map(({ label, value }) => (
           <div key={label}>
             <p style={{ margin: 0, fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</p>
-            <p style={{ margin: '2px 0 0', fontSize: 15, fontWeight: 700, color: '#334155' }}>{value}</p>
+            <p style={{ margin: '2px 0 0', fontSize: 15, fontWeight: 700, color: '#374151' }}>{value}</p>
           </div>
         ))}
       </div>

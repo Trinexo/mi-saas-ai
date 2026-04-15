@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 import MateriaMaestriaBar from '../components/materia/MateriaMaestriaBar';
@@ -24,8 +24,19 @@ export default function MateriaPage() {
       .finally(() => setLoading(false));
   }, [token, id]);
 
-  if (loading) return <main style={{ padding: 32 }}><p>Cargando…</p></main>;
-  if (error) return <main style={{ padding: 32 }}><p style={{ color: 'red' }}>{error}</p></main>;
+  if (loading) return (
+    <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+      <div style={{ width: 38, height: 38, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>Cargando…</p>
+    </div>
+  );
+  if (error) return (
+    <div style={{ maxWidth: 820, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+      <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>⚠️</div>
+      <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
+    </div>
+  );
 
   const materiaNombre = temas[0]?.materiaNombre ?? `Materia #${id}`;
   const oposicionId = temas[0]?.oposicionId ?? null;
@@ -38,27 +49,19 @@ export default function MateriaPage() {
   const colorGlobal = maestriaGlobal >= 70 ? '#22c55e' : maestriaGlobal >= 40 ? '#f59e0b' : '#ef4444';
 
   return (
-    <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 16px' }}>
-      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
-        <span>›</span>
-        <Link to="/mis-oposiciones" style={{ color: '#64748b', textDecoration: 'none' }}>Mis oposiciones</Link>
-        {oposicionId && (
-          <>
-            <span>›</span>
-            <Link to={`/oposicion/${oposicionId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{oposicionNombre}</Link>
-          </>
-        )}
-      </nav>
-      <h1 style={{ fontSize: 22, fontWeight: 800, margin: '16px 0 4px' }}>{materiaNombre}</h1>
-      <p style={{ color: '#64748b', margin: '0 0 24px', fontSize: 13 }}>
-        {practicados} de {totalTemas} temas practicados
-      </p>
+    <div style={{ maxWidth: 820, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>{materiaNombre}</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+          {practicados} de {totalTemas} temas practicados
+          {oposicionNombre && <> &middot; {oposicionNombre}</>}
+        </p>
+      </div>
       <MateriaMaestriaBar maestriaGlobal={maestriaGlobal} colorGlobal={colorGlobal} />
       <MateriaTemasTable
         temas={temas}
         onPracticar={(temaId) => navigate('/', { state: { temaId, materiaId: Number(id) } })}
       />
-    </main>
+    </div>
   );
 }

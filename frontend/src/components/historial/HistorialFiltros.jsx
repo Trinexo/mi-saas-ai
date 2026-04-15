@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const SEL = { padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, color: '#334155', background: '#fff' };
+const SEL = { padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' };
 
 export default function HistorialFiltros({
   oposiciones,
@@ -62,7 +62,7 @@ export default function HistorialFiltros({
         />
         <button
           onClick={() => setExpanded((v) => !v)}
-          style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: expanded ? '#f1f5f9' : '#fff', fontSize: 13, color: '#64748b', cursor: 'pointer' }}
+          style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: expanded ? '#f1f5f9' : '#fff', fontSize: 13, color: '#64748b', cursor: 'pointer' }}
         >
           {expanded ? 'Menos filtros \u25b2' : 'M\u00e1s filtros \u25bc'}
         </button>
@@ -70,7 +70,7 @@ export default function HistorialFiltros({
 
       {/* Filtros avanzados colapsables */}
       {expanded && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '10px 12px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '10px 12px', background: '#f9fafb', borderRadius: 10, border: '1px solid #e5e7eb' }}>
           <select style={SEL} value={erroresFiltro} onChange={(e) => setErroresFiltro(e.target.value)}>
             <option value="todos">Errores: todos</option>
             <option value="con">Con errores</option>
@@ -104,7 +104,7 @@ export default function HistorialFiltros({
 
       {/* Contador */}
       <p style={{ margin: '6px 0 0', fontSize: 12, color: '#94a3b8' }}>
-        Mostrando <strong style={{ color: '#334155' }}>{filtradosCount}</strong> de {totalCount} tests
+        Mostrando <strong style={{ color: '#374151' }}>{filtradosCount}</strong> de {totalCount} tests
       </p>
     </div>
   );

@@ -62,4 +62,13 @@ export const testQuestionsSpecialRepository = {
     const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, temaId]);
     return result.rows;
   },
+
+  async getOpcionesCorrectasByPreguntaIds(preguntaIds) {
+    if (!preguntaIds || preguntaIds.length === 0) return {};
+    const result = await pool.query(
+      'SELECT pregunta_id, id AS opcion_id FROM opciones_respuesta WHERE pregunta_id = ANY($1::bigint[]) AND correcta = TRUE',
+      [preguntaIds],
+    );
+    return Object.fromEntries(result.rows.map((r) => [r.pregunta_id, r.opcion_id]));
+  },
 };

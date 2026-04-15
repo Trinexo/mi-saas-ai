@@ -21,16 +21,16 @@ export default function ResumenOposicionWidget() {
   const mc = data.maestria >= 70 ? '#22c55e' : data.maestria >= 40 ? '#f59e0b' : '#ef4444';
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16, borderLeft: `4px solid ${mc}` }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16, borderLeft: `4px solid ${mc}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
         <div>
-          <h2 style={{ margin: 0 }}>Tu oposición</h2>
-          <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{data.oposicionNombre}</p>
+          <h2 style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Tu oposición</h2>
+          <p style={{ margin: '2px 0 0', fontSize: 14, fontWeight: 700, color: '#111827' }}>{data.oposicionNombre}</p>
         </div>
         <a
           href={`/oposicion/${user.oposicionPreferidaId}`}
           onClick={(e) => { e.preventDefault(); navigate(`/oposicion/${user.oposicionPreferidaId}`); }}
-          style={{ fontSize: 13, color: '#6366f1', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
+          style={{ fontSize: 13, color: '#1d4ed8', textDecoration: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
         >
           Ver detalle →
         </a>
@@ -56,6 +56,6 @@ export default function ResumenOposicionWidget() {
           </a>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

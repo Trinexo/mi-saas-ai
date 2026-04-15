@@ -28,8 +28,16 @@ export default function ResumenGlobalSection() {
     return () => { cancelled = true; };
   }, [token]);
 
-  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
-  if (loading || !stats) return <p>Cargando progreso...</p>;
+  if (error) return (
+    <div style={{ display: 'flex', gap: 8, background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: '8px 14px', marginBottom: 16 }}>
+      <span>⚠️</span>{error}
+    </div>
+  );
+  if (loading || !stats) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+      <div style={{ width: 38, height: 38, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
+    </div>
+  );
 
   const totalRespondidas = stats.aciertos + stats.errores + stats.blancos;
   const pctAcierto = totalRespondidas > 0
@@ -37,8 +45,7 @@ export default function ResumenGlobalSection() {
     : 0;
 
   return (
-    <section>
-      <h2>Mi Progreso</h2>
+    <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: '1.25rem' }}>
         {[
           { value: stats.totalTests, label: 'Tests realizados' },
@@ -48,8 +55,8 @@ export default function ResumenGlobalSection() {
           { value: Number(stats.notaMedia).toFixed(2), label: 'Nota media' },
           { value: formatTime(stats.tiempoMedio), label: 'Tiempo medio/test' },
         ].map(({ value, label }) => (
-          <div key={label} style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 18px', textAlign: 'center', minWidth: 110, flex: '1 1 110px' }}>
-            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#1e293b' }}>{value}</span>
+          <div key={label} style={{ background: '#f9fafb', borderRadius: 8, padding: '12px 18px', textAlign: 'center', minWidth: 110, flex: '1 1 110px' }}>
+            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#111827' }}>{value}</span>
             <span style={{ display: 'block', fontSize: 12, color: '#64748b', marginTop: 2 }}>{label}</span>
           </div>
         ))}
@@ -68,6 +75,6 @@ export default function ResumenGlobalSection() {
           }} />
         </div>
       </div>
-    </section>
+    </div>
   );
 }

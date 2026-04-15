@@ -2,7 +2,7 @@ export default function TemaMaestriaBar({ tema }) {
   const maestriaColor = tema.maestria >= 70 ? '#22c55e' : tema.maestria >= 40 ? '#f59e0b' : '#ef4444';
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 24 }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>Maestría</span>
         <span style={{ fontWeight: 800, fontSize: 20, color: maestriaColor }}>{tema.maestria}%</span>
@@ -15,6 +15,6 @@ export default function TemaMaestriaBar({ tema }) {
           Última práctica: {new Date(tema.ultimaPractica).toLocaleDateString('es-ES')}
         </p>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 import OposicionAcciones from '../components/oposicion/OposicionAcciones';
@@ -32,20 +32,27 @@ export default function OposicionPage() {
       .finally(() => setLoading(false));
   }, [token, id]);
 
-  if (loading) return <main style={{ padding: 32 }}><p>Cargando…</p></main>;
-  if (error) return <main style={{ padding: 32 }}><p style={{ color: 'red' }}>{error}</p></main>;
+  if (loading) return (
+    <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+      <div style={{ width: 38, height: 38, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>Cargando…</p>
+    </div>
+  );
+  if (error) return (
+    <div style={{ maxWidth: 820, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+      <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>⚠️</div>
+      <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
+    </div>
+  );
   if (!resumen) return null;
 
   return (
-    <main style={{ maxWidth: 820, margin: '0 auto', padding: '32px 16px' }}>
-      <nav style={{ fontSize: 13, color: '#64748b', marginBottom: 16, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Link to="/" style={{ color: '#64748b', textDecoration: 'none' }}>Inicio</Link>
-        <span>›</span>
-        <Link to="/mis-oposiciones" style={{ color: '#64748b', textDecoration: 'none' }}>Mis oposiciones</Link>
-      </nav>
-
-      <h1 style={{ fontSize: 24, fontWeight: 800, margin: '16px 0 4px' }}>{resumen.oposicionNombre}</h1>
-      <p style={{ color: '#64748b', margin: '0 0 28px', fontSize: 13 }}>Resumen de tu progreso en esta oposición</p>
+    <div style={{ maxWidth: 820, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>{resumen.oposicionNombre}</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Resumen de tu progreso en esta oposición</p>
+      </div>
 
       <OposicionMaestriaBar resumen={resumen} />
       <OposicionStatsGrid resumen={resumen} />
@@ -58,6 +65,6 @@ export default function OposicionPage() {
         oposicionId={Number(id)}
         onPracticar={(materiaId) => navigate('/', { state: { materiaId, oposicionId: Number(id) } })}
       />
-    </main>
+    </div>
   );
 }

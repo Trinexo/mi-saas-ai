@@ -18,18 +18,27 @@ export default function BalancePrecisionWidget() {
   const pctError = Number(data?.porcentajeError ?? 0);
 
   return (
-    <section style={SECTION}>
-      <h2>Balance de precisión</h2>
-      <ul>
-        <li>Acierto: <strong>{Number(data?.porcentajeAcierto ?? 0).toFixed(2)}%</strong> ({data?.aciertosTotales ?? 0})</li>
-        <li>Error: <strong>{pctError.toFixed(2)}%</strong> ({data?.erroresTotales ?? 0})</li>
-        <li>Blanco: <strong>{pctBlanco.toFixed(2)}%</strong> ({data?.blancosTotales ?? 0})</li>
-      </ul>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Balance de precisión</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{Number(data?.porcentajeAcierto ?? 0).toFixed(2)}%</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Acierto ({data?.aciertosTotales ?? 0})</span>
+        </div>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#ef4444' }}>{pctError.toFixed(2)}%</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Error ({data?.erroresTotales ?? 0})</span>
+        </div>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#94a3b8' }}>{pctBlanco.toFixed(2)}%</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Blanco ({data?.blancosTotales ?? 0})</span>
+        </div>
+      </div>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
         {pctBlanco > 20 && 'Reduce blancos con tests más cortos.'}
         {pctBlanco <= 20 && pctError > 35 && 'Conviene reforzar conceptos clave.'}
         {pctBlanco <= 20 && pctError <= 35 && 'Buen equilibrio de respuesta.'}
       </p>
-    </section>
+    </div>
   );
 }
