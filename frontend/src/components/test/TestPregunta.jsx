@@ -20,16 +20,16 @@ export default function TestPregunta({ question, answers, onSelect, feedbackMode
       };
       return {
         textAlign: 'left', padding: '10px 16px', borderRadius: 8,
-        border: '1px solid #e2e8f0', background: '#f8fafc',
+        border: '1px solid #e5e7eb', background: '#f9fafb',
         color: '#94a3b8', fontWeight: 400, cursor: 'default', fontSize: '0.95rem',
       };
     }
 
     return {
       textAlign: 'left', padding: '10px 16px', borderRadius: 8,
-      border: isSelected ? '2px solid #6366f1' : '1px solid #e2e8f0',
-      background: isSelected ? '#eef2ff' : '#f8fafc',
-      color: isSelected ? '#4338ca' : '#334155',
+      border: isSelected ? '2px solid #1d4ed8' : '1px solid #e5e7eb',
+      background: isSelected ? '#dbeafe' : '#f9fafb',
+      color: isSelected ? '#1d4ed8' : '#374151',
       fontWeight: isSelected ? 600 : 400,
       cursor: feedbackMode && confirmed ? 'default' : 'pointer',
       fontSize: '0.95rem',
@@ -41,14 +41,14 @@ export default function TestPregunta({ question, answers, onSelect, feedbackMode
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pregunta {index + 1} de {total}</span>
+        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pregunta {index + 1} de {total}</span>
         {feedbackMode && confirmed && (
           <span style={{ fontSize: '0.75rem', color: answers[question.id] === question.opcionCorrectaId ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
             {answers[question.id] === question.opcionCorrectaId ? '✓ Correcta' : '✗ Incorrecta'}
           </span>
         )}
       </div>
-      <p style={{ margin: '0 0 1rem', fontWeight: 500, color: '#1e293b', lineHeight: 1.5 }}>{question.enunciado}</p>
+      <p style={{ margin: '0 0 1rem', fontWeight: 500, color: '#111827', lineHeight: 1.5 }}>{question.enunciado}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '1rem 0' }}>
         {question.opciones.map((option) => (
           <button
@@ -61,7 +61,7 @@ export default function TestPregunta({ question, answers, onSelect, feedbackMode
         ))}
       </div>
       {feedbackMode && confirmed && question.explicacion && (
-        <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13, color: '#475569' }}>
+        <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb', fontSize: 13, color: '#475569' }}>
           <strong>Explicación:</strong> {question.explicacion}
         </div>
       )}

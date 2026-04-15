@@ -20,7 +20,7 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <p style={{ margin: 0, flex: 1, fontWeight: 500, fontSize: 14, color: '#1e293b' }}>
+        <p style={{ margin: 0, flex: 1, fontWeight: 500, fontSize: 14, color: '#111827' }}>
           <strong>{idx + 1}.</strong> {pregunta.enunciado}
         </p>
         <div style={{ display: 'flex', gap: '4px' }}>
@@ -46,11 +46,11 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
         {pregunta.opciones.map((opcion) => {
           const cls = getOptionClass(opcion, pregunta.respuestaUsuarioId, pregunta.esCorrecta);
           const bg = cls === 'review-option correcta' || cls === 'review-option correcta_no_elegida'
-            ? '#f0fdf4' : cls === 'review-option incorrecta' ? '#fef2f2' : '#f8fafc';
+            ? '#f0fdf4' : cls === 'review-option incorrecta' ? '#fef2f2' : '#f9fafb';
           const border = cls === 'review-option correcta' || cls === 'review-option correcta_no_elegida'
-            ? '1px solid #bbf7d0' : cls === 'review-option incorrecta' ? '1px solid #fecaca' : '1px solid #e2e8f0';
+            ? '1px solid #bbf7d0' : cls === 'review-option incorrecta' ? '1px solid #fecaca' : '1px solid #e5e7eb';
           return (
-            <li key={opcion.id} style={{ padding: '8px 12px', borderRadius: 8, background: bg, border, fontSize: 13, color: '#334155' }}>
+            <li key={opcion.id} style={{ padding: '8px 12px', borderRadius: 8, background: bg, border, fontSize: 13, color: '#374151' }}>
               {opcion.texto}
               {opcion.correcta && <span style={{ marginLeft: 6, color: '#16a34a', fontWeight: 700 }}> ✓</span>}
               {pregunta.respuestaUsuarioId === opcion.id && !pregunta.esCorrecta && (
@@ -63,7 +63,7 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
           );
         })}
         {pregunta.respuestaUsuarioId === null && (
-          <li style={{ padding: '8px 12px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>
+          <li style={{ padding: '8px 12px', borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb', fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>
             En blanco
           </li>
         )}

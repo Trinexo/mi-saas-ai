@@ -45,11 +45,22 @@ export default function MarcadasPage() {
       )
     : [];
 
-  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
-  if (!preguntas) return <p>Cargando preguntas marcadas...</p>;
+  if (error) return (
+    <div style={{ maxWidth: 860, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+      <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>⚠️</div>
+      <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
+    </div>
+  );
+  if (!preguntas) return (
+    <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+      <div style={{ width: 38, height: 38, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>Cargando preguntas marcadas…</p>
+    </div>
+  );
 
   return (
-    <section>
+    <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <MarcadasHeader
         preguntas={preguntas}
         preguntasFiltradas={preguntasFiltradas}
@@ -68,6 +79,6 @@ export default function MarcadasPage() {
         filtroTema={filtroTema}
         onDesmarcar={onDesmarcar}
       />
-    </section>
+    </div>
   );
 }

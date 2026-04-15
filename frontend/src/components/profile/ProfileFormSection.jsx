@@ -6,14 +6,23 @@ import { useAsyncAction } from '../../hooks/useAsyncAction.js';
 const inputStyle = {
   width: '100%',
   marginBottom: '1rem',
-  padding: '.5rem .75rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: '1px solid #e5e7eb',
   boxSizing: 'border-box',
+  fontSize: '0.9rem',
+  color: '#111827',
+  outline: 'none',
 };
 
-const labelStyle = { display: 'block', marginBottom: '.5rem', fontWeight: 600 };
-const hintStyle = { color: '#6b7280', fontSize: '0.875rem', margin: '0 0 .5rem' };
+const selectStyle = {
+  ...inputStyle,
+  background: '#fff',
+  cursor: 'pointer',
+};
+
+const labelStyle = { display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.875rem', color: '#374151' };
+const hintStyle = { color: '#6b7280', fontSize: '0.8rem', margin: '-4px 0 8px' };
 
 export default function ProfileFormSection({ token, refreshUser }) {
   const [nombre, setNombre] = useState('');
@@ -57,11 +66,10 @@ export default function ProfileFormSection({ token, refreshUser }) {
     }, 'Error al actualizar el perfil');
   };
 
-  if (!profileLoaded) return <p style={{ padding: '1rem 0' }}>Cargando perfil...</p>;
+  if (!profileLoaded) return <p style={{ padding: '0.5rem 0', color: '#6b7280', fontSize: '0.875rem' }}>Cargando perfil…</p>;
 
   return (
-    <section style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: '2rem' }}>
-      <h3 style={{ marginTop: 0 }}>Datos personales</h3>
+    <>
       <form onSubmit={handleSubmit}>
         <label style={labelStyle}>Nombre</label>
         <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} style={inputStyle} />
@@ -72,7 +80,7 @@ export default function ProfileFormSection({ token, refreshUser }) {
         <select
           value={oposicionPreferidaId}
           onChange={(e) => setOposicionPreferidaId(e.target.value)}
-          style={{ ...inputStyle, marginBottom: '1.25rem' }}
+          style={{ ...selectStyle, marginBottom: '1.25rem' }}
         >
           <option value="">— Sin preferencia —</option>
           {oposiciones.map((op) => (
@@ -89,16 +97,16 @@ export default function ProfileFormSection({ token, refreshUser }) {
           onChange={(e) => setObjetivoDiario(e.target.value)}
           style={{ ...inputStyle, marginBottom: '1.25rem' }}
         />
-        {profileAction.error && <p style={{ color: '#c00', marginBottom: '.75rem' }}>{profileAction.error}</p>}
+        {profileAction.error && <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.85rem', marginBottom: 8 }}><span>⚠️</span>{profileAction.error}</div>}
         {profileAction.message && <p style={{ color: '#2a7', marginBottom: '.75rem' }}>{profileAction.message}</p>}
         <button
           type="submit"
           disabled={profileAction.isLoading}
-          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: profileAction.isLoading ? 0.7 : 1 }}
+          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: profileAction.isLoading ? 0.7 : 1, fontSize: '0.9rem' }}
         >
-          {profileAction.isLoading ? 'Guardando...' : 'Guardar cambios'}
+          {profileAction.isLoading ? 'Guardando…' : 'Guardar cambios'}
         </button>
       </form>
-    </section>
+    </>
   );
 }

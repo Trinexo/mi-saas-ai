@@ -27,7 +27,7 @@ export default function TestTimer({ index, total, answered, elapsed, remaining, 
       </div>
 
       {/* Barra de progreso de respuestas */}
-      <div style={{ height: 6, borderRadius: 3, background: '#e2e8f0', marginBottom: 4, overflow: 'hidden' }}>
+      <div style={{ height: 6, borderRadius: 3, background: '#e5e7eb', marginBottom: 4, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pctRespondidas}%`, background: '#22c55e', borderRadius: 3, transition: 'width 0.3s ease' }} />
       </div>
       <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0 0 0.75rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -37,11 +37,11 @@ export default function TestTimer({ index, total, answered, elapsed, remaining, 
 
       {/* Barra de tiempo restante */}
       {pctTiempo !== null && (
-        <div style={{ height: 4, borderRadius: 2, background: '#e2e8f0', marginBottom: 12, overflow: 'hidden' }}>
+        <div style={{ height: 4, borderRadius: 2, background: '#e5e7eb', marginBottom: 12, overflow: 'hidden' }}>
           <div style={{
             height: '100%',
             width: `${pctTiempo}%`,
-            background: isExpired ? '#dc2626' : isWarning ? '#f59e0b' : '#6366f1',
+            background: isExpired ? '#dc2626' : isWarning ? '#f59e0b' : '#1d4ed8',
             borderRadius: 2,
             transition: 'width 1s linear',
           }} />

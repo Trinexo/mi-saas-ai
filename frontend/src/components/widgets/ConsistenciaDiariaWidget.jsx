@@ -15,18 +15,27 @@ export default function ConsistenciaDiariaWidget() {
   }, [token]);
 
   return (
-    <section style={SECTION}>
-      <h2>Consistencia diaria</h2>
-      <ul>
-        <li>Días activos (30): <strong>{data?.diasActivos30 ?? 0}</strong></li>
-        <li>Días inactivos (30): <strong>{data?.diasInactivos30 ?? 30}</strong></li>
-        <li>Constancia: <strong>{Number(data?.porcentajeConstancia ?? 0).toFixed(2)}%</strong></li>
-      </ul>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Consistencia diaria</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#111827' }}>{data?.diasActivos30 ?? 0}</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Días activos (30d)</span>
+        </div>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#111827' }}>{data?.diasInactivos30 ?? 30}</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Días inactivos (30d)</span>
+        </div>
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center', flex: '1 1 100px' }}>
+          <span style={{ display: 'block', fontSize: 18, fontWeight: 800, color: '#1d4ed8' }}>{Number(data?.porcentajeConstancia ?? 0).toFixed(2)}%</span>
+          <span style={{ display: 'block', fontSize: 11, color: '#6b7280', marginTop: 2 }}>Constancia</span>
+        </div>
+      </div>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
         {data?.tendenciaConstancia === 'mejorando' && 'Tu constancia diaria está subiendo, sigue así.'}
         {data?.tendenciaConstancia === 'empeorando' && 'Recupera hábito con bloques cortos diarios.'}
         {(!data?.tendenciaConstancia || data?.tendenciaConstancia === 'estable') && 'Mantienes un ritmo constante de estudio.'}
       </p>
-    </section>
+    </div>
   );
 }

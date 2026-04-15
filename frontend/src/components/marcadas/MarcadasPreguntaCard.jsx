@@ -21,7 +21,7 @@ export default function MarcadasPreguntaCard({ pregunta, onDesmarcar }) {
         <button
           onClick={() => onDesmarcar(pregunta.id)}
           title="Quitar marca"
-          style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', cursor: 'pointer', fontSize: '0.875rem' }}
+          style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', cursor: 'pointer', fontSize: '0.875rem' }}
         >
           ☆ Quitar
         </button>

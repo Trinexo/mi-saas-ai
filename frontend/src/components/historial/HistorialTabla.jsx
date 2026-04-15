@@ -40,12 +40,12 @@ function ModoBadge({ modo }) {
 }
 
 const BTN_SECONDARY = {
-  padding: '5px 12px', borderRadius: 7, border: '1px solid #e2e8f0',
-  background: '#fff', color: '#334155', fontWeight: 600, fontSize: 12, cursor: 'pointer',
+  padding: '5px 12px', borderRadius: 7, border: '1px solid #e5e7eb',
+  background: '#fff', color: '#374151', fontWeight: 600, fontSize: 12, cursor: 'pointer',
 };
 const BTN_LINK = {
   padding: '5px 12px', borderRadius: 7, border: 'none',
-  background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: 12,
+  background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 12,
   cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
 };
 
@@ -82,13 +82,13 @@ export default function HistorialTabla({ itemsOrdenados, onReintentar }) {
                   <span style={{ fontSize: 12, color: '#94a3b8' }}>{mins} min</span>
                 )}
               </div>
-              <p style={{ margin: 0, fontSize: 13, color: '#1e293b', fontWeight: 500 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#111827', fontWeight: 500 }}>
                 {t.oposicionNombre ? (
                   <Link to={`/oposicion/${t.oposicionId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{t.oposicionNombre}</Link>
                 ) : null}
                 {t.materiaNombre ? <span style={{ color: '#94a3b8' }}> &rsaquo; {t.materiaNombre}</span> : null}
                 {t.temaId ? (
-                  <> &rsaquo; <Link to={`/tema/${t.temaId}`} style={{ color: '#334155', fontWeight: 600, textDecoration: 'none' }}>{t.temaNombre}</Link></>
+                  <> &rsaquo; <Link to={`/tema/${t.temaId}`} style={{ color: '#374151', fontWeight: 600, textDecoration: 'none' }}>{t.temaNombre}</Link></>
                 ) : (t.temaNombre ? <span> &rsaquo; {t.temaNombre}</span> : null)}
               </p>
             </div>

@@ -5,13 +5,16 @@ import { useAsyncAction } from '../../hooks/useAsyncAction.js';
 const inputStyle = {
   width: '100%',
   marginBottom: '1rem',
-  padding: '.5rem .75rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: '1px solid #e5e7eb',
   boxSizing: 'border-box',
+  fontSize: '0.9rem',
+  color: '#111827',
+  outline: 'none',
 };
 
-const labelStyle = { display: 'block', marginBottom: '.5rem', fontWeight: 600 };
+const labelStyle = { display: 'block', marginBottom: 6, fontWeight: 600, fontSize: '0.875rem', color: '#374151' };
 
 export default function PasswordFormSection({ token }) {
   const [passwordActual, setPasswordActual] = useState('');
@@ -39,8 +42,7 @@ export default function PasswordFormSection({ token }) {
   };
 
   return (
-    <section style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-      <h3 style={{ marginTop: 0 }}>Cambiar contraseña</h3>
+    <>
       <form onSubmit={handleSubmit}>
         <label style={labelStyle}>Contraseña actual</label>
         <input type="password" value={passwordActual} onChange={(e) => setPasswordActual(e.target.value)} style={inputStyle} />
@@ -53,16 +55,16 @@ export default function PasswordFormSection({ token }) {
           onChange={(e) => setPasswordConfirm(e.target.value)}
           style={{ ...inputStyle, marginBottom: '1.25rem' }}
         />
-        {passwordAction.error && <p style={{ color: '#c00', marginBottom: '.75rem' }}>{passwordAction.error}</p>}
+        {passwordAction.error && <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.85rem', marginBottom: 8 }}><span>⚠️</span>{passwordAction.error}</div>}
         {passwordAction.message && <p style={{ color: '#2a7', marginBottom: '.75rem' }}>{passwordAction.message}</p>}
         <button
           type="submit"
           disabled={passwordAction.isLoading}
-          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: passwordAction.isLoading ? 0.7 : 1 }}
+          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: passwordAction.isLoading ? 0.7 : 1, fontSize: '0.9rem' }}
         >
-          {passwordAction.isLoading ? 'Actualizando...' : 'Cambiar contraseña'}
+          {passwordAction.isLoading ? 'Actualizando…' : 'Cambiar contraseña'}
         </button>
       </form>
-    </section>
+    </>
   );
 }

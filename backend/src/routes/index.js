@@ -7,6 +7,7 @@ import adminRoutes from './v1/admin.routes.js';
 import repasoRoutes from './v1/repaso.routes.js';
 import marcadasRoutes from './v1/marcadas.routes.js';
 import reportesRoutes from './v1/reportes.routes.js';
+import subscriptionRoutes from './v1/subscription.routes.js';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/admin', adminRoutes);
 router.use('/repaso', repasoRoutes);
 router.use('/marcadas', marcadasRoutes);
 router.use('/preguntas/:preguntaId/reportar', reportesRoutes);
+router.use('/subscriptions', subscriptionRoutes);
 
 export default router;

@@ -92,11 +92,25 @@ export default function TestPage() {
   const answered = Object.keys(answers).length;
 
   return (
-    <section style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 28px', background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
       {test?.modo === 'simulacro' && (
-        <div style={{ background: '#1e293b', color: '#f1f5f9', padding: '8px 14px', borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 600 }}>
-          <span>🎯</span>
-          <span>Simulacro en curso — Las respuestas no se muestran hasta el final</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)',
+          color: '#fff', padding: '10px 16px', borderRadius: 10,
+          marginBottom: 18, fontSize: '0.875rem', fontWeight: 600,
+          boxShadow: '0 2px 8px rgba(29,78,216,.25)',
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>🎯</span>
+          <div>
+            <span style={{ fontWeight: 700 }}>Simulacro en curso</span>
+            <span style={{ fontWeight: 400, opacity: 0.85, marginLeft: 8 }}>Las respuestas no se muestran hasta el final</span>
+          </div>
+          {remaining !== null && (
+            <span style={{ marginLeft: 'auto', background: 'rgba(255,255,255,.15)', borderRadius: 6, padding: '3px 10px', fontSize: '0.82rem', fontFamily: 'monospace', fontWeight: 700 }}>
+              ⏱ {Math.floor(remaining / 60).toString().padStart(2,'0')}:{(remaining % 60).toString().padStart(2,'0')}
+            </span>
+          )}
         </div>
       )}
       <TestTimer
@@ -138,6 +152,6 @@ export default function TestPage() {
         hasAnswer={!!answers[question.id]}
         onComprobar={onComprobar}
       />
-    </section>
+    </div>
   );
 }

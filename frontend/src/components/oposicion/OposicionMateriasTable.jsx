@@ -4,8 +4,8 @@ export default function OposicionMateriasTable({ materias, oposicionId, onPracti
   if (materias.length === 0) return null;
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-      <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700 }}>Progreso por materia</h2>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
+      <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: '#111827' }}>Progreso por materia</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
@@ -22,8 +22,8 @@ export default function OposicionMateriasTable({ materias, oposicionId, onPracti
               const color = m.maestria >= 70 ? '#22c55e' : m.maestria >= 40 ? '#f59e0b' : '#ef4444';
               return (
                 <tr key={m.materiaId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1e293b' }}>
-                    <Link to={`/materia/${m.materiaId}`} style={{ color: '#1e293b', textDecoration: 'none' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>
+                    <Link to={`/materia/${m.materiaId}`} style={{ color: '#111827', textDecoration: 'none' }}>
                       {m.materiaNombre}
                     </Link>
                   </td>
@@ -42,7 +42,7 @@ export default function OposicionMateriasTable({ materias, oposicionId, onPracti
                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                     <button
                       onClick={() => onPracticar(m.materiaId)}
-                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
                     >
                       Practicar
                     </button>
@@ -53,6 +53,6 @@ export default function OposicionMateriasTable({ materias, oposicionId, onPracti
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
-const BTN = { padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'none', display: 'inline-block' };
-const BTN_PRIMARY = { ...BTN, background: '#6366f1', color: '#fff', border: 'none' };
+const BTN = { padding: '10px 20px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, fontSize: 14, cursor: 'pointer', textDecoration: 'none', display: 'inline-block' };
+const BTN_PRIMARY = { ...BTN, background: '#1d4ed8', color: '#fff', border: 'none' };
 const BTN_WARN = { ...BTN, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
 
 export default function ReviewAcciones({ testInfo, errores = 0, onNuevoTest, onVerProgreso }) {

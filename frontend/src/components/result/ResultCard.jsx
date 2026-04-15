@@ -21,7 +21,7 @@ export default function ResultCard({ result, activeTest }) {
   const dificultadLabel = DIFICULTAD_LABEL[activeTest?.dificultad] ?? activeTest?.dificultad ?? null;
 
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20 }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20, borderTop: `3px solid ${notaColor}` }}>
       {(modoLabel || dificultadLabel) && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
           {modoLabel && <span style={BADGE_STYLE}>{modoLabel}</span>}
@@ -40,7 +40,7 @@ export default function ResultCard({ result, activeTest }) {
         <div style={{ display: 'flex', height: '14px', borderRadius: '7px', overflow: 'hidden', marginBottom: '1.5rem' }}>
           <div style={{ width: `${pctAciertos}%`, background: '#22c55e' }} title={`Aciertos ${pctAciertos}%`} />
           <div style={{ width: `${pctErrores}%`, background: '#ef4444' }} title={`Errores ${pctErrores}%`} />
-          <div style={{ width: `${pctBlancos}%`, background: '#d1d5db' }} title={`Blancos ${pctBlancos}%`} />
+          <div style={{ width: `${pctBlancos}%`, background: '#e5e7eb' }} title={`Blancos ${pctBlancos}%`} />
         </div>
       )}
       <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -56,6 +56,6 @@ export default function ResultCard({ result, activeTest }) {
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

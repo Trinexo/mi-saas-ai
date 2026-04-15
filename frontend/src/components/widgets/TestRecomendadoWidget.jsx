@@ -44,14 +44,18 @@ export default function TestRecomendadoWidget() {
   };
 
   return (
-    <section style={SECTION}>
-      <h2>Test recomendado</h2>
-      <button disabled={isLoading} onClick={onStart}>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Test recomendado</h2>
+      <button
+        disabled={isLoading}
+        onClick={onStart}
+        style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1 }}
+      >
         {isLoading ? 'Generando...' : 'Hacer test ahora'}
       </button>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
         {data?.motivo || 'Empieza con un test rápido de 10 preguntas'}
       </p>
-    </section>
+    </div>
   );
 }

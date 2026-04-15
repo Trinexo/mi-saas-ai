@@ -93,14 +93,14 @@ export default function AdminRevisionPage() {
       {loading && <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando cola de revisión...</p>}
 
       {!loading && items.length === 0 && (
-        <div style={{ background: 'white', borderRadius: 10, padding: '2.5rem', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+        <div style={{ background: '#fff', borderRadius: 10, padding: '2.5rem', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
           <div style={{ fontSize: '2rem', marginBottom: 8 }}>✓</div>
           <p style={{ color: '#059669', fontWeight: 600, margin: 0 }}>No hay preguntas pendientes de revisión.</p>
         </div>
       )}
 
       {!loading && items.length > 0 && (
-        <div style={{ background: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+        <div style={{ background: '#fff', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
@@ -210,7 +210,7 @@ export default function AdminRevisionPage() {
             <button
               disabled={pagination.page <= 1}
               onClick={() => loadData(pagination.page - 1)}
-              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer', background: 'white', color: '#374151', fontSize: '0.85rem', opacity: pagination.page <= 1 ? 0.5 : 1 }}
+              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer', background: '#fff', color: '#374151', fontSize: '0.85rem', opacity: pagination.page <= 1 ? 0.5 : 1 }}
             >
               ← Anterior
             </button>
@@ -220,7 +220,7 @@ export default function AdminRevisionPage() {
             <button
               disabled={pagination.page >= totalPages}
               onClick={() => loadData(pagination.page + 1)}
-              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', cursor: pagination.page >= totalPages ? 'not-allowed' : 'pointer', background: 'white', color: '#374151', fontSize: '0.85rem', opacity: pagination.page >= totalPages ? 0.5 : 1 }}
+              style={{ padding: '0.3rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', cursor: pagination.page >= totalPages ? 'not-allowed' : 'pointer', background: '#fff', color: '#374151', fontSize: '0.85rem', opacity: pagination.page >= totalPages ? 0.5 : 1 }}
             >
               Siguiente →
             </button>

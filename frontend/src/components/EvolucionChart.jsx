@@ -46,7 +46,7 @@ export default function EvolucionChart({ data }) {
       <polyline
         points={points}
         fill="none"
-        stroke="#6366f1"
+        stroke="#1d4ed8"
         strokeWidth="2.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -59,7 +59,7 @@ export default function EvolucionChart({ data }) {
             cx={xScale(i)}
             cy={yScale(d.nota)}
             r={5}
-            fill="#6366f1"
+            fill="#1d4ed8"
             stroke="#fff"
             strokeWidth={2}
           />

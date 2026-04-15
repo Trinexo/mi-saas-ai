@@ -15,7 +15,7 @@ export default function ReviewFiltros({ filtro, setFiltro, filtradosCount, total
           style={{
             padding: '0.3rem 0.75rem',
             borderRadius: 20,
-            border: '1px solid #d1d5db',
+              border: '1px solid #e5e7eb',
             background: filtro === f.value ? '#2563eb' : '#fff',
             color: filtro === f.value ? '#fff' : '#374151',
             cursor: 'pointer',

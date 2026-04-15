@@ -38,9 +38,9 @@ const DIFICULTAD = {
 const BTN_PRIMARY = { background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
 const BTN_SECONDARY = { background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
 const BTN_DANGER = { background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
-const BTN_OUTLINE = { background: 'white', color: '#374151', border: '1px solid #d1d5db', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
-const SELECT_STYLE = { padding: '0.4rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.875rem', background: 'white' };
-const INPUT_STYLE = { padding: '0.4rem 0.75rem', borderRadius: 6, border: '1px solid #d1d5db', fontSize: '0.875rem', width: '100%', boxSizing: 'border-box' };
+const BTN_OUTLINE = { background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
+const SELECT_STYLE = { padding: '0.4rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff' };
+const INPUT_STYLE = { padding: '0.4rem 0.75rem', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: '0.875rem', width: '100%', boxSizing: 'border-box' };
 const SECTION_TITLE = { margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 600, color: '#111827' };
 
 export default function AdminQuestionsPage() {
@@ -354,7 +354,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Filtros */}
-      <div style={{ background: 'white', borderRadius: 10, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 16 }}>
         <p style={{ margin: '0 0 10px', fontSize: '0.8rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filtros</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <select
@@ -421,7 +421,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Tabla */}
-      <div style={{ background: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden', marginBottom: 0 }}>
+      <div style={{ background: '#fff', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden', marginBottom: 0 }}>
         {msg && <p style={{ margin: 0, padding: '10px 16px', color: '#059669', background: '#f0fdf4', fontSize: '0.875rem', fontWeight: 500 }}>{msg}</p>}
         {error && <p style={{ margin: 0, padding: '10px 16px', color: '#dc2626', background: '#fef2f2', fontSize: '0.875rem', fontWeight: 500 }}>{error}</p>}
         <div style={{ overflowX: 'auto' }}>
@@ -502,7 +502,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Formulario crear / editar */}
-      <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
         <h3 id="pregunta-form" style={{ ...SECTION_TITLE, paddingBottom: 12, borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>
           {editingId ? `Editando pregunta #${editingId}` : 'Nueva pregunta'}
         </h3>
@@ -652,7 +652,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Importador CSV */}
-      <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
         <h3 style={{ ...SECTION_TITLE, paddingBottom: 12, borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>Importador CSV</h3>
         <form onSubmit={onImportCsv} style={{ display: 'grid', gap: 12 }}>
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
@@ -718,7 +718,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Moderación de reportes */}
-      <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>
           <h3 style={{ ...SECTION_TITLE, marginBottom: 0, flex: 1 }}>Moderación de reportes</h3>
           <select value={reportesEstado} onChange={(e) => setReportesEstado(e.target.value)} style={SELECT_STYLE}>
@@ -777,7 +777,7 @@ export default function AdminQuestionsPage() {
 
       {/* Auditoría de cambios en preguntas */}
       {user?.role === 'admin' && (
-        <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
+        <div style={{ background: '#fff', borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginTop: 20 }}>
           <h3 style={{ ...SECTION_TITLE, paddingBottom: 12, borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>Auditoría de cambios</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
             <input

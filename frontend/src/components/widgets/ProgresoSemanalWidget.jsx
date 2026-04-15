@@ -15,8 +15,8 @@ export default function ProgresoSemanalWidget() {
   }, [token]);
 
   return (
-    <section style={SECTION}>
-      <h2>Progreso semanal</h2>
+    <div style={SECTION}>
+      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Progreso semanal</h2>
       <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: 0 }}>
         Tests semana: <strong>{data?.testsSemana ?? 0}</strong> · Nota media: <strong>{Number(data?.notaMediaSemana ?? 0).toFixed(2)}</strong>
       </p>
@@ -38,6 +38,6 @@ export default function ProgresoSemanalWidget() {
           ? 'Empieza hoy con un test rápido.'
           : 'Has mantenido actividad esta semana.'}
       </p>
-    </section>
+    </div>
   );
 }

@@ -9,7 +9,7 @@ export default function HistorialStats({ testsLast7Days, bestNoteLast30Days, mej
     <div style={{ display: 'flex', gap: 12, marginBottom: '1.5rem', flexWrap: 'wrap' }}>
       <div style={CARD}>
         <p style={LABEL}>Tests esta semana</p>
-        <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#1e293b' }}>{testsLast7Days}</p>
+        <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#111827' }}>{testsLast7Days}</p>
       </div>
       <div style={CARD}>
         <p style={LABEL}>Mejor nota (30 d)</p>
@@ -21,10 +21,10 @@ export default function HistorialStats({ testsLast7Days, bestNoteLast30Days, mej
         <p style={LABEL}>Mejor test semanal</p>
         {mejorTestSemana ? (
           <>
-            <p style={{ margin: '0 0 10px', fontSize: 24, fontWeight: 800, color: '#6366f1' }}>{Number(mejorTestSemana.nota).toFixed(2)}</p>
+            <p style={{ margin: '0 0 10px', fontSize: 24, fontWeight: 800, color: '#1d4ed8' }}>{Number(mejorTestSemana.nota).toFixed(2)}</p>
             <button
               onClick={() => onReintentar(mejorTestSemana.id)}
-              style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: 7, border: 'none', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+              style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: 7, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
             >
               Repetir
             </button>

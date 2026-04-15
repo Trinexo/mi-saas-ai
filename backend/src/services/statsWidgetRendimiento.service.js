@@ -1,27 +1,10 @@
-import { widgetStatsRepository } from '../repositories/widgetStats.repository.js';
+// Barrel de compatibilidad - los metodos se han dividido en statsWidgetRendimientoEficiencia y statsWidgetRendimientoCalidad.
+import { statsWidgetRendimientoEficienciaService } from './statsWidgetRendimientoEficiencia.service.js';
+import { statsWidgetRendimientoCalidadService } from './statsWidgetRendimientoCalidad.service.js';
 
 export const statsWidgetRendimientoService = {
-  async getRitmoPregunta(userId) {
-    return widgetStatsRepository.getRitmoPregunta(userId);
-  },
-
-  async getBalancePrecision(userId) {
-    return widgetStatsRepository.getBalancePrecision(userId);
-  },
-
-  async getEficienciaTiempo(userId) {
-    return widgetStatsRepository.getEficienciaTiempo(userId);
-  },
-
-  async getRendimientoModos(userId) {
-    return widgetStatsRepository.getRendimientoModos(userId);
-  },
-
-  async getInsightMensual(userId) {
-    return widgetStatsRepository.getInsightMensual(userId);
-  },
-
-  async getTemasDebiles(userId) {
-    return widgetStatsRepository.getTemasDebiles(userId);
-  },
+  ...statsWidgetRendimientoEficienciaService,
+  ...statsWidgetRendimientoCalidadService,
 };
+
+export { statsWidgetRendimientoEficienciaService, statsWidgetRendimientoCalidadService };

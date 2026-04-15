@@ -9,8 +9,8 @@ export default function MateriaTemasTable({ temas, onPracticar }) {
     );
   }
   return (
-    <section style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-      <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700 }}>Temas</h2>
+    <div style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
+      <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: '#111827' }}>Temas</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
@@ -27,8 +27,8 @@ export default function MateriaTemasTable({ temas, onPracticar }) {
               const color = t.maestria >= 70 ? '#22c55e' : t.maestria >= 40 ? '#f59e0b' : '#ef4444';
               return (
                 <tr key={t.temaId} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#1e293b' }}>
-                    <Link to={`/tema/${t.temaId}`} style={{ color: '#1e293b', textDecoration: 'none' }}>{t.temaNombre}</Link>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>
+                    <Link to={`/tema/${t.temaId}`} style={{ color: '#111827', textDecoration: 'none' }}>{t.temaNombre}</Link>
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>
                     {t.respondidas}/{t.totalPreguntas}
@@ -45,7 +45,7 @@ export default function MateriaTemasTable({ temas, onPracticar }) {
                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                     <button
                       onClick={() => onPracticar(t.temaId)}
-                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#334155', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
                     >
                       Practicar
                     </button>
@@ -56,6 +56,6 @@ export default function MateriaTemasTable({ temas, onPracticar }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }

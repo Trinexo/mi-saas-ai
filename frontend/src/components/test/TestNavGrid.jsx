@@ -12,7 +12,7 @@ export default function TestNavGrid({ preguntas, answers, index, setIndex }) {
               width: 36,
               height: 36,
               borderRadius: 6,
-              border: isCurrent ? '2px solid #2563eb' : '1px solid #d1d5db',
+              border: isCurrent ? '2px solid #2563eb' : '1px solid #e5e7eb',
               background: isCurrent ? '#2563eb' : isAnswered ? '#dcfce7' : '#f9fafb',
               color: isCurrent ? '#fff' : isAnswered ? '#15803d' : '#374151',
               fontWeight: isCurrent ? 700 : 400,
