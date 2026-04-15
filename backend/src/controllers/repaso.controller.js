@@ -9,3 +9,13 @@ export const getRepasoPendientes = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const postActualizarRepaso = async (req, res, next) => {
+  try {
+    const { respuestas } = req.body;
+    await repasoService.actualizarBatch(req.user.userId, respuestas);
+    return ok(res, { updated: respuestas.length });
+  } catch (error) {
+    return next(error);
+  }
+};

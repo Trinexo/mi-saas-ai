@@ -8,6 +8,10 @@ import repasoRoutes from './v1/repaso.routes.js';
 import marcadasRoutes from './v1/marcadas.routes.js';
 import reportesRoutes from './v1/reportes.routes.js';
 import subscriptionRoutes from './v1/subscription.routes.js';
+import accesosRoutes from './v1/accesos.routes.js';
+import billingRoutes from './v1/billing.routes.js';
+import notificacionesRoutes from './v1/notificaciones.routes.js';
+import profesorRoutes from './v1/profesor.routes.js';
 
 const router = Router();
 
@@ -24,5 +28,9 @@ router.use('/repaso', repasoRoutes);
 router.use('/marcadas', marcadasRoutes);
 router.use('/preguntas/:preguntaId/reportar', reportesRoutes);
 router.use('/subscriptions', subscriptionRoutes);
+router.use('/accesos', accesosRoutes);
+router.use('/billing', billingRoutes);
+router.use('/notificaciones', notificacionesRoutes);
+router.use('/profesor', profesorRoutes);
 
 export default router;

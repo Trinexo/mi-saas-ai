@@ -1,0 +1,37 @@
+# Configuración de deploy para Railway
+# Railway detecta este archivo automáticamente desde la carpeta raíz del servicio.
+# En Railway: New Project → Deploy from GitHub → Root Directory: backend
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "node src/server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Variables a configurar en Railway Dashboard → Variables:
+#
+# DATABASE_URL          → se copia automáticamente desde el plugin PostgreSQL
+# JWT_SECRET            → openssl rand -hex 64
+# JWT_EXPIRES_IN        → 7d
+# NODE_ENV              → production
+# FRONTEND_URL          → https://tu-app.vercel.app  (o dominio propio)
+# EMAIL_FROM            → noreply@tudominio.es
+# APP_NAME              → Plataforma Test
+# SMTP_HOST             → smtp.resend.com
+# SMTP_PORT             → 465
+# SMTP_SECURE           → true
+# SMTP_USER             → resend
+# SMTP_PASS             → re_xxxxxxxxxxxxxxxxxxxx  (Resend API key)
+# STRIPE_SECRET_KEY     → sk_live_xxxxxxxxxxxx
+# STRIPE_WEBHOOK_SECRET → whsec_xxxxxxxxxxxx
+
+# SMTP_HOST             → smtp.resend.com (si usas Resend)
+# SMTP_PORT             → 465
+# SMTP_SECURE           → true
+# SMTP_USER             → resend
+# SMTP_PASS             → re_xxxxxxxxxxxx
+# STRIPE_SECRET_KEY     → sk_live_xxxx (cuando tengas cuenta)
+# STRIPE_WEBHOOK_SECRET → whsec_xxxx

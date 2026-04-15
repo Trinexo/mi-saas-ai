@@ -1,4 +1,5 @@
-import pool from '../config/db.js';
+﻿import pool from '../config/db.js';
+import { spacedRepetitionRepository } from './spacedRepetition.repository.js';
 
 export const repasoRepository = {
   async getPendientes(userId, limit = 20) {
@@ -50,5 +51,16 @@ export const repasoRepository = {
         proximaRevision: row.proxima_revision,
       })),
     };
+  },
+
+  /**
+   * Delega en spacedRepetitionRepository para reutilizar el algoritmo SM-2 centralizado.
+   * respuestas: Array<{ preguntaId: number, acertada: boolean }>
+   */
+  async actualizarBatch(userId, respuestas) {
+    if (!respuestas || !respuestas.length) return;
+    for (const { preguntaId, acertada } of respuestas) {
+      await spacedRepetitionRepository.upsertRepaso({ userId, preguntaId, correcta: acertada });
+    }
   },
 };

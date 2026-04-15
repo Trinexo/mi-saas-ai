@@ -6,7 +6,9 @@ export const widgetEngagementFocoTemasRepository = {
       `SELECT
          pu.tema_id,
          t.nombre AS tema_nombre,
+         m.id AS materia_id,
          m.nombre AS materia_nombre,
+         o.id AS oposicion_id,
          o.nombre AS oposicion_nombre,
          pu.aciertos,
          pu.errores,
@@ -25,7 +27,9 @@ export const widgetEngagementFocoTemasRepository = {
     return result.rows.map((row) => ({
       temaId: Number(row.tema_id),
       temaNombre: row.tema_nombre,
+      materiaId: Number(row.materia_id),
       materiaNombre: row.materia_nombre,
+      oposicionId: Number(row.oposicion_id),
       oposicionNombre: row.oposicion_nombre,
       aciertos: Number(row.aciertos ?? 0),
       errores: Number(row.errores ?? 0),

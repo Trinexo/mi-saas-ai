@@ -7,11 +7,10 @@ import ProfileFormSection from '../components/profile/ProfileFormSection';
 import { subscriptionApi } from '../services/subscriptionApi';
 
 const ROLE_BADGE = {
-  admin:   { label: 'Administrador', bg: '#fef3c7', color: '#92400e' },
-  alumno:  { label: 'Alumno',         bg: '#eff6ff', color: '#1d4ed8' },
-  editor:  { label: 'Editor',         bg: '#dbeafe', color: '#1d4ed8' },
-  revisor: { label: 'Revisor',        bg: '#fef9c3', color: '#a16207' },
-  user:    { label: 'Alumno',         bg: '#eff6ff', color: '#1d4ed8' },
+  admin:    { label: 'Administrador', bg: '#fef3c7', color: '#92400e' },
+  profesor: { label: 'Profesor',      bg: '#dcfce7', color: '#166534' },
+  alumno:   { label: 'Alumno',        bg: '#eff6ff', color: '#1d4ed8' },
+  user:     { label: 'Alumno',        bg: '#eff6ff', color: '#1d4ed8' },
 };
 
 const PLAN_BADGE = {
@@ -32,7 +31,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!token) return;
     subscriptionApi.getMyPlan(token)
-      .then((res) => setPlanActual(res?.data?.planActual ?? 'free'))
+      .then((res) => setPlanActual(res?.planActual ?? 'free'))
       .catch(() => setPlanActual('free'));
   }, [token]);
 
@@ -78,6 +77,22 @@ export default function ProfilePage() {
             style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 7, padding: '8px 16px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}
           >
             Ver planes →
+          </button>
+        </div>
+      )}
+
+      {/* Banner de upgrade si el plan es pro → invitar a Elite */}
+      {planActual === 'pro' && (
+        <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 10, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#92400e' }}>🏆 Actualiza a Elite</div>
+            <div style={{ fontSize: '0.8rem', color: '#b45309', marginTop: 2 }}>Analíticas avanzadas, aprendizaje adaptativo y soporte prioritario por 19,99€/mes</div>
+          </div>
+          <button
+            onClick={() => navigate('/planes')}
+            style={{ background: '#b45309', color: '#fff', border: 'none', borderRadius: 7, padding: '8px 16px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}
+          >
+            Ver plan Elite →
           </button>
         </div>
       )}

@@ -1,11 +1,33 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useUserPlan } from '../../hooks/useUserPlan';
 import { testApi } from '../../services/testApi';
 
-const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
+const O  = '#ea580c';
+const OL = '#fb923c';
+const DK = '#111827';
+const DM = '#1f2937';
+
+const CARD_DARK = {
+  background:   `linear-gradient(135deg, ${DK} 0%, ${DM} 100%)`,
+  borderRadius: 20,
+  padding:      '24px 24px 20px',
+  boxShadow:    '0 4px 20px rgba(0,0,0,.22)',
+  marginBottom: 16,
+  marginLeft:   8,
+  position:     'relative',
+  overflow:     'hidden',
+};
+
+const IconPlay = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+);
+
+const IconLock = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+);
 
 export default function RepasoPendienteWidget() {
   const navigate = useNavigate();
@@ -13,6 +35,7 @@ export default function RepasoPendienteWidget() {
   const { isLoading, runAction, setErrorMessage } = useAsyncAction();
   const { hasAccess, loading: planLoading } = useUserPlan();
   const [data, setData] = useState(null);
+  const [hov, setHov] = useState(false);
 
   const tienePro = hasAccess('pro');
 
@@ -26,34 +49,28 @@ export default function RepasoPendienteWidget() {
   const onStart = async () => {
     const temaId = data?.temaIdSugerido;
     const totalPendientes = Number(data?.totalPendientes || 0);
-    if (!temaId || totalPendientes < 1) {
-      setErrorMessage('No tienes repaso pendiente hoy');
-      return;
-    }
-    const payload = {
-      modo: 'repaso',
-      temaId,
-      numeroPreguntas: Math.min(20, Math.max(5, totalPendientes)),
-      dificultad: 'mixto',
-    };
+    if (!temaId || totalPendientes < 1) { setErrorMessage('No tienes repaso pendiente hoy'); return; }
+    const payload = { modo: 'repaso', temaId, numeroPreguntas: Math.min(20, Math.max(5, totalPendientes)), dificultad: 'mixto' };
     const test = await runAction(() => testApi.generate(token, payload));
-    if (test) {
-      sessionStorage.setItem('active_test', JSON.stringify(test));
-      navigate('/test');
-    }
+    if (test) { sessionStorage.setItem('active_test', JSON.stringify(test)); navigate('/test'); }
   };
 
-  // Plan free → estado bloqueado
   if (!planLoading && !tienePro) {
     return (
-      <div style={{ ...SECTION, background: '#f9fafb', border: '1px dashed #d1d5db' }}>
-        <h2 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: '#6b7280' }}>🔒 Repaso espaciado</h2>
-        <p style={{ fontSize: '0.82rem', color: '#9ca3af', margin: '0 0 12px' }}>
-          La repetición espaciada activa el repaso inteligente basado en tus fallos a lo largo del tiempo.
+      <div style={{ ...CARD_DARK, borderLeft: '4px solid #374151' }}>
+        <div style={{ position: 'absolute', right: -16, top: -16, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,.03)', pointerEvents: 'none' }} />
+        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+          Repaso espaciado
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '1.1rem', fontWeight: 800, color: '#9ca3af', lineHeight: 1.35, marginBottom: 16 }}>
+          <IconLock /> Disponible en plan Pro
+        </div>
+        <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '0 0 16px', lineHeight: 1.5 }}>
+          Repaso inteligente basado en tus fallos a lo largo del tiempo.
         </p>
         <button
           onClick={() => navigate('/planes')}
-          style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #1d4ed8', background: '#fff', color: '#1d4ed8', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', color: OL, border: `1.5px solid ${O}`, borderRadius: 10, padding: '9px 20px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
         >
           Desbloquear con Pro
         </button>
@@ -61,20 +78,40 @@ export default function RepasoPendienteWidget() {
     );
   }
 
+  const pendientes = Number(data?.totalPendientes || 0);
+
   return (
-    <div style={SECTION}>
-      <h2 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#111827' }}>Repaso pendiente hoy</h2>
-      <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-        {data?.totalPendientes
-          ? `Tienes ${data.totalPendientes} preguntas pendientes de repetición espaciada.`
-          : 'No tienes preguntas pendientes hoy.'}
-      </p>
+    <div style={{ ...CARD_DARK, borderLeft: `4px solid ${pendientes > 0 ? O : '#374151'}` }}>
+      <div style={{ position: 'absolute', right: -16, top: -16, width: 120, height: 120, borderRadius: '50%', background: `${O}10`, pointerEvents: 'none' }} />
+      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: pendientes > 0 ? OL : '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>
+        Repaso pendiente hoy
+      </div>
+      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', lineHeight: 1.35, marginBottom: 16, maxWidth: 260 }}>
+        {pendientes > 0
+          ? `${pendientes} preguntas listas para repasar`
+          : 'Sin repaso pendiente hoy'}
+      </div>
       <button
-        disabled={!data?.totalPendientes || isLoading}
+        disabled={!pendientes || isLoading}
         onClick={onStart}
-        style={{ marginTop: 8, padding: '8px 18px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, cursor: (!data?.totalPendientes || isLoading) ? 'not-allowed' : 'pointer', opacity: (!data?.totalPendientes || isLoading) ? 0.5 : 1 }}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background:   !pendientes ? 'rgba(255,255,255,.08)' : hov ? '#c2410c' : O,
+          color:        !pendientes ? '#6b7280' : '#fff',
+          border:       'none',
+          borderRadius: 10,
+          padding:      '10px 22px',
+          fontWeight:   800,
+          fontSize:     '0.88rem',
+          cursor:       (!pendientes || isLoading) ? 'not-allowed' : 'pointer',
+          opacity:      (!pendientes || isLoading) ? 0.6 : 1,
+          boxShadow:    pendientes ? `0 4px 14px ${O}40` : 'none',
+          transition:   'all .15s',
+        }}
       >
-        {isLoading ? 'Generando...' : 'Empezar repaso'}
+        <IconPlay /> {isLoading ? 'Generando...' : 'Empezar repaso'}
       </button>
     </div>
   );

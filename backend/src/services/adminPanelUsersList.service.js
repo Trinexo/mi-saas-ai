@@ -6,7 +6,7 @@ export const adminPanelUsersListService = {
     const pageSize = query.page_size ?? 20;
     const offset = (page - 1) * pageSize;
     const { rows, total } = await adminRepository.listUsers(
-      { role: query.role, q: query.q },
+      { role: query.role, q: query.q, excludeRole: query.exclude_role },
       pageSize,
       offset,
     );

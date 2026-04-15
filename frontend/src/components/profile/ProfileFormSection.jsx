@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { authApi } from '../../services/authApi.js';
-import { catalogApi } from '../../services/catalogApi.js';
 import { useAsyncAction } from '../../hooks/useAsyncAction.js';
 
 const inputStyle = {
@@ -27,23 +26,19 @@ const hintStyle = { color: '#6b7280', fontSize: '0.8rem', margin: '-4px 0 8px' }
 export default function ProfileFormSection({ token, refreshUser }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
-  const [oposicionPreferidaId, setOposicionPreferidaId] = useState('');
   const [objetivoDiario, setObjetivoDiario] = useState(10);
-  const [oposiciones, setOposiciones] = useState([]);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const profileAction = useAsyncAction();
 
   useEffect(() => {
     authApi.getProfile(token).then((res) => {
-      if (res?.data) {
-        setNombre(res.data.nombre || '');
-        setEmail(res.data.email || '');
-        setOposicionPreferidaId(res.data.oposicionPreferidaId ? String(res.data.oposicionPreferidaId) : '');
-        setObjetivoDiario(res.data.objetivoDiarioPreguntas ?? 10);
+      if (res) {
+        setNombre(res.nombre || '');
+        setEmail(res.email || '');
+        setObjetivoDiario(res.objetivoDiarioPreguntas ?? 10);
         setProfileLoaded(true);
       }
     });
-    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
   }, [token]);
 
   const handleSubmit = async (e) => {
@@ -51,17 +46,15 @@ export default function ProfileFormSection({ token, refreshUser }) {
     const payload = {};
     if (nombre.trim()) payload.nombre = nombre.trim();
     if (email.trim()) payload.email = email.trim();
-    payload.oposicionPreferidaId = oposicionPreferidaId !== '' ? Number(oposicionPreferidaId) : null;
     if (objetivoDiario) payload.objetivoDiarioPreguntas = Number(objetivoDiario);
     await profileAction.runAction(async () => {
       const res = await authApi.updateProfile(token, payload);
       profileAction.setSuccessMessage('Perfil actualizado correctamente');
-      if (res?.data) {
-        setNombre(res.data.nombre || '');
-        setEmail(res.data.email || '');
-        setOposicionPreferidaId(res.data.oposicionPreferidaId ? String(res.data.oposicionPreferidaId) : '');
-        setObjetivoDiario(res.data.objetivoDiarioPreguntas ?? 10);
-        refreshUser(res.data);
+      if (res) {
+        setNombre(res.nombre || '');
+        setEmail(res.email || '');
+        setObjetivoDiario(res.objetivoDiarioPreguntas ?? 10);
+        refreshUser(res);
       }
     }, 'Error al actualizar el perfil');
   };
@@ -75,18 +68,6 @@ export default function ProfileFormSection({ token, refreshUser }) {
         <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} style={inputStyle} />
         <label style={labelStyle}>Email</label>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-        <label style={labelStyle}>Oposición predeterminada</label>
-        <p style={hintStyle}>Se preseleccionará automáticamente al entrar en la pantalla de inicio.</p>
-        <select
-          value={oposicionPreferidaId}
-          onChange={(e) => setOposicionPreferidaId(e.target.value)}
-          style={{ ...selectStyle, marginBottom: '1.25rem' }}
-        >
-          <option value="">— Sin preferencia —</option>
-          {oposiciones.map((op) => (
-            <option key={op.id} value={String(op.id)}>{op.nombre}</option>
-          ))}
-        </select>
         <label style={labelStyle}>Objetivo diario de preguntas</label>
         <p style={hintStyle}>Número de preguntas que quieres responder cada día (1–200).</p>
         <input

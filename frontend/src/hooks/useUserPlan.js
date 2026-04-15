@@ -19,7 +19,7 @@ export function useUserPlan() {
     if (!token) { setLoading(false); return; }
     subscriptionApi
       .getMyPlan(token)
-      .then((res) => setPlan(res?.data?.planActual ?? 'free'))
+      .then((res) => setPlan(res?.planActual ?? 'free'))
       .catch(() => setPlan('free'))
       .finally(() => setLoading(false));
   }, [token]);
@@ -30,5 +30,5 @@ export function useUserPlan() {
     return userIdx >= reqIdx;
   };
 
-  return { plan, loading, hasAccess };
+  return { plan, loading, hasAccess, esPro: plan === 'pro', esElite: plan === 'elite' };
 }

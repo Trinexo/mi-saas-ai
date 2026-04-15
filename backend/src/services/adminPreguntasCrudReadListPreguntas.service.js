@@ -1,7 +1,8 @@
+import { ApiError } from '../utils/api-error.js';
 import { adminRepository } from '../repositories/admin.repository.js';
 
 export const adminPreguntasCrudReadListPreguntasService = {
-  async listPreguntas(query) {
+  async listPreguntas(query, caller = {}) {
     const {
       page,
       page_size: pageSize,
@@ -17,6 +18,14 @@ export const adminPreguntasCrudReadListPreguntasService = {
       temaId: temaId ?? null,
       nivelDificultad: nivelDificultad ?? null,
     };
+
+    if (caller.role === 'profesor') {
+      const assignedIds = await adminRepository.listUserAssignedOposiciones(caller.userId);
+      if (assignedIds.length === 0) {
+        throw new ApiError(403, 'No tienes oposiciones asignadas');
+      }
+      filters.allowedOposicionIds = assignedIds;
+    }
 
     const [items, total] = await Promise.all([
       adminRepository.listPreguntas(filters, pageSize, (page - 1) * pageSize),

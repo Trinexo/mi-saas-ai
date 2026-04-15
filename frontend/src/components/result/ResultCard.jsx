@@ -19,13 +19,19 @@ export default function ResultCard({ result, activeTest }) {
   const tiempo = formatTime(result.tiempoSegundos);
   const modoLabel = MODO_LABEL[activeTest?.modo] ?? activeTest?.modo ?? null;
   const dificultadLabel = DIFICULTAD_LABEL[activeTest?.dificultad] ?? activeTest?.dificultad ?? null;
+  const tiempoAgotado = !!result.timeoutSubmit;
 
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20, borderTop: `3px solid ${notaColor}` }}>
-      {(modoLabel || dificultadLabel) && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      {(modoLabel || dificultadLabel || tiempoAgotado) && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           {modoLabel && <span style={BADGE_STYLE}>{modoLabel}</span>}
           {dificultadLabel && <span style={BADGE_STYLE}>{dificultadLabel}</span>}
+          {tiempoAgotado && (
+            <span style={{ ...BADGE_STYLE, background: '#fee2e2', color: '#dc2626' }}>
+              ⏰ Tiempo agotado
+            </span>
+          )}
         </div>
       )}
       <div style={{ textAlign: 'center', margin: '0 0 24px' }}>

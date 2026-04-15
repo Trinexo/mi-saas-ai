@@ -1,4 +1,4 @@
-export default function TestPregunta({ question, answers, onSelect, feedbackMode = false, confirmed = false, index = 0, total = 1 }) {
+export default function TestPregunta({ question, answers, onSelect, feedbackMode = false, confirmed = false, index = 0, total = 1, marcada = false, onToggleMarcada, onReportar }) {
   const selectedId = answers[question.id];
   const correctId = question.opcionCorrectaId;
 
@@ -40,13 +40,44 @@ export default function TestPregunta({ question, answers, onSelect, feedbackMode
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pregunta {index + 1} de {total}</span>
-        {feedbackMode && confirmed && (
-          <span style={{ fontSize: '0.75rem', color: answers[question.id] === question.opcionCorrectaId ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-            {answers[question.id] === question.opcionCorrectaId ? '✓ Correcta' : '✗ Incorrecta'}
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pregunta {index + 1} de {total}</span>
+          {feedbackMode && confirmed && (
+            <span style={{ fontSize: '0.75rem', color: answers[question.id] === question.opcionCorrectaId ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+              {answers[question.id] === question.opcionCorrectaId ? '✓ Correcta' : '✗ Incorrecta'}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {onToggleMarcada && (
+            <button
+              onClick={onToggleMarcada}
+              title={marcada ? 'Quitar marca' : 'Marcar pregunta'}
+              style={{
+                background: marcada ? '#fffbeb' : 'none',
+                border: marcada ? '1px solid #f59e0b' : '1px solid #e5e7eb',
+                borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                fontSize: '0.9rem', color: marcada ? '#d97706' : '#9ca3af', lineHeight: 1,
+              }}
+            >
+              🔖
+            </button>
+          )}
+          {onReportar && (
+            <button
+              onClick={onReportar}
+              title="Reportar pregunta"
+              style={{
+                background: 'none', border: '1px solid #e5e7eb',
+                borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                fontSize: '0.9rem', color: '#9ca3af', lineHeight: 1,
+              }}
+            >
+              ⚠️
+            </button>
+          )}
+        </div>
       </div>
       <p style={{ margin: '0 0 1rem', fontWeight: 500, color: '#111827', lineHeight: 1.5 }}>{question.enunciado}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '1rem 0' }}>

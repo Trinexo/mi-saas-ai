@@ -49,6 +49,8 @@ export const progressTemarioDetalleBrowseRepository = {
          m.nombre AS materia_nombre,
          COUNT(DISTINCT t.id)::int AS total_temas,
          COUNT(DISTINCT CASE WHEN (pu.aciertos + pu.errores) > 0 THEN pu.tema_id END)::int AS temas_practicados,
+         COUNT(DISTINCT p.id)::int AS total_preguntas,
+         COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas,
          COALESCE(ROUND(AVG(
            CASE WHEN (pu.aciertos + pu.errores) > 0
              THEN (pu.aciertos::numeric / (pu.aciertos + pu.errores)) * 100
@@ -56,7 +58,10 @@ export const progressTemarioDetalleBrowseRepository = {
          )::numeric, 1), 0) AS porcentaje_acierto
        FROM materias m
        JOIN temas t ON t.materia_id = m.id
+       LEFT JOIN preguntas p ON p.tema_id = t.id
        LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
+       LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.estado = 'finalizado'
+       LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
        WHERE m.oposicion_id = $2
        GROUP BY m.id, m.nombre
        ORDER BY m.nombre ASC`,
@@ -64,15 +69,17 @@ export const progressTemarioDetalleBrowseRepository = {
     );
 
     return result.rows.map((row) => {
-      const totalTemas = Number(row.total_temas ?? 0);
-      const temasPracticados = Number(row.temas_practicados ?? 0);
-      const maestria = totalTemas > 0 ? Number(((temasPracticados / totalTemas) * 100).toFixed(1)) : 0;
+      const totalPreguntas = Number(row.total_preguntas ?? 0);
+      const dominadas = Number(row.dominadas ?? 0);
+      const dominio = totalPreguntas > 0 ? Number(((dominadas / totalPreguntas) * 100).toFixed(1)) : 0;
       return {
         materiaId: Number(row.materia_id),
         materiaNombre: row.materia_nombre,
-        totalTemas,
-        temasPracticados,
-        maestria,
+        totalTemas: Number(row.total_temas ?? 0),
+        temasPracticados: Number(row.temas_practicados ?? 0),
+        totalPreguntas,
+        dominadas,
+        dominio,
         porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
       };
     });

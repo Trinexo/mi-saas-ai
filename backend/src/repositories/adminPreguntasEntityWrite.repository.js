@@ -3,8 +3,8 @@ import pool from '../config/db.js';
 export const adminPreguntasEntityWriteRepository = {
   async createPregunta(client, payload) {
     const result = await client.query(
-      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad, estado)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
       [
         payload.temaId,
@@ -12,7 +12,6 @@ export const adminPreguntasEntityWriteRepository = {
         payload.explicacion,
         payload.referenciaNormativa ?? null,
         payload.nivelDificultad,
-        payload.estado ?? 'aprobada',
       ],
     );
 

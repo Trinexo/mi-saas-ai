@@ -31,10 +31,15 @@ export const importPreguntasCsvSchema = z.object({
 
 export const updateReporteEstadoSchema = z.object({
   estado: z.enum(['abierto', 'en_revision', 'resuelto', 'descartado']),
+  mensajeAdmin: z.string().max(1000).optional(),
 });
 
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
+});
+
+export const userIdParamSchema = z.object({
+  userId: z.coerce.number().int().positive(),
 });
 
 export const listReportesQuerySchema = z.object({
@@ -63,23 +68,43 @@ export const listAuditoriaQuerySchema = z.object({
 export const listUsersQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
-  role: z.enum(['alumno', 'editor', 'revisor', 'admin']).optional(),
+  role: z.enum(['alumno', 'profesor', 'admin']).optional(),
+  exclude_role: z.enum(['alumno', 'profesor', 'admin']).optional(),
   q: z.string().optional(),
 });
 
 export const updateUserRoleSchema = z.object({
-  role: z.enum(['alumno', 'editor', 'revisor', 'admin']),
+  role: z.enum(['alumno', 'profesor', 'admin']),
 });
 
-export const listSinRevisarQuerySchema = z.object({
+export const profesorAsignacionesQuerySchema = z.object({
+  email: z.string().email().optional(),
+});
+
+export const profesorOposicionPayloadSchema = z.object({
+  email: z.string().email(),
+  oposicionId: z.coerce.number().int().positive(),
+});
+
+export const bulkUsersSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1).max(100),
+  action: z.enum(['delete', 'set_role', 'set_plan']),
+  value: z.string().optional(),
+});
+
+export const listProfesoresQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
-  oposicion_id: z.coerce.number().int().positive().optional(),
-  materia_id: z.coerce.number().int().positive().optional(),
-  tema_id: z.coerce.number().int().positive().optional(),
+  q: z.string().optional(),
 });
 
-export const updatePreguntaEstadoSchema = z.object({
-  estado: z.enum(['aprobada', 'rechazada']),
-  motivo: z.string().max(500).optional(),
+export const createProfesorSchema = z.object({
+  nombre: z.string().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(6).max(72),
 });
+
+export const updateProfesorSchema = z.object({
+  nombre: z.string().min(2).max(100).optional(),
+  email: z.string().email().optional(),
+}).refine((d) => d.nombre || d.email, { message: 'Se requiere al menos nombre o email' });

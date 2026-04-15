@@ -1,11 +1,24 @@
 import pool from '../config/db.js';
+import { ApiError } from '../utils/api-error.js';
 import { adminRepository } from '../repositories/admin.repository.js';
 
 export const adminPreguntasCrudWriteMutationCreateService = {
-  async createPregunta(payload, userId, userRole) {
+  async createPregunta(payload, caller = {}) {
+    const { userId, role: userRole } = caller;
     const client = await pool.connect();
 
-    const estadoInicial = userRole === 'editor' ? 'pendiente' : 'aprobada';
+    if (userRole === 'profesor') {
+      const assignedIds = await adminRepository.listUserAssignedOposiciones(userId);
+      if (assignedIds.length === 0) {
+        throw new ApiError(403, 'No tienes oposiciones asignadas');
+      }
+      const allowed = await adminRepository.existsTemaInOposiciones(payload.temaId, assignedIds);
+      if (!allowed) {
+        throw new ApiError(403, 'El tema no pertenece a tus oposiciones asignadas');
+      }
+    }
+
+    const estadoInicial = userRole === 'profesor' ? 'pendiente' : 'aprobada';
 
     try {
       await client.query('BEGIN');

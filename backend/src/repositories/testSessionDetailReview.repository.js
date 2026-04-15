@@ -26,7 +26,7 @@ export const testSessionDetailReviewRepository = {
        JOIN opciones_respuesta o ON o.pregunta_id = p.id
        LEFT JOIN respuestas_usuario ru ON ru.test_id = tp.test_id AND ru.pregunta_id = tp.pregunta_id
        WHERE tp.test_id = $1
-       GROUP BY p.id, ru.respuesta_id, ru.correcta
+       GROUP BY p.id, tp.orden, ru.respuesta_id, ru.correcta
        ORDER BY tp.orden`,
       [testId],
     );

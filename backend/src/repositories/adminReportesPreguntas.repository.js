@@ -63,4 +63,21 @@ export const adminReportesPreguntasRepository = {
 
     return result.rowCount > 0;
   },
+
+  async getReporteById(reporteId) {
+    const result = await pool.query(
+      `SELECT rp.id,
+              rp.pregunta_id,
+              rp.usuario_id,
+              rp.motivo,
+              rp.estado,
+              rp.fecha_creacion,
+              p.enunciado AS pregunta_enunciado
+       FROM reportes_preguntas rp
+       JOIN preguntas p ON p.id = rp.pregunta_id
+       WHERE rp.id = $1`,
+      [reporteId],
+    );
+    return result.rows[0] ?? null;
+  },
 };

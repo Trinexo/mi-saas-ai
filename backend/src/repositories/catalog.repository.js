@@ -2,7 +2,9 @@ import pool from '../config/db.js';
 
 export const catalogRepository = {
   async getOposiciones() {
-    const result = await pool.query('SELECT id, nombre, descripcion FROM oposiciones ORDER BY nombre ASC');
+    const result = await pool.query(
+      'SELECT id, nombre, descripcion, precio_mensual_cents, tiempo_limite_minutos FROM oposiciones ORDER BY nombre ASC',
+    );
     return result.rows;
   },
 

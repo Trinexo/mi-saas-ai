@@ -47,7 +47,7 @@ export default function ResultPage() {
       </div>
       <ResultCard result={result} activeTest={activeTest} />
       <ResultErroresPreview result={result} activeTest={activeTest} />
-      <ResultAcciones activeTest={activeTest} />
+      <ResultAcciones activeTest={activeTest} result={result} />
     </div>
   );
 }
