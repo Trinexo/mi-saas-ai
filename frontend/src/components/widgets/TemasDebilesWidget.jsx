@@ -9,6 +9,19 @@ const OL = '#fb923c';
 const DK = '#111827';
 const DM = '#1f2937';
 
+const IconPlay = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+    <polygon points="5,3 19,12 5,21" />
+  </svg>
+);
+
+const IconLock = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
 export default function TemasDebilesWidget() {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -61,7 +74,7 @@ export default function TemasDebilesWidget() {
               color:      pct < 50 ? '#fca5a5' : OL,
               padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700,
             }}>
-              {pct}% acierto Â· {top.aciertos}A / {top.errores}E
+              {pct}% acierto - {top.aciertos}A / {top.errores}E
             </span>
           </div>
           <button
@@ -83,17 +96,17 @@ export default function TemasDebilesWidget() {
               transition:   'all .15s',
             }}
           >
-            â–· Practicar este tema
+            <IconPlay /> Practicar este tema
           </button>
           {!hasAccess('pro') && (
-            <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 10 }}>
-              ðŸ”’ Modo refuerzo automÃ¡tico requiere Pro
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.72rem', color: '#6b7280', marginTop: 10 }}>
+              <IconLock /> Modo refuerzo automatico requiere Pro
             </div>
           )}
         </>
       ) : (
         <div style={{ fontSize: '0.95rem', color: '#6b7280', marginTop: 4 }}>
-          AÃºn no hay datos suficientes para identificar un tema dÃ©bil.
+          Aun no hay datos suficientes para identificar un tema debil.
         </div>
       )}
     </div>

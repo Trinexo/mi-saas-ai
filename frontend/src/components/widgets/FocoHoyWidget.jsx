@@ -9,6 +9,12 @@ const OL = '#fb923c';
 const DK = '#111827';
 const DM = '#1f2937';
 
+const IconPlay = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+    <polygon points="5,3 19,12 5,21" />
+  </svg>
+);
+
 export default function FocoHoyWidget() {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -19,7 +25,7 @@ export default function FocoHoyWidget() {
   useEffect(() => {
     testApi.getFocoHoy(token)
       .then(setData)
-      .catch(() => setData({ modo: 'adaptativo', temaId: null, numeroPreguntas: 10, motivo: 'Activa tu sesiÃ³n con 10 preguntas' }));
+      .catch(() => setData({ modo: 'adaptativo', temaId: null, numeroPreguntas: 10, motivo: 'Activa tu sesion con 10 preguntas' }));
   }, [token]);
 
   const onStart = async () => {
@@ -50,7 +56,7 @@ export default function FocoHoyWidget() {
         Foco de hoy
       </div>
       <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', lineHeight: 1.35, marginBottom: 16, maxWidth: 280 }}>
-        {data?.motivo || 'Activa tu sesiÃ³n con 10 preguntas'}
+        {data?.motivo || 'Activa tu sesion con 10 preguntas'}
       </div>
       <button
         disabled={isLoading}
@@ -72,7 +78,7 @@ export default function FocoHoyWidget() {
           transition:   'all .15s',
         }}
       >
-        {isLoading ? 'Generandoâ€¦' : 'â–· Empezar foco'}
+        <IconPlay /> {isLoading ? 'Generando...' : 'Empezar foco'}
       </button>
     </div>
   );
