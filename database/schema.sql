@@ -148,6 +148,13 @@ CREATE INDEX IF NOT EXISTS idx_repaso_usuario_proxima ON repeticion_espaciada(us
 CREATE INDEX IF NOT EXISTS idx_repaso_pregunta ON repeticion_espaciada(pregunta_id);
 
 -- FK diferida: usuarios.oposicion_preferida_id -> oposiciones.id
-ALTER TABLE usuarios
-  ADD CONSTRAINT IF NOT EXISTS fk_usuarios_oposicion_preferida
-  FOREIGN KEY (oposicion_preferida_id) REFERENCES oposiciones(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_usuarios_oposicion_preferida'
+  ) THEN
+    ALTER TABLE usuarios
+      ADD CONSTRAINT fk_usuarios_oposicion_preferida
+      FOREIGN KEY (oposicion_preferida_id) REFERENCES oposiciones(id) ON DELETE SET NULL;
+  END IF;
+END $$;

@@ -51,6 +51,10 @@ jobs:
         run: |
           psql "$DATABASE_URL" -f database/schema.sql
           psql "$DATABASE_URL" -f database/seed.sql
+          for f in $(ls database/migrations/*.sql | sort); do
+            echo "Applying migration: $f"
+            psql "$DATABASE_URL" -f "$f"
+          done
 
       - name: Start backend API
         working-directory: backend
