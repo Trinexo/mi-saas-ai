@@ -8,9 +8,11 @@ export const createOposicionSchema = z.object({ nombre, descripcion });
 export const updateOposicionSchema = z.object({
   nombre: nombre.optional(),
   descripcion: descripcion,
-}).refine((d) => d.nombre !== undefined || d.descripcion !== undefined, {
-  message: 'Proporciona al menos un campo a actualizar',
-});
+  tiempo_limite_minutos: z.coerce.number().int().min(1).max(600).nullable().optional(),
+}).refine(
+  (d) => d.nombre !== undefined || d.descripcion !== undefined || d.tiempo_limite_minutos !== undefined,
+  { message: 'Proporciona al menos un campo a actualizar' },
+);
 
 export const createMateriaSchema = z.object({
   oposicion_id: z.coerce.number().int().positive(),

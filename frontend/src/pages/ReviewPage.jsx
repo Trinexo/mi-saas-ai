@@ -39,6 +39,9 @@ export default function ReviewPage() {
         setTestInfo(data.test ?? null);
       }
     });
+    marcadasApi.getMarcadas(token)
+      .then((data) => setMarcadas(new Set((data || []).map((m) => m.id))))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId, token]);
 

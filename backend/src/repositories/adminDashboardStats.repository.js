@@ -5,19 +5,18 @@ export const adminDashboardStatsRepository = {
     const result = await pool.query(`
       SELECT
         (SELECT COUNT(*)::int FROM preguntas)                                      AS total_preguntas,
-        (SELECT COUNT(*)::int FROM preguntas WHERE estado = 'pendiente')           AS pendientes_revision,
-        (SELECT COUNT(*)::int FROM usuarios)                                       AS total_usuarios,
-        (SELECT COUNT(*)::int FROM tests WHERE estado = 'completado')              AS total_tests,
+        (SELECT COUNT(*)::int FROM usuarios WHERE deleted_at IS NULL)              AS total_usuarios,
+        (SELECT COUNT(*)::int FROM tests WHERE estado = 'finalizado')              AS total_tests,
         (SELECT COUNT(*)::int FROM tests
-          WHERE estado = 'completado'
-            AND created_at >= NOW() - INTERVAL '7 days')                          AS tests_esta_semana,
-        (SELECT ROUND(AVG(nota_total)::numeric, 2)
-          FROM tests WHERE estado = 'completado')                                  AS nota_media_global
+          WHERE estado = 'finalizado'
+            AND fecha_creacion >= NOW() - INTERVAL '7 days')                      AS tests_esta_semana,
+        (SELECT ROUND(AVG(rt.nota)::numeric, 2)
+          FROM tests t JOIN resultados_test rt ON rt.test_id = t.id
+          WHERE t.estado = 'finalizado')                                           AS nota_media_global
     `);
     const row = result.rows[0];
     return {
       totalPreguntas: row.total_preguntas,
-      pendientesRevision: row.pendientes_revision,
       totalUsuarios: row.total_usuarios,
       totalTests: row.total_tests,
       testsEstaSemana: row.tests_esta_semana,

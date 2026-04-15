@@ -12,14 +12,14 @@ export default function OposicionMateriasTable({ materias, oposicionId, onPracti
             <tr style={{ borderBottom: '2px solid #f1f5f9', textAlign: 'left' }}>
               <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600 }}>Materia</th>
               <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>Temas</th>
-              <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, minWidth: 140 }}>Maestría</th>
-              <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>% Acierto</th>
+              <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, minWidth: 140 }}>Dominio</th>
+              <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>Acierto</th>
               <th style={{ padding: '8px 12px' }} />
             </tr>
           </thead>
           <tbody>
             {materias.map((m) => {
-              const color = m.maestria >= 70 ? '#22c55e' : m.maestria >= 40 ? '#f59e0b' : '#ef4444';
+              const color = m.dominio >= 70 ? '#22c55e' : m.dominio >= 40 ? '#f59e0b' : '#ef4444';
               return (
                 <tr key={m.materiaId} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '10px 12px', fontWeight: 600, color: '#111827' }}>
@@ -33,9 +33,9 @@ export default function OposicionMateriasTable({ materias, oposicionId, onPracti
                   <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 999, height: 8, overflow: 'hidden' }}>
-                        <div style={{ width: `${m.maestria}%`, height: '100%', background: color, borderRadius: 999 }} />
+                        <div style={{ width: `${m.dominio}%`, height: '100%', background: color, borderRadius: 999 }} />
                       </div>
-                      <span style={{ fontSize: 12, color, fontWeight: 700, minWidth: 36, textAlign: 'right' }}>{m.maestria}%</span>
+                      <span style={{ fontSize: 12, color, fontWeight: 700, minWidth: 36, textAlign: 'right' }}>{m.dominio}%</span>
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>{m.porcentajeAcierto}%</td>

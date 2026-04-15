@@ -15,9 +15,9 @@ export function AuthProvider({ children }) {
     if (!initialToken) return;
     apiRequest('/auth/me', { token: initialToken })
       .then((res) => {
-        if (res?.data) {
-          localStorage.setItem('user', JSON.stringify(res.data));
-          setUser(res.data);
+        if (res) {
+          localStorage.setItem('user', JSON.stringify(res));
+          setUser(res);
         }
       })
       .catch(() => {

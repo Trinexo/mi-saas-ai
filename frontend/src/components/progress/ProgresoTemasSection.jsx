@@ -67,14 +67,14 @@ export default function ProgresoTemasSection() {
         >
           <option value="pct_asc">Peor primero (a reforzar)</option>
           <option value="pct_desc">Mejor primero</option>
-          <option value="actividad">M\u00e1s practicado</option>
+          <option value="actividad">Más practicado</option>
         </select>
       </div>
 
       {progresoTemas === null ? (
         <p style={{ color: '#94a3b8' }}>Cargando progreso...</p>
       ) : progresoTemas.length === 0 ? (
-        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>A\u00fan no tienes progreso registrado. Completa algunos tests para ver tus estad\u00edsticas por tema.</p>
+        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Aún no tienes progreso registrado. Completa algunos tests para ver tus estadísticas por tema.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {temasFiltrados.map((t) => {

@@ -27,17 +27,42 @@ export default function ReviewPreguntaCard({ pregunta, idx, marcadas, reportadas
           <button
             onClick={() => onToggleMarcada(pregunta.preguntaId)}
             title={marcadas.has(pregunta.preguntaId) ? 'Quitar marca' : 'Marcar para estudiar'}
-            style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer' }}
+            style={{
+              background: marcadas.has(pregunta.preguntaId) ? '#fffbeb' : 'none',
+              border: marcadas.has(pregunta.preguntaId) ? '1px solid #f59e0b' : '1px solid #e5e7eb',
+              borderRadius: 6,
+              padding: '3px 8px',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              color: marcadas.has(pregunta.preguntaId) ? '#d97706' : '#6b7280',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+            }}
           >
-            {marcadas.has(pregunta.preguntaId) ? '★' : '☆'}
+            🔖 {marcadas.has(pregunta.preguntaId) ? 'Marcada' : 'Marcar'}
           </button>
           <button
             onClick={() => onOpenReport(pregunta.preguntaId)}
             disabled={reportadas.has(pregunta.preguntaId)}
-            title={reportadas.has(pregunta.preguntaId) ? '✓ Reportada' : 'Reportar pregunta errónea'}
-            style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: reportadas.has(pregunta.preguntaId) ? 'default' : 'pointer', opacity: reportadas.has(pregunta.preguntaId) ? 0.4 : 1 }}
+            title={reportadas.has(pregunta.preguntaId) ? 'Ya reportada' : 'Reportar pregunta errónea'}
+            style={{
+              background: reportadas.has(pregunta.preguntaId) ? '#f9fafb' : 'none',
+              border: '1px solid #e5e7eb',
+              borderRadius: 6,
+              padding: '3px 8px',
+              fontSize: '0.75rem',
+              cursor: reportadas.has(pregunta.preguntaId) ? 'default' : 'pointer',
+              opacity: reportadas.has(pregunta.preguntaId) ? 0.5 : 1,
+              color: reportadas.has(pregunta.preguntaId) ? '#9ca3af' : '#ef4444',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+            }}
           >
-            ⚑
+            ⚠️ {reportadas.has(pregunta.preguntaId) ? 'Reportada' : 'Reportar'}
           </button>
         </div>
       </div>

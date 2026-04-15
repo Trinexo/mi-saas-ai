@@ -2,13 +2,15 @@ import pool from '../config/db.js';
 
 export const progressTemarioResumenOposicionRepository = {
   async getResumenOposicion(userId, oposicionId) {
-    const [metaResult, progresoResult, testResult] = await Promise.all([
+    const [metaResult, progresoResult, testResult, dominioResult] = await Promise.all([
       pool.query(
         `SELECT o.nombre AS oposicion_nombre,
-                COUNT(DISTINCT t.id)::int AS total_temas
+                COUNT(DISTINCT t.id)::int AS total_temas,
+                COUNT(DISTINCT p.id)::int AS total_preguntas
          FROM oposiciones o
          JOIN materias m ON m.oposicion_id = o.id
          JOIN temas t ON t.materia_id = m.id
+         LEFT JOIN preguntas p ON p.tema_id = t.id
          WHERE o.id = $1
          GROUP BY o.nombre`,
         [oposicionId],
@@ -43,22 +45,39 @@ export const progressTemarioResumenOposicionRepository = {
            AND t.estado = 'finalizado'`,
         [userId, oposicionId],
       ),
+      pool.query(
+        `SELECT COUNT(DISTINCT ru.pregunta_id)::int AS dominadas
+         FROM respuestas_usuario ru
+         JOIN tests ts ON ts.id = ru.test_id
+         JOIN preguntas p ON p.id = ru.pregunta_id
+         JOIN temas t ON t.id = p.tema_id
+         JOIN materias m ON m.id = t.materia_id
+         WHERE ts.usuario_id = $1
+           AND ts.estado = 'finalizado'
+           AND ru.correcta = true
+           AND m.oposicion_id = $2`,
+        [userId, oposicionId],
+      ),
     ]);
 
     const totalTemas = Number(metaResult.rows[0]?.total_temas ?? 0);
+    const totalPreguntas = Number(metaResult.rows[0]?.total_preguntas ?? 0);
     const temasPracticados = Number(progresoResult.rows[0]?.temas_practicados ?? 0);
     const totalRespondidas = Number(progresoResult.rows[0]?.total_respondidas ?? 0);
     const porcentajeAcierto = Number(progresoResult.rows[0]?.porcentaje_acierto_medio ?? 0);
     const testsRealizados = Number(testResult.rows[0]?.tests_realizados ?? 0);
     const notaMedia = Number(testResult.rows[0]?.nota_media ?? 0);
-    const maestria = totalTemas > 0 ? Number(((temasPracticados / totalTemas) * 100).toFixed(1)) : 0;
+    const dominadas = Number(dominioResult.rows[0]?.dominadas ?? 0);
+    const dominio = totalPreguntas > 0 ? Number(((dominadas / totalPreguntas) * 100).toFixed(1)) : 0;
 
     return {
       oposicionId: Number(oposicionId),
       oposicionNombre: metaResult.rows[0]?.oposicion_nombre ?? '',
       totalTemas,
+      totalPreguntas,
       temasPracticados,
-      maestria,
+      dominadas,
+      dominio,
       totalRespondidas,
       porcentajeAcierto,
       testsRealizados,

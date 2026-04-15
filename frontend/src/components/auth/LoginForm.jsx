@@ -17,7 +17,8 @@ export default function LoginForm() {
     try {
       const data = await authApi.login(form);
       login(data.token, data.user);
-      navigate('/');
+      const destino = ['admin', 'profesor'].includes(data.user?.role) ? '/admin' : '/';
+      navigate(destino);
     } catch (e) {
       setError(getErrorMessage(e));
     }
@@ -52,6 +53,9 @@ export default function LoginForm() {
       </form>
       <p style={{ marginTop: 20, textAlign: 'center', fontSize: '0.85rem', color: '#6b7280' }}>
         &iquest;No tienes cuenta? <Link to="/register" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'none' }}>Reg&iacute;strate</Link>
+      </p>
+      <p style={{ marginTop: 8, textAlign: 'center', fontSize: '0.82rem' }}>
+        <Link to="/forgot-password" style={{ color: '#6b7280', textDecoration: 'none' }}>&iquest;Olvidaste tu contrase&ntilde;a?</Link>
       </p>
     </AuthCard>
   );

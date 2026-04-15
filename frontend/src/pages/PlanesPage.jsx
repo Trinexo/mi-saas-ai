@@ -84,7 +84,7 @@ export default function PlanesPage() {
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     subscriptionApi.getMyPlan(token)
-      .then((res) => setPlanActual(res?.data?.planActual ?? 'free'))
+      .then((res) => setPlanActual(res?.planActual ?? 'free'))
       .catch(() => setPlanActual('free'))
       .finally(() => setLoading(false));
   }, [token]);

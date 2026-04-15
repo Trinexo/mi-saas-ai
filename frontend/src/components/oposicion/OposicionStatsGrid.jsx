@@ -4,7 +4,7 @@ export default function OposicionStatsGrid({ resumen }) {
     { label: 'Temas practicados', value: resumen.temasPracticados },
     { label: 'Preguntas respondidas', value: resumen.totalRespondidas },
     { label: 'Tests realizados', value: resumen.testsRealizados },
-    { label: '% Acierto medio', value: `${resumen.porcentajeAcierto}%` },
+    { label: 'Acierto medio', value: `${resumen.porcentajeAcierto}%` },
     { label: 'Nota media', value: resumen.notaMedia.toFixed(2) },
   ];
 

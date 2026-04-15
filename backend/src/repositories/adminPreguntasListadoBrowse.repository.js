@@ -3,6 +3,11 @@ import pool from '../config/db.js';
 const buildWhere = (filters, args) => {
   const where = [];
 
+  if (filters.allowedOposicionIds && filters.allowedOposicionIds.length > 0) {
+    args.push(filters.allowedOposicionIds);
+    where.push(`m.oposicion_id = ANY($${args.length}::int[])`);
+  }
+
   if (filters.oposicionId) {
     args.push(filters.oposicionId);
     where.push(`m.oposicion_id = $${args.length}`);
@@ -61,5 +66,27 @@ export const adminPreguntasListadoBrowseRepository = {
     );
 
     return result.rows[0].total;
+  },
+
+  async listUserAssignedOposiciones(userId) {
+    const result = await pool.query(
+      `SELECT oposicion_id FROM profesores_oposiciones WHERE user_id = $1`,
+      [userId],
+    );
+    return result.rows.map((r) => r.oposicion_id);
+  },
+
+  async existsTemaInOposiciones(temaId, oposicionIds) {
+    if (!oposicionIds || oposicionIds.length === 0) return false;
+    const result = await pool.query(
+      `SELECT 1
+       FROM temas t
+       JOIN materias m ON m.id = t.materia_id
+       WHERE t.id = $1
+         AND m.oposicion_id = ANY($2::int[])
+       LIMIT 1`,
+      [temaId, oposicionIds],
+    );
+    return result.rows.length > 0;
   },
 };

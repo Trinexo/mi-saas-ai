@@ -18,6 +18,17 @@ export default function SimulacroForm() {
     catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
   }, []);
 
+  // Pre-rellena la duración cuando el admin ha configurado un tiempo por defecto
+  const onOposicionChange = (e) => {
+    const selectedId = e.target.value;
+    const oposicion = oposiciones.find((o) => String(o.id) === selectedId);
+    setSimulacro((prev) => ({
+      ...prev,
+      oposicionId: selectedId,
+      duracion: oposicion?.tiempo_limite_minutos ? String(oposicion.tiempo_limite_minutos) : prev.duracion,
+    }));
+  };
+
   const onGenerate = async () => {
     clearError();
     const numeroPreguntasSimulacro = Number(simulacro.numeroPreguntas);
@@ -70,7 +81,7 @@ export default function SimulacroForm() {
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Oposición *</label>
           <select
             value={simulacro.oposicionId}
-            onChange={(e) => setSimulacro({ ...simulacro, oposicionId: e.target.value })}
+            onChange={onOposicionChange}
             style={{ width: '100%', padding: '8px 10px', border: `1px solid ${simulacro.oposicionId ? '#93c5fd' : '#e5e7eb'}`, borderRadius: 8, fontSize: '0.875rem', background: '#fff', outline: 'none' }}
           >
             <option value="">Selecciona oposición</option>
@@ -91,16 +102,30 @@ export default function SimulacroForm() {
           />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Duración <span style={{ color: '#9ca3af', fontWeight: 400 }}>(min, opcional)</span></label>
-          <input
-            type="number"
-            min="1"
-            max="300"
-            placeholder="Sin límite"
-            value={simulacro.duracion}
-            onChange={(e) => setSimulacro({ ...simulacro, duracion: e.target.value })}
-            style={{ width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
-          />
+          {(() => {
+            const oposicion = oposiciones.find((o) => String(o.id) === String(simulacro.oposicionId));
+            const tieneDefault = !!oposicion?.tiempo_limite_minutos;
+            return (
+              <>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+                  Duración
+                  {tieneDefault
+                    ? <span style={{ marginLeft: 6, color: '#1d4ed8', fontWeight: 400, fontSize: '0.75rem' }}>⏱ Tiempo oficial configurado</span>
+                    : <span style={{ color: '#9ca3af', fontWeight: 400 }}> (min, opcional)</span>
+                  }
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="300"
+                  placeholder="Sin límite"
+                  value={simulacro.duracion}
+                  onChange={(e) => setSimulacro({ ...simulacro, duracion: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', border: `1px solid ${tieneDefault ? '#93c5fd' : '#e5e7eb'}`, borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </>
+            );
+          })()}
         </div>
       </div>
 

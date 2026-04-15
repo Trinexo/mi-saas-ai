@@ -22,7 +22,7 @@ export default function DashboardWidget() {
 
   useEffect(() => {
     testApi.getDashboard(token).then((res) => {
-      if (res?.data) setData(res.data);
+      if (res) setData(res);
     });
   }, [token]);
 

@@ -49,8 +49,8 @@ export default function TemaPage() {
         </p>
       </div>
 
-      <TemaStatsGrid tema={tema} />
       <TemaMaestriaBar tema={tema} />
+      <TemaStatsGrid tema={tema} />
       <TemaTestsTable tests={tema.ultimosTests} />
       <TemaAcciones
         temaId={Number(id)}

@@ -56,10 +56,7 @@ export default function OposicionPage() {
 
       <OposicionMaestriaBar resumen={resumen} />
       <OposicionStatsGrid resumen={resumen} />
-      <OposicionAcciones
-        id={id}
-        onTestCompleta={() => navigate('/', { state: { oposicionId: Number(id), modoOposicionCompleta: true } })}
-      />
+      <OposicionAcciones id={id} />
       <OposicionMateriasTable
         materias={materias}
         oposicionId={Number(id)}

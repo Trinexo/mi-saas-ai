@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../services/adminApi';
 import { subscriptionApi } from '../../services/subscriptionApi';
+import { accesosApi } from '../../services/accesosApi';
 import { useAuth } from '../../state/auth.jsx';
 import { useRevision } from '../../state/revisionContext.jsx';
 
@@ -18,14 +19,15 @@ const KPI_ITEMS = [
 ];
 
 const QUICK_LINKS = [
-  { to: '/admin/preguntas', icon: '📝', label: 'Preguntas',  desc: 'Añadir y revisar' },
+  { to: '/admin/preguntas', icon: '📝', label: 'Preguntas',  desc: 'Añadir y gestionar' },
   { to: '/admin/catalogo',  icon: '🗂️', label: 'Catálogo',   desc: 'Oposiciones, temas' },
   { to: '/admin/usuarios',  icon: '👥', label: 'Usuarios',   desc: 'Roles y cuentas' },
-  { to: '/admin/revision',  icon: '✅', label: 'Revisión',   desc: 'Cola de aprobación' },
+  { to: '/admin/accesos',   icon: '🔑', label: 'Accesos',    desc: 'Cursos por alumno' },
+  { to: '/admin/revision',  icon: '✅', label: 'Revisión',   desc: 'Reportes de usuarios' },
 ];
 
-const ROL_LABELS = { alumno: 'Alumnos', editor: 'Editores', revisor: 'Revisores', admin: 'Admins' };
-const ROL_COLOR  = { alumno: '#374151', editor: '#1d4ed8',  revisor: '#a16207',   admin: '#b91c1c' };
+const ROL_LABELS = { alumno: 'Alumnos', profesor: 'Profesores', admin: 'Admins' };
+const ROL_COLOR  = { alumno: '#374151', profesor: '#166534', admin: '#b91c1c' };
 
 const TH = {
   padding: '0.5rem 0.75rem', fontWeight: 600, color: '#6b7280',
@@ -34,40 +36,29 @@ const TH = {
 };
 const TD = { padding: '0.5rem 0.75rem', color: '#111827', borderBottom: '1px solid #f3f4f6', fontSize: '0.875rem' };
 
-const ESTADO_COLOR = {
-  pendiente: { bg: '#fef3c7', border: '#f59e0b', num: '#92400e', label: 'Pendientes' },
-  aprobada:  { bg: '#dcfce7', border: '#059669', num: '#166534', label: 'Aprobadas'  },
-  rechazada: { bg: '#fee2e2', border: '#dc2626', num: '#991b1b', label: 'Rechazadas' },
-};
-
 const PLAN_SUB_COLOR = { free: '#6b7280', pro: '#1d4ed8', elite: '#7c3aed' };
 const PLAN_SUB_BG    = { free: '#f9fafb', pro: '#eff6ff', elite: '#f5f3ff' };
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();
-  const { setPendientes } = useRevision();
+  const { reportesAbiertos } = useRevision();
   const [stats, setStats] = useState(null);
   const [subStats, setSubStats] = useState(null);
+  const [accesosStats, setAccesosStats] = useState(null);
   const [usersByRole, setUsersByRole] = useState(null);
   const [temasErrores, setTemasErrores] = useState(null);
-  const [preguntasPorEstado, setPreguntasPorEstado] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     adminApi
       .getAdminStats(token)
-      .then((res) => {
-        if (res?.data) {
-          setStats(res.data);
-          setPendientes(res.data.pendientesRevision ?? 0);
-        }
-      })
+      .then((res) => { if (res) setStats(res); })
       .catch(() => setError('No se pudieron cargar las estadísticas.'));
 
     Promise.all(
-      ['alumno', 'editor', 'revisor', 'admin'].map((role) =>
+      ['alumno', 'profesor', 'admin'].map((role) =>
         adminApi.listUsers(token, { role, page: 1, page_size: 1 })
-          .then((res) => ({ role, total: res?.data?.pagination?.total ?? 0 }))
+          .then((res) => ({ role, total: res?.pagination?.total ?? 0 }))
           .catch(() => ({ role, total: 0 })),
       ),
     ).then((results) => {
@@ -78,18 +69,18 @@ export default function AdminDashboardPage() {
 
     adminApi
       .getTemasConMasErrores(token, 10)
-      .then((res) => { if (res?.data) setTemasErrores(res.data); })
+      .then((res) => { if (res) setTemasErrores(res); })
       .catch(() => setTemasErrores([]));
-
-    adminApi
-      .getPreguntasPorEstado(token)
-      .then((res) => { if (res?.data) setPreguntasPorEstado(res.data); })
-      .catch(() => setPreguntasPorEstado([]));
 
     subscriptionApi
       .getStats(token)
-      .then((res) => { if (res?.data) setSubStats(res.data); })
+      .then((res) => { if (res) setSubStats(res); })
       .catch(() => setSubStats(null));
+
+    accesosApi
+      .getStats(token)
+      .then((res) => { if (res) setAccesosStats(res); })
+      .catch(() => setAccesosStats(null));
   }, [token]);
 
   const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -103,15 +94,15 @@ export default function AdminDashboardPage() {
           <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Panel de administración</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>{today}</p>
         </div>
-        <Link
-          to="/admin/revision"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1d4ed8', color: '#fff', padding: '8px 18px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem' }}
-        >
-          ✅ Cola de revisión
-          {stats?.pendientesRevision > 0 && (
-            <span style={{ background: '#ef4444', color: '#fff', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '1px 7px', marginLeft: 2 }}>{stats.pendientesRevision}</span>
-          )}
-        </Link>
+        {reportesAbiertos > 0 && (
+          <Link
+            to="/admin/revision"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1d4ed8', color: '#fff', padding: '8px 18px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem' }}
+          >
+            ✅ Reportes
+            <span style={{ background: '#ef4444', color: '#fff', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '1px 7px', marginLeft: 2 }}>{reportesAbiertos}</span>
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -122,12 +113,12 @@ export default function AdminDashboardPage() {
         <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando estadísticas…</p>
       )}
 
-      {/* Alerta revisión pendiente */}
-      {stats?.pendientesRevision > 0 && (
+      {/* Alerta reportes abiertos */}
+      {reportesAbiertos > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 10, padding: '12px 18px', marginBottom: 20 }}>
           <span style={{ fontSize: '1.25rem' }}>⚠️</span>
           <span style={{ color: '#92400e', fontWeight: 600 }}>
-            {stats.pendientesRevision} pregunta{stats.pendientesRevision !== 1 ? 's' : ''} pendiente{stats.pendientesRevision !== 1 ? 's' : ''} de revisión
+            {reportesAbiertos} reporte{reportesAbiertos !== 1 ? 's' : ''} de usuario{reportesAbiertos !== 1 ? 's' : ''} sin resolver
           </span>
           <Link to="/admin/revision" style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', padding: '6px 14px', borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
             Revisar ahora
@@ -167,42 +158,20 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Fila inferior: Usuarios por rol + Estado banco */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-
-        {/* Usuarios por rol */}
-        {usersByRole && (
-          <div style={SECTION}>
-            <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Usuarios por rol</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {['alumno', 'editor', 'revisor', 'admin'].map((role) => (
-                <div key={role} style={{ flex: '1 1 80px', background: '#f9fafb', borderRadius: 8, padding: '10px 12px', textAlign: 'center', borderTop: `3px solid ${ROL_COLOR[role]}` }}>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: ROL_COLOR[role] }}>{usersByRole[role]}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>{ROL_LABELS[role]}</div>
-                </div>
-              ))}
-            </div>
+      {/* Usuarios por rol */}
+      {usersByRole && (
+        <div style={{ ...SECTION, marginBottom: 20 }}>
+          <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Usuarios por rol</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {['alumno', 'profesor', 'admin'].map((role) => (
+              <div key={role} style={{ flex: '1 1 80px', background: '#f9fafb', borderRadius: 8, padding: '10px 12px', textAlign: 'center', borderTop: `3px solid ${ROL_COLOR[role]}` }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: ROL_COLOR[role] }}>{usersByRole[role]}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>{ROL_LABELS[role]}</div>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Estado banco preguntas */}
-        {preguntasPorEstado && preguntasPorEstado.length > 0 && (
-          <div style={SECTION}>
-            <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Estado del banco</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {preguntasPorEstado.map((row) => {
-                const c = ESTADO_COLOR[row.estado] ?? { bg: '#f3f4f6', border: '#9ca3af', num: '#374151', label: row.estado };
-                return (
-                  <div key={row.estado} style={{ flex: '1 1 80px', background: c.bg, borderRadius: 8, padding: '10px 12px', textAlign: 'center', borderTop: `3px solid ${c.border}` }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: c.num }}>{row.total.toLocaleString()}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>{c.label}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Estadísticas de suscripciones */}
       {subStats && (
@@ -238,6 +207,37 @@ export default function AdminDashboardPage() {
               <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>Nuevas (30d)</div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Estadísticas de accesos a oposiciones */}
+      {accesosStats && (
+        <div style={SECTION}>
+          <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Accesos a cursos</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+            <div style={{ background: '#dcfce7', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #059669', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>{accesosStats.total_activos ?? 0}</div>
+              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Accesos activos</div>
+            </div>
+            <div style={{ background: '#eff6ff', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #1d4ed8', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1d4ed8' }}>{accesosStats.usuarios_con_acceso ?? 0}</div>
+              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Alumnos con acceso</div>
+            </div>
+            <div style={{ background: '#fef3c7', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #f59e0b', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706' }}>{accesosStats.nuevos_7d ?? 0}</div>
+              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Nuevos (7d)</div>
+            </div>
+            <div style={{ background: '#fff7ed', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #ea580c', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#c2410c' }}>{accesosStats.nuevos_30d ?? 0}</div>
+              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Nuevos (30d)</div>
+            </div>
+            <div style={{ background: '#f5f3ff', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #7c3aed', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#7c3aed' }}>
+                {accesosStats.ingresos_total !== null ? `${Number(accesosStats.ingresos_total).toFixed(0)}€` : '—'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Ingresos acumulados</div>
+            </div>
           </div>
         </div>
       )}

@@ -24,21 +24,21 @@ import { idParamSchema } from '../../schemas/admin.schema.js';
 
 const router = Router();
 
-router.use(requireAuth, requireRole('admin', 'editor', 'revisor'));
+router.use(requireAuth, requireRole('admin'));
 
 // --- Catálogo: oposiciones ---
-router.post('/catalogo/oposiciones', requireRole('admin', 'editor'), validate(createOposicionSchema), createOposicion);
-router.put('/catalogo/oposiciones/:id', requireRole('admin', 'editor'), validate(idParamSchema, 'params'), validate(updateOposicionSchema), updateOposicion);
-router.delete('/catalogo/oposiciones/:id', requireRole('admin'), validate(idParamSchema, 'params'), deleteOposicion);
+router.post('/catalogo/oposiciones', validate(createOposicionSchema), createOposicion);
+router.put('/catalogo/oposiciones/:id', validate(idParamSchema, 'params'), validate(updateOposicionSchema), updateOposicion);
+router.delete('/catalogo/oposiciones/:id', validate(idParamSchema, 'params'), deleteOposicion);
 
 // --- Catálogo: materias ---
-router.post('/catalogo/materias', requireRole('admin', 'editor'), validate(createMateriaSchema), createMateria);
-router.put('/catalogo/materias/:id', requireRole('admin', 'editor'), validate(idParamSchema, 'params'), validate(updateMateriaSchema), updateMateria);
-router.delete('/catalogo/materias/:id', requireRole('admin'), validate(idParamSchema, 'params'), deleteMateria);
+router.post('/catalogo/materias', validate(createMateriaSchema), createMateria);
+router.put('/catalogo/materias/:id', validate(idParamSchema, 'params'), validate(updateMateriaSchema), updateMateria);
+router.delete('/catalogo/materias/:id', validate(idParamSchema, 'params'), deleteMateria);
 
 // --- Catálogo: temas ---
-router.post('/catalogo/temas', requireRole('admin', 'editor'), validate(createTemaSchema), createTema);
-router.put('/catalogo/temas/:id', requireRole('admin', 'editor'), validate(idParamSchema, 'params'), validate(updateTemaSchema), updateTema);
-router.delete('/catalogo/temas/:id', requireRole('admin'), validate(idParamSchema, 'params'), deleteTema);
+router.post('/catalogo/temas', validate(createTemaSchema), createTema);
+router.put('/catalogo/temas/:id', validate(idParamSchema, 'params'), validate(updateTemaSchema), updateTema);
+router.delete('/catalogo/temas/:id', validate(idParamSchema, 'params'), deleteTema);
 
 export default router;

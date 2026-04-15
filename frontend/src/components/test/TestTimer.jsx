@@ -5,9 +5,15 @@ function formatTime(seconds) {
 }
 
 export default function TestTimer({ index, total, answered, elapsed, remaining, duracion }) {
-  const isWarning = remaining != null && remaining <= 60 && remaining > 0;
+  const isUrgent  = remaining != null && remaining <= 300 && remaining > 60;  // < 5 min
+  const isWarning = remaining != null && remaining <= 60  && remaining > 0;   // < 1 min
   const isExpired = remaining === 0;
-  const timerColor = isExpired ? '#dc2626' : isWarning ? '#d97706' : '#6b7280';
+
+  const timerColor = isExpired ? '#dc2626'
+    : isWarning               ? '#dc2626'
+    : isUrgent                ? '#d97706'
+    : '#6b7280';
+
   const timerLabel = remaining != null
     ? `⏳ ${formatTime(remaining)}`
     : `⏱ ${formatTime(elapsed)}`;
@@ -17,11 +23,29 @@ export default function TestTimer({ index, total, answered, elapsed, remaining, 
     ? Math.max(0, Math.round((remaining / duracion) * 100))
     : null;
 
+  // Animación de parpadeo cuando queda < 1 min
+  const pulseStyle = (isWarning || isExpired) ? {
+    animation: 'timerPulse 0.8s ease-in-out infinite',
+  } : {};
+
   return (
     <>
+      <style>{`
+        @keyframes timerPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.45; }
+        }
+      `}</style>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <h2 style={{ margin: 0, fontSize: 17 }}>Pregunta {index + 1} <span style={{ color: '#94a3b8', fontWeight: 400 }}>/ {total}</span></h2>
-        <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '1rem', color: timerColor, fontWeight: isWarning || isExpired ? 700 : 500 }}>
+        <span style={{
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: '1rem',
+          color: timerColor,
+          fontWeight: (isUrgent || isWarning || isExpired) ? 700 : 500,
+          ...pulseStyle,
+        }}>
           {timerLabel}
         </span>
       </div>
@@ -41,16 +65,21 @@ export default function TestTimer({ index, total, answered, elapsed, remaining, 
           <div style={{
             height: '100%',
             width: `${pctTiempo}%`,
-            background: isExpired ? '#dc2626' : isWarning ? '#f59e0b' : '#1d4ed8',
+            background: (isExpired || isWarning) ? '#dc2626' : isUrgent ? '#f59e0b' : '#1d4ed8',
             borderRadius: 2,
             transition: 'width 1s linear',
           }} />
         </div>
       )}
 
-      {isWarning && !isExpired && (
+      {isUrgent && !isWarning && !isExpired && (
         <p style={{ color: '#d97706', fontSize: '0.82rem', margin: '-4px 0 10px', fontWeight: 600 }}>
-          ⚠ Menos de 1 minuto. El test se enviará automáticamente al terminar.
+          ⚠ Menos de 5 minutos. El test se enviará automáticamente al terminar.
+        </p>
+      )}
+      {isWarning && !isExpired && (
+        <p style={{ color: '#dc2626', fontSize: '0.82rem', margin: '-4px 0 10px', fontWeight: 700, ...pulseStyle }}>
+          🚨 ¡Menos de 1 minuto! El test se enviará automáticamente.
         </p>
       )}
     </>

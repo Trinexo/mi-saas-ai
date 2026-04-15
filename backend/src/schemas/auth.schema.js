@@ -26,3 +26,12 @@ export const updatePasswordSchema = z.object({
 export const patchOposicionPreferidaSchema = z.object({
   oposicionPreferidaId: z.coerce.number().int().positive().nullable(),
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(10),
+  passwordNuevo: z.string().min(8),
+});

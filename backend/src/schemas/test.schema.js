@@ -1,18 +1,25 @@
 import { z } from 'zod';
 
+const temasMixItemSchema = z.object({
+  temaId: z.coerce.number().int().positive(),
+  pct: z.coerce.number().int().min(1).max(100),
+});
+
 export const generateTestSchema = z.object({
-  temaId: z.number().int().positive().optional(),
-  oposicionId: z.number().int().positive().optional(),
-  numeroPreguntas: z.number().int().min(1).max(200),
+  temaId: z.coerce.number().int().positive().optional(),
+  temasMix: z.array(temasMixItemSchema).min(2).max(10).optional(),
+  oposicionId: z.coerce.number().int().positive().optional(),
+  numeroPreguntas: z.coerce.number().int().min(1).max(200),
   modo: z.enum(['normal', 'adaptativo', 'repaso', 'simulacro', 'marcadas']).optional().default('adaptativo'),
   dificultad: z.enum(['facil', 'media', 'dificil', 'mixto']).optional().default('mixto'),
-  duracionSegundos: z.number().int().positive().optional(),
+  duracionSegundos: z.coerce.number().int().positive().optional(),
+  feedbackInmediato: z.boolean().optional().default(false),
 }).refine(
   (d) => d.modo !== 'simulacro' || d.oposicionId != null,
   { message: 'El modo simulacro requiere oposicionId', path: ['oposicionId'] },
 ).refine(
-  (d) => ['simulacro', 'marcadas'].includes(d.modo) || d.temaId != null || d.oposicionId != null,
-  { message: 'Se requiere temaId u oposicionId para este modo', path: ['temaId'] },
+  (d) => ['simulacro', 'marcadas'].includes(d.modo) || d.temasMix != null || d.temaId != null || d.oposicionId != null,
+  { message: 'Se requiere temaId, temasMix u oposicionId para este modo', path: ['temaId'] },
 );
 
 export const generateRefuerzoSchema = z.object({
@@ -21,16 +28,16 @@ export const generateRefuerzoSchema = z.object({
 });
 
 export const submitTestSchema = z.object({
-  testId: z.number().int().positive(),
+  testId: z.coerce.number().int().positive(),
   respuestas: z
     .array(
       z.object({
-        preguntaId: z.number().int().positive(),
-        respuestaId: z.number().int().positive().nullable(),
+        preguntaId: z.coerce.number().int().positive(),
+        respuestaId: z.coerce.number().int().positive().nullable(),
       }),
     )
     .default([]),
-  tiempoSegundos: z.number().int().nonnegative().default(0),
+  tiempoSegundos: z.coerce.number().int().nonnegative().default(0),
 });
 
 export const historyQuerySchema = z.object({

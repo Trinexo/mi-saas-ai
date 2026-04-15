@@ -7,6 +7,28 @@ import EstadisticasPorTemaSection from '../components/progress/EstadisticasPorTe
 import ProgresoTemasSection from '../components/progress/ProgresoTemasSection';
 import RachaTemasSection from '../components/progress/RachaTemasSection';
 import AnaliticasAvanzadasSection from '../components/progress/AnaliticasAvanzadasSection';
+import ResumenSemanaWidget from '../components/widgets/ResumenSemanaWidget';
+import ProgresoSemanalWidget from '../components/widgets/ProgresoSemanalWidget';
+import Actividad14Widget from '../components/widgets/Actividad14Widget';
+import TemasDebilesWidget from '../components/widgets/TemasDebilesWidget';
+import RendimientoModosWidget from '../components/widgets/RendimientoModosWidget';
+import InsightMensualWidget from '../components/widgets/InsightMensualWidget';
+import EficienciaWidget from '../components/widgets/EficienciaWidget';
+import ConsistenciaDiariaWidget from '../components/widgets/ConsistenciaDiariaWidget';
+import RitmoPreguntaWidget from '../components/widgets/RitmoPreguntaWidget';
+import BalancePrecisionWidget from '../components/widgets/BalancePrecisionWidget';
+import TuNivelWidget from '../components/widgets/TuNivelWidget';
+
+const GRID2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 };
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '20px 0 10px' }}>
+      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{children}</span>
+      <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+    </div>
+  );
+}
 
 export default function ProgressPage() {
   const navigate = useNavigate();
@@ -18,17 +40,55 @@ export default function ProgressPage() {
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Mi progreso</h2>
-        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Estadísticas de tu preparación</p>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Estadísticas y análisis completo de tu preparación</p>
       </div>
+
+      <SectionLabel>Resumen global</SectionLabel>
       <ResumenGlobalSection />
       <RachaObjetivoSection />
+
+      <SectionLabel>Esta semana</SectionLabel>
+      <div style={GRID2}>
+        <ResumenSemanaWidget />
+        <ProgresoSemanalWidget />
+      </div>
+      <Actividad14Widget />
+
+      <SectionLabel>Evolución</SectionLabel>
       <EvolucionSection />
+
+      <SectionLabel>Temas</SectionLabel>
       <EstadisticasPorTemaSection />
       <ProgresoTemasSection />
       <RachaTemasSection />
 
+      <SectionLabel>Análisis de rendimiento</SectionLabel>
+      <TemasDebilesWidget />
+      <div style={GRID2}>
+        <RendimientoModosWidget />
+        <InsightMensualWidget />
+      </div>
+
+      <SectionLabel>Estadísticas detalladas</SectionLabel>
+      <div style={GRID2}>
+        <EficienciaWidget />
+        <ConsistenciaDiariaWidget />
+      </div>
+      <div style={GRID2}>
+        <RitmoPreguntaWidget />
+        <BalancePrecisionWidget />
+      </div>
+
+      <SectionLabel>Tu nivel</SectionLabel>
+      <TuNivelWidget />
+
       {/* Analíticas avanzadas — solo Elite */}
-      {!loading && esElite && <AnaliticasAvanzadasSection />}
+      {!loading && esElite && (
+        <>
+          <SectionLabel>Analíticas avanzadas</SectionLabel>
+          <AnaliticasAvanzadasSection />
+        </>
+      )}
 
       {/* Teaser para Pro — invitar a Elite */}
       {!loading && !esElite && esPro && (

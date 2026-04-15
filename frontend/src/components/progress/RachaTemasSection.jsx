@@ -34,7 +34,7 @@ export default function RachaTemasSection() {
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 32 }}>
       <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 700 }}>Racha por tema</h2>
-      <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b' }}>D\u00edas consecutivos practicando cada tema</p>
+      <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748b' }}>Días consecutivos practicando cada tema</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rachaTemas.slice(0, 15).map((t) => (
@@ -50,8 +50,8 @@ export default function RachaTemasSection() {
               <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 6 }}>{t.materiaNombre}</span>
             </div>
             <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#64748b' }}>
-              <span>{t.diasActivos} d\u00edas activos</span>
-              {t.ultimoDia && <span>\u00daltimo: {t.ultimoDia}</span>}
+              <span>{t.diasActivos} días activos</span>
+              {t.ultimoDia && <span>Último: {t.ultimoDia}</span>}
             </div>
           </div>
         ))}

@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const adminDashboardUsersRepository = {
-  async listUsers({ role, q }, limit, offset) {
+  async listUsers({ role, q, excludeRole }, limit, offset) {
     const args = [];
     const where = [];
 
@@ -9,11 +9,17 @@ export const adminDashboardUsersRepository = {
       args.push(role);
       where.push(`u.role = $${args.length}`);
     }
+    if (excludeRole) {
+      args.push(excludeRole);
+      where.push(`u.role != $${args.length}`);
+    }
     if (q) {
       args.push(`%${q}%`);
       where.push(`(u.nombre ILIKE $${args.length} OR u.email ILIKE $${args.length})`);
     }
 
+    // Excluir usuarios eliminados (soft-delete)
+    where.push('u.deleted_at IS NULL');
     const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     args.push(limit, offset);
 
@@ -46,9 +52,37 @@ export const adminDashboardUsersRepository = {
 
   async updateUserRole(userId, role) {
     const result = await pool.query(
-      `UPDATE usuarios SET role = $2 WHERE id = $1 RETURNING id, nombre, email, role`,
+      `UPDATE usuarios SET role = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id, nombre, email, role`,
       [userId, role],
     );
     return result.rows[0] ?? null;
+  },
+
+  async deleteUser(userId) {
+    const result = await pool.query(
+      `UPDATE usuarios SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, email`,
+      [userId],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async bulkUpdateRole(userIds, role) {
+    const result = await pool.query(
+      `UPDATE usuarios SET role = $1
+       WHERE id = ANY($2::int[]) AND deleted_at IS NULL
+       RETURNING id`,
+      [role, userIds],
+    );
+    return result.rowCount;
+  },
+
+  async bulkDeleteUsers(userIds) {
+    const result = await pool.query(
+      `UPDATE usuarios SET deleted_at = NOW()
+       WHERE id = ANY($1::int[]) AND deleted_at IS NULL
+       RETURNING id`,
+      [userIds],
+    );
+    return result.rowCount;
   },
 };

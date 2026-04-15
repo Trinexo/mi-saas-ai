@@ -3,6 +3,7 @@ import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
 import { rateLimit } from '../../middleware/rate-limit.middleware.js';
 import { loadUserPlan, requirePlan } from '../../middleware/plan.middleware.js';
+import { requireAccesoOposicion } from '../../middleware/acceso.middleware.js';
 import { generateTestSchema, submitTestSchema, generateRefuerzoSchema } from '../../schemas/test.schema.js';
 import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig, generateRefuerzo, getTestRecomendado } from '../../controllers/test.controller.js';
 
@@ -15,9 +16,9 @@ const submitRateLimit = rateLimit({
 	message: 'Has enviado demasiados tests en poco tiempo. Espera un minuto.',
 });
 
-// generate: carga el plan para aplicar límites de preguntas y modo simulacro
-router.post('/generate', requireAuth, loadUserPlan, validate(generateTestSchema), generateTest);
-// generate-refuerzo: requiere plan pro o superior
+// generate: valida acceso a la oposición (modo demo si no la tiene) + límites de plan
+router.post('/generate', requireAuth, loadUserPlan, requireAccesoOposicion('demo'), validate(generateTestSchema), generateTest);
+// generate-refuerzo: requiere plan pro o superior + acceso a la oposición del tema
 router.post('/generate-refuerzo', requireAuth, loadUserPlan, requirePlan('pro', 'el refuerzo de preguntas falladas'), validate(generateRefuerzoSchema), generateRefuerzo);
 router.post('/submit', requireAuth, submitRateLimit, validate(submitTestSchema), submitTest);
 // history: carga el plan para limitar resultados en plan free

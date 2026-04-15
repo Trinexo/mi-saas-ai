@@ -9,8 +9,4 @@ export const adminPreguntasCrudReadDetailService = {
     }
     return pregunta;
   },
-
-  async getPreguntasPorEstado() {
-    return adminRepository.getPreguntasPorEstado();
-  },
 };

@@ -1,0 +1,101 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Stack de producción autohospedado (VPS / servidor propio)
+#
+# Uso:
+#   cp .env.prod.example .env.prod
+#   # editar .env.prod con los valores reales
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Para Railway + Vercel (cloud): ver backend/railway.toml y frontend/vercel.json
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Base de datos ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: plataforma_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-plataforma_test}
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-plataforma_test}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # ── Migraciones (job de un solo uso) ─────────────────────────────────────────
+  migrate:
+    image: postgres:16-alpine
+    container_name: plataforma_migrate
+    restart: "no"
+    volumes:
+      - ./database:/sql:ro
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    command: >
+      sh -c "
+        echo 'Esperando PostgreSQL...';
+        until pg_isready -h postgres -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-plataforma_test}; do
+          sleep 2;
+        done;
+        echo 'Aplicando schema.sql...';
+        psql -h postgres -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-plataforma_test} -f /sql/schema.sql;
+        echo 'Aplicando migraciones...';
+        for f in \$$(ls /sql/migrations/*.sql 2>/dev/null | sort); do
+          echo \"  -> \$$f\";
+          psql -h postgres -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-plataforma_test} -f \"\$$f\" || true;
+        done;
+        echo 'Migraciones completadas.';
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Backend API ───────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: plataforma_backend
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      # DATABASE_URL sobreescribe el .env.prod para apuntar al contenedor
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-plataforma_test}
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  # ── Frontend (React compilado + nginx) ────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # URL pública del backend visible desde el navegador del usuario
+        VITE_API_URL: ${BACKEND_PUBLIC_URL:-http://localhost:3000}/api
+    container_name: plataforma_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:

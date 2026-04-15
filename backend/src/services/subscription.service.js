@@ -1,6 +1,8 @@
 import { subscriptionRepository } from '../repositories/subscription.repository.js';
 import { ApiError } from '../utils/api-error.js';
 import { PLAN_ORDER } from '../config/plans.config.js';
+import { emailService } from './email.service.js';
+import { authRepository } from '../repositories/auth.repository.js';
 
 export const subscriptionService = {
   /**
@@ -51,6 +53,17 @@ export const subscriptionService = {
       fechaFin: fechaFinDate,
       notas,
     });
+
+    // Email de confirmación del plan (fire-and-forget)
+    authRepository.getUserById(targetUserId).then((user) => {
+      if (!user) return;
+      emailService.sendSuscripcionConfirmada({
+        to: user.email,
+        nombre: user.nombre,
+        plan,
+        fechaFin: fechaFinDate,
+      }).catch((err) => console.error('[email] Error enviando confirmación plan:', err.message));
+    }).catch(() => {});
 
     return suscripcion;
   },

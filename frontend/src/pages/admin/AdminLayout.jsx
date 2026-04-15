@@ -6,11 +6,16 @@ const NAV_ITEMS = [
   { to: '/admin/preguntas',   icon: '❔', label: 'Preguntas' },
   { to: '/admin/catalogo',    icon: '◈', label: 'Catálogo' },
   { to: '/admin/usuarios',    icon: '◉', label: 'Usuarios' },
+  { to: '/admin/profesores',  icon: '👩‍🏫', label: 'Profesores' },
+  { to: '/admin/accesos',     icon: '🔑', label: 'Accesos' },
+  { to: '/admin/precios',     icon: '💶', label: 'Precios' },
   { to: '/admin/revision',    icon: '◎', label: 'Revisión', hasBadge: true },
+  { to: '/admin/ajustes',     icon: '⚙', label: 'Ajustes' },
 ];
 
 export default function AdminLayout() {
-  const { pendientes } = useRevision();
+  const { pendientes, reportesAbiertos } = useRevision();
+  const totalBadge = (pendientes ?? 0) + (reportesAbiertos ?? 0);
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <nav style={{ width: 230, background: '#111827', color: '#f9fafb', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
@@ -42,13 +47,13 @@ export default function AdminLayout() {
               >
                 <span style={{ fontSize: '0.95rem', width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
                 <span style={{ flex: 1 }}>{label}</span>
-                {hasBadge && pendientes > 0 && (
+                {hasBadge && totalBadge > 0 && (
                   <span style={{
                     background: '#dc2626', color: '#fff',
                     borderRadius: 10, padding: '1px 7px',
                     fontSize: '0.7rem', fontWeight: 700,
                   }}>
-                    {pendientes}
+                    {totalBadge}
                   </span>
                 )}
               </NavLink>

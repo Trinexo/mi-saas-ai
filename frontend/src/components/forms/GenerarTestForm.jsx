@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useUserPlan } from '../../hooks/useUserPlan';
+import { useUserAccesos } from '../../hooks/useUserAccesos';
 import { catalogApi } from '../../services/catalogApi';
 import { testApi } from '../../services/testApi';
 
@@ -23,8 +24,9 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const locationStateApplied = useRef(false);
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const { hasAccess: hasPlanAccess } = useUserPlan();
+  const { tieneAcceso, loading: loadingAccesos } = useUserAccesos();
   const { error, isLoading, clearError, runAction, setErrorMessage } = useAsyncAction();
   const [oposiciones, setOposiciones] = useState([]);
   const [materias, setMaterias] = useState([]);
@@ -42,8 +44,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
         if (cancelled) return;
         setOposiciones(ops);
         const stateOposicionId = location.state?.oposicionId ? String(location.state.oposicionId) : null;
-        const prefId = user?.oposicionPreferidaId ? String(user.oposicionPreferidaId) : null;
-        const targetOposicionId = stateOposicionId || prefId;
+        const targetOposicionId = stateOposicionId;
         if (targetOposicionId && !cancelled) {
           setSelection((prev) => ({ ...prev, oposicionId: targetOposicionId, materiaId: '', temaId: '' }));
           const materiasData = await catalogApi.getMaterias(targetOposicionId);
@@ -179,6 +180,12 @@ export default function GenerarTestForm({ modoSugerido = null }) {
               <option key={item.id} value={item.id}>{item.nombre}</option>
             ))}
           </select>
+          {/* Gate: aviso si la oposición no tiene acceso completo */}
+          {!loadingAccesos && selection.oposicionId && !tieneAcceso(Number(selection.oposicionId)) && selection.modo !== 'marcadas' && (
+            <div style={{ marginTop: 8, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5 }}>
+              <strong>Modo demo</strong> — Las preguntas estarán limitadas. Para acceso completo, <a href="/catalogo" style={{ color: '#1d4ed8', fontWeight: 600 }}>compra el curso</a>.
+            </div>
+          )}
         </div>
         <div>
           <label style={LBL}>Materia</label>

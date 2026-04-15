@@ -15,8 +15,8 @@ export const adminPanelReportesAuditoriaService = {
     };
 
     const [items, total] = await Promise.all([
-      adminRepository.listAuditoria(filters, pageSize, (page - 1) * pageSize),
-      adminRepository.countAuditoria(filters),
+      adminRepository.listAuditoria({ page, pageSize, preguntaId, usuarioId, accion }),
+      adminRepository.countAuditoria({ preguntaId, usuarioId, accion }),
     ]);
 
     return {

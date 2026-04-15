@@ -72,6 +72,9 @@ export default function AdminCatalogPage() {
   const [selMateria, setSelMateria] = useState(null);
   const [addingOposicion, setAddingOposicion] = useState(false);
   const [editingOposicion, setEditingOposicion] = useState(null);
+  const [tiempoLimiteInput, setTiempoLimiteInput] = useState('');
+  const [guardandoTiempo, setGuardandoTiempo] = useState(false);
+  const [mensajeTiempo, setMensajeTiempo] = useState(null);
   const [addingMateria, setAddingMateria] = useState(false);
   const [editingMateria, setEditingMateria] = useState(null);
   const [addingTema, setAddingTema] = useState(false);
@@ -95,6 +98,8 @@ export default function AdminCatalogPage() {
     setTemas([]);
     setAddingMateria(false);
     setEditingMateria(null);
+    setTiempoLimiteInput(op.tiempo_limite_minutos ? String(op.tiempo_limite_minutos) : '');
+    setMensajeTiempo(null);
     loadMaterias(op.id);
   };
 
@@ -121,6 +126,22 @@ export default function AdminCatalogPage() {
     setEditingOposicion(null);
     loadOposiciones();
   });
+
+  const handleGuardarTiempoLimite = async () => {
+    setGuardandoTiempo(true);
+    setMensajeTiempo(null);
+    try {
+      const mins = tiempoLimiteInput === '' ? null : Number(tiempoLimiteInput);
+      await adminApi.updateOposicion(token, selOposicion.id, { tiempo_limite_minutos: mins });
+      setSelOposicion((prev) => ({ ...prev, tiempo_limite_minutos: mins }));
+      loadOposiciones();
+      setMensajeTiempo({ tipo: 'ok', texto: mins ? `${mins} min guardados` : 'Sin límite (eliminado)' });
+    } catch (e) {
+      setMensajeTiempo({ tipo: 'error', texto: e.message || 'Error al guardar' });
+    } finally {
+      setGuardandoTiempo(false);
+    }
+  };
 
   const handleDeleteOposicion = (id) => guardoConError(async () => {
     if (!window.confirm('Eliminar esta oposicion y todo su contenido?')) return;
@@ -362,6 +383,46 @@ export default function AdminCatalogPage() {
         </div>
 
       </div>
+
+      {/* ── Panel ajustes de la oposición seleccionada ── */}
+      {selOposicion && (
+        <div style={{ marginTop: 16, background: '#fff', borderRadius: 10, padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,.07)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '1rem' }}>⏱</span>
+          <div style={{ flex: '0 0 auto' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: 2 }}>
+              Tiempo oficial del examen — <span style={{ color: '#1d4ed8' }}>{selOposicion.nombre}</span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+              Pre-rellena el campo duración en el simulacro. Deja vacío si no hay límite oficial.
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <input
+              type="number"
+              min="1"
+              max="600"
+              placeholder="Sin límite"
+              value={tiempoLimiteInput}
+              onChange={(e) => { setTiempoLimiteInput(e.target.value); setMensajeTiempo(null); }}
+              style={{ width: 110, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.875rem', outline: 'none' }}
+            />
+            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>min</span>
+            <button
+              onClick={handleGuardarTiempoLimite}
+              disabled={guardandoTiempo}
+              style={{ padding: '7px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: '0.8rem', cursor: guardandoTiempo ? 'not-allowed' : 'pointer', opacity: guardandoTiempo ? 0.7 : 1 }}
+            >
+              {guardandoTiempo ? 'Guardando…' : 'Guardar'}
+            </button>
+            {mensajeTiempo && (
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: mensajeTiempo.tipo === 'ok' ? '#166534' : '#dc2626', background: mensajeTiempo.tipo === 'ok' ? '#dcfce7' : '#fee2e2', padding: '4px 10px', borderRadius: 20 }}>
+                {mensajeTiempo.texto}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

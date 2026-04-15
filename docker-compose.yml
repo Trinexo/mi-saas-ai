@@ -1,0 +1,43 @@
+# docker-compose para desarrollo local
+# Uso: docker compose up -d
+#
+# Levanta PostgreSQL + backend en contenedores.
+# El frontend sigue ejecutándose con npm run dev en el host (port 5173).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: plataforma_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plataforma_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d plataforma_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: plataforma_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/plataforma_test
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

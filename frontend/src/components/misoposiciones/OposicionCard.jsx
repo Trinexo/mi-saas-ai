@@ -4,8 +4,9 @@ function formatDate(isoDate) {
 }
 
 export default function OposicionCard({ op, onNavigate, onPracticar }) {
-  const color = op.maestria >= 70 ? '#22c55e' : op.maestria >= 40 ? '#f59e0b' : '#ef4444';
-  const pctAcierto = op.respondidas > 0 ? Math.round((op.aciertos / op.respondidas) * 100) : 0;
+  const dominio = Math.min(100, Number(op.dominio ?? op.maestria ?? 0));
+  const color = dominio >= 70 ? '#22c55e' : dominio >= 40 ? '#f59e0b' : '#ef4444';
+  const pctAcierto = Number(op.porcentajeAcierto ?? (op.respondidas > 0 ? Math.round((op.aciertos / op.respondidas) * 100) : 0));
 
   return (
     <div
@@ -32,17 +33,17 @@ export default function OposicionCard({ op, onNavigate, onPracticar }) {
       </div>
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-          <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Maestría</span>
-          <span style={{ fontSize: 16, fontWeight: 800, color }}>{op.maestria}%</span>
+          <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Dominio</span>
+          <span style={{ fontSize: 16, fontWeight: 800, color }}>{dominio}%</span>
         </div>
         <div style={{ background: '#f1f5f9', borderRadius: 999, height: 10, overflow: 'hidden' }}>
-          <div style={{ width: `${op.maestria}%`, height: '100%', background: color, borderRadius: 999, transition: 'width .4s' }} />
+          <div style={{ width: `${dominio}%`, height: '100%', background: color, borderRadius: 999, transition: 'width .4s' }} />
         </div>
       </div>
       <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
         {[
           { label: 'Preguntas respondidas', value: `${op.respondidas} / ${op.totalPreguntas}` },
-          { label: '% Acierto', value: `${pctAcierto}%` },
+          { label: 'Acierto', value: `${pctAcierto}%` },
           { label: 'Tests realizados', value: op.testsRealizados },
         ].map(({ label, value }) => (
           <div key={label}>
