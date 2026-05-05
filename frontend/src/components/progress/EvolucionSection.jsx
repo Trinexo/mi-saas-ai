@@ -1,11 +1,30 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../state/auth.jsx';
 import { testApi } from '../../services/testApi';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 
-const MODO_COLOR = {
-  adaptativo: '#1d4ed8', normal: '#3b82f6', repaso: '#f59e0b',
-  simulacro: '#ef4444', refuerzo: '#22c55e', marcadas: '#ec4899',
-};
+const O   = '#ea580c';
+const OBG = '#fff7ed';
+const BD  = '#e5e7eb';
+const DK  = '#111827';
+const GL  = '#9ca3af';
+
+/* Tooltip personalizado */
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const nota = payload[0]?.value;
+  const color = nota >= 7 ? '#16a34a' : nota >= 5 ? '#2563eb' : '#dc2626';
+  return (
+    <div style={{ background: '#fff', border: `1px solid ${BD}`, borderRadius: 10, padding: '8px 14px', boxShadow: '0 4px 12px rgba(0,0,0,.1)', fontSize: '0.78rem' }}>
+      <div style={{ fontWeight: 700, color: DK, marginBottom: 4 }}>{label}</div>
+      <div style={{ color, fontWeight: 800, fontSize: '1rem' }}>{Number(nota).toFixed(2)}</div>
+      <div style={{ color: GL, fontSize: '0.68rem' }}>Nota</div>
+    </div>
+  );
+}
 
 export default function EvolucionSection() {
   const { token } = useAuth();
@@ -24,79 +43,54 @@ export default function EvolucionSection() {
 
   if (loading || !data || data.length < 2) return null;
 
-  const notas = data.map((e) => Number(e.nota));
-  const max = 10;
-  const BAR_W = Math.max(24, Math.min(48, Math.floor(600 / data.length) - 6));
+  const notas  = data.map((e) => Number(e.nota));
+  const media  = (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2);
+  const tendencia = notas.length >= 2 ? notas[notas.length - 1] - notas[0] : 0;
+
+  const chartData = data.map((e) => ({
+    fecha: new Date(e.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
+    nota:  Number(Number(e.nota).toFixed(2)),
+  }));
 
   return (
-    <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Evolución de nota ({data.length} últimos tests)</h3>
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>Nota media: <strong style={{ color: '#111827' }}>{(notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2)}</strong></span>
-      </div>
-
-      {/* Línea de aprobado */}
-      <div style={{ position: 'relative', overflowX: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, minWidth: data.length * (BAR_W + 4), height: 160, paddingBottom: 28, position: 'relative' }}>
-          {/* Línea de 5 (aprobado) */}
-          <div style={{
-            position: 'absolute', left: 0, right: 0,
-            bottom: 28 + (5 / max) * 132,
-            borderTop: '1.5px dashed #cbd5e1', zIndex: 1,
-            display: 'flex', alignItems: 'center',
-          }}>
-            <span style={{ position: 'absolute', right: 0, fontSize: 10, color: '#94a3b8', background: '#fff', paddingLeft: 3 }}>5.0</span>
+    <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${BD}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)', padding: '20px 24px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Evolución de nota</div>
+          <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>{data.length} últimos tests</div>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, color: DK, lineHeight: 1 }}>{media}</div>
+            <div style={{ fontSize: '0.68rem', color: GL }}>nota media</div>
           </div>
-
-          {data.map((e, i) => {
-            const nota = Number(e.nota);
-            const barH = Math.round((nota / max) * 132);
-            const color = nota >= 7 ? '#22c55e' : nota >= 5 ? '#3b82f6' : '#ef4444';
-            const modoColor = MODO_COLOR[e.tipoTest] ?? '#94a3b8';
-            const fecha = new Date(e.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-            return (
-              <div
-                key={i}
-                title={`${fecha} · ${e.tipoTest ?? ''} · Nota: ${nota.toFixed(2)}`}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', position: 'relative', zIndex: 2 }}
-              >
-                {/* Valor encima */}
-                <span style={{ fontSize: 9, color: '#64748b', marginBottom: 2, fontWeight: 600 }}>{nota.toFixed(1)}</span>
-                {/* Barra */}
-                <div style={{
-                  width: BAR_W, height: barH,
-                  background: color, borderRadius: '4px 4px 0 0',
-                  borderBottom: `3px solid ${modoColor}`,
-                  transition: 'height 0.4s ease',
-                }} />
-                {/* Fecha */}
-                <span style={{ fontSize: 9, color: '#94a3b8', marginTop: 4, transform: 'rotate(-30deg)', transformOrigin: 'top left', whiteSpace: 'nowrap', display: 'block', position: 'absolute', bottom: 4 }}>
-                  {fecha}
-                </span>
-              </div>
-            );
-          })}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, lineHeight: 1, color: tendencia >= 0 ? '#16a34a' : '#dc2626' }}>
+              {tendencia >= 0 ? '↑' : '↓'} {Math.abs(tendencia).toFixed(2)}
+            </div>
+            <div style={{ fontSize: '0.68rem', color: GL }}>tendencia</div>
+          </div>
         </div>
       </div>
 
-      {/* Leyenda modos */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-        {Object.entries(MODO_COLOR).map(([modo, color]) => (
-          <span key={modo} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: color, display: 'inline-block' }} />
-            {modo}
-          </span>
-        ))}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#22c55e', display: 'inline-block' }} /> &ge;7
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#3b82f6', display: 'inline-block' }} /> 5–7
-        </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#ef4444', display: 'inline-block' }} /> &lt;5
-        </span>
-      </div>
+      {/* Gráfica Recharts */}
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="gradNota" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor={O} stopOpacity={0.25} />
+              <stop offset="95%" stopColor={O} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke={BD} vertical={false} />
+          <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: GL }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+          <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: GL }} tickLine={false} axisLine={false} tickCount={6} />
+          <ReferenceLine y={5} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: 'Aprobado', position: 'insideTopRight', fontSize: 9, fill: GL }} />
+          <Tooltip content={<CustomTooltip />} />
+          <Area type="monotone" dataKey="nota" stroke={O} strokeWidth={2.5} fill="url(#gradNota)" dot={{ r: 3, fill: O, strokeWidth: 0 }} activeDot={{ r: 5, fill: O }} />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

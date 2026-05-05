@@ -19,12 +19,12 @@ import RitmoPreguntaWidget from '../components/widgets/RitmoPreguntaWidget';
 import BalancePrecisionWidget from '../components/widgets/BalancePrecisionWidget';
 import TuNivelWidget from '../components/widgets/TuNivelWidget';
 
-const GRID2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 };
+const GRID2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 };
 
 function SectionLabel({ children }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '20px 0 10px' }}>
-      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{children}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '28px 0 12px' }}>
+      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{children}</span>
       <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
     </div>
   );
@@ -38,9 +38,10 @@ export default function ProgressPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Mi progreso</h2>
-        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Estadísticas y análisis completo de tu preparación</p>
+      {/* Cabecera */}
+      <div style={{ marginBottom: 28 }}>
+        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#111827' }}>Mi progreso</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#9ca3af' }}>Estadísticas y análisis completo de tu preparación</p>
       </div>
 
       <SectionLabel>Resumen global</SectionLabel>
@@ -92,18 +93,18 @@ export default function ProgressPage() {
 
       {/* Teaser para Pro — invitar a Elite */}
       {!loading && !esElite && esPro && (
-        <div style={{ marginTop: '2rem', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 14, padding: '24px 28px', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
-          <span style={{ fontSize: '2rem', flexShrink: 0 }}>🔒</span>
+        <div style={{ marginTop: '2rem', background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 16, padding: '24px 28px', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>🔒</div>
           <div>
-            <h3 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 700, color: '#4c1d95' }}>Analíticas avanzadas (Elite)</h3>
-            <p style={{ margin: '0 0 14px', fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.6 }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 800, color: '#111827' }}>Analíticas avanzadas — Plan Elite</h3>
+            <p style={{ margin: '0 0 14px', fontSize: '0.85rem', color: '#374151', lineHeight: 1.6 }}>
               Desglosa tu rendimiento por materia, analiza tu eficiencia de tiempo, detecta patrones de error y sigue tu tendencia mensual con precisión.
             </p>
             <button
               onClick={() => navigate('/planes')}
-              style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              style={{ padding: '9px 22px', borderRadius: 10, border: 'none', background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
             >
-              Ver plan Elite
+              Ver plan Elite →
             </button>
           </div>
         </div>

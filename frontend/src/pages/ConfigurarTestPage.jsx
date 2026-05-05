@@ -29,8 +29,8 @@ export default function ConfigurarTestPage() {
     <div style={{ maxWidth: 820, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Configurar test</h2>
-        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>Elige el modo y los parámetros de tu sesión de práctica</p>
+        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#111827' }}>Configurar test</h2>
+        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#9ca3af' }}>Elige el modo y los parámetros de tu sesión de práctica</p>
       </div>
 
       {/* Tabs underline */}
@@ -46,9 +46,9 @@ export default function ConfigurarTestPage() {
               background: 'transparent',
               fontWeight: tab === t.key ? 700 : 500,
               fontSize: '0.9rem',
-              color: t.locked ? '#9ca3af' : tab === t.key ? '#1d4ed8' : '#6b7280',
+              color: t.locked ? '#9ca3af' : tab === t.key ? '#ea580c' : '#6b7280',
               cursor: 'pointer',
-              borderBottom: tab === t.key ? '2px solid #1d4ed8' : '2px solid transparent',
+              borderBottom: tab === t.key ? '2px solid #ea580c' : '2px solid transparent',
               marginBottom: -2,
               transition: 'color .15s',
               display: 'flex',
@@ -57,7 +57,7 @@ export default function ConfigurarTestPage() {
             }}
           >
             {t.label}
-            {t.locked && <span style={{ fontSize: '0.7rem', background: '#f3f4f6', color: '#6b7280', borderRadius: 6, padding: '1px 6px', fontWeight: 600 }}>Pro</span>}
+            {t.locked && <span style={{ fontSize: '0.7rem', background: '#fff7ed', color: '#ea580c', borderRadius: 6, padding: '1px 6px', fontWeight: 700, border: '1px solid #fdba74' }}>Pro</span>}
           </button>
         ))}
       </div>

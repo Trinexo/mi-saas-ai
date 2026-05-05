@@ -34,6 +34,8 @@ import ProfesorLayout from './pages/profesor/ProfesorLayout.jsx';
 import ProfesorDashboardPage from './pages/profesor/ProfesorDashboardPage.jsx';
 import ProfesorPreguntasPage from './pages/profesor/ProfesorPreguntasPage.jsx';
 import NotificacionesPage from './pages/NotificacionesPage.jsx';
+import SimulacrosPage from './pages/SimulacrosPage.jsx';
+import RankingPage from './pages/RankingPage.jsx';
 import { RevisionProvider } from './state/revisionContext.jsx';
 
 function ProtectedRoute({ children }) {
@@ -91,6 +93,8 @@ export default function App() {
         <Route path="planes" element={<PlanesPage />} />
         <Route path="catalogo" element={<CatalogoPage />} />
         <Route path="notificaciones" element={<NotificacionesPage />} />
+        <Route path="simulacros" element={<SimulacrosPage />} />
+        <Route path="ranking" element={<RankingPage />} />
         <Route
           path="admin"
           element={

@@ -5,7 +5,7 @@ import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { catalogApi } from '../../services/catalogApi';
 import { testApi } from '../../services/testApi';
 
-const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16, borderTop: '3px solid #1d4ed8' };
+const SECTION = { background: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', border: '1px solid #e5e7eb', marginBottom: 16, borderTop: '3px solid #ea580c' };
 
 export default function SimulacroForm() {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ export default function SimulacroForm() {
     <div style={SECTION}>
       {/* Cabecera */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 18 }}>
-        <div style={{ background: '#1d4ed8', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>🎯</div>
+        <div style={{ background: '#ea580c', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>🎯</div>
         <div>
           <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Simulacro de examen</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}>Preguntas proporcionales de toda la oposición. Las respuestas no se muestran hasta el final.</p>
@@ -110,7 +110,7 @@ export default function SimulacroForm() {
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>
                   Duración
                   {tieneDefault
-                    ? <span style={{ marginLeft: 6, color: '#1d4ed8', fontWeight: 400, fontSize: '0.75rem' }}>⏱ Tiempo oficial configurado</span>
+                    ? <span style={{ marginLeft: 6, color: '#ea580c', fontWeight: 400, fontSize: '0.75rem' }}>⏱ Tiempo oficial configurado</span>
                     : <span style={{ color: '#9ca3af', fontWeight: 400 }}> (min, opcional)</span>
                   }
                 </label>
@@ -121,7 +121,7 @@ export default function SimulacroForm() {
                   placeholder="Sin límite"
                   value={simulacro.duracion}
                   onChange={(e) => setSimulacro({ ...simulacro, duracion: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', border: `1px solid ${tieneDefault ? '#93c5fd' : '#e5e7eb'}`, borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
+                  style={{ width: '100%', padding: '8px 10px', border: `1px solid ${tieneDefault ? '#fdba74' : '#e5e7eb'}`, borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
                 />
               </>
             );
@@ -133,7 +133,7 @@ export default function SimulacroForm() {
         disabled={!isReady}
         onClick={onGenerate}
         style={{
-          background: isReady ? '#1d4ed8' : '#e5e7eb',
+          background: isReady ? '#ea580c' : '#e5e7eb',
           color: isReady ? '#fff' : '#9ca3af',
           border: 'none',
           borderRadius: 8,
