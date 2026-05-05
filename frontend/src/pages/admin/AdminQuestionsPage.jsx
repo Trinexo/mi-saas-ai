@@ -35,7 +35,7 @@ const DIFICULTAD = {
   4: { bg: '#fee2e2', color: '#991b1b', label: '4 — Difícil' },
   5: { bg: '#fecaca', color: '#7f1d1d', label: '5 — Muy difícil' },
 };
-const BTN_PRIMARY = { background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
+const BTN_PRIMARY = { background: '#ea580c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
 const BTN_SECONDARY = { background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
 const BTN_DANGER = { background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
 const BTN_OUTLINE = { background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
@@ -444,7 +444,7 @@ export default function AdminQuestionsPage() {
                 </tr>
               )}
               {data.items.map((item) => (
-                <tr key={item.id} style={{ background: editingId === item.id ? '#eff6ff' : 'white' }}>
+                <tr key={item.id} style={{ background: editingId === item.id ? '#fff7ed' : 'white' }}>
                   <td style={{ ...TD, color: '#9ca3af', fontSize: '0.8rem' }}>{item.id}</td>
                   <td style={{ ...TD, maxWidth: 420, lineHeight: 1.4 }}>
                     <span style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>

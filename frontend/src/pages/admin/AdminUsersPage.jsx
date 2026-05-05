@@ -18,7 +18,7 @@ const ROLE_BADGE = {
 
 const PLAN_BADGE = {
   free:  { background: '#f3f4f6', color: '#6b7280' },
-  pro:   { background: '#eff6ff', color: '#1d4ed8' },
+  pro:   { background: '#fff7ed', color: '#ea580c' },
   elite: { background: '#fef9c3', color: '#92400e' },
 };
 
@@ -218,7 +218,7 @@ export default function AdminUsersPage() {
   const totalPages = Math.max(1, Math.ceil((data.pagination.total || 0) / (data.pagination.pageSize || filters.page_size)));
 
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
 
       {/* Cabecera */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
@@ -252,7 +252,7 @@ export default function AdminUsersPage() {
         </select>
         <button
           type="submit"
-          style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
         >
           Buscar
         </button>
@@ -274,8 +274,8 @@ export default function AdminUsersPage() {
 
       {/* Barra de acciones masivas */}
       {selected.size > 0 && (
-        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 16px', marginBottom: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e40af', marginRight: 4 }}>
+        <div style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 10, padding: '10px 16px', marginBottom: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#c2410c', marginRight: 4 }}>
             {selected.size} usuario{selected.size > 1 ? 's' : ''} seleccionado{selected.size > 1 ? 's' : ''}
           </span>
 
@@ -285,7 +285,7 @@ export default function AdminUsersPage() {
               value={bulkRole}
               onChange={(e) => setBulkRole(e.target.value)}
               disabled={bulkWorking}
-              style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid #93c5fd', fontSize: '0.82rem', background: '#fff' }}
+              style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid #fdba74', fontSize: '0.82rem', background: '#fff' }}
             >
               <option value="">Cambiar rol…</option>
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -293,7 +293,7 @@ export default function AdminUsersPage() {
             <button
               onClick={handleBulkRole}
               disabled={!bulkRole || bulkWorking}
-              style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: bulkRole ? '#1d4ed8' : '#93c5fd', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: bulkRole ? 'pointer' : 'not-allowed' }}
+              style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: bulkRole ? '#ea580c' : '#fdba74', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: bulkRole ? 'pointer' : 'not-allowed' }}
             >
               Aplicar rol
             </button>
@@ -305,7 +305,7 @@ export default function AdminUsersPage() {
               value={bulkPlan}
               onChange={(e) => setBulkPlan(e.target.value)}
               disabled={bulkWorking}
-              style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid #93c5fd', fontSize: '0.82rem', background: '#fff' }}
+              style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid #fdba74', fontSize: '0.82rem', background: '#fff' }}
             >
               <option value="">Cambiar plan…</option>
               {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -342,7 +342,7 @@ export default function AdminUsersPage() {
 
           <button
             onClick={() => setSelected(new Set())}
-            style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: 6, border: '1px solid #93c5fd', background: '#fff', color: '#1d4ed8', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+            style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: 6, border: '1px solid #fdba74', background: '#fff', color: '#ea580c', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
           >
             Deseleccionar
           </button>
@@ -360,7 +360,7 @@ export default function AdminUsersPage() {
                   checked={allSelected}
                   onChange={toggleSelectAll}
                   title="Seleccionar todos"
-                  style={{ cursor: 'pointer', accentColor: '#1d4ed8' }}
+                  style={{ cursor: 'pointer', accentColor: '#ea580c' }}
                 />
               </th>
               <th style={TH}>ID</th>
@@ -385,14 +385,14 @@ export default function AdminUsersPage() {
               const isSel = selected.has(String(u.id));
               const isConfirmDel = confirmDelete === u.id;
               return (
-                <tr key={u.id} style={{ background: isSel ? '#eff6ff' : undefined }}>
+                <tr key={u.id} style={{ background: isSel ? '#fff7ed' : undefined }}>
                   <td style={{ ...TD, textAlign: 'center' }}>
                     {isMe ? null : (
                       <input
                         type="checkbox"
                         checked={isSel}
                         onChange={() => toggleSelect(String(u.id))}
-                        style={{ cursor: 'pointer', accentColor: '#1d4ed8' }}
+                        style={{ cursor: 'pointer', accentColor: '#ea580c' }}
                       />
                     )}
                   </td>

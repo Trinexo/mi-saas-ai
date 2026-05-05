@@ -47,9 +47,9 @@ export default function ProfesorDashboardPage() {
       {/* Stats cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'Preguntas creadas', value: stats.total, bg: '#eff6ff', fg: '#1d4ed8', icon: '📝' },
+          { label: 'Preguntas creadas', value: stats.total, bg: '#fff7ed', fg: '#ea580c', icon: '📝' },
         ].map((c) => (
-          <div key={c.label} style={{ background: '#fff', borderRadius: 12, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+            <div key={c.label} style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
                 {c.icon}
@@ -62,7 +62,7 @@ export default function ProfesorDashboardPage() {
       </div>
 
       {/* Oposiciones asignadas */}
-      <div style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginBottom: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginBottom: 20 }}>
         <h2 style={{ margin: '0 0 12px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>
           Mis oposiciones ({oposiciones.length})
         </h2>
@@ -93,12 +93,12 @@ export default function ProfesorDashboardPage() {
       </div>
 
       {/* Actividad reciente */}
-      <div style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>
             Actividad reciente
           </h2>
-          <Link to="/profesor/preguntas" style={{ fontSize: '0.8rem', color: '#1d4ed8', textDecoration: 'none', fontWeight: 600 }}>
+          <Link to="/profesor/preguntas" style={{ fontSize: '0.8rem', color: '#ea580c', textDecoration: 'none', fontWeight: 600 }}>
             Ver todas →
           </Link>
         </div>

@@ -5,9 +5,10 @@ import { catalogApi } from '../../services/catalogApi';
 
 const COL = {
   background: '#fff',
-  borderRadius: 12,
+  borderRadius: 16,
+  border: '1px solid #e5e7eb',
   padding: '0 0 8px',
-  boxShadow: '0 1px 4px rgba(0,0,0,.07)',
+  boxShadow: '0 1px 4px rgba(0,0,0,.06)',
   minHeight: 320,
   display: 'flex',
   flexDirection: 'column',
@@ -32,7 +33,7 @@ const ITEM_BASE = {
 };
 
 const BTN_ADD = {
-  background: '#1d4ed8', color: '#fff', border: 'none',
+  background: '#ea580c', color: '#fff', border: 'none',
   borderRadius: 6, padding: '5px 12px', fontWeight: 600,
   cursor: 'pointer', fontSize: '0.8rem',
 };
@@ -56,7 +57,7 @@ function InlineForm({ placeholder, onSave, onCancel, initialValue = '' }) {
         onKeyDown={(e) => { if (e.key === 'Enter' && value.trim().length >= 2) onSave(value.trim()); if (e.key === 'Escape') onCancel(); }}
       />
       <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-        <button onClick={() => onSave(value.trim())} disabled={value.trim().length < 2} style={{ flex: 1, background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600, cursor: 'pointer', fontSize: '0.8rem' }}>Guardar</button>
+        <button onClick={() => onSave(value.trim())} disabled={value.trim().length < 2} style={{ flex: 1, background: '#ea580c', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600, cursor: 'pointer', fontSize: '0.8rem' }}>Guardar</button>
         <button onClick={onCancel} style={{ flex: 1, background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600, cursor: 'pointer', fontSize: '0.8rem' }}>Cancelar</button>
       </div>
     </div>
@@ -249,13 +250,13 @@ export default function AdminCatalogPage() {
                   <div
                     style={{
                       ...ITEM_BASE,
-                      background: selOposicion?.id === op.id ? '#eff6ff' : 'transparent',
-                      border: selOposicion?.id === op.id ? '1px solid #93c5fd' : '1px solid transparent',
+                      background: selOposicion?.id === op.id ? '#fff7ed' : 'transparent',
+                      border: selOposicion?.id === op.id ? '1px solid #fdba74' : '1px solid transparent',
                     }}
                     onClick={() => handleSelectOposicion(op)}
                   >
                     <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>►</span>
-                    <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: selOposicion?.id === op.id ? 600 : 400, color: selOposicion?.id === op.id ? '#1d4ed8' : '#374151' }}>
+                    <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: selOposicion?.id === op.id ? 600 : 400, color: selOposicion?.id === op.id ? '#ea580c' : '#374151' }}>
                       {op.nombre}
                     </span>
                     <button title="Editar" onClick={(e) => { e.stopPropagation(); setEditingOposicion(op); setAddingOposicion(false); }} style={{ ...BTN_ICON, color: '#9ca3af' }}>✎</button>
@@ -309,13 +310,13 @@ export default function AdminCatalogPage() {
                       <div
                         style={{
                           ...ITEM_BASE,
-                          background: selMateria?.id === mat.id ? '#eff6ff' : 'transparent',
-                          border: selMateria?.id === mat.id ? '1px solid #93c5fd' : '1px solid transparent',
-                        }}
-                        onClick={() => handleSelectMateria(mat)}
-                      >
-                        <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>►</span>
-                        <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: selMateria?.id === mat.id ? 600 : 400, color: selMateria?.id === mat.id ? '#1d4ed8' : '#374151' }}>
+                        background: selMateria?.id === mat.id ? '#fff7ed' : 'transparent',
+                        border: selMateria?.id === mat.id ? '1px solid #fdba74' : '1px solid transparent',
+                      }}
+                      onClick={() => handleSelectMateria(mat)}
+                    >
+                      <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>►</span>
+                      <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: selMateria?.id === mat.id ? 600 : 400, color: selMateria?.id === mat.id ? '#ea580c' : '#374151' }}>
                           {mat.nombre}
                         </span>
                         <button title="Editar" onClick={(e) => { e.stopPropagation(); setEditingMateria(mat); setAddingMateria(false); }} style={{ ...BTN_ICON, color: '#9ca3af' }}>✎</button>
@@ -390,7 +391,7 @@ export default function AdminCatalogPage() {
           <span style={{ fontSize: '1rem' }}>⏱</span>
           <div style={{ flex: '0 0 auto' }}>
             <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: 2 }}>
-              Tiempo oficial del examen — <span style={{ color: '#1d4ed8' }}>{selOposicion.nombre}</span>
+              Tiempo oficial del examen — <span style={{ color: '#ea580c' }}>{selOposicion.nombre}</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
               Pre-rellena el campo duración en el simulacro. Deja vacío si no hay límite oficial.
@@ -410,7 +411,7 @@ export default function AdminCatalogPage() {
             <button
               onClick={handleGuardarTiempoLimite}
               disabled={guardandoTiempo}
-              style={{ padding: '7px 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: '0.8rem', cursor: guardandoTiempo ? 'not-allowed' : 'pointer', opacity: guardandoTiempo ? 0.7 : 1 }}
+              style={{ padding: '7px 16px', background: '#ea580c', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: '0.8rem', cursor: guardandoTiempo ? 'not-allowed' : 'pointer', opacity: guardandoTiempo ? 0.7 : 1 }}
             >
               {guardandoTiempo ? 'Guardando…' : 'Guardar'}
             </button>
