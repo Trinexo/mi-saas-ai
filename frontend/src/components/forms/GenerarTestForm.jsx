@@ -7,7 +7,7 @@ import { useUserAccesos } from '../../hooks/useUserAccesos';
 import { catalogApi } from '../../services/catalogApi';
 import { testApi } from '../../services/testApi';
 
-const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16, borderTop: '3px solid #10b981' };
+const SECTION = { background: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', border: '1px solid #e5e7eb', marginBottom: 16, borderTop: '3px solid #ea580c' };
 const SEL = { width: '100%', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: '0.875rem', color: '#374151', background: '#fff', outline: 'none', boxSizing: 'border-box' };
 const LBL = { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 };
 const SUBHEAD = { fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 };
@@ -135,19 +135,28 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     }
   };
 
-  if (loading) return <p>Cargando catálogo...</p>;
-  if (error) return <p style={{ color: '#dc2626', padding: '1rem' }}>{error}</p>;
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '4px solid #fff7ed', borderTopColor: '#ea580c', animation: 'spin .8s linear infinite' }} />
+    </div>
+  );
+  if (error) return (
+    <div style={{ display: 'flex', gap: 8, background: '#fef2f2', color: '#dc2626', borderRadius: 10, padding: '10px 16px' }}>
+      <span>⚠️</span>{error}
+    </div>
+  );
 
   if (isLoading) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '1.25rem' }}>
       <div style={{
         width: 48, height: 48, borderRadius: '50%',
-        border: '4px solid #dbeafe',
-        borderTopColor: '#1d4ed8',
+        border: '4px solid #fff7ed',
+        borderTopColor: '#ea580c',
         animation: 'spin 0.8s linear infinite',
       }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <p style={{ margin: 0, color: '#1d4ed8', fontWeight: 600 }}>Generando tu test…</p>
+      <p style={{ margin: 0, color: '#ea580c', fontWeight: 600 }}>Generando tu test…</p>
       <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Seleccionando las preguntas más adecuadas para ti</p>
     </div>
   );
@@ -157,7 +166,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
 
       {/* Cabecera */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 18 }}>
-        <div style={{ background: '#10b981', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>📋</div>
+        <div style={{ background: '#ea580c', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>📋</div>
         <div>
           <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Práctica personalizada</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}>Elige oposición, tema, modo y dificultad para tu sesión.</p>
@@ -304,7 +313,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
           onClick={onGenerate}
           style={{
             padding: '10px 24px', borderRadius: 8, border: 'none',
-            background: '#10b981', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+            background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
             cursor: 'pointer',
             opacity: ((selection.modo !== 'marcadas' && !selection.temaId && !(oposicionCompleta && selection.oposicionId)) || isLoading) ? 0.5 : 1,
           }}
