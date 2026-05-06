@@ -279,7 +279,7 @@ test('SMOKE-A08: listar reportes', async () => {
 
 // ── Seguridad básica ───────────────────────────────────────────
 test('SMOKE-S01: ruta protegida sin token = 401', async () => {
-  const { status } = await api('/tests/generate', { method: 'POST', body: { bloqueId: 1, numPreguntas: 5 } });
+  const { status } = await api('/tests/generate', { method: 'POST', body: { temaId: 1, numPreguntas: 5 } });
   assert.equal(status, 401);
 });
 
