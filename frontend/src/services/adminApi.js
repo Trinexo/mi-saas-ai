@@ -17,20 +17,20 @@ export const adminApi = {
   updateOposicion: (token, id, payload) => apiRequest(`/admin/catalogo/oposiciones/${id}`, { method: 'PUT', body: payload, token }),
   deleteOposicion: (token, id) => apiRequest(`/admin/catalogo/oposiciones/${id}`, { method: 'DELETE', token }),
 
-  // Catálogo: materias
-  createMateria: (token, payload) => apiRequest('/admin/catalogo/materias', { method: 'POST', body: payload, token }),
-  updateMateria: (token, id, payload) => apiRequest(`/admin/catalogo/materias/${id}`, { method: 'PUT', body: payload, token }),
-  deleteMateria: (token, id) => apiRequest(`/admin/catalogo/materias/${id}`, { method: 'DELETE', token }),
-
-  // Catálogo: temas
+  // Catálogo: temas (primer nivel bajo oposición)
   createTema: (token, payload) => apiRequest('/admin/catalogo/temas', { method: 'POST', body: payload, token }),
   updateTema: (token, id, payload) => apiRequest(`/admin/catalogo/temas/${id}`, { method: 'PUT', body: payload, token }),
   deleteTema: (token, id) => apiRequest(`/admin/catalogo/temas/${id}`, { method: 'DELETE', token }),
 
+  // Catálogo: bloques (segundo nivel bajo tema)
+  createBloque: (token, payload) => apiRequest('/admin/catalogo/bloques', { method: 'POST', body: payload, token }),
+  updateBloque: (token, id, payload) => apiRequest(`/admin/catalogo/bloques/${id}`, { method: 'PUT', body: payload, token }),
+  deleteBloque: (token, id) => apiRequest(`/admin/catalogo/bloques/${id}`, { method: 'DELETE', token }),
+
   // Stats globales
   getAdminStats: (token) => apiRequest('/admin/stats', { token }),
-  getTemasConMasErrores: (token, limit = 10) =>
-    apiRequest('/admin/stats/temas-errores', { token, query: { limit } }),
+  getBloquesConMasErrores: (token, limit = 10) =>
+    apiRequest('/admin/stats/bloques-errores', { token, query: { limit } }),
 
   // Usuarios
   listUsers: (token, query = {}) => apiRequest('/admin/users', { token, query }),
@@ -69,6 +69,44 @@ export const adminApi = {
     apiRequest(`/admin/profesores/${id}`, { method: 'PATCH', body: payload, token }),
   deleteProfesor: (token, id) =>
     apiRequest(`/admin/profesores/${id}`, { method: 'DELETE', token }),
+
+  // Catálogo: oposiciones con stats
+  listOposicionesConStats: (token, query = {}) =>
+    apiRequest('/admin/catalogo/oposiciones', { token, query }),
+
+  // Simulacros
+  listSimulacros: (token, query = {}) =>
+    apiRequest('/admin/simulacros', { token, query }),
+  getSimulacro: (token, id) =>
+    apiRequest(`/admin/simulacros/${id}`, { token }),
+  createSimulacro: (token, payload) =>
+    apiRequest('/admin/simulacros', { method: 'POST', body: payload, token }),
+  updateSimulacro: (token, id, payload) =>
+    apiRequest(`/admin/simulacros/${id}`, { method: 'PUT', body: payload, token }),
+  deleteSimulacro: (token, id) =>
+    apiRequest(`/admin/simulacros/${id}`, { method: 'DELETE', token }),
+
+  // Etiquetas
+  listEtiquetas: (token, query = {}) =>
+    apiRequest('/admin/etiquetas', { token, query }),
+  createEtiqueta: (token, payload) =>
+    apiRequest('/admin/etiquetas', { method: 'POST', body: payload, token }),
+  updateEtiqueta: (token, id, payload) =>
+    apiRequest(`/admin/etiquetas/${id}`, { method: 'PUT', body: payload, token }),
+  deleteEtiqueta: (token, id) =>
+    apiRequest(`/admin/etiquetas/${id}`, { method: 'DELETE', token }),
+
+  // Stats mejoradas (B5+B6)
+  getAdminStatsFull: (token) =>
+    apiRequest('/admin/stats/full', { token }),
+  getDistribucionContenido: (token) =>
+    apiRequest('/admin/stats/contenido', { token }),
+  getTopOposiciones: (token, limit = 5) =>
+    apiRequest('/admin/stats/top-oposiciones', { token, query: { limit } }),
+  getEvolucionUsuarios: (token, dias = 30) =>
+    apiRequest('/admin/stats/evolucion-usuarios', { token, query: { dias } }),
+  getActividadReciente: (token, limit = 20) =>
+    apiRequest('/admin/actividad', { token, query: { limit } }),
 
   // Ajustes del sistema (email + Stripe)
   getSettings: (token) =>

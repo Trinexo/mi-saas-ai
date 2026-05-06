@@ -7,7 +7,7 @@ const SELECT_DUE_QUESTIONS_SQL = `
   JOIN preguntas p ON p.id = re.pregunta_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE re.usuario_id = $1
-    AND p.tema_id = $2
+    AND p.bloque_id = $2
     AND re.proxima_revision <= NOW()
   GROUP BY p.id, re.proxima_revision
   ORDER BY re.proxima_revision ASC
@@ -19,7 +19,7 @@ const COUNT_DUE_QUESTIONS_SQL = `
   FROM repeticion_espaciada re
   JOIN preguntas p ON p.id = re.pregunta_id
   WHERE re.usuario_id = $1
-    AND p.tema_id = $2
+    AND p.bloque_id = $2
     AND re.proxima_revision <= NOW()
 `;
 
@@ -54,7 +54,7 @@ const SELECT_ADAPTIVE_QUESTIONS_SQL = `
     ORDER BY ru.fecha_respuesta DESC
     LIMIT 1
   ) ru ON true
-  WHERE p.tema_id = $2
+  WHERE p.bloque_id = $2
     AND p.id != ALL($3::bigint[])
     AND ($5::int IS NULL OR p.nivel_dificultad = $5)
   ORDER BY score DESC, RANDOM()
@@ -62,18 +62,18 @@ const SELECT_ADAPTIVE_QUESTIONS_SQL = `
 `;
 
 export const testQuestionsAdaptiveRepository = {
-  async pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
-    const result = await pool.query(SELECT_ADAPTIVE_QUESTIONS_SQL, [userId, temaId, excludePreguntaIds, numeroPreguntas, nivelDificultad]);
+  async pickAdaptiveQuestions({ userId, bloqueId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
+    const result = await pool.query(SELECT_ADAPTIVE_QUESTIONS_SQL, [userId, bloqueId, excludePreguntaIds, numeroPreguntas, nivelDificultad]);
     return result.rows;
   },
 
-  async pickDueQuestions({ userId, temaId, numeroPreguntas }) {
-    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, temaId, numeroPreguntas]);
+  async pickDueQuestions({ userId, bloqueId, numeroPreguntas }) {
+    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, bloqueId, numeroPreguntas]);
     return result.rows;
   },
 
-  async countDueQuestions({ userId, temaId }) {
-    const result = await pool.query(COUNT_DUE_QUESTIONS_SQL, [userId, temaId]);
+  async countDueQuestions({ userId, bloqueId }) {
+    const result = await pool.query(COUNT_DUE_QUESTIONS_SQL, [userId, bloqueId]);
     return result.rows[0].total;
   },
 };

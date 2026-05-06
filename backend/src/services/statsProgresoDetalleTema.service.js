@@ -2,29 +2,29 @@ import { progressStatsRepository } from '../repositories/progressStats.repositor
 import { ApiError } from '../utils/api-error.js';
 
 export const statsProgresoDetalleTemaService = {
-  async getTemaStats(userId, temaId) {
-    if (!Number.isInteger(temaId) || temaId <= 0)
-      throw new ApiError(400, 'tema_id debe ser un entero positivo');
-    return progressStatsRepository.getTemaStats(userId, temaId);
+  async getBloqueStats(userId, bloqueId) {
+    if (!Number.isInteger(bloqueId) || bloqueId <= 0)
+      throw new ApiError(400, 'bloque_id debe ser un entero positivo');
+    return progressStatsRepository.getBloqueStats(userId, bloqueId);
   },
 
-  async getRepasoStats(userId, temaId) {
-    if (!Number.isInteger(temaId) || temaId <= 0)
-      throw new ApiError(400, 'tema_id debe ser un entero positivo');
-    return progressStatsRepository.getRepasoStats(userId, temaId);
+  async getRepasoStats(userId, bloqueId) {
+    if (!Number.isInteger(bloqueId) || bloqueId <= 0)
+      throw new ApiError(400, 'bloque_id debe ser un entero positivo');
+    return progressStatsRepository.getRepasoStats(userId, bloqueId);
   },
 
-  async getProgresoTemasByMateria(userId, materiaId) {
-    if (!Number.isInteger(materiaId) || materiaId <= 0)
-      throw new ApiError(400, 'materia_id debe ser un entero positivo');
-    return progressStatsRepository.getProgresoTemasByMateria(userId, materiaId);
-  },
-
-  async getDetalleTema(userId, temaId) {
+  async getProgresoBloquesByTema(userId, temaId) {
     if (!Number.isInteger(temaId) || temaId <= 0)
       throw new ApiError(400, 'tema_id debe ser un entero positivo');
-    const data = await progressStatsRepository.getDetalleTema(userId, temaId);
-    if (!data) throw new ApiError(404, 'Tema no encontrado');
+    return progressStatsRepository.getProgresoBloquesByTema(userId, temaId);
+  },
+
+  async getDetalleBloque(userId, bloqueId) {
+    if (!Number.isInteger(bloqueId) || bloqueId <= 0)
+      throw new ApiError(400, 'bloque_id debe ser un entero positivo');
+    const data = await progressStatsRepository.getDetalleBloque(userId, bloqueId);
+    if (!data) throw new ApiError(404, 'Bloque no encontrado');
     return data;
   },
 };

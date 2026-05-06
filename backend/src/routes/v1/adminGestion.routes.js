@@ -5,7 +5,7 @@ import {
   createPregunta,
   deletePregunta,
   getAdminStats,
-  getTemasConMasErrores,
+  getBloquesConMasErrores,
   getPregunta,
   importPreguntasCsv,
   listAuditoria,
@@ -25,6 +25,13 @@ import {
   updateProfesor,
   deleteProfesor,
 } from '../../controllers/admin.controller.js';
+import {
+  getAdminStatsFull,
+  getDistribucionContenido,
+  getTopOposiciones,
+  getEvolucionUsuarios,
+  getActividadReciente,
+} from '../../controllers/adminPanel.controller.js';
 import {
   createPreguntaSchema,
   idParamSchema,
@@ -63,8 +70,22 @@ router.patch('/reportes/:id/estado', requireRole('admin'), validate(idParamSchem
 // --- Auditoría ---
 router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema, 'query'), listAuditoria);
 
-// --- Stats globales ---
+// --- Stats globales (legado) ---
 router.get('/stats', requireRole('admin'), getAdminStats);
+
+// --- B6: Stats ampliados para Dashboard ---
+// GET /api/admin/stats/full          → KPIs: usuarios activos 30d, simulacros publicados, oposiciones activas…
+// GET /api/admin/stats/contenido     → distribución circular: preguntas/tests/simulacros/temas
+// GET /api/admin/stats/top-oposiciones?limit=5  → top oposiciones por actividad 30d
+// GET /api/admin/stats/evolucion-usuarios?dias=30 → evolución de registros por día
+router.get('/stats/full',              requireRole('admin'), getAdminStatsFull);
+router.get('/stats/contenido',         requireRole('admin'), getDistribucionContenido);
+router.get('/stats/top-oposiciones',   requireRole('admin'), getTopOposiciones);
+router.get('/stats/evolucion-usuarios',requireRole('admin'), getEvolucionUsuarios);
+
+// --- B5: Actividad reciente ---
+// GET /api/admin/actividad?limit=20  → últimos N eventos del log actividad_global
+router.get('/actividad', requireRole('admin'), getActividadReciente);
 
 // --- Usuarios ---
 router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
@@ -73,7 +94,7 @@ router.delete('/users/:id', requireRole('admin'), validate(idParamSchema, 'param
 router.post('/users/bulk', requireRole('admin'), validate(bulkUsersSchema), bulkUsers);
 
 // --- Stats: temas con más errores ---
-router.get('/stats/temas-errores', requireRole('admin'), getTemasConMasErrores);
+router.get('/stats/bloques-errores', requireRole('admin'), getBloquesConMasErrores);
 
 // --- Profesor: gestión de asignaciones de oposiciones ---
 router.get('/profesores/asignaciones', requireRole('admin'), validate(profesorAsignacionesQuerySchema, 'query'), listProfesorAsignaciones);

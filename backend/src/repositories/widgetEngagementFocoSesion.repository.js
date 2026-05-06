@@ -15,15 +15,15 @@ export const widgetEngagementFocoSesionRepository = {
       : null;
 
     const pendientesResult = await pool.query(
-      `SELECT p.tema_id,
-              t.nombre AS tema_nombre,
+      `SELECT p.bloque_id,
+              bl.nombre AS bloque_nombre,
               COUNT(*)::int AS pendientes
        FROM repeticion_espaciada re
        JOIN preguntas p ON p.id = re.pregunta_id
-       JOIN temas t ON t.id = p.tema_id
+       JOIN bloques bl ON bl.id = p.bloque_id
        WHERE re.usuario_id = $1
          AND re.proxima_revision <= NOW()
-       GROUP BY p.tema_id, t.nombre
+       GROUP BY p.bloque_id, bl.nombre
        ORDER BY pendientes DESC
        LIMIT 1`,
       [userId],
@@ -34,31 +34,31 @@ export const widgetEngagementFocoSesionRepository = {
       const numeroPreguntas = Math.min(20, Math.max(5, Number(pendienteTop.pendientes)));
       return {
         modo: 'repaso',
-        temaId: Number(pendienteTop.tema_id),
+        bloqueId: Number(pendienteTop.bloque_id),
         oposicionId,
         numeroPreguntas,
-        motivo: `Tienes ${Number(pendienteTop.pendientes)} preguntas pendientes en ${pendienteTop.tema_nombre}`,
+        motivo: `Tienes ${Number(pendienteTop.pendientes)} preguntas pendientes en ${pendienteTop.bloque_nombre}`,
       };
     }
 
-    // Temas practicados en las últimas 24h para evitar repetir la misma sugerencia
+    // Bloques practicados en las últimas 24h para evitar repetir la misma sugerencia
     const recientesResult = await pool.query(
-      `SELECT DISTINCT p.tema_id::int
+      `SELECT DISTINCT p.bloque_id::int
        FROM tests t
        JOIN tests_preguntas tp ON tp.test_id = t.id
        JOIN preguntas p ON p.id = tp.pregunta_id
        WHERE t.usuario_id = $1
          AND t.estado = 'finalizado'
          AND t.fecha_creacion >= NOW() - INTERVAL '24 hours'
-         AND p.tema_id IS NOT NULL`,
+         AND p.bloque_id IS NOT NULL`,
       [userId],
     );
-    const recientes = recientesResult.rows.map((r) => Number(r.tema_id));
+    const recientes = recientesResult.rows.map((r) => Number(r.bloque_id));
 
-    // Tema débil: intenta excluir los practicados hoy; si no hay resultado, sin exclusión
+    // Bloque débil: intenta excluir los practicados hoy; si no hay resultado, sin exclusión
     const buildDebilQuery = (withExclude) => {
       const excludeClause = withExclude && recientes.length > 0
-        ? 'AND pu.tema_id != ALL($2::bigint[])'
+        ? 'AND pu.bloque_id != ALL($2::bigint[])'
         : '';
       const params = withExclude && recientes.length > 0 ? [userId, recientes] : [userId];
       return { excludeClause, params };
@@ -67,13 +67,13 @@ export const widgetEngagementFocoSesionRepository = {
     const runDebil = async (withExclude) => {
       const { excludeClause, params } = buildDebilQuery(withExclude);
       return pool.query(
-        `SELECT pu.tema_id,
-                t.nombre AS tema_nombre,
+        `SELECT pu.bloque_id,
+                bl.nombre AS bloque_nombre,
                 pu.aciertos,
                 pu.errores,
                 ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 0) AS porcentaje_acierto
          FROM progreso_usuario pu
-         JOIN temas t ON t.id = pu.tema_id
+         JOIN bloques bl ON bl.id = pu.bloque_id
          WHERE pu.usuario_id = $1
            AND (pu.aciertos + pu.errores) >= 10
            ${excludeClause}
@@ -88,20 +88,20 @@ export const widgetEngagementFocoSesionRepository = {
       debilResult = await runDebil(false);
     }
 
-    const temaDebil = debilResult.rows[0];
-    if (temaDebil) {
-      // Busca un segundo tema con preguntas sin ver para mezclar (50% débil + 50% nuevo)
-      const excluirNuevo = [Number(temaDebil.tema_id), ...recientes];
+    const bloqueDebil = debilResult.rows[0];
+    if (bloqueDebil) {
+      // Busca un segundo bloque con preguntas sin ver para mezclar (50% débil + 50% nuevo)
+      const excluirNuevo = [Number(bloqueDebil.bloque_id), ...recientes];
       const nuevoResult = await pool.query(
-        `SELECT t.id AS tema_id, t.nombre AS tema_nombre
-         FROM temas t
-         JOIN preguntas p ON p.tema_id = t.id
-         WHERE t.id != ALL($2::bigint[])
+        `SELECT bl.id AS bloque_id, bl.nombre AS bloque_nombre
+         FROM bloques bl
+         JOIN preguntas p ON p.bloque_id = bl.id
+         WHERE bl.id != ALL($2::bigint[])
            AND NOT EXISTS (
              SELECT 1 FROM progreso_usuario pu
-             WHERE pu.tema_id = t.id AND pu.usuario_id = $1
+             WHERE pu.bloque_id = bl.id AND pu.usuario_id = $1
            )
-         GROUP BY t.id, t.nombre
+         GROUP BY bl.id, bl.nombre
          HAVING COUNT(p.id) >= 5
          ORDER BY RANDOM()
          LIMIT 1`,
@@ -109,32 +109,32 @@ export const widgetEngagementFocoSesionRepository = {
       );
 
       if (nuevoResult.rows[0]) {
-        const temaNuevo = nuevoResult.rows[0];
+        const bloqueNuevo = nuevoResult.rows[0];
         return {
           modo: 'adaptativo',
-          temaId: null,
+          bloqueId: null,
           oposicionId,
           temasMix: [
-            { temaId: Number(temaDebil.tema_id), pct: 50 },
-            { temaId: Number(temaNuevo.tema_id), pct: 50 },
+            { bloqueId: Number(bloqueDebil.bloque_id), pct: 50 },
+            { bloqueId: Number(bloqueNuevo.bloque_id), pct: 50 },
           ],
           numeroPreguntas: 10,
-          motivo: `Combina "${temaDebil.tema_nombre}" (tu punto débil) con "${temaNuevo.tema_nombre}" (tema nuevo).`,
+          motivo: `Combina "${bloqueDebil.bloque_nombre}" (tu punto débil) con "${bloqueNuevo.bloque_nombre}" (bloque nuevo).`,
         };
       }
 
       return {
         modo: 'adaptativo',
-        temaId: Number(temaDebil.tema_id),
+        bloqueId: Number(bloqueDebil.bloque_id),
         oposicionId,
         numeroPreguntas: 10,
-        motivo: `Activa tu sesion reforzando "${temaDebil.tema_nombre}" (acierto ${Number(temaDebil.porcentaje_acierto ?? 0)}%)`,
+        motivo: `Activa tu sesion reforzando "${bloqueDebil.bloque_nombre}" (acierto ${Number(bloqueDebil.porcentaje_acierto ?? 0)}%)`,
       };
     }
 
     return {
       modo: 'adaptativo',
-      temaId: null,
+      bloqueId: null,
       oposicionId,
       numeroPreguntas: 10,
       motivo: 'Empieza con un test adaptativo rapido para activar tu sesion',

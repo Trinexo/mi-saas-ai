@@ -4,10 +4,10 @@ const SELECT_SIMULACRO_QUESTIONS_SQL = `
   SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
-  JOIN temas t ON t.id = p.tema_id
-  JOIN materias m ON m.id = t.materia_id
+  JOIN bloques bl ON bl.id = p.bloque_id
+  JOIN temas t ON t.id = bl.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE m.oposicion_id = $1
+  WHERE t.oposicion_id = $1
   GROUP BY p.id
   ORDER BY RANDOM()
   LIMIT $2
@@ -33,7 +33,7 @@ const SELECT_DUE_QUESTIONS_SQL = `
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE re.usuario_id = $1
     AND re.proxima_revision <= NOW()
-    AND ($3::bigint IS NULL OR p.tema_id = $3)
+    AND ($3::bigint IS NULL OR p.bloque_id = $3)
   GROUP BY p.id, re.proxima_revision
   ORDER BY re.proxima_revision ASC
   LIMIT $2
@@ -55,7 +55,7 @@ const SELECT_REFUERZO_QUESTIONS_SQL = `
   FROM failed f
   JOIN preguntas p ON p.id = f.pregunta_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE ($3::bigint IS NULL OR p.tema_id = $3)
+  WHERE ($3::bigint IS NULL OR p.bloque_id = $3)
   GROUP BY p.id, f.cnt
   ORDER BY f.cnt DESC, RANDOM()
   LIMIT $2
@@ -72,13 +72,13 @@ export const testQuestionsSpecialRepository = {
     return result.rows;
   },
 
-  async pickDueQuestions({ userId, temaId = null, numeroPreguntas }) {
-    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, numeroPreguntas, temaId ?? null]);
+  async pickDueQuestions({ userId, bloqueId = null, numeroPreguntas }) {
+    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, numeroPreguntas, bloqueId ?? null]);
     return result.rows;
   },
 
-  async pickRefuerzoQuestions({ userId, numeroPreguntas, temaId = null }) {
-    const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, temaId]);
+  async pickRefuerzoQuestions({ userId, numeroPreguntas, bloqueId = null }) {
+    const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, bloqueId]);
     return result.rows;
   },
 

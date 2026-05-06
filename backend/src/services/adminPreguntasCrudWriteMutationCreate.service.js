@@ -12,7 +12,7 @@ export const adminPreguntasCrudWriteMutationCreateService = {
       if (assignedIds.length === 0) {
         throw new ApiError(403, 'No tienes oposiciones asignadas');
       }
-      const allowed = await adminRepository.existsTemaInOposiciones(payload.temaId, assignedIds);
+      const allowed = await adminRepository.existsBloqueInOposiciones(payload.bloqueId, assignedIds);
       if (!allowed) {
         throw new ApiError(403, 'El tema no pertenece a tus oposiciones asignadas');
       }

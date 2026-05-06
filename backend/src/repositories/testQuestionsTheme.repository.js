@@ -5,7 +5,7 @@ const SELECT_QUESTIONS_SQL = `
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE p.tema_id = $1
+  WHERE p.bloque_id = $1
     AND p.id NOT IN (
       SELECT tp.pregunta_id
       FROM tests t
@@ -24,7 +24,7 @@ const SELECT_FRESH_QUESTIONS_SQL = `
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE p.tema_id = $1
+  WHERE p.bloque_id = $1
     AND ($4::int IS NULL OR p.nivel_dificultad = $4)
     AND p.id NOT IN (
       SELECT tp.pregunta_id
@@ -44,7 +44,7 @@ const SELECT_ANY_QUESTIONS_SQL = `
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE p.tema_id = $1
+  WHERE p.bloque_id = $1
     AND ($4::int IS NULL OR p.nivel_dificultad = $4)
     AND p.id != ALL($3::bigint[])
   GROUP BY p.id
@@ -53,18 +53,18 @@ const SELECT_ANY_QUESTIONS_SQL = `
 `;
 
 export const testQuestionsThemeRepository = {
-  async pickQuestions({ userId, temaId, numeroPreguntas }) {
-    const result = await pool.query(SELECT_QUESTIONS_SQL, [temaId, userId, numeroPreguntas]);
+  async pickQuestions({ userId, bloqueId, numeroPreguntas }) {
+    const result = await pool.query(SELECT_QUESTIONS_SQL, [bloqueId, userId, numeroPreguntas]);
     return result.rows;
   },
 
-  async pickFreshQuestions({ userId, temaId, numeroPreguntas, nivelDificultad = null }) {
-    const result = await pool.query(SELECT_FRESH_QUESTIONS_SQL, [temaId, userId, numeroPreguntas, nivelDificultad]);
+  async pickFreshQuestions({ userId, bloqueId, numeroPreguntas, nivelDificultad = null }) {
+    const result = await pool.query(SELECT_FRESH_QUESTIONS_SQL, [bloqueId, userId, numeroPreguntas, nivelDificultad]);
     return result.rows;
   },
 
-  async pickAnyQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
-    const result = await pool.query(SELECT_ANY_QUESTIONS_SQL, [temaId, numeroPreguntas, excludePreguntaIds, nivelDificultad]);
+  async pickAnyQuestions({ userId, bloqueId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
+    const result = await pool.query(SELECT_ANY_QUESTIONS_SQL, [bloqueId, numeroPreguntas, excludePreguntaIds, nivelDificultad]);
     return result.rows;
   },
 };

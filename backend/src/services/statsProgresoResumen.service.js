@@ -1,6 +1,10 @@
 import { progressStatsRepository } from '../repositories/progressStats.repository.js';
 
 export const statsProgresoResumenService = {
+  async getProgresoBloques(userId, oposicionId) {
+    return progressStatsRepository.getProgresoBloques(userId, oposicionId ?? null);
+  },
+
   async getProgresoTemas(userId, oposicionId) {
     return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null);
   },

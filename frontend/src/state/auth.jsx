@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('oposicionActiva');
   };
 
   const refreshUser = (updatedUser) => {

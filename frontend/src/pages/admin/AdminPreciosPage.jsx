@@ -3,9 +3,9 @@ import { useAuth } from '../../state/auth.jsx';
 import { catalogApi } from '../../services/catalogApi';
 import { adminApi } from '../../services/adminApi';
 
-const CARD = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
-const INPUT = { padding: '7px 10px', borderRadius: 7, border: '1px solid #d1d5db', fontSize: '0.875rem', width: 110 };
-const BTN = { padding: '7px 16px', borderRadius: 7, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' };
+const CARD = { background: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', border: '1px solid #e5e7eb', marginBottom: 16 };
+const INPUT = { padding: '7px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.875rem', width: 110 };
+const BTN = { padding: '8px 18px', borderRadius: 8, border: 'none', background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' };
 
 export default function AdminPreciosPage() {
   const { token } = useAuth();

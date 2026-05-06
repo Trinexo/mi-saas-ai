@@ -3,6 +3,7 @@ import { useAuth } from '../state/auth.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useEffect, useState } from 'react';
 import { notificacionesApi } from '../services/notificacionesApi';
+import { useRevision } from '../state/revisionContext.jsx';
 
 const PLAN_BADGE = {
   pro:   { label: 'Pro',   color: '#ea580c' },
@@ -29,6 +30,23 @@ const BOTTOM_NAV = [
   { to: '/perfil',          label: 'Perfil',   exact: false, icon: 'user'  },
 ];
 
+const ADMIN_NAV = [
+  { to: '/admin',            exact: true,  icon: '▦', label: 'Dashboard' },
+  { to: '/admin/preguntas',  exact: false, icon: '❔', label: 'Preguntas' },
+  { to: '/admin/catalogo',   exact: false, icon: '◈', label: 'Catálogo' },
+  { to: '/admin/usuarios',   exact: false, icon: '◉', label: 'Usuarios' },
+  { to: '/admin/profesores', exact: false, icon: '👩‍🏫', label: 'Profesores' },
+  { to: '/admin/accesos',    exact: false, icon: '🔑', label: 'Accesos' },
+  { to: '/admin/precios',    exact: false, icon: '💶', label: 'Precios' },
+  { to: '/admin/revision',   exact: false, icon: '◎', label: 'Revisión', hasBadge: true },
+  { to: '/admin/ajustes',    exact: false, icon: '⚙', label: 'Ajustes' },
+];
+
+const PROFESOR_NAV = [
+  { to: '/profesor',           exact: true,  icon: '▦', label: 'Dashboard' },
+  { to: '/profesor/preguntas', exact: false, icon: '❔', label: 'Mis preguntas' },
+];
+
 const ICON_SVG = {
   home:      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
   clipboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>',
@@ -45,15 +63,22 @@ const ICON_SVG = {
 };
 
 function NavIcon({ name }) {
+  if (ICON_SVG[name]) {
+    return (
+      <span
+        dangerouslySetInnerHTML={{ __html: ICON_SVG[name] }}
+        style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
+      />
+    );
+  }
   return (
-    <span
-      dangerouslySetInnerHTML={{ __html: ICON_SVG[name] || ICON_SVG.home }}
-      style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
-    />
+    <span style={{ display: 'flex', alignItems: 'center', width: 18, flexShrink: 0, fontSize: '1rem', justifyContent: 'center' }}>
+      {name}
+    </span>
   );
 }
 
-function SidebarLink({ to, label, exact, icon }) {
+function SidebarLink({ to, label, exact, icon, badge }) {
   const { pathname } = useLocation();
   const active = exact ? pathname === to : pathname.startsWith(to);
   const [hov, setHov] = useState(false);
@@ -80,6 +105,11 @@ function SidebarLink({ to, label, exact, icon }) {
     >
       <NavIcon name={icon} />
       {label}
+      {badge > 0 && (
+        <span style={{ marginLeft: 'auto', background: '#dc2626', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700 }}>
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -93,6 +123,8 @@ function Shell() {
   const planBadge = PLAN_BADGE[plan] ?? null;
   const isStaff = user && ['admin', 'profesor'].includes(user.role);
   const [sinLeer, setSinLeer] = useState(0);
+  const revision = useRevision();
+  const totalBadge = revision?.reportesAbiertos ?? 0;
 
   useEffect(() => {
     if (!token) return;
@@ -146,12 +178,13 @@ function Shell() {
         <div style={{ margin: '0 16px 10px', borderTop: '1px solid rgba(255,255,255,.07)' }} />
 
         {/* Nav links */}
-        {!isStaff && (
-          <nav style={{ flex: 1 }}>
-            {NAV_LINKS.map((l) => <SidebarLink key={l.to} {...l} />)}
-          </nav>
-        )}
-        {isStaff && <div style={{ flex: 1 }} />}
+        <nav style={{ flex: 1 }}>
+          {!isStaff && NAV_LINKS.map((l) => <SidebarLink key={l.to} {...l} />)}
+          {user?.role === 'admin' && ADMIN_NAV.map((l) => (
+            <SidebarLink key={l.to} {...l} badge={l.hasBadge ? totalBadge : 0} />
+          ))}
+          {user?.role === 'profesor' && PROFESOR_NAV.map((l) => <SidebarLink key={l.to} {...l} />)}
+        </nav>
 
         {/* User block */}
         <div style={{ padding: '10px 14px 20px', marginTop: 'auto' }}>

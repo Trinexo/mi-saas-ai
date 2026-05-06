@@ -4,6 +4,7 @@ import { useAuth } from '../../state/auth.jsx';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useUserPlan } from '../../hooks/useUserPlan';
 import { useUserAccesos } from '../../hooks/useUserAccesos';
+import { useOposicionActiva } from '../../state/oposicionActiva.jsx';
 import { catalogApi } from '../../services/catalogApi';
 import { testApi } from '../../services/testApi';
 
@@ -27,12 +28,16 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   const { token } = useAuth();
   const { hasAccess: hasPlanAccess } = useUserPlan();
   const { tieneAcceso, loading: loadingAccesos } = useUserAccesos();
+  const { oposicionActiva } = useOposicionActiva();
+  // Mostrar badge de oposición activa solo cuando NO hay oposicionId en location.state
+  // (el state indica que el usuario viene del catálogo para probar/practicar otra oposición)
+  const usandoOposicionActiva = !!oposicionActiva && !location.state?.oposicionId;
   const { error, isLoading, clearError, runAction, setErrorMessage } = useAsyncAction();
   const [oposiciones, setOposiciones] = useState([]);
-  const [materias, setMaterias] = useState([]);
   const [temas, setTemas] = useState([]);
+  const [bloques, setBloques] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selection, setSelection] = useState({ oposicionId: '', materiaId: '', temaId: '', numeroPreguntas: 10, modo: modoSugerido ?? 'adaptativo', dificultad: 'mixto' });
+  const [selection, setSelection] = useState({ oposicionId: '', temaId: '', bloqueId: '', numeroPreguntas: 10, modo: modoSugerido ?? 'adaptativo', dificultad: 'mixto' });
   const [oposicionCompleta, setOposicionCompleta] = useState(false);
   const [feedbackInmediato, setFeedbackInmediato] = useState(false);
 
@@ -43,21 +48,26 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       .then(async (ops) => {
         if (cancelled) return;
         setOposiciones(ops);
+
+        // Prioridad 1: location.state (navegación contextual desde tema/materia)
         const stateOposicionId = location.state?.oposicionId ? String(location.state.oposicionId) : null;
-        const targetOposicionId = stateOposicionId;
+        // Prioridad 2: oposición activa seleccionada en el contexto global
+        const activaId = oposicionActiva?.id ? String(oposicionActiva.id) : null;
+        const targetOposicionId = stateOposicionId ?? activaId;
+
         if (targetOposicionId && !cancelled) {
-          setSelection((prev) => ({ ...prev, oposicionId: targetOposicionId, materiaId: '', temaId: '' }));
-          const materiasData = await catalogApi.getMaterias(targetOposicionId);
+          setSelection((prev) => ({ ...prev, oposicionId: targetOposicionId, temaId: '', bloqueId: '' }));
+          const temasData = await catalogApi.getTemas(targetOposicionId);
           if (!cancelled) {
-            setMaterias(materiasData);
-            const stateMateriaId = location.state?.materiaId ? String(location.state.materiaId) : null;
-            if (stateMateriaId && !locationStateApplied.current) {
-              setSelection((prev) => ({ ...prev, materiaId: stateMateriaId, temaId: '' }));
-              const temasData = await catalogApi.getTemas(stateMateriaId);
+            setTemas(temasData);
+            const stateTemaId = location.state?.temaId ? String(location.state.temaId) : null;
+            if (stateTemaId && !locationStateApplied.current) {
+              setSelection((prev) => ({ ...prev, temaId: stateTemaId, bloqueId: '' }));
+              const bloquesData = await catalogApi.getBloques(stateTemaId);
               if (!cancelled) {
-                setTemas(temasData);
-                const stateTemaId = location.state?.temaId ? String(location.state.temaId) : null;
-                if (stateTemaId) setSelection((prev) => ({ ...prev, temaId: stateTemaId }));
+                setBloques(bloquesData);
+                const stateBloqueId = location.state?.bloqueId ? String(location.state.bloqueId) : null;
+                if (stateBloqueId) setSelection((prev) => ({ ...prev, bloqueId: stateBloqueId }));
               }
             }
           }
@@ -71,22 +81,9 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   }, []);
 
   const onOposicion = async (id) => {
-    setSelection({ ...selection, oposicionId: id, materiaId: '', temaId: '' });
-    setMaterias([]);
+    setSelection({ ...selection, oposicionId: id, temaId: '', bloqueId: '' });
     setTemas([]);
-    clearError();
-    if (!id) return;
-    try {
-      const data = await catalogApi.getMaterias(id);
-      setMaterias(data);
-    } catch (e) {
-      setErrorMessage(e, 'No se pudieron cargar las materias');
-    }
-  };
-
-  const onMateria = async (id) => {
-    setSelection({ ...selection, materiaId: id, temaId: '' });
-    setTemas([]);
+    setBloques([]);
     clearError();
     if (!id) return;
     try {
@@ -94,6 +91,19 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       setTemas(data);
     } catch (e) {
       setErrorMessage(e, 'No se pudieron cargar los temas');
+    }
+  };
+
+  const onTema = async (id) => {
+    setSelection({ ...selection, temaId: id, bloqueId: '' });
+    setBloques([]);
+    clearError();
+    if (!id) return;
+    try {
+      const data = await catalogApi.getBloques(id);
+      setBloques(data);
+    } catch (e) {
+      setErrorMessage(e, 'No se pudieron cargar los bloques');
     }
   };
 
@@ -106,10 +116,10 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     }
     const payload = { numeroPreguntas, modo: selection.modo, dificultad: selection.dificultad, feedbackInmediato };
     if (selection.modo !== 'marcadas') {
-      if (oposicionCompleta && selection.oposicionId && !selection.temaId) {
+      if (oposicionCompleta && selection.oposicionId && !selection.bloqueId) {
         payload.oposicionId = Number(selection.oposicionId);
       } else {
-        payload.temaId = Number(selection.temaId);
+        payload.bloqueId = Number(selection.bloqueId);
       }
     }
     const test = await runAction(() => testApi.generate(token, payload));
@@ -127,7 +137,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       return;
     }
     const payload = { numeroPreguntas };
-    if (selection.temaId) payload.temaId = Number(selection.temaId);
+    if (selection.bloqueId) payload.bloqueId = Number(selection.bloqueId);
     const test = await runAction(() => testApi.generateRefuerzo(token, payload));
     if (test) {
       sessionStorage.setItem('active_test', JSON.stringify(test));
@@ -169,7 +179,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
         <div style={{ background: '#ea580c', borderRadius: 10, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>📋</div>
         <div>
           <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Práctica personalizada</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}>Elige oposición, tema, modo y dificultad para tu sesión.</p>
+          <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}>Elige oposición, tema, bloque, modo y dificultad para tu sesión.</p>
         </div>
       </div>
 
@@ -178,48 +188,58 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: 10 }}>
         <div>
           <label style={LBL}>Oposición</label>
-          <select
-            value={selection.oposicionId}
-            onChange={(e) => onOposicion(e.target.value)}
-            disabled={selection.modo === 'marcadas'}
-            style={{ ...SEL, opacity: selection.modo === 'marcadas' ? 0.5 : 1 }}
-          >
-            <option value="">{selection.modo === 'marcadas' ? '(no aplica)' : 'Selecciona oposición'}</option>
-            {oposiciones.map((item) => (
-              <option key={item.id} value={item.id}>{item.nombre}</option>
-            ))}
-          </select>
-          {/* Gate: aviso si la oposición no tiene acceso completo */}
-          {!loadingAccesos && selection.oposicionId && !tieneAcceso(Number(selection.oposicionId)) && selection.modo !== 'marcadas' && (
-            <div style={{ marginTop: 8, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5 }}>
-              <strong>Modo demo</strong> — Las preguntas estarán limitadas. Para acceso completo, <a href="/catalogo" style={{ color: '#1d4ed8', fontWeight: 600 }}>compra el curso</a>.
+          {usandoOposicionActiva ? (
+            /* Oposición fijada por el contexto activo — solo lectura */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid #fdba74', borderRadius: 8, background: '#fff7ed', fontSize: '0.875rem', color: '#92400e', fontWeight: 600 }}>
+              <span>🎯</span>
+              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{oposicionActiva.nombre}</span>
             </div>
+          ) : (
+            <>
+              <select
+                value={selection.oposicionId}
+                onChange={(e) => onOposicion(e.target.value)}
+                disabled={selection.modo === 'marcadas'}
+                style={{ ...SEL, opacity: selection.modo === 'marcadas' ? 0.5 : 1 }}
+              >
+                <option value="">{selection.modo === 'marcadas' ? '(no aplica)' : 'Selecciona oposición'}</option>
+                {oposiciones.map((item) => (
+                  <option key={item.id} value={item.id}>{item.nombre}</option>
+                ))}
+              </select>
+              {/* Gate: aviso si la oposición no tiene acceso completo */}
+              {!loadingAccesos && selection.oposicionId && !tieneAcceso(Number(selection.oposicionId)) && selection.modo !== 'marcadas' && (
+                <div style={{ marginTop: 8, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5 }}>
+                  <strong>Modo demo</strong> — Las preguntas estarán limitadas. Para acceso completo, <a href="/catalogo" style={{ color: '#1d4ed8', fontWeight: 600 }}>compra el curso</a>.
+                </div>
+              )}
+            </>
           )}
-        </div>
-        <div>
-          <label style={LBL}>Materia</label>
-          <select
-            value={selection.materiaId}
-            onChange={(e) => onMateria(e.target.value)}
-            disabled={!selection.oposicionId || selection.modo === 'marcadas'}
-            style={{ ...SEL, opacity: (!selection.oposicionId || selection.modo === 'marcadas') ? 0.5 : 1 }}
-          >
-            <option value="">Selecciona materia</option>
-            {materias.map((item) => (
-              <option key={item.id} value={item.id}>{item.nombre}</option>
-            ))}
-          </select>
         </div>
         <div>
           <label style={LBL}>Tema</label>
           <select
             value={selection.temaId}
-            onChange={(e) => setSelection({ ...selection, temaId: e.target.value })}
-            disabled={!selection.materiaId || selection.modo === 'marcadas' || oposicionCompleta}
-            style={{ ...SEL, opacity: (!selection.materiaId || selection.modo === 'marcadas' || oposicionCompleta) ? 0.5 : 1 }}
+            onChange={(e) => onTema(e.target.value)}
+            disabled={!selection.oposicionId || selection.modo === 'marcadas'}
+            style={{ ...SEL, opacity: (!selection.oposicionId || selection.modo === 'marcadas') ? 0.5 : 1 }}
           >
             <option value="">Selecciona tema</option>
             {temas.map((item) => (
+              <option key={item.id} value={item.id}>{item.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={LBL}>Bloque</label>
+          <select
+            value={selection.bloqueId}
+            onChange={(e) => setSelection({ ...selection, bloqueId: e.target.value })}
+            disabled={!selection.temaId || selection.modo === 'marcadas' || oposicionCompleta}
+            style={{ ...SEL, opacity: (!selection.temaId || selection.modo === 'marcadas' || oposicionCompleta) ? 0.5 : 1 }}
+          >
+            <option value="">Selecciona bloque</option>
+            {bloques.map((item) => (
               <option key={item.id} value={item.id}>{item.nombre}</option>
             ))}
           </select>
@@ -232,7 +252,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
           disabled={!selection.oposicionId || selection.modo === 'marcadas'}
           onChange={(e) => {
             setOposicionCompleta(e.target.checked);
-            if (e.target.checked) setSelection((prev) => ({ ...prev, materiaId: '', temaId: '' }));
+            if (e.target.checked) setSelection((prev) => ({ ...prev, temaId: '', bloqueId: '' }));
           }}
         />
         Usar toda la oposición (sin filtrar por tema)
@@ -309,13 +329,13 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       {/* Botones */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <button
-          disabled={(selection.modo !== 'marcadas' && !selection.temaId && !(oposicionCompleta && selection.oposicionId)) || isLoading}
+          disabled={(selection.modo !== 'marcadas' && !selection.bloqueId && !(oposicionCompleta && selection.oposicionId)) || isLoading}
           onClick={onGenerate}
           style={{
             padding: '10px 24px', borderRadius: 8, border: 'none',
             background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
             cursor: 'pointer',
-            opacity: ((selection.modo !== 'marcadas' && !selection.temaId && !(oposicionCompleta && selection.oposicionId)) || isLoading) ? 0.5 : 1,
+            opacity: ((selection.modo !== 'marcadas' && !selection.bloqueId && !(oposicionCompleta && selection.oposicionId)) || isLoading) ? 0.5 : 1,
           }}
         >
           {isLoading ? 'Generando…' : '▷ Generar test'}

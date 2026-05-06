@@ -28,12 +28,12 @@ export const profesorDashboardRepository = {
   async getActividadReciente(userId, limit = 10) {
     const result = await pool.query(
       `SELECT p.id, p.enunciado, a.fecha AS creado_en,
-              t.nombre AS tema_nombre, m.nombre AS materia_nombre, o.nombre AS oposicion_nombre
+              bl.nombre AS bloque_nombre, t.nombre AS tema_nombre, o.nombre AS oposicion_nombre
        FROM preguntas p
        JOIN auditoria a ON a.pregunta_id = p.id AND a.accion = 'create'
-       JOIN temas t ON t.id = p.tema_id
-       JOIN materias m ON m.id = t.materia_id
-       JOIN oposiciones o ON o.id = m.oposicion_id
+       JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas t    ON t.id  = bl.tema_id
+       JOIN oposiciones o ON o.id = t.oposicion_id
        WHERE a.usuario_id = $1
        ORDER BY a.fecha DESC
        LIMIT $2`,
@@ -48,7 +48,7 @@ export const profesorDashboardRepository = {
 
     if (oposicionId) {
       args.push(oposicionId);
-      conditions.push(`m.oposicion_id = $${args.length}`);
+      conditions.push(`t.oposicion_id = $${args.length}`);
     }
     if (q) {
       args.push(`%${q}%`);
@@ -62,12 +62,12 @@ export const profesorDashboardRepository = {
 
     const result = await pool.query(
       `SELECT p.id, p.enunciado, p.nivel_dificultad, a.fecha AS creado_en,
-              t.nombre AS tema_nombre, m.nombre AS materia_nombre, o.nombre AS oposicion_nombre
+              bl.nombre AS bloque_nombre, t.nombre AS tema_nombre, o.nombre AS oposicion_nombre
        FROM preguntas p
        JOIN auditoria a ON a.pregunta_id = p.id AND a.accion = 'create'
-       JOIN temas t ON t.id = p.tema_id
-       JOIN materias m ON m.id = t.materia_id
-       JOIN oposiciones o ON o.id = m.oposicion_id
+       JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas t    ON t.id  = bl.tema_id
+       JOIN oposiciones o ON o.id = t.oposicion_id
        WHERE ${where}
        ORDER BY a.fecha DESC
        LIMIT $${args.length - 1} OFFSET $${args.length}`,
@@ -79,9 +79,9 @@ export const profesorDashboardRepository = {
       `SELECT COUNT(*)::int AS total
        FROM preguntas p
        JOIN auditoria a ON a.pregunta_id = p.id AND a.accion = 'create'
-       JOIN temas t ON t.id = p.tema_id
-       JOIN materias m ON m.id = t.materia_id
-       JOIN oposiciones o ON o.id = m.oposicion_id
+       JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas t    ON t.id  = bl.tema_id
+       JOIN oposiciones o ON o.id = t.oposicion_id
        WHERE ${where}`,
       countArgs,
     );

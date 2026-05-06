@@ -29,11 +29,11 @@ export default function EstadisticasPorTemaSection() {
   const [simulacrosLoading, setSimulacrosLoading] = useState(false);
 
   const [oposiciones, setOposiciones] = useState([]);
-  const [materias, setMaterias] = useState([]);
   const [temas, setTemas] = useState([]);
+  const [bloques, setBloques] = useState([]);
   const [selOposicion, setSelOposicion] = useState('');
-  const [selMateria, setSelMateria] = useState('');
   const [selTema, setSelTema] = useState('');
+  const [selBloque, setSelBloque] = useState('');
 
   const [temaStats, setTemaStats] = useState(null);
   const [repasoData, setRepasoData] = useState(null);
@@ -51,13 +51,13 @@ export default function EstadisticasPorTemaSection() {
     return () => { cancelled = true; };
   }, []);
 
-  // Cambio de oposición: cargar materias + simulacros
+  // Cambio de oposición: cargar temas + simulacros
   useEffect(() => {
     if (!selOposicion) {
-      setMaterias([]);
-      setSelMateria('');
       setTemas([]);
       setSelTema('');
+      setBloques([]);
+      setSelBloque('');
       setTemaStats(null);
       setCatalogError('');
       setTemaError('');
@@ -71,22 +71,22 @@ export default function EstadisticasPorTemaSection() {
       .then((data) => { if (!cancelled) setSimulacrosData(Array.isArray(data) ? data : []); })
       .catch(() => { if (!cancelled) setSimulacrosData([]); })
       .finally(() => { if (!cancelled) setSimulacrosLoading(false); });
-    catalogApi.getMaterias(selOposicion)
-      .then((data) => { if (!cancelled) setMaterias(data); })
-      .catch((e) => { if (!cancelled) { setMaterias([]); setCatalogError(getErrorMessage(e, 'No se pudieron cargar las materias')); } });
-    setSelMateria('');
-    setTemas([]);
+    catalogApi.getTemas(selOposicion)
+      .then((data) => { if (!cancelled) setTemas(data); })
+      .catch((e) => { if (!cancelled) { setTemas([]); setCatalogError(getErrorMessage(e, 'No se pudieron cargar los temas')); } });
     setSelTema('');
+    setBloques([]);
+    setSelBloque('');
     setTemaStats(null);
     setTemaError('');
     return () => { cancelled = true; };
   }, [selOposicion, token]);
 
-  // Cambio de materia: cargar temas
+  // Cambio de tema: cargar bloques
   useEffect(() => {
-    if (!selMateria) {
-      setTemas([]);
-      setSelTema('');
+    if (!selTema) {
+      setBloques([]);
+      setSelBloque('');
       setTemaStats(null);
       setCatalogError('');
       setTemaError('');
@@ -94,18 +94,18 @@ export default function EstadisticasPorTemaSection() {
     }
     let cancelled = false;
     setCatalogError('');
-    catalogApi.getTemas(selMateria)
-      .then((data) => { if (!cancelled) setTemas(data); })
-      .catch((e) => { if (!cancelled) { setTemas([]); setCatalogError(getErrorMessage(e, 'No se pudieron cargar los temas')); } });
-    setSelTema('');
+    catalogApi.getBloques(selTema)
+      .then((data) => { if (!cancelled) setBloques(data); })
+      .catch((e) => { if (!cancelled) { setBloques([]); setCatalogError(getErrorMessage(e, 'No se pudieron cargar los bloques')); } });
+    setSelBloque('');
     setTemaStats(null);
     setTemaError('');
     return () => { cancelled = true; };
-  }, [selMateria]);
+  }, [selTema]);
 
-  // Cambio de tema: cargar stats + repaso
+  // Cambio de bloque: cargar stats + repaso
   useEffect(() => {
-    if (!selTema) {
+    if (!selBloque) {
       setTemaStats(null);
       setTemaError('');
       setRepasoData(null);
@@ -116,22 +116,22 @@ export default function EstadisticasPorTemaSection() {
     setTemaError('');
     setRepasoLoading(true);
     setRepasoData(null);
-    testApi.temaStats(token, selTema)
+    testApi.temaStats(token, selBloque)
       .then((data) => { if (!cancelled) setTemaStats(data); })
-      .catch((e) => { if (!cancelled) { setTemaStats(null); setTemaError(getErrorMessage(e, 'No se pudieron cargar las estadísticas del tema')); } })
+      .catch((e) => { if (!cancelled) { setTemaStats(null); setTemaError(getErrorMessage(e, 'No se pudieron cargar las estadísticas del bloque')); } })
       .finally(() => { if (!cancelled) setLoadingTema(false); });
-    testApi.repasoStats(token, selTema)
+    testApi.repasoStats(token, selBloque)
       .then((data) => { if (!cancelled) setRepasoData(data); })
       .catch(() => { if (!cancelled) setRepasoData(null); })
       .finally(() => { if (!cancelled) setRepasoLoading(false); });
     return () => { cancelled = true; };
-  }, [selTema, token]);
+  }, [selBloque, token]);
 
   return (
     <>
       {/* ── Estadísticas por tema ── */}
       <div style={{ marginTop: '1.5rem', background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#111827' }}>Estadísticas por tema</h3>
+        <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#111827' }}>Estadísticas por bloque</h3>
         {loadingCatalog && <p>Cargando catálogo...</p>}
         {catalogError && <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{catalogError}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '0.75rem 0' }}>
@@ -147,24 +147,24 @@ export default function EstadisticasPorTemaSection() {
             ))}
           </select>
           <select
-            value={selMateria}
-            onChange={(e) => setSelMateria(e.target.value)}
-            disabled={!materias.length}
-            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' }}
-          >
-            <option value="">— Materia —</option>
-            {materias.map((m) => (
-              <option key={m.id} value={m.id}>{m.nombre}</option>
-            ))}
-          </select>
-          <select
             value={selTema}
             onChange={(e) => setSelTema(e.target.value)}
             disabled={!temas.length}
             style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' }}
           >
             <option value="">— Tema —</option>
-            {temas.map((t) => (
+            {temas.map((m) => (
+              <option key={m.id} value={m.id}>{m.nombre}</option>
+            ))}
+          </select>
+          <select
+            value={selBloque}
+            onChange={(e) => setSelBloque(e.target.value)}
+            disabled={!bloques.length}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, color: '#374151', background: '#fff' }}
+          >
+            <option value="">— Bloque —</option>
+            {bloques.map((t) => (
               <option key={t.id} value={t.id}>{t.nombre}</option>
             ))}
           </select>
@@ -183,7 +183,7 @@ export default function EstadisticasPorTemaSection() {
                 onClick={async () => {
                   const test = await testApi.generate(token, {
                     modo: 'repaso',
-                    temaId: Number(selTema),
+                    bloqueId: Number(selBloque),
                     numeroPreguntas: Math.min(20, Math.max(5, repasoData.pendientes)),
                     dificultad: 'mixto',
                   });

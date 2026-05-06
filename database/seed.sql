@@ -9,26 +9,26 @@ INSERT INTO oposiciones (nombre, descripcion)
 VALUES ('Auxiliar Administrativo', 'Preparación por test para auxiliar administrativo')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO materias (oposicion_id, nombre)
+INSERT INTO temas (oposicion_id, nombre)
 SELECT o.id, 'Constitución'
 FROM oposiciones o
 WHERE o.nombre = 'Auxiliar Administrativo'
 ON CONFLICT DO NOTHING;
 
-INSERT INTO temas (materia_id, nombre)
-SELECT m.id, 'Tema 1 - Principios Constitucionales'
-FROM materias m
-WHERE m.nombre = 'Constitución'
+INSERT INTO bloques (tema_id, nombre)
+SELECT t.id, 'Bloque 1 - Principios Constitucionales'
+FROM temas t
+WHERE t.nombre = 'Constitución'
 ON CONFLICT DO NOTHING;
 
-WITH tema_obj AS (
-  SELECT t.id AS tema_id
-  FROM temas t
-  WHERE t.nombre = 'Tema 1 - Principios Constitucionales'
+WITH bloque_obj AS (
+  SELECT b.id AS bloque_id
+  FROM bloques b
+  WHERE b.nombre = 'Bloque 1 - Principios Constitucionales'
   LIMIT 1
 )
-INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad)
-SELECT tema_id,
+INSERT INTO preguntas (bloque_id, enunciado, explicacion, referencia_normativa, nivel_dificultad)
+SELECT bloque_id,
        q.enunciado,
        q.explicacion,
        q.referencia,
@@ -45,8 +45,8 @@ FROM tema_obj,
 WITH preguntas_insertadas AS (
   SELECT p.id, p.enunciado
   FROM preguntas p
-  JOIN temas t ON t.id = p.tema_id
-  WHERE t.nombre = 'Tema 1 - Principios Constitucionales'
+  JOIN bloques b ON b.id = p.bloque_id
+  WHERE b.nombre = 'Bloque 1 - Principios Constitucionales'
 )
 INSERT INTO opciones_respuesta (pregunta_id, texto, correcta)
 SELECT p.id, o.texto, o.correcta

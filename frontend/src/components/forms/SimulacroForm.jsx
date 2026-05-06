@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
+import { useOposicionActiva } from '../../state/oposicionActiva.jsx';
 import { catalogApi } from '../../services/catalogApi';
 import { testApi } from '../../services/testApi';
 
@@ -11,14 +12,29 @@ export default function SimulacroForm() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { isLoading, runAction, setErrorMessage, clearError } = useAsyncAction();
+  const { oposicionActiva } = useOposicionActiva();
   const [oposiciones, setOposiciones] = useState([]);
   const [simulacro, setSimulacro] = useState({ oposicionId: '', numeroPreguntas: 60, duracion: '' });
 
   useEffect(() => {
-    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
+    catalogApi.getOposiciones().then((ops) => {
+      setOposiciones(Array.isArray(ops) ? ops : (ops?.data ?? []));
+      // Auto-seleccionar la oposición activa y su tiempo configurado
+      if (oposicionActiva?.id) {
+        const opActiva = (Array.isArray(ops) ? ops : (ops?.data ?? [])).find(
+          (o) => Number(o.id) === Number(oposicionActiva.id),
+        );
+        setSimulacro((prev) => ({
+          ...prev,
+          oposicionId: String(oposicionActiva.id),
+          duracion: opActiva?.tiempo_limite_minutos ? String(opActiva.tiempo_limite_minutos) : prev.duracion,
+        }));
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pre-rellena la duración cuando el admin ha configurado un tiempo por defecto
+  // Pre-rellena la duración cuando se cambia oposición manualmente (solo sin activa)
   const onOposicionChange = (e) => {
     const selectedId = e.target.value;
     const oposicion = oposiciones.find((o) => String(o.id) === selectedId);
@@ -79,16 +95,24 @@ export default function SimulacroForm() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: 16 }}>
         <div>
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Oposición *</label>
-          <select
-            value={simulacro.oposicionId}
-            onChange={onOposicionChange}
-            style={{ width: '100%', padding: '8px 10px', border: `1px solid ${simulacro.oposicionId ? '#93c5fd' : '#e5e7eb'}`, borderRadius: 8, fontSize: '0.875rem', background: '#fff', outline: 'none' }}
-          >
-            <option value="">Selecciona oposición</option>
-            {oposiciones.map((item) => (
-              <option key={item.id} value={item.id}>{item.nombre}</option>
-            ))}
-          </select>
+          {oposicionActiva ? (
+            /* Oposición fijada por el contexto activo — solo lectura */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid #fdba74', borderRadius: 8, background: '#fff7ed', fontSize: '0.875rem', color: '#92400e', fontWeight: 600 }}>
+              <span>🎯</span>
+              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{oposicionActiva.nombre}</span>
+            </div>
+          ) : (
+            <select
+              value={simulacro.oposicionId}
+              onChange={onOposicionChange}
+              style={{ width: '100%', padding: '8px 10px', border: `1px solid ${simulacro.oposicionId ? '#93c5fd' : '#e5e7eb'}`, borderRadius: 8, fontSize: '0.875rem', background: '#fff', outline: 'none' }}
+            >
+              <option value="">Selecciona oposición</option>
+              {oposiciones.map((item) => (
+                <option key={item.id} value={item.id}>{item.nombre}</option>
+              ))}
+            </select>
+          )}
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Núm. preguntas <span style={{ color: '#9ca3af', fontWeight: 400 }}>(máx. 200)</span></label>

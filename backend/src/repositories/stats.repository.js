@@ -6,6 +6,11 @@ import { progressStatsRepository } from './progressStats.repository.js';
 export const statsRepository = {
   ...widgetStatsRepository,
   ...progressStatsRepository,
+
+  // Compatibilidad con nombres legacy usados por tests y consumidores antiguos.
+  getProgresoMaterias: (...args) => progressStatsRepository.getProgresoTemas(...args),
+  getProgresoTemasByMateria: (...args) => progressStatsRepository.getProgresoBloquesByTema(...args),
+  getDetalleTema: (...args) => progressStatsRepository.getDetalleBloque(...args),
 };
 
 export { widgetStatsRepository, progressStatsRepository };

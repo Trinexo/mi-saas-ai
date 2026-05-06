@@ -2,16 +2,17 @@ import pool from '../config/db.js';
 
 export const accesoOposicionRepository = {
   /**
-   * Devuelve los IDs de las oposiciones a las que el usuario tiene acceso activo.
+   * Devuelve los accesos activos del usuario incluyendo el nombre de la oposición.
    */
   async getAccesosActivos(userId) {
     const result = await pool.query(
-      `SELECT oposicion_id, fecha_fin
-       FROM accesos_oposicion
-       WHERE usuario_id = $1
-         AND estado = 'activo'
-         AND (fecha_fin IS NULL OR fecha_fin > NOW())
-       ORDER BY fecha_inicio DESC`,
+      `SELECT a.oposicion_id, o.nombre, a.fecha_fin
+       FROM accesos_oposicion a
+       JOIN oposiciones o ON o.id = a.oposicion_id
+       WHERE a.usuario_id = $1
+         AND a.estado = 'activo'
+         AND (a.fecha_fin IS NULL OR a.fecha_fin > NOW())
+       ORDER BY a.fecha_inicio DESC`,
       [userId],
     );
     return result.rows;

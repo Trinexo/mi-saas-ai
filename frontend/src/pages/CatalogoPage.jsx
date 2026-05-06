@@ -147,7 +147,7 @@ export default function CatalogoPage() {
                 {/* CTA */}
                 {comprado ? (
                   <button
-                    onClick={() => navigate('/', { state: { oposicionId: op.id } })}
+                    onClick={() => navigate('/configurar-test', { state: { oposicionId: op.id } })}
                     style={{ marginTop: 4, padding: '9px 0', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', width: '100%' }}
                   >
                     ▷ Practicar ahora
@@ -155,7 +155,7 @@ export default function CatalogoPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
                     <button
-                      onClick={() => navigate('/', { state: { oposicionId: op.id } })}
+                      onClick={() => navigate('/configurar-test', { state: { oposicionId: op.id } })}
                       style={{ padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', width: '100%' }}
                     >
                       Probar demo (10 preguntas)

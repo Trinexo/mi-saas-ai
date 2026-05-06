@@ -12,7 +12,7 @@ export default function OposicionPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const [resumen, setResumen] = useState(null);
-  const [materias, setMaterias] = useState([]);
+  const [temas, setTemas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -22,11 +22,11 @@ export default function OposicionPage() {
     setError('');
     Promise.all([
       testApi.getResumenOposicion(token, Number(id)),
-      testApi.getProgresoMaterias(token, Number(id)),
+      testApi.getProgresoTemas(token, Number(id)),
     ])
-      .then(([resumenData, materiasData]) => {
+      .then(([resumenData, temasData]) => {
         setResumen(resumenData);
-        setMaterias(Array.isArray(materiasData) ? materiasData : []);
+        setTemas(Array.isArray(temasData) ? temasData : []);
       })
       .catch((e) => setError(e.message || 'No se pudo cargar el resumen'))
       .finally(() => setLoading(false));
@@ -58,9 +58,9 @@ export default function OposicionPage() {
       <OposicionStatsGrid resumen={resumen} />
       <OposicionAcciones id={id} />
       <OposicionMateriasTable
-        materias={materias}
+        temas={temas}
         oposicionId={Number(id)}
-        onPracticar={(materiaId) => navigate('/', { state: { materiaId, oposicionId: Number(id) } })}
+        onPracticar={(temaId) => navigate('/', { state: { temaId, oposicionId: Number(id) } })}
       />
     </div>
   );

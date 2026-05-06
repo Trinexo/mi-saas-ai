@@ -1,13 +1,13 @@
 import pool from '../config/db.js';
 
 export const progressTemarioDetalleDetailRepository = {
-  async getProgresoTemasByMateria(userId, materiaId) {
+  async getProgresoBloquesByTema(userId, temaId) {
     const result = await pool.query(
       `SELECT
-         t.id AS tema_id,
+         bl.id AS bloque_id,
+         bl.nombre AS bloque_nombre,
+         t.id AS tema_id_col,
          t.nombre AS tema_nombre,
-         m.id AS materia_id_col,
-         m.nombre AS materia_nombre,
          o.id AS oposicion_id,
          o.nombre AS oposicion_nombre,
          COUNT(DISTINCT p.id)::int AS total_preguntas,
@@ -17,17 +17,17 @@ export const progressTemarioDetalleDetailRepository = {
            0
          ) AS porcentaje_acierto,
          COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas
-       FROM temas t
-       JOIN materias m ON m.id = t.materia_id
-       JOIN oposiciones o ON o.id = m.oposicion_id
-       LEFT JOIN preguntas p ON p.tema_id = t.id
-       LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
-       LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.tema_id = t.id AND ts.estado = 'finalizado'
+       FROM bloques bl
+       JOIN temas t ON t.id = bl.tema_id
+       JOIN oposiciones o ON o.id = t.oposicion_id
+       LEFT JOIN preguntas p ON p.bloque_id = bl.id
+       LEFT JOIN progreso_usuario pu ON pu.bloque_id = bl.id AND pu.usuario_id = $1
+       LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.bloque_id = bl.id AND ts.estado = 'finalizado'
        LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
-       WHERE t.materia_id = $2
-       GROUP BY t.id, t.nombre, m.id, m.nombre, o.id, o.nombre, pu.aciertos, pu.errores
-       ORDER BY t.nombre ASC`,
-      [userId, materiaId],
+       WHERE bl.tema_id = $2
+       GROUP BY bl.id, bl.nombre, t.id, t.nombre, o.id, o.nombre, pu.aciertos, pu.errores
+       ORDER BY bl.nombre ASC`,
+      [userId, temaId],
     );
 
     return result.rows.map((row) => {
@@ -37,10 +37,10 @@ export const progressTemarioDetalleDetailRepository = {
         ? Number(((dominadas / totalPreguntas) * 100).toFixed(1))
         : 0;
       return {
-        temaId: Number(row.tema_id),
+        bloqueId: Number(row.bloque_id),
+        bloqueNombre: row.bloque_nombre,
+        temaId: Number(row.tema_id_col),
         temaNombre: row.tema_nombre,
-        materiaId: Number(row.materia_id_col),
-        materiaNombre: row.materia_nombre,
         oposicionId: Number(row.oposicion_id),
         oposicionNombre: row.oposicion_nombre,
         totalPreguntas,
@@ -52,14 +52,14 @@ export const progressTemarioDetalleDetailRepository = {
     });
   },
 
-  async getDetalleTema(userId, temaId) {
+  async getDetalleBloque(userId, bloqueId) {
     const [progresoResult, historialResult] = await Promise.all([
       pool.query(
         `SELECT
+           bl.id AS bloque_id,
+           bl.nombre AS bloque_nombre,
            t.id AS tema_id,
            t.nombre AS tema_nombre,
-           m.id AS materia_id,
-           m.nombre AS materia_nombre,
            o.id AS oposicion_id,
            o.nombre AS oposicion_nombre,
            COUNT(DISTINCT p.id)::int AS total_preguntas,
@@ -71,16 +71,16 @@ export const progressTemarioDetalleDetailRepository = {
              ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
              0
            ) AS porcentaje_acierto
-         FROM temas t
-         JOIN materias m ON m.id = t.materia_id
-         JOIN oposiciones o ON o.id = m.oposicion_id
-         LEFT JOIN preguntas p ON p.tema_id = t.id
-         LEFT JOIN progreso_usuario pu ON pu.tema_id = t.id AND pu.usuario_id = $1
-         LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.tema_id = t.id AND ts.estado = 'finalizado'
+         FROM bloques bl
+         JOIN temas t ON t.id = bl.tema_id
+         JOIN oposiciones o ON o.id = t.oposicion_id
+         LEFT JOIN preguntas p ON p.bloque_id = bl.id
+         LEFT JOIN progreso_usuario pu ON pu.bloque_id = bl.id AND pu.usuario_id = $1
+         LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.bloque_id = bl.id AND ts.estado = 'finalizado'
          LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
-         WHERE t.id = $2
-         GROUP BY t.id, t.nombre, m.id, m.nombre, o.id, o.nombre, pu.aciertos, pu.errores`,
-        [userId, temaId],
+         WHERE bl.id = $2
+         GROUP BY bl.id, bl.nombre, t.id, t.nombre, o.id, o.nombre, pu.aciertos, pu.errores`,
+        [userId, bloqueId],
       ),
       pool.query(
         `SELECT t.id AS test_id, t.fecha_creacion, t.tipo_test,
@@ -88,11 +88,11 @@ export const progressTemarioDetalleDetailRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
-           AND t.tema_id = $2
+           AND t.bloque_id = $2
            AND t.estado = 'finalizado'
          ORDER BY t.fecha_creacion DESC
          LIMIT 5`,
-        [userId, temaId],
+        [userId, bloqueId],
       ),
     ]);
 
@@ -107,10 +107,10 @@ export const progressTemarioDetalleDetailRepository = {
       : 0;
 
     return {
+      bloqueId: Number(row.bloque_id),
+      bloqueNombre: row.bloque_nombre,
       temaId: Number(row.tema_id),
       temaNombre: row.tema_nombre,
-      materiaId: Number(row.materia_id),
-      materiaNombre: row.materia_nombre,
       oposicionId: Number(row.oposicion_id),
       oposicionNombre: row.oposicion_nombre,
       totalPreguntas,

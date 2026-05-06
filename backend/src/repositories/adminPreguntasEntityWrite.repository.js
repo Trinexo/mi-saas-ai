@@ -3,11 +3,11 @@ import pool from '../config/db.js';
 export const adminPreguntasEntityWriteRepository = {
   async createPregunta(client, payload) {
     const result = await client.query(
-      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad)
+      `INSERT INTO preguntas (bloque_id, enunciado, explicacion, referencia_normativa, nivel_dificultad)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
       [
-        payload.temaId,
+        payload.bloqueId,
         payload.enunciado,
         payload.explicacion,
         payload.referenciaNormativa ?? null,
@@ -31,7 +31,7 @@ export const adminPreguntasEntityWriteRepository = {
   async updatePregunta(client, preguntaId, payload) {
     await client.query(
       `UPDATE preguntas
-       SET tema_id = $2,
+       SET bloque_id = $2,
            enunciado = $3,
            explicacion = $4,
            referencia_normativa = $5,
@@ -40,7 +40,7 @@ export const adminPreguntasEntityWriteRepository = {
        WHERE id = $1`,
       [
         preguntaId,
-        payload.temaId,
+        payload.bloqueId,
         payload.enunciado,
         payload.explicacion,
         payload.referenciaNormativa ?? null,

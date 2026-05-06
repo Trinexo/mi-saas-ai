@@ -1,285 +1,328 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from 'recharts';
 import { adminApi } from '../../services/adminApi';
-import { subscriptionApi } from '../../services/subscriptionApi';
-import { accesosApi } from '../../services/accesosApi';
 import { useAuth } from '../../state/auth.jsx';
 import { useRevision } from '../../state/revisionContext.jsx';
 
-const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.07)', marginBottom: 20 };
-const BIG_NUM = { fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1.1 };
-const LABEL = { fontSize: '0.78rem', color: '#6b7280', marginTop: 5 };
-
-const KPI_ITEMS = [
-  { key: 'totalPreguntas',   icon: '📝', label: 'Preguntas',       color: '#1d4ed8' },
-  { key: 'totalUsuarios',    icon: '👥', label: 'Usuarios',        color: '#7c3aed' },
-  { key: 'totalTests',       icon: '📊', label: 'Tests totales',   color: '#0369a1' },
-  { key: 'testsEstaSemana',  icon: '📅', label: 'Tests esta semana', color: '#059669' },
-  { key: 'notaMediaGlobal',  icon: '⭐', label: 'Nota media global', color: '#d97706', format: (v) => v !== null ? Number(v).toFixed(2) : '—' },
-];
-
-const QUICK_LINKS = [
-  { to: '/admin/preguntas', icon: '📝', label: 'Preguntas',  desc: 'Añadir y gestionar' },
-  { to: '/admin/catalogo',  icon: '🗂️', label: 'Catálogo',   desc: 'Oposiciones, temas' },
-  { to: '/admin/usuarios',  icon: '👥', label: 'Usuarios',   desc: 'Roles y cuentas' },
-  { to: '/admin/accesos',   icon: '🔑', label: 'Accesos',    desc: 'Cursos por alumno' },
-  { to: '/admin/revision',  icon: '✅', label: 'Revisión',   desc: 'Reportes de usuarios' },
-];
-
-const ROL_LABELS = { alumno: 'Alumnos', profesor: 'Profesores', admin: 'Admins' };
-const ROL_COLOR  = { alumno: '#374151', profesor: '#166534', admin: '#b91c1c' };
-
-const TH = {
-  padding: '0.5rem 0.75rem', fontWeight: 600, color: '#6b7280',
-  borderBottom: '2px solid #e5e7eb', textAlign: 'left',
-  fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em',
+const P = '#7c3aed';
+const CARD = {
+  background: '#fff', borderRadius: 16,
+  boxShadow: '0 1px 3px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0',
 };
-const TD = { padding: '0.5rem 0.75rem', color: '#111827', borderBottom: '1px solid #f3f4f6', fontSize: '0.875rem' };
+const PIE_COLORS = ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b'];
 
-const PLAN_SUB_COLOR = { free: '#6b7280', pro: '#1d4ed8', elite: '#7c3aed' };
-const PLAN_SUB_BG    = { free: '#f9fafb', pro: '#eff6ff', elite: '#f5f3ff' };
+const KPI_CFG = [
+  { key: 'totalUsuarios',   icon: '👥', label: 'Usuarios activos',  color: P,         bg: '#f5f3ff' },
+  { key: 'totalTests',      icon: '✅', label: 'Tests realizados',  color: '#2563eb', bg: '#eff6ff' },
+  { key: 'testsEstaSemana', icon: '📅', label: 'Tests esta semana', color: '#059669', bg: '#f0fdf4' },
+  {
+    key: 'notaMediaGlobal',
+    icon: '⭐',
+    label: 'Media de aciertos',
+    color: '#d97706',
+    bg: '#fffbeb',
+    fmt: (v) => v != null ? `${Number(v).toFixed(1)}%` : '—',
+  },
+];
+
+const TIPO_MAP = {
+  usuario_nuevo: { icon: '👤', color: '#10b981', bg: '#d1fae5' },
+  test_creado:   { icon: '📝', color: '#3b82f6', bg: '#dbeafe' },
+  simulacro:     { icon: '📋', color: '#f59e0b', bg: '#fef3c7' },
+  pregunta:      { icon: '✏️', color: '#6b7280', bg: '#f3f4f6' },
+  reporte:       { icon: '⚠️', color: '#ef4444', bg: '#fee2e2' },
+  default:       { icon: '🔔', color: P,         bg: '#ede9fe' },
+};
+
+function tipoStyle(tipo) {
+  const t = (tipo || '').toLowerCase();
+  if (t.includes('usuario') || t.includes('registro')) return TIPO_MAP.usuario_nuevo;
+  if (t.includes('test'))      return TIPO_MAP.test_creado;
+  if (t.includes('simulacro')) return TIPO_MAP.simulacro;
+  if (t.includes('pregunta'))  return TIPO_MAP.pregunta;
+  if (t.includes('reporte') || t.includes('comentario')) return TIPO_MAP.reporte;
+  return TIPO_MAP.default;
+}
+
+function relTime(fecha) {
+  if (!fecha) return '';
+  const d = Math.round((Date.now() - new Date(fecha).getTime()) / 60000);
+  if (d < 1) return 'ahora';
+  if (d < 60) return `${d} min`;
+  if (d < 1440) return `${Math.round(d / 60)}h`;
+  return `${Math.round(d / 1440)}d`;
+}
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();
   const { reportesAbiertos } = useRevision();
-  const [stats, setStats] = useState(null);
-  const [subStats, setSubStats] = useState(null);
-  const [accesosStats, setAccesosStats] = useState(null);
-  const [usersByRole, setUsersByRole] = useState(null);
-  const [temasErrores, setTemasErrores] = useState(null);
-  const [error, setError] = useState('');
+
+  const [stats,             setStats]             = useState(null);
+  const [evolucion,         setEvolucion]         = useState([]);
+  const [distribucion,      setDistribucion]      = useState([]);
+  const [actividadReciente, setActividadReciente] = useState([]);
+  const [topOposiciones,    setTopOposiciones]    = useState([]);
+  const [periodo,           setPeriodo]           = useState('30');
+  const [error,             setError]             = useState('');
 
   useEffect(() => {
-    adminApi
-      .getAdminStats(token)
-      .then((res) => { if (res) setStats(res); })
+    if (!token) return;
+
+    adminApi.getAdminStats(token)
+      .then((r) => { if (r) setStats(r); })
       .catch(() => setError('No se pudieron cargar las estadísticas.'));
 
-    Promise.all(
-      ['alumno', 'profesor', 'admin'].map((role) =>
-        adminApi.listUsers(token, { role, page: 1, page_size: 1 })
-          .then((res) => ({ role, total: res?.pagination?.total ?? 0 }))
-          .catch(() => ({ role, total: 0 })),
-      ),
-    ).then((results) => {
-      const byRole = {};
-      results.forEach(({ role, total }) => { byRole[role] = total; });
-      setUsersByRole(byRole);
-    });
+    adminApi.getActividadReciente(token, 15)
+      .then((r) => setActividadReciente(r?.items ?? (Array.isArray(r) ? r : [])))
+      .catch(() => setActividadReciente([]));
 
-    adminApi
-      .getTemasConMasErrores(token, 10)
-      .then((res) => { if (res) setTemasErrores(res); })
-      .catch(() => setTemasErrores([]));
+    adminApi.getTopOposiciones(token, 5)
+      .then((r) => setTopOposiciones(r?.items ?? (Array.isArray(r) ? r : [])))
+      .catch(() => setTopOposiciones([]));
 
-    subscriptionApi
-      .getStats(token)
-      .then((res) => { if (res) setSubStats(res); })
-      .catch(() => setSubStats(null));
+    adminApi.getEvolucionUsuarios(token, 30)
+      .then((r) => setEvolucion(Array.isArray(r) ? r : (r?.items ?? [])))
+      .catch(() => setEvolucion([]));
 
-    accesosApi
-      .getStats(token)
-      .then((res) => { if (res) setAccesosStats(res); })
-      .catch(() => setAccesosStats(null));
+    adminApi.getDistribucionContenido(token)
+      .then((r) => {
+        if (!r) return;
+        const d = [
+          { name: 'Preguntas',  value: Number(r.preguntas  || 0) },
+          { name: 'Tests',      value: Number(r.tests      || 0) },
+          { name: 'Simulacros', value: Number(r.simulacros || 0) },
+          { name: 'Temario',    value: Number(r.temario    || 0) },
+        ].filter((x) => x.value > 0);
+        setDistribucion(d);
+      })
+      .catch(() => setDistribucion([]));
   }, [token]);
 
-  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  const totalDist = distribucion.reduce((a, b) => a + b.value, 0);
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: 28 }}>
 
       {/* Cabecera */}
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Panel de administración</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>{today}</p>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Dashboard</h1>
+          <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>Resumen general de la plataforma</p>
         </div>
-        {reportesAbiertos > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 12px', fontSize: '0.82rem', color: '#374151' }}>
+            <span>📅</span>
+            <select
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value)}
+              style={{ border: 'none', background: 'transparent', fontSize: '0.82rem', cursor: 'pointer', color: '#374151', outline: 'none' }}
+            >
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+            </select>
+          </div>
+          {reportesAbiertos > 0 && (
+            <Link
+              to="/admin/revision"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: '#fee2e2', color: '#dc2626', fontSize: '0.72rem', fontWeight: 700, textDecoration: 'none' }}
+            >
+              {reportesAbiertos}
+            </Link>
+          )}
           <Link
-            to="/admin/revision"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1d4ed8', color: '#fff', padding: '8px 18px', borderRadius: 8, textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem' }}
+            to="/admin/preguntas"
+            style={{ background: P, color: '#fff', borderRadius: 8, padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            ✅ Reportes
-            <span style={{ background: '#ef4444', color: '#fff', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '1px 7px', marginLeft: 2 }}>{reportesAbiertos}</span>
+            + Crear
           </Link>
-        )}
+        </div>
       </div>
 
       {error && (
-        <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.875rem', marginBottom: 16 }}>{error}</div>
+        <div style={{ padding: '10px 14px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.85rem', marginBottom: 16 }}>
+          {error}
+        </div>
       )}
 
-      {!stats && !error && (
-        <p style={{ color: '#6b7280', padding: '2rem', textAlign: 'center' }}>Cargando estadísticas…</p>
-      )}
-
-      {/* Alerta reportes abiertos */}
       {reportesAbiertos > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 10, padding: '12px 18px', marginBottom: 20 }}>
-          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-          <span style={{ color: '#92400e', fontWeight: 600 }}>
-            {reportesAbiertos} reporte{reportesAbiertos !== 1 ? 's' : ''} de usuario{reportesAbiertos !== 1 ? 's' : ''} sin resolver
+          <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+          <span style={{ color: '#92400e', fontWeight: 600, fontSize: '0.88rem' }}>
+            {reportesAbiertos} reporte{reportesAbiertos !== 1 ? 's' : ''} sin resolver
           </span>
-          <Link to="/admin/revision" style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', padding: '6px 14px', borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-            Revisar ahora
+          <Link to="/admin/revision" style={{ marginLeft: 'auto', background: '#f59e0b', color: '#fff', padding: '6px 14px', borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.82rem' }}>
+            Revisar
           </Link>
         </div>
       )}
 
-      {/* KPIs */}
-      {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 14, marginBottom: 20 }}>
-          {KPI_ITEMS.map(({ key, icon, label, color, format }) => (
-            <div key={key} style={{ background: '#fff', borderRadius: 12, padding: '18px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.07)', borderTop: `4px solid ${color}` }}>
-              <span style={{ fontSize: '1.5rem' }}>{icon}</span>
-              <div style={{ ...BIG_NUM, color, marginTop: 8 }}>
-                {format ? format(stats[key]) : (stats[key] ?? 0).toLocaleString()}
+      {/* KPI cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        {KPI_CFG.map(({ key, icon, label, color, bg, fmt }) => (
+          <div key={key} style={{ ...CARD, padding: '20px 22px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '0.73rem', color: '#64748b', fontWeight: 500, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {label}
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>
+                  {stats == null
+                    ? <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Cargando…</span>
+                    : (fmt ? fmt(stats[key]) : (stats[key] ?? 0).toLocaleString('es-ES'))
+                  }
+                </div>
               </div>
-              <div style={LABEL}>{label}</div>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0 }}>
+                {icon}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Accesos rápidos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
-        {QUICK_LINKS.map(({ to, icon, label, desc }) => (
-          <Link
-            key={to}
-            to={to}
-            style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,.07)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #e5e7eb', transition: 'box-shadow .15s' }}
-          >
-            <span style={{ fontSize: '1.4rem' }}>{icon}</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>{label}</div>
-              <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 2 }}>{desc}</div>
-            </div>
-          </Link>
+          </div>
         ))}
       </div>
 
-      {/* Usuarios por rol */}
-      {usersByRole && (
-        <div style={{ ...SECTION, marginBottom: 20 }}>
-          <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Usuarios por rol</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {['alumno', 'profesor', 'admin'].map((role) => (
-              <div key={role} style={{ flex: '1 1 80px', background: '#f9fafb', borderRadius: 8, padding: '10px 12px', textAlign: 'center', borderTop: `3px solid ${ROL_COLOR[role]}` }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: ROL_COLOR[role] }}>{usersByRole[role]}</div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>{ROL_LABELS[role]}</div>
-              </div>
-            ))}
+      {/* Fila 2: Evolución + Actividad reciente */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.65fr 1fr', gap: 16, marginBottom: 24 }}>
+
+        {/* Evolución de usuarios */}
+        <div style={{ ...CARD, padding: '20px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontSize: '0.93rem', fontWeight: 700, color: '#0f172a' }}>Evolución de usuarios</h3>
           </div>
+          {evolucion.length > 0 ? (
+            <ResponsiveContainer width="100%" height={210}>
+              <LineChart data={evolucion} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.78rem' }} />
+                <Line type="monotone" dataKey="usuarios" stroke={P} strokeWidth={2.5} dot={{ r: 3, fill: P }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 210, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: '#cbd5e1' }}>
+              <span style={{ fontSize: '2.2rem' }}>📈</span>
+              <span style={{ fontSize: '0.82rem' }}>Sin datos de evolución disponibles</span>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Estadísticas de suscripciones */}
-      {subStats && (
-        <div style={SECTION}>
-          <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Suscripciones</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-
-            {/* Distribución por plan */}
-            {['free', 'pro', 'elite'].map((plan) => (
-              <div key={plan} style={{ background: PLAN_SUB_BG[plan], borderRadius: 10, padding: '12px 16px', borderTop: `3px solid ${PLAN_SUB_COLOR[plan]}`, textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: PLAN_SUB_COLOR[plan] }}>
-                  {(subStats.porPlan[plan] ?? 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3, textTransform: 'capitalize' }}>{plan}</div>
-              </div>
-            ))}
-
-            {/* Tasa de conversión */}
-            <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #059669', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>{subStats.tasaConversion}%</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>Conversión</div>
+        {/* Actividad reciente */}
+        <div style={{ ...CARD, padding: '20px 22px' }}>
+          <h3 style={{ margin: '0 0 14px', fontSize: '0.93rem', fontWeight: 700, color: '#0f172a' }}>Actividad reciente</h3>
+          {actividadReciente.length === 0 ? (
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: '#cbd5e1' }}>
+              <span style={{ fontSize: '1.8rem' }}>🔔</span>
+              <span style={{ fontSize: '0.82rem' }}>Sin actividad reciente</span>
             </div>
-
-            {/* Nuevas últimas semana */}
-            <div style={{ background: '#fff7ed', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #d97706', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706' }}>{subStats.nuevas7d}</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>Nuevas (7d)</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 260, overflowY: 'auto' }}>
+              {actividadReciente.slice(0, 8).map((item, i) => {
+                const st = tipoStyle(item.tipo);
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: st.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', flexShrink: 0 }}>
+                      {st.icon}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#1e293b', fontWeight: 500, lineHeight: 1.3 }}>
+                        {item.descripcion || item.tipo}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: 2 }}>
+                        {item.usuario_nombre && <span>{item.usuario_nombre} · </span>}
+                        {relTime(item.fecha)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Nuevas últimos 30 días */}
-            <div style={{ background: '#fff7ed', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #f59e0b', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>{subStats.nuevas30d}</div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 3 }}>Nuevas (30d)</div>
-            </div>
-
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Estadísticas de accesos a oposiciones */}
-      {accesosStats && (
-        <div style={SECTION}>
-          <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Accesos a cursos</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-            <div style={{ background: '#dcfce7', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #059669', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>{accesosStats.total_activos ?? 0}</div>
-              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Accesos activos</div>
-            </div>
-            <div style={{ background: '#eff6ff', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #1d4ed8', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1d4ed8' }}>{accesosStats.usuarios_con_acceso ?? 0}</div>
-              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Alumnos con acceso</div>
-            </div>
-            <div style={{ background: '#fef3c7', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #f59e0b', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706' }}>{accesosStats.nuevos_7d ?? 0}</div>
-              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Nuevos (7d)</div>
-            </div>
-            <div style={{ background: '#fff7ed', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #ea580c', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#c2410c' }}>{accesosStats.nuevos_30d ?? 0}</div>
-              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Nuevos (30d)</div>
-            </div>
-            <div style={{ background: '#f5f3ff', borderRadius: 10, padding: '12px 16px', borderTop: '3px solid #7c3aed', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#7c3aed' }}>
-                {accesosStats.ingresos_total !== null ? `${Number(accesosStats.ingresos_total).toFixed(0)}€` : '—'}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 3 }}>Ingresos acumulados</div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Fila 3: Distribución de contenido + Top oposiciones */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.65fr', gap: 16 }}>
 
-      {/* Top temas con más errores */}
-      {temasErrores && temasErrores.length > 0 && (
-        <div style={SECTION}>
-          <h3 style={{ margin: '0 0 14px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Top temas con más errores</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ background: '#f9fafb' }}>
-                  <th style={TH}>Tema</th>
-                  <th style={TH}>Materia</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>Respuestas</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>Errores</th>
-                  <th style={{ ...TH, textAlign: 'right' }}>% Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {temasErrores.map((t) => (
-                  <tr key={t.temaId}>
-                    <td style={TD}>{t.temaNombre}</td>
-                    <td style={{ ...TD, color: '#6b7280' }}>{t.materiaNombre}</td>
-                    <td style={{ ...TD, textAlign: 'right' }}>{t.totalRespuestas.toLocaleString()}</td>
-                    <td style={{ ...TD, textAlign: 'right', color: '#b91c1c', fontWeight: 600 }}>{t.totalErrores.toLocaleString()}</td>
-                    <td style={{ ...TD, textAlign: 'right' }}>
-                      <span style={{
-                        background: t.pctError >= 60 ? '#fee2e2' : t.pctError >= 40 ? '#fef3c7' : '#dcfce7',
-                        color: t.pctError >= 60 ? '#991b1b' : t.pctError >= 40 ? '#92400e' : '#166534',
-                        padding: '2px 8px', borderRadius: 12, fontWeight: 600, fontSize: '0.78rem',
-                      }}>
-                        {t.pctError !== null ? `${t.pctError}%` : '—'}
-                      </span>
-                    </td>
-                  </tr>
+        {/* Distribución contenido */}
+        <div style={{ ...CARD, padding: '20px 22px' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: '0.93rem', fontWeight: 700, color: '#0f172a' }}>Contenido por tipo</h3>
+          {distribucion.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={170}>
+                <PieChart>
+                  <Pie data={distribucion} cx="50%" cy="50%" innerRadius={46} outerRadius={70} paddingAngle={3} dataKey="value">
+                    {distribucion.map((_, idx) => (
+                      <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v) => v.toLocaleString('es-ES')} contentStyle={{ borderRadius: 8, fontSize: '0.78rem' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                {distribucion.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                      <span style={{ color: '#64748b' }}>{item.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>{item.value.toLocaleString('es-ES')}</span>
+                      <span style={{ color: '#94a3b8' }}>({totalDist > 0 ? Math.round((item.value / totalDist) * 100) : 0}%)</span>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: '#cbd5e1' }}>
+              <span style={{ fontSize: '1.8rem' }}>📊</span>
+              <span style={{ fontSize: '0.82rem' }}>Sin datos de contenido</span>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Top oposiciones */}
+        <div style={{ ...CARD, padding: '20px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h3 style={{ margin: 0, fontSize: '0.93rem', fontWeight: 700, color: '#0f172a' }}>Top oposiciones por actividad</h3>
+            <Link to="/admin/oposiciones" style={{ fontSize: '0.78rem', color: P, textDecoration: 'none', fontWeight: 500 }}>
+              Ver todas →
+            </Link>
+          </div>
+          {topOposiciones.length === 0 ? (
+            <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: '#cbd5e1' }}>
+              <span style={{ fontSize: '1.8rem' }}>🏛️</span>
+              <span style={{ fontSize: '0.82rem' }}>Sin datos de oposiciones</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {topOposiciones.slice(0, 5).map((op, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8fafc', borderRadius: 10 }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: i < 3 ? P : '#94a3b8', width: 20, textAlign: 'center', flexShrink: 0 }}>
+                    {i + 1}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {op.nombre}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 9px', flexShrink: 0, fontWeight: 500 }}>
+                    Activa
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, flexShrink: 0, minWidth: 40, textAlign: 'right' }}>
+                    {(op.total_accesos ?? op.accesos ?? 0).toLocaleString('es-ES')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
     </div>
   );

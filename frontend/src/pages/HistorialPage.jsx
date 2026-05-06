@@ -4,6 +4,7 @@ import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import HistorialFiltros from '../components/historial/HistorialFiltros';
 import HistorialStats from '../components/historial/HistorialStats';
 import HistorialTabla from '../components/historial/HistorialTabla';
@@ -13,6 +14,7 @@ export default function HistorialPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const { hasAccess } = useUserPlan();
+  const { oposicionActiva } = useOposicionActiva();
   const [items, setItems] = useState(null);
   const [error, setError] = useState('');
   const [total, setTotal] = useState(0);
@@ -35,6 +37,13 @@ export default function HistorialPage() {
   useEffect(() => {
     catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
   }, []);
+
+  // Pre-seleccionar la oposición activa al montar
+  useEffect(() => {
+    if (oposicionActiva?.id) {
+      setOposicionId(String(oposicionActiva.id));
+    }
+  }, [oposicionActiva]);
 
   useEffect(() => {
     setItems(null);
@@ -109,7 +118,7 @@ export default function HistorialPage() {
       || (consistenciaFiltro === 'baja' && volumenDia === 1);
     const texto = textoFiltro.trim().toLowerCase();
     const hayTexto = texto.length > 0;
-    const compuesto = `${t.oposicionNombre || ''} ${t.materiaNombre || ''} ${t.temaNombre || ''}`.toLowerCase();
+    const compuesto = `${t.oposicionNombre || ''} ${t.bloqueNombre || ''} ${t.temaNombre || ''}`.toLowerCase();
     const byTexto = !hayTexto || compuesto.includes(texto);
     return byModo && byNota && byErrores && byBlancos && byDuracion && byRitmo && byConsistencia && byTexto;
   });

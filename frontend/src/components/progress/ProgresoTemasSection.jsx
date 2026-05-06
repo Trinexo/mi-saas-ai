@@ -17,21 +17,21 @@ function PctBar({ pct }) {
 
 export default function ProgresoTemasSection() {
   const { token } = useAuth();
-  const [progresoTemas, setProgresoTemas] = useState(null);
+  const [progresoBloques, setProgresoBloques] = useState(null);
   const [filtro, setFiltro] = useState('');
   const [orden, setOrden] = useState('pct_asc');
 
   useEffect(() => {
     let cancelled = false;
-    testApi.getProgresoTemas(token)
-      .then((data) => { if (!cancelled) setProgresoTemas(Array.isArray(data) ? data : []); })
-      .catch(() => { if (!cancelled) setProgresoTemas([]); });
+    testApi.getProgresoBloques(token)
+      .then((data) => { if (!cancelled) setProgresoBloques(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!cancelled) setProgresoBloques([]); });
     return () => { cancelled = true; };
   }, [token]);
 
-  const oposicionesUnicas = [...new Set((progresoTemas ?? []).map((t) => t.oposicionNombre))];
+  const oposicionesUnicas = [...new Set((progresoBloques ?? []).map((t) => t.oposicionNombre))];
 
-  const temasFiltrados = [...(progresoTemas ?? [])]
+  const bloquesFiltrados = [...(progresoBloques ?? [])]
     .filter((t) => !filtro || t.oposicionNombre === filtro)
     .sort((a, b) => {
       const pA = Number(a.porcentajeAcierto ?? 0);
@@ -44,11 +44,11 @@ export default function ProgresoTemasSection() {
   return (
     <div style={{ marginTop: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Progreso por tema</h2>
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>{temasFiltrados.length} temas</span>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Progreso por bloque</h2>
+        <span style={{ fontSize: 12, color: '#94a3b8' }}>{bloquesFiltrados.length} bloques</span>
       </div>
       <p style={{ color: '#64748b', margin: '4px 0 12px', fontSize: 13 }}>
-        Porcentaje de acierto acumulado en cada tema practicado.
+        Porcentaje de acierto acumulado en cada bloque practicado.
       </p>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -71,25 +71,25 @@ export default function ProgresoTemasSection() {
         </select>
       </div>
 
-      {progresoTemas === null ? (
+      {progresoBloques === null ? (
         <p style={{ color: '#94a3b8' }}>Cargando progreso...</p>
-      ) : progresoTemas.length === 0 ? (
-        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Aún no tienes progreso registrado. Completa algunos tests para ver tus estadísticas por tema.</p>
+      ) : progresoBloques.length === 0 ? (
+        <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>Aún no tienes progreso registrado. Completa algunos tests para ver tus estadísticas por bloque.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {temasFiltrados.map((t) => {
+          {bloquesFiltrados.map((t) => {
             const pct = Number(t.porcentajeAcierto ?? 0);
             return (
-              <div key={t.temaId} style={{
+              <div key={t.bloqueId} style={{
                 background: '#fff', borderRadius: 10, padding: '12px 16px',
                 boxShadow: '0 1px 3px rgba(0,0,0,.06)',
                 display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px 16px', alignItems: 'center',
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <Link to={`/tema/${t.temaId}`} style={{ fontWeight: 600, fontSize: 14, color: '#111827', textDecoration: 'none' }}>{t.temaNombre}</Link>
+                    <Link to={`/bloque/${t.bloqueId}`} style={{ fontWeight: 600, fontSize: 14, color: '#111827', textDecoration: 'none' }}>{t.bloqueNombre}</Link>
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>&rsaquo;</span>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>{t.materiaNombre}</span>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>{t.temaNombre}</span>
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>&rsaquo;</span>
                     <span style={{ fontSize: 12, color: '#94a3b8' }}>{t.oposicionNombre}</span>
                   </div>

@@ -5,11 +5,11 @@ import { useAuth } from '../state/auth.jsx';
 import MateriaMaestriaBar from '../components/materia/MateriaMaestriaBar';
 import MateriaTemasTable from '../components/materia/MateriaTemasTable';
 
-export default function MateriaPage() {
+export default function BloquePage() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
-  const [temas, setTemas] = useState([]);
+  const [bloques, setBloques] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -18,9 +18,9 @@ export default function MateriaPage() {
     setLoading(true);
     setError('');
     testApi
-      .getProgresoTemasByMateria(token, Number(id))
-      .then((data) => setTemas(Array.isArray(data) ? data : []))
-      .catch((e) => setError(e.message || 'No se pudo cargar la materia'))
+      .getProgresoBloquesByTema(token, Number(id))
+      .then((data) => setBloques(Array.isArray(data) ? data : []))
+      .catch((e) => setError(e.message || 'No se pudo cargar el tema'))
       .finally(() => setLoading(false));
   }, [token, id]);
 
@@ -38,12 +38,12 @@ export default function MateriaPage() {
     </div>
   );
 
-  const materiaNombre = temas[0]?.materiaNombre ?? `Materia #${id}`;
-  const oposicionId = temas[0]?.oposicionId ?? null;
-  const oposicionNombre = temas[0]?.oposicionNombre ?? null;
-  const totalTemas = temas.length;
-  const totalDominadas = temas.reduce((sum, t) => sum + (t.dominadas ?? 0), 0);
-  const totalPreguntas = temas.reduce((sum, t) => sum + (t.totalPreguntas ?? 0), 0);
+  const temaNombre = bloques[0]?.temaNombre ?? `Tema #${id}`;
+  const oposicionId = bloques[0]?.oposicionId ?? null;
+  const oposicionNombre = bloques[0]?.oposicionNombre ?? null;
+  const totalBloques = bloques.length;
+  const totalDominadas = bloques.reduce((sum, b) => sum + (b.dominadas ?? 0), 0);
+  const totalPreguntas = bloques.reduce((sum, b) => sum + (b.totalPreguntas ?? 0), 0);
   const dominioGlobal = totalPreguntas > 0
     ? Number(((totalDominadas / totalPreguntas) * 100).toFixed(1))
     : 0;
@@ -51,29 +51,29 @@ export default function MateriaPage() {
   return (
     <div style={{ maxWidth: 820, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>{materiaNombre}</h2>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>{temaNombre}</h2>
         <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-          {temas.length} temas
+          {bloques.length} bloques
           {oposicionNombre && <> &middot; {oposicionNombre}</>}
         </p>
       </div>
       <MateriaMaestriaBar dominioGlobal={dominioGlobal} dominadas={totalDominadas} totalPreguntas={totalPreguntas} />
       <MateriaTemasTable
-        temas={temas}
-        onPracticar={(temaId) => navigate('/', { state: { temaId, materiaId: Number(id) } })}
+        temas={bloques}
+        onPracticar={(bloqueId) => navigate('/', { state: { bloqueId, temaId: Number(id) } })}
       />
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
         <Link
           to="/configurar-test"
-          state={{ materiaId: Number(id), oposicionId }}
+          state={{ temaId: Number(id), oposicionId }}
           style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
         >
-          Practicar toda la materia
+          Practicar todo el tema
         </Link>
         <Link
           to="/configurar-test"
-          state={{ materiaId: Number(id), oposicionId, modoSugerido: 'errores' }}
+          state={{ temaId: Number(id), oposicionId, modoSugerido: 'errores' }}
           style={{ padding: '10px 22px', borderRadius: 8, border: '1px solid #fde68a', background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
         >
           Repasar errores

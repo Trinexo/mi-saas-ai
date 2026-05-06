@@ -7,15 +7,15 @@ export const adminPreguntasCrudReadListPreguntasService = {
       page,
       page_size: pageSize,
       oposicion_id: oposicionId,
-      materia_id: materiaId,
       tema_id: temaId,
+      bloque_id: bloqueId,
       nivel_dificultad: nivelDificultad,
     } = query;
 
     const filters = {
       oposicionId: oposicionId ?? null,
-      materiaId: materiaId ?? null,
       temaId: temaId ?? null,
+      bloqueId: bloqueId ?? null,
       nivelDificultad: nivelDificultad ?? null,
     };
 
