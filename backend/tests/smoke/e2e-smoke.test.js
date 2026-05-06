@@ -57,14 +57,14 @@ test('SMOKE-U03: catálogo oposiciones', async () => {
   assert.ok(data.length > 0, 'Debe haber al menos 1 oposición');
 });
 
-test('SMOKE-U04: catálogo materias', async () => {
-  const { status, data } = await api('/materias?oposicion_id=1');
+test('SMOKE-U04: catálogo temas', async () => {
+  const { status, data } = await api('/temas?oposicion_id=1');
   assert.equal(status, 200);
   assert.ok(Array.isArray(data));
 });
 
-test('SMOKE-U05: catálogo temas', async () => {
-  const { status, data } = await api('/temas?materia_id=1');
+test('SMOKE-U05: catálogo bloques', async () => {
+  const { status, data } = await api('/bloques?tema_id=1');
   assert.equal(status, 200);
   assert.ok(Array.isArray(data));
 });
@@ -76,7 +76,7 @@ test('SMOKE-U06: generar test', async () => {
   const { status, data } = await api('/tests/generate', {
     method: 'POST',
     token: userToken,
-    body: { temaId: 1, numeroPreguntas: 5 },
+    body: { bloqueId: 1, numeroPreguntas: 5 },
   });
   assert.equal(status, 201);
   assert.ok(data.testId > 0);
@@ -105,7 +105,7 @@ test('SMOKE-U07B: generar test sin enviar no debe contar en estadísticas finali
   const { status, data } = await api('/tests/generate', {
     method: 'POST',
     token: userToken,
-    body: { temaId: 1, numeroPreguntas: 5 },
+    body: { bloqueId: 1, numeroPreguntas: 5 },
   });
 
   assert.ok([201, 400].includes(status));
@@ -121,8 +121,8 @@ test('SMOKE-U08: estadísticas de usuario', async () => {
   assert.equal(data.totalTests, 1);
 });
 
-test('SMOKE-U09: estadísticas por tema', async () => {
-  const { status, data } = await api('/stats/tema?tema_id=1', { token: userToken });
+test('SMOKE-U09: estadísticas por bloque', async () => {
+  const { status, data } = await api('/stats/bloque?bloque_id=1', { token: userToken });
   assert.equal(status, 200);
   assert.ok(typeof data.preguntasVistas === 'number');
 });
@@ -152,7 +152,7 @@ test('SMOKE-A03: crear pregunta', async () => {
     method: 'POST',
     token: adminToken,
     body: {
-      temaId: 1,
+      bloqueId: 1,
       enunciado: 'Smoke test pregunta E2E',
       explicacion: 'Test explicación',
       referenciaNormativa: null,
@@ -182,7 +182,7 @@ test('SMOKE-A05: editar pregunta', async () => {
     method: 'PUT',
     token: adminToken,
     body: {
-      temaId: 1,
+      bloqueId: 1,
       enunciado: 'Smoke test pregunta E2E (editada)',
       explicacion: 'Explicación actualizada',
       referenciaNormativa: null,
@@ -220,7 +220,7 @@ test('SMOKE-A08: listar reportes', async () => {
 
 // ── Seguridad básica ───────────────────────────────────────────
 test('SMOKE-S01: ruta protegida sin token = 401', async () => {
-  const { status } = await api('/tests/generate', { method: 'POST', body: { temaId: 1, numPreguntas: 5 } });
+  const { status } = await api('/tests/generate', { method: 'POST', body: { bloqueId: 1, numPreguntas: 5 } });
   assert.equal(status, 401);
 });
 
