@@ -6,7 +6,7 @@ const opcionSchema = z.object({
 });
 
 const basePreguntaSchema = {
-  temaId: z.number().int().positive(),
+  bloqueId: z.number().int().positive(),
   enunciado: z.string().min(10),
   explicacion: z.string().min(2),
   referenciaNormativa: z.string().optional().nullable(),
