@@ -1,5 +1,6 @@
 import { ok } from '../utils/response.js';
 import { adminService } from '../services/admin.service.js';
+import { adminPanelUsersStatsService } from '../services/adminPanelUsersStats.service.js';
 
 export const listReportes = async (req, res, next) => {
   try {
@@ -74,10 +75,10 @@ export const bulkUsers = async (req, res, next) => {
   }
 };
 
-export const getTemasConMasErrores = async (req, res, next) => {
+export const getBloquesConMasErrores = async (req, res, next) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
-    const data = await adminService.getTemasConMasErrores(limit);
+    const data = await adminService.getBloquesConMasErrores(limit);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -145,4 +146,46 @@ export const deleteProfesor = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
+
+// ─── B6: stats ampliados para el Dashboard ────────────────────────────────────
+
+export const getAdminStatsFull = async (req, res, next) => {
+  try {
+    const data = await adminPanelUsersStatsService.getAdminStatsFull();
+    return ok(res, data);
+  } catch (e) { return next(e); }
+};
+
+export const getDistribucionContenido = async (req, res, next) => {
+  try {
+    const data = await adminPanelUsersStatsService.getDistribucionContenido();
+    return ok(res, data);
+  } catch (e) { return next(e); }
+};
+
+export const getTopOposiciones = async (req, res, next) => {
+  try {
+    const limit = Math.min(10, Math.max(1, Number(req.query.limit) || 5));
+    const data = await adminPanelUsersStatsService.getTopOposiciones(limit);
+    return ok(res, data);
+  } catch (e) { return next(e); }
+};
+
+export const getEvolucionUsuarios = async (req, res, next) => {
+  try {
+    const dias = Math.min(90, Math.max(7, Number(req.query.dias) || 30));
+    const data = await adminPanelUsersStatsService.getEvolucionUsuarios(dias);
+    return ok(res, data);
+  } catch (e) { return next(e); }
+};
+
+// ─── B5: actividad reciente ───────────────────────────────────────────────────
+
+export const getActividadReciente = async (req, res, next) => {
+  try {
+    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+    const data = await adminPanelUsersStatsService.getActividadReciente(limit);
+    return ok(res, data);
+  } catch (e) { return next(e); }
 };

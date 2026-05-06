@@ -6,19 +6,19 @@ export const catalogHierarchyService = {
     return catalogRepository.getOposiciones();
   },
 
-  async getMaterias(oposicionId) {
+  async getTemas(oposicionId) {
     if (!Number.isFinite(oposicionId)) {
       throw new ApiError(400, 'oposicion_id es obligatorio');
     }
 
-    return catalogRepository.getMaterias(oposicionId);
+    return catalogRepository.getTemas(oposicionId);
   },
 
-  async getTemas(materiaId) {
-    if (!Number.isFinite(materiaId)) {
-      throw new ApiError(400, 'materia_id es obligatorio');
+  async getBloques(temaId) {
+    if (!Number.isFinite(temaId)) {
+      throw new ApiError(400, 'tema_id es obligatorio');
     }
 
-    return catalogRepository.getTemas(materiaId);
+    return catalogRepository.getBloques(temaId);
   },
 };

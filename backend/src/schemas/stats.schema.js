@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
-export const temaStatsQuerySchema = z.object({
-  tema_id: z.coerce.number().int().positive(),
+export const bloqueStatsQuerySchema = z.object({
+  bloque_id: z.coerce.number().int().positive(),
 });
 
 export const repasoStatsQuerySchema = z.object({
-  tema_id: z.coerce.number().int().positive(),
+  bloque_id: z.coerce.number().int().positive(),
 });
 
 export const simulacrosStatsQuerySchema = z.object({

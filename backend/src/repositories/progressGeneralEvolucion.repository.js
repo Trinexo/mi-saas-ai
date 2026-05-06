@@ -26,21 +26,21 @@ export const progressGeneralEvolucionRepository = {
   async getMisOposiciones(userId) {
     const result = await pool.query(
       `WITH preguntas_count AS (
-         SELECT m.oposicion_id, COUNT(DISTINCT p.id)::int AS total_preguntas
+         SELECT t.oposicion_id, COUNT(DISTINCT p.id)::int AS total_preguntas
          FROM preguntas p
-         JOIN temas tm ON tm.id = p.tema_id
-         JOIN materias m ON m.id = tm.materia_id
-         GROUP BY m.oposicion_id
+         JOIN bloques bl ON bl.id = p.bloque_id
+         JOIN temas t    ON t.id  = bl.tema_id
+         GROUP BY t.oposicion_id
        ),
        -- Determina la oposición de cada test a través de sus preguntas,
        -- independientemente de si tests.oposicion_id está relleno o no.
        test_oposicion AS (
-         SELECT DISTINCT t.id AS test_id, m.oposicion_id
+         SELECT DISTINCT t.id AS test_id, tm.oposicion_id
          FROM tests t
          JOIN tests_preguntas tp ON tp.test_id = t.id
-         JOIN preguntas p ON p.id = tp.pregunta_id
-         JOIN temas tm ON tm.id = p.tema_id
-         JOIN materias m ON m.id = tm.materia_id
+         JOIN preguntas p  ON p.id = tp.pregunta_id
+         JOIN bloques bl   ON bl.id = p.bloque_id
+         JOIN temas tm     ON tm.id = bl.tema_id
          WHERE t.usuario_id = $1 AND t.estado = 'finalizado'
        ),
        user_stats AS (

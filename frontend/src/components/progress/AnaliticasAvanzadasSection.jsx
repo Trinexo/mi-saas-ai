@@ -52,10 +52,10 @@ export default function AnaliticasAvanzadasSection() {
   const [insight, setInsight]               = useState(null);
   const [ritmo, setRitmo]                   = useState(null);
 
-  // --- Progreso por materia ---
+  // --- Progreso por tema ---
   const [oposiciones, setOposiciones]       = useState([]);
   const [selOposicion, setSelOposicion]     = useState('');
-  const [progMaterias, setProgMaterias]     = useState(null);
+  const [progTemas, setProgTemas]           = useState(null);
   const [loadingMaterias, setLoadingMaterias] = useState(false);
 
   // Carga en paralelo de métricas de rendimiento
@@ -77,15 +77,15 @@ export default function AnaliticasAvanzadasSection() {
     return () => { cancelled = true; };
   }, [token]);
 
-  // Progreso por materia cuando cambia oposición
+  // Progreso por tema cuando cambia oposición
   useEffect(() => {
-    if (!selOposicion) { setProgMaterias(null); return; }
+    if (!selOposicion) { setProgTemas(null); return; }
     let cancelled = false;
     setLoadingMaterias(true);
-    setProgMaterias(null);
-    testApi.getProgresoMaterias(token, selOposicion)
-      .then((d) => { if (!cancelled) setProgMaterias(Array.isArray(d) ? d : []); })
-      .catch(() => { if (!cancelled) setProgMaterias([]); })
+    setProgTemas(null);
+    testApi.getProgresoTemas(token, selOposicion)
+      .then((d) => { if (!cancelled) setProgTemas(Array.isArray(d) ? d : []); })
+      .catch(() => { if (!cancelled) setProgTemas([]); })
       .finally(() => { if (!cancelled) setLoadingMaterias(false); });
     return () => { cancelled = true; };
   }, [token, selOposicion]);
@@ -229,7 +229,7 @@ export default function AnaliticasAvanzadasSection() {
       {/* ── Bloque 3: Progreso por materia ── */}
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Progreso por materia</h3>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Progreso por tema</h3>
           <select
             value={selOposicion}
             onChange={(e) => setSelOposicion(e.target.value)}
@@ -243,27 +243,27 @@ export default function AnaliticasAvanzadasSection() {
         </div>
 
         {!selOposicion && (
-          <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: 0 }}>Selecciona una oposición para ver el desglose por materia.</p>
+          <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: 0 }}>Selecciona una oposición para ver el desglose por tema.</p>
         )}
 
         {selOposicion && loadingMaterias && (
           <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: 0 }}>Cargando…</p>
         )}
 
-        {selOposicion && !loadingMaterias && progMaterias !== null && progMaterias.length === 0 && (
+        {selOposicion && !loadingMaterias && progTemas !== null && progTemas.length === 0 && (
           <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: 0 }}>Aún no tienes progreso registrado para esta oposición.</p>
         )}
 
-        {progMaterias && progMaterias.length > 0 && (
+        {progTemas && progTemas.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[...progMaterias]
+            {[...progTemas]
               .sort((a, b) => Number(a.porcentajeAcierto ?? 0) - Number(b.porcentajeAcierto ?? 0))
               .map((m) => {
                 const pct = Number(m.porcentajeAcierto ?? 0);
                 return (
-                  <div key={m.materiaId ?? m.materiaNombre} style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px' }}>
+                  <div key={m.temaId ?? m.temaNombre} style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6, flexWrap: 'wrap', gap: 4 }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{m.materiaNombre}</span>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{m.temaNombre}</span>
                       <span style={{ fontSize: 11, color: '#6b7280' }}>
                         {m.aciertos ?? 0}A · {m.errores ?? 0}E · {m.blancos ?? 0}B · {m.totalRespondidas ?? 0} resp.
                       </span>

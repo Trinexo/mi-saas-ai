@@ -10,7 +10,7 @@ import TemaTestsTable from '../components/tema/TemaTestsTable';
 export default function TemaPage() {
   const { id } = useParams();
   const { token } = useAuth();
-  const [tema, setTema] = useState(null);
+  const [bloque, setBloque] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,9 +19,9 @@ export default function TemaPage() {
     setLoading(true);
     setError('');
     testApi
-      .getDetalleTema(token, Number(id))
-      .then((data) => setTema(data))
-      .catch((e) => setError(e.message || 'No se pudo cargar el tema'))
+      .getDetalleBloque(token, Number(id))
+      .then((data) => setBloque(data))
+      .catch((e) => setError(e.message || 'No se pudo cargar el bloque'))
       .finally(() => setLoading(false));
   }, [token, id]);
 
@@ -38,24 +38,24 @@ export default function TemaPage() {
       <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
     </div>
   );
-  if (!tema) return null;
+  if (!bloque) return null;
 
   return (
     <div style={{ maxWidth: 820, margin: '0 auto' }}>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>{tema.temaNombre}</h2>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>{bloque.bloqueNombre}</h2>
         <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-          {tema.materiaNombre} &middot; {tema.oposicionNombre}
+          {bloque.temaNombre} &middot; {bloque.oposicionNombre}
         </p>
       </div>
 
-      <TemaMaestriaBar tema={tema} />
-      <TemaStatsGrid tema={tema} />
-      <TemaTestsTable tests={tema.ultimosTests} />
+      <TemaMaestriaBar tema={bloque} />
+      <TemaStatsGrid tema={bloque} />
+      <TemaTestsTable tests={bloque.ultimosTests} />
       <TemaAcciones
-        temaId={Number(id)}
-        materiaId={tema.materiaId}
-        oposicionId={tema.oposicionId}
+        bloqueId={Number(id)}
+        temaId={bloque.temaId}
+        oposicionId={bloque.oposicionId}
       />
     </div>
   );

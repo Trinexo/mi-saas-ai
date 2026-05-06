@@ -12,29 +12,36 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE TABLE IF NOT EXISTS oposiciones (
   id BIGSERIAL PRIMARY KEY,
   nombre TEXT NOT NULL,
-  descripcion TEXT
+  descripcion TEXT,
+  categoria TEXT,
+  estado TEXT NOT NULL DEFAULT 'activa'
+    CHECK (estado IN ('activa', 'borrador', 'inactiva'))
 );
 
-CREATE TABLE IF NOT EXISTS materias (
+CREATE TABLE IF NOT EXISTS temas (
   id BIGSERIAL PRIMARY KEY,
   oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
   nombre TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS temas (
+CREATE TABLE IF NOT EXISTS bloques (
   id BIGSERIAL PRIMARY KEY,
-  materia_id BIGINT NOT NULL REFERENCES materias(id) ON DELETE CASCADE,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
   nombre TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS preguntas (
   id BIGSERIAL PRIMARY KEY,
-  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  bloque_id BIGINT NOT NULL REFERENCES bloques(id) ON DELETE CASCADE,
   enunciado TEXT NOT NULL,
   explicacion TEXT NOT NULL,
   referencia_normativa TEXT,
   nivel_dificultad SMALLINT NOT NULL,
-  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW()
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW(),
+  es_oficial BOOLEAN NOT NULL DEFAULT FALSE,
+  puntos NUMERIC(5,2) NOT NULL DEFAULT 1.00,
+  tipo_pregunta TEXT NOT NULL DEFAULT 'opcion_multiple'
+    CHECK (tipo_pregunta IN ('opcion_multiple', 'verdadero_falso', 'texto_libre'))
 );
 
 CREATE TABLE IF NOT EXISTS opciones_respuesta (
@@ -47,7 +54,7 @@ CREATE TABLE IF NOT EXISTS opciones_respuesta (
 CREATE TABLE IF NOT EXISTS tests (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  tema_id BIGINT REFERENCES temas(id),
+  bloque_id BIGINT REFERENCES bloques(id),
   oposicion_id BIGINT REFERENCES oposiciones(id),
   tipo_test TEXT NOT NULL,
   numero_preguntas INTEGER NOT NULL,
@@ -87,12 +94,12 @@ CREATE TABLE IF NOT EXISTS resultados_test (
 CREATE TABLE IF NOT EXISTS progreso_usuario (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  bloque_id BIGINT NOT NULL REFERENCES bloques(id) ON DELETE CASCADE,
   preguntas_vistas INTEGER NOT NULL DEFAULT 0,
   aciertos INTEGER NOT NULL DEFAULT 0,
   errores INTEGER NOT NULL DEFAULT 0,
   tiempo_medio INTEGER NOT NULL DEFAULT 0,
-  UNIQUE (usuario_id, tema_id)
+  UNIQUE (usuario_id, bloque_id)
 );
 
 CREATE TABLE IF NOT EXISTS reportes_preguntas (
@@ -104,8 +111,11 @@ CREATE TABLE IF NOT EXISTS reportes_preguntas (
   fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_preguntas_tema_id ON preguntas(tema_id);
+CREATE INDEX IF NOT EXISTS idx_preguntas_bloque_id ON preguntas(bloque_id);
 CREATE INDEX IF NOT EXISTS idx_preguntas_nivel_dificultad ON preguntas(nivel_dificultad);
+CREATE INDEX IF NOT EXISTS idx_preguntas_es_oficial ON preguntas(es_oficial);
+CREATE INDEX IF NOT EXISTS idx_oposiciones_estado ON oposiciones(estado);
+CREATE INDEX IF NOT EXISTS idx_oposiciones_categoria ON oposiciones(categoria);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_fecha ON tests(usuario_id, fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_pregunta ON respuestas_usuario(test_id, pregunta_id);
 CREATE INDEX IF NOT EXISTS idx_materias_oposicion ON materias(oposicion_id);
@@ -158,3 +168,79 @@ BEGIN
       FOREIGN KEY (oposicion_preferida_id) REFERENCES oposiciones(id) ON DELETE SET NULL;
   END IF;
 END $$;
+
+-- ─── Etiquetas (migración 016) ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS etiquetas (
+  id             BIGSERIAL PRIMARY KEY,
+  nombre         TEXT NOT NULL UNIQUE,
+  color          TEXT,
+  descripcion    TEXT,
+  creado_por     BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS preguntas_etiquetas (
+  pregunta_id BIGINT NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+  etiqueta_id BIGINT NOT NULL REFERENCES etiquetas(id) ON DELETE CASCADE,
+  PRIMARY KEY (pregunta_id, etiqueta_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_etiquetas_nombre   ON etiquetas(nombre);
+CREATE INDEX IF NOT EXISTS idx_preg_etiq_pregunta ON preguntas_etiquetas(pregunta_id);
+CREATE INDEX IF NOT EXISTS idx_preg_etiq_etiqueta ON preguntas_etiquetas(etiqueta_id);
+
+-- ─── Simulacros (migración 017) ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS simulacros (
+  id                          BIGSERIAL PRIMARY KEY,
+  nombre                      TEXT NOT NULL,
+  descripcion                 TEXT,
+  oposicion_id                BIGINT REFERENCES oposiciones(id) ON DELETE SET NULL,
+  estado                      TEXT NOT NULL DEFAULT 'borrador'
+                                CHECK (estado IN ('borrador', 'publicado', 'archivado')),
+  tiempo_limite_segundos      INTEGER,
+  puntuacion_maxima           NUMERIC(6,2) NOT NULL DEFAULT 100,
+  penalizacion                NUMERIC(4,2) NOT NULL DEFAULT 0,
+  mostrar_resultados_al_final BOOLEAN NOT NULL DEFAULT TRUE,
+  fecha_publicacion           TIMESTAMPTZ,
+  creado_por                  BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  fecha_creacion              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  fecha_actualizacion         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS simulacros_bloques (
+  id               BIGSERIAL PRIMARY KEY,
+  simulacro_id     BIGINT NOT NULL REFERENCES simulacros(id) ON DELETE CASCADE,
+  nombre           TEXT NOT NULL,
+  orden            SMALLINT NOT NULL DEFAULT 0,
+  numero_preguntas INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS simulacros_preguntas (
+  id          BIGSERIAL PRIMARY KEY,
+  bloque_id   BIGINT NOT NULL REFERENCES simulacros_bloques(id) ON DELETE CASCADE,
+  pregunta_id BIGINT NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+  orden       SMALLINT NOT NULL DEFAULT 0,
+  UNIQUE (bloque_id, pregunta_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_simulacros_oposicion   ON simulacros(oposicion_id);
+CREATE INDEX IF NOT EXISTS idx_simulacros_estado      ON simulacros(estado);
+CREATE INDEX IF NOT EXISTS idx_simulacros_creado_por  ON simulacros(creado_por);
+CREATE INDEX IF NOT EXISTS idx_sim_bloques_simulacro  ON simulacros_bloques(simulacro_id, orden);
+CREATE INDEX IF NOT EXISTS idx_sim_preguntas_bloque   ON simulacros_preguntas(bloque_id, orden);
+CREATE INDEX IF NOT EXISTS idx_sim_preguntas_pregunta ON simulacros_preguntas(pregunta_id);
+
+-- ─── Actividad global (migración 018) ────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS actividad_global (
+  id          BIGSERIAL PRIMARY KEY,
+  tipo        TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  usuario_id  BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  entidad     TEXT,
+  entidad_id  BIGINT,
+  fecha       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_actividad_fecha   ON actividad_global(fecha DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_actividad_tipo    ON actividad_global(tipo);
+CREATE INDEX IF NOT EXISTS idx_actividad_usuario ON actividad_global(usuario_id);

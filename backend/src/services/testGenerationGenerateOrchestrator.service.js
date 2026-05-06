@@ -25,6 +25,8 @@ export const testGenerationGenerateOrchestratorService = {
       });
     }
 
+    if (!preguntas || preguntas.length === 0) return null;
+
     return testGenerationGeneratePersistenceService.persistAndBuildResponse({
       userId,
       temaId: temasMix ? null : temaId,

@@ -1,5 +1,6 @@
 ﻿import { useNavigate } from 'react-router-dom';
 import { useUserPlan } from '../hooks/useUserPlan';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import ResumenGlobalSection from '../components/progress/ResumenGlobalSection';
 import RachaObjetivoSection from '../components/progress/RachaObjetivoSection';
 import EvolucionSection from '../components/progress/EvolucionSection';
@@ -33,6 +34,7 @@ function SectionLabel({ children }) {
 export default function ProgressPage() {
   const navigate = useNavigate();
   const { hasAccess, loading } = useUserPlan();
+  const { oposicionActiva } = useOposicionActiva();
   const esElite = hasAccess('elite');
   const esPro   = hasAccess('pro');
 
@@ -40,12 +42,19 @@ export default function ProgressPage() {
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Cabecera */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#111827' }}>Mi progreso</h2>
-        <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#9ca3af' }}>Estadísticas y análisis completo de tu preparación</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#111827' }}>Mi progreso</h2>
+          {oposicionActiva && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#fff7ed', color: '#ea580c', fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #fb923c40' }}>
+              🎯 {oposicionActiva.nombre}
+            </span>
+          )}
+        </div>
+        <p style={{ margin: 0, fontSize: '0.85rem', color: '#9ca3af' }}>Estadísticas y análisis completo de tu preparación</p>
       </div>
 
       <SectionLabel>Resumen global</SectionLabel>
-      <ResumenGlobalSection />
+      <ResumenGlobalSection oposicionId={oposicionActiva?.id} />
       <RachaObjetivoSection />
 
       <SectionLabel>Esta semana</SectionLabel>

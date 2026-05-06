@@ -28,9 +28,9 @@ export const getRacha = async (req, res, next) => {
   }
 };
 
-export const getRachaTemas = async (req, res, next) => {
+export const getRachaBloques = async (req, res, next) => {
   try {
-    const data = await statsService.getRachaTemas(req.user.userId);
+    const data = await statsService.getRachaBloques(req.user.userId);
     return ok(res, data);
   } catch (error) {
     return next(error);

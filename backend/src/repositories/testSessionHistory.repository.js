@@ -16,13 +16,13 @@ export const testSessionHistoryRepository = {
     const [dataResult, countResult] = await Promise.all([
       pool.query(
         `SELECT t.id, t.fecha_creacion, t.tipo_test, t.duracion_segundos, t.numero_preguntas, t.estado,
-                t.tema_id, te.nombre AS tema_nombre,
-                ma.nombre AS materia_nombre,
+                t.bloque_id, bl.nombre AS bloque_nombre,
+                te.nombre AS tema_nombre,
                 t.oposicion_id, op.nombre AS oposicion_nombre,
                 rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
          FROM tests t
-         LEFT JOIN temas te ON te.id = t.tema_id
-         LEFT JOIN materias ma ON ma.id = te.materia_id
+         LEFT JOIN bloques bl ON bl.id = t.bloque_id
+         LEFT JOIN temas te ON te.id = bl.tema_id
          LEFT JOIN oposiciones op ON op.id = t.oposicion_id
          LEFT JOIN resultados_test rt ON rt.test_id = t.id
          WHERE ${where}
@@ -44,9 +44,9 @@ export const testSessionHistoryRepository = {
         duracionSegundos: row.duracion_segundos,
         numeroPreguntas: row.numero_preguntas,
         estado: row.estado,
-        temaId: row.tema_id ? Number(row.tema_id) : null,
+        bloqueId: row.bloque_id ? Number(row.bloque_id) : null,
+        bloqueNombre: row.bloque_nombre || null,
         temaNombre: row.tema_nombre || null,
-        materiaNombre: row.materia_nombre || null,
         oposicionId: row.oposicion_id ? Number(row.oposicion_id) : null,
         oposicionNombre: row.oposicion_nombre || null,
         aciertos: row.aciertos ?? 0,

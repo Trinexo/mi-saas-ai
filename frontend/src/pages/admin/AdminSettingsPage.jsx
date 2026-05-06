@@ -5,9 +5,10 @@ import { adminApi } from '../../services/adminApi';
 // ─── Estilos inline (patrón consistente con el resto del admin) ───────────────
 const CARD = {
   background: '#fff',
-  borderRadius: 10,
+  borderRadius: 16,
   padding: '24px 28px',
-  boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+  boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+  border: '1px solid #e5e7eb',
   marginBottom: 24,
 };
 const LABEL = {

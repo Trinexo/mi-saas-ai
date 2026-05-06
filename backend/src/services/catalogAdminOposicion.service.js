@@ -2,6 +2,12 @@ import { catalogAdminRepository } from '../repositories/catalogAdmin.repository.
 import { ApiError } from '../utils/api-error.js';
 
 export const catalogAdminOposicionService = {
+  async listOposicionesConStats({ q, estado, categoria, page, pageSize }) {
+    const limit  = pageSize;
+    const offset = (page - 1) * pageSize;
+    return catalogAdminRepository.listOposicionesConStats({ q, estado, categoria, limit, offset });
+  },
+
   async createOposicion(nombre, descripcion) {
     return catalogAdminRepository.createOposicion(nombre, descripcion);
   },

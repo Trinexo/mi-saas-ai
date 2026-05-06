@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 
@@ -358,6 +359,7 @@ function HistorialReciente() {
 /* ── página principal ────────────────────────────────────── */
 export default function HomePage() {
   const { user } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const nombre = user?.nombre?.split(' ')[0] || 'alumno';
   const hour   = new Date().getHours();
   const saludo = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
@@ -369,10 +371,20 @@ export default function HomePage() {
       {/* ── Saludo ───────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: DK, letterSpacing: '-0.03em' }}>
-            ¡{saludo}, {nombre}! 👋
-          </h1>
-          <p style={{ margin: '5px 0 0', fontSize: '0.85rem', color: GL }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+            <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: DK, letterSpacing: '-0.03em' }}>
+              ¡{saludo}, {nombre}! 👋
+            </h1>
+            {oposicionActiva && (
+              <Link
+                to="/mis-oposiciones"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: OBG, color: O, fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: 999, textDecoration: 'none', border: `1px solid ${OL}40`, whiteSpace: 'nowrap' }}
+              >
+                🎯 {oposicionActiva.nombre}
+              </Link>
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: GL }}>
             {fecha.charAt(0).toUpperCase() + fecha.slice(1)} — Prepara. Practica. Consigue.
           </p>
         </div>

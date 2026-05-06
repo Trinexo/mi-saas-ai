@@ -2,6 +2,6 @@ import { apiRequest } from './api';
 
 export const catalogApi = {
   getOposiciones: () => apiRequest('/oposiciones'),
-  getMaterias: (oposicionId) => apiRequest('/materias', { query: { oposicion_id: oposicionId } }),
-  getTemas: (materiaId) => apiRequest('/temas', { query: { materia_id: materiaId } }),
+  getTemas: (oposicionId) => apiRequest('/temas', { query: { oposicion_id: oposicionId } }),
+  getBloques: (temaId) => apiRequest('/bloques', { query: { tema_id: temaId } }),
 };

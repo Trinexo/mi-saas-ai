@@ -11,6 +11,16 @@ export const getTemasDebiles = async (req, res, next) => {
   }
 };
 
+export const getProgresoBloques = async (req, res, next) => {
+  try {
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const data = await statsService.getProgresoBloques(req.user.userId, oposicionId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getProgresoTemas = async (req, res, next) => {
   try {
     const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
@@ -21,9 +31,9 @@ export const getProgresoTemas = async (req, res, next) => {
   }
 };
 
-export const getTemaStats = async (req, res, next) => {
+export const getBloqueStats = async (req, res, next) => {
   try {
-    const data = await statsService.getTemaStats(req.user.userId, req.query.tema_id);
+    const data = await statsService.getBloqueStats(req.user.userId, req.query.bloque_id);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -32,18 +42,18 @@ export const getTemaStats = async (req, res, next) => {
 
 export const getRepasoStats = async (req, res, next) => {
   try {
-    const data = await statsService.getRepasoStats(req.user.userId, req.query.tema_id);
+    const data = await statsService.getRepasoStats(req.user.userId, req.query.bloque_id);
     return ok(res, data);
   } catch (error) {
     return next(error);
   }
 };
 
-export const getDetalleTema = async (req, res, next) => {
+export const getDetalleBloque = async (req, res, next) => {
   try {
-    const temaId = req.params.id ? Number(req.params.id) : null;
-    if (!temaId) return next(new ApiError(400, 'Se requiere id de tema'));
-    const data = await statsService.getDetalleTema(req.user.userId, temaId);
+    const bloqueId = req.params.id ? Number(req.params.id) : null;
+    if (!bloqueId) return next(new ApiError(400, 'Se requiere id de bloque'));
+    const data = await statsService.getDetalleBloque(req.user.userId, bloqueId);
     return ok(res, data);
   } catch (error) {
     return next(error);

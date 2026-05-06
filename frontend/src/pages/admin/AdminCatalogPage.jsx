@@ -67,48 +67,48 @@ function InlineForm({ placeholder, onSave, onCancel, initialValue = '' }) {
 export default function AdminCatalogPage() {
   const { token } = useAuth();
   const [oposiciones, setOposiciones] = useState([]);
-  const [materias, setMaterias] = useState([]);
   const [temas, setTemas] = useState([]);
+  const [bloques, setBloques] = useState([]);
   const [selOposicion, setSelOposicion] = useState(null);
-  const [selMateria, setSelMateria] = useState(null);
+  const [selTema, setSelTema] = useState(null);
   const [addingOposicion, setAddingOposicion] = useState(false);
   const [editingOposicion, setEditingOposicion] = useState(null);
   const [tiempoLimiteInput, setTiempoLimiteInput] = useState('');
   const [guardandoTiempo, setGuardandoTiempo] = useState(false);
   const [mensajeTiempo, setMensajeTiempo] = useState(null);
-  const [addingMateria, setAddingMateria] = useState(false);
-  const [editingMateria, setEditingMateria] = useState(null);
   const [addingTema, setAddingTema] = useState(false);
   const [editingTema, setEditingTema] = useState(null);
+  const [addingBloque, setAddingBloque] = useState(false);
+  const [editingBloque, setEditingBloque] = useState(null);
   const [error, setError] = useState('');
 
   const loadOposiciones = () =>
     catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
 
-  const loadMaterias = (opId) =>
-    catalogApi.getMaterias(opId).then(setMaterias).catch(() => setMaterias([]));
+  const loadTemas = (opId) =>
+    catalogApi.getTemas(opId).then(setTemas).catch(() => setTemas([]));
 
-  const loadTemas = (matId) =>
-    catalogApi.getTemas(matId).then(setTemas).catch(() => setTemas([]));
+  const loadBloques = (temaId) =>
+    catalogApi.getBloques(temaId).then(setBloques).catch(() => setBloques([]));
 
   useEffect(() => { loadOposiciones(); }, []);
 
   const handleSelectOposicion = (op) => {
     setSelOposicion(op);
-    setSelMateria(null);
-    setTemas([]);
-    setAddingMateria(false);
-    setEditingMateria(null);
-    setTiempoLimiteInput(op.tiempo_limite_minutos ? String(op.tiempo_limite_minutos) : '');
-    setMensajeTiempo(null);
-    loadMaterias(op.id);
-  };
-
-  const handleSelectMateria = (mat) => {
-    setSelMateria(mat);
+    setSelTema(null);
+    setBloques([]);
     setAddingTema(false);
     setEditingTema(null);
-    loadTemas(mat.id);
+    setTiempoLimiteInput(op.tiempo_limite_minutos ? String(op.tiempo_limite_minutos) : '');
+    setMensajeTiempo(null);
+    loadTemas(op.id);
+  };
+
+  const handleSelectTema = (tema) => {
+    setSelTema(tema);
+    setAddingBloque(false);
+    setEditingBloque(null);
+    loadBloques(tema.id);
   };
 
   const guardoConError = async (fn) => {
@@ -147,45 +147,45 @@ export default function AdminCatalogPage() {
   const handleDeleteOposicion = (id) => guardoConError(async () => {
     if (!window.confirm('Eliminar esta oposicion y todo su contenido?')) return;
     await adminApi.deleteOposicion(token, id);
-    if (selOposicion?.id === id) { setSelOposicion(null); setMaterias([]); setSelMateria(null); setTemas([]); }
+    if (selOposicion?.id === id) { setSelOposicion(null); setTemas([]); setSelTema(null); setBloques([]); }
     loadOposiciones();
   });
 
-  const handleCreateMateria = (nombre) => guardoConError(async () => {
-    await adminApi.createMateria(token, { oposicion_id: selOposicion.id, nombre });
-    setAddingMateria(false);
-    loadMaterias(selOposicion.id);
-  });
-
-  const handleUpdateMateria = (nombre) => guardoConError(async () => {
-    await adminApi.updateMateria(token, editingMateria.id, { nombre });
-    setEditingMateria(null);
-    loadMaterias(selOposicion.id);
-  });
-
-  const handleDeleteMateria = (id) => guardoConError(async () => {
-    if (!window.confirm('Eliminar esta materia y todos sus temas?')) return;
-    await adminApi.deleteMateria(token, id);
-    if (selMateria?.id === id) { setSelMateria(null); setTemas([]); }
-    loadMaterias(selOposicion.id);
-  });
-
   const handleCreateTema = (nombre) => guardoConError(async () => {
-    await adminApi.createTema(token, { materia_id: selMateria.id, nombre });
+    await adminApi.createTema(token, { oposicion_id: selOposicion.id, nombre });
     setAddingTema(false);
-    loadTemas(selMateria.id);
+    loadTemas(selOposicion.id);
   });
 
   const handleUpdateTema = (nombre) => guardoConError(async () => {
     await adminApi.updateTema(token, editingTema.id, { nombre });
     setEditingTema(null);
-    loadTemas(selMateria.id);
+    loadTemas(selOposicion.id);
   });
 
   const handleDeleteTema = (id) => guardoConError(async () => {
-    if (!window.confirm('Eliminar este tema?')) return;
+    if (!window.confirm('Eliminar este tema y todos sus bloques?')) return;
     await adminApi.deleteTema(token, id);
-    loadTemas(selMateria.id);
+    if (selTema?.id === id) { setSelTema(null); setBloques([]); }
+    loadTemas(selOposicion.id);
+  });
+
+  const handleCreateBloque = (nombre) => guardoConError(async () => {
+    await adminApi.createBloque(token, { tema_id: selTema.id, nombre });
+    setAddingBloque(false);
+    loadBloques(selTema.id);
+  });
+
+  const handleUpdateBloque = (nombre) => guardoConError(async () => {
+    await adminApi.updateBloque(token, editingBloque.id, { nombre });
+    setEditingBloque(null);
+    loadBloques(selTema.id);
+  });
+
+  const handleDeleteBloque = (id) => guardoConError(async () => {
+    if (!window.confirm('Eliminar este bloque?')) return;
+    await adminApi.deleteBloque(token, id);
+    loadBloques(selTema.id);
   });
 
   return (
@@ -195,18 +195,18 @@ export default function AdminCatalogPage() {
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Catálogo</h2>
         <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-          Gestiona la estructura: oposiciones → materias → temas
+          Gestiona la estructura: oposiciones → temas → bloques
         </p>
       </div>
 
       {/* Breadcrumb de selección */}
-      {(selOposicion || selMateria) && (
+      {(selOposicion || selTema) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: '#6b7280', marginBottom: 14, background: '#f9fafb', borderRadius: 8, padding: '8px 14px', border: '1px solid #e5e7eb' }}>
           <span style={{ color: '#374151', fontWeight: 600 }}>📂 {selOposicion?.nombre}</span>
-          {selMateria && (
+          {selTema && (
             <>
               <span style={{ color: '#d1d5db' }}>›</span>
-              <span style={{ color: '#374151', fontWeight: 600 }}>📋 {selMateria?.nombre}</span>
+              <span style={{ color: '#374151', fontWeight: 600 }}>📋 {selTema?.nombre}</span>
             </>
           )}
         </div>
@@ -268,20 +268,20 @@ export default function AdminCatalogPage() {
           </div>
         </div>
 
-        {/* ── Materias ── */}
+        {/* ── Temas (primer nivel) ── */}
         <div style={COL}>
           <div style={COL_HEADER}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: '1rem' }}>📋</span>
               <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#111827' }}>
-                Materias
+                Temas
               </h3>
               {selOposicion && (
-                <span style={{ background: '#e5e7eb', color: '#6b7280', borderRadius: 999, fontSize: 11, fontWeight: 600, padding: '1px 7px' }}>{materias.length}</span>
+                <span style={{ background: '#e5e7eb', color: '#6b7280', borderRadius: 999, fontSize: 11, fontWeight: 600, padding: '1px 7px' }}>{temas.length}</span>
               )}
             </div>
             {selOposicion && (
-              <button onClick={() => { setAddingMateria(true); setEditingMateria(null); }} style={BTN_ADD}>+ Nueva</button>
+              <button onClick={() => { setAddingTema(true); setEditingTema(null); }} style={BTN_ADD}>+ Nuevo</button>
             )}
           </div>
           <div style={{ padding: '8px 0', flex: 1 }}>
@@ -289,68 +289,6 @@ export default function AdminCatalogPage() {
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af', fontSize: '0.85rem' }}>
                 <div style={{ fontSize: '2rem', marginBottom: 8 }}>←</div>
                 Selecciona una oposición
-              </div>
-            ) : (
-              <>
-                {addingMateria && (
-                  <div style={{ padding: '0 8px', marginBottom: 4 }}>
-                    <InlineForm placeholder="Nombre de la materia" onSave={handleCreateMateria} onCancel={() => setAddingMateria(false)} />
-                  </div>
-                )}
-                {materias.length === 0 && !addingMateria && (
-                  <div style={{ textAlign: 'center', padding: '2rem 0', color: '#9ca3af', fontSize: '0.85rem' }}>Sin materias aún</div>
-                )}
-                {materias.map((mat) => (
-                  <div key={mat.id}>
-                    {editingMateria?.id === mat.id ? (
-                      <div style={{ padding: '0 8px', marginBottom: 4 }}>
-                        <InlineForm placeholder="Nombre" initialValue={mat.nombre} onSave={handleUpdateMateria} onCancel={() => setEditingMateria(null)} />
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          ...ITEM_BASE,
-                        background: selMateria?.id === mat.id ? '#fff7ed' : 'transparent',
-                        border: selMateria?.id === mat.id ? '1px solid #fdba74' : '1px solid transparent',
-                      }}
-                      onClick={() => handleSelectMateria(mat)}
-                    >
-                      <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>►</span>
-                      <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: selMateria?.id === mat.id ? 600 : 400, color: selMateria?.id === mat.id ? '#ea580c' : '#374151' }}>
-                          {mat.nombre}
-                        </span>
-                        <button title="Editar" onClick={(e) => { e.stopPropagation(); setEditingMateria(mat); setAddingMateria(false); }} style={{ ...BTN_ICON, color: '#9ca3af' }}>✎</button>
-                        <button title="Eliminar" onClick={(e) => { e.stopPropagation(); handleDeleteMateria(mat.id); }} style={{ ...BTN_ICON, color: '#fca5a5' }}>✕</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ── Temas ── */}
-        <div style={COL}>
-          <div style={COL_HEADER}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '1rem' }}>📄</span>
-              <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#111827' }}>
-                Temas
-              </h3>
-              {selMateria && (
-                <span style={{ background: '#e5e7eb', color: '#6b7280', borderRadius: 999, fontSize: 11, fontWeight: 600, padding: '1px 7px' }}>{temas.length}</span>
-              )}
-            </div>
-            {selMateria && (
-              <button onClick={() => { setAddingTema(true); setEditingTema(null); }} style={BTN_ADD}>+ Nuevo</button>
-            )}
-          </div>
-          <div style={{ padding: '8px 0', flex: 1 }}>
-            {!selMateria ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af', fontSize: '0.85rem' }}>
-                <div style={{ fontSize: '2rem', marginBottom: 8 }}>←</div>
-                Selecciona una materia
               </div>
             ) : (
               <>
@@ -369,11 +307,73 @@ export default function AdminCatalogPage() {
                         <InlineForm placeholder="Nombre" initialValue={tema.nombre} onSave={handleUpdateTema} onCancel={() => setEditingTema(null)} />
                       </div>
                     ) : (
+                      <div
+                        style={{
+                          ...ITEM_BASE,
+                        background: selTema?.id === tema.id ? '#fff7ed' : 'transparent',
+                        border: selTema?.id === tema.id ? '1px solid #fdba74' : '1px solid transparent',
+                      }}
+                      onClick={() => handleSelectTema(tema)}
+                    >
+                      <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>►</span>
+                      <span style={{ flex: 1, fontSize: '0.875rem', fontWeight: selTema?.id === tema.id ? 600 : 400, color: selTema?.id === tema.id ? '#ea580c' : '#374151' }}>
+                          {tema.nombre}
+                        </span>
+                        <button title="Editar" onClick={(e) => { e.stopPropagation(); setEditingTema(tema); setAddingTema(false); }} style={{ ...BTN_ICON, color: '#9ca3af' }}>✎</button>
+                        <button title="Eliminar" onClick={(e) => { e.stopPropagation(); handleDeleteTema(tema.id); }} style={{ ...BTN_ICON, color: '#fca5a5' }}>✕</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── Bloques ── */}
+        <div style={COL}>
+          <div style={COL_HEADER}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: '1rem' }}>📄</span>
+              <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#111827' }}>
+                Bloques
+              </h3>
+              {selTema && (
+                <span style={{ background: '#e5e7eb', color: '#6b7280', borderRadius: 999, fontSize: 11, fontWeight: 600, padding: '1px 7px' }}>{bloques.length}</span>
+              )}
+            </div>
+            {selTema && (
+              <button onClick={() => { setAddingBloque(true); setEditingBloque(null); }} style={BTN_ADD}>+ Nuevo</button>
+            )}
+          </div>
+          <div style={{ padding: '8px 0', flex: 1 }}>
+            {!selTema ? (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#9ca3af', fontSize: '0.85rem' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 8 }}>←</div>
+                Selecciona un tema
+              </div>
+            ) : (
+              <>
+                {addingBloque && (
+                  <div style={{ padding: '0 8px', marginBottom: 4 }}>
+                    <InlineForm placeholder="Nombre del bloque" onSave={handleCreateBloque} onCancel={() => setAddingBloque(false)} />
+                  </div>
+                )}
+                {bloques.length === 0 && !addingBloque && (
+                  <div style={{ textAlign: 'center', padding: '2rem 0', color: '#9ca3af', fontSize: '0.85rem' }}>Sin bloques aún</div>
+                )}
+                {bloques.map((bloque) => (
+                  <div key={bloque.id}>
+                    {editingBloque?.id === bloque.id ? (
+                      <div style={{ padding: '0 8px', marginBottom: 4 }}>
+                        <InlineForm placeholder="Nombre" initialValue={bloque.nombre} onSave={handleUpdateBloque} onCancel={() => setEditingBloque(null)} />
+                      </div>
+                    ) : (
                       <div style={{ ...ITEM_BASE, cursor: 'default', border: '1px solid transparent' }}>
                         <span style={{ fontSize: '0.75rem', color: '#d1d5db', lineHeight: 1 }}>▪</span>
-                        <span style={{ flex: 1, fontSize: '0.875rem', color: '#374151' }}>{tema.nombre}</span>
-                        <button title="Editar" onClick={() => { setEditingTema(tema); setAddingTema(false); }} style={{ ...BTN_ICON, color: '#9ca3af' }}>✎</button>
-                        <button title="Eliminar" onClick={() => handleDeleteTema(tema.id)} style={{ ...BTN_ICON, color: '#fca5a5' }}>✕</button>
+                        <span style={{ flex: 1, fontSize: '0.875rem', color: '#374151' }}>{bloque.nombre}</span>
+                        <button title="Editar" onClick={() => { setEditingBloque(bloque); setAddingBloque(false); }} style={{ ...BTN_ICON, color: '#9ca3af' }}>✎</button>
+                        <button title="Eliminar" onClick={() => handleDeleteBloque(bloque.id)} style={{ ...BTN_ICON, color: '#fca5a5' }}>✕</button>
                       </div>
                     )}
                   </div>

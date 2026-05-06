@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
 
 /* ── Paleta ─────────────────────────────────────────── */
@@ -116,6 +117,7 @@ function RankingRow({ row, userPct, userTests, userRacha }) {
    ══════════════════════════════════════════════════ */
 export default function RankingPage() {
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const [stats, setStats] = useState(null);
   const [racha, setRacha] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -152,8 +154,15 @@ export default function RankingPage() {
 
       {/* Encabezado */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: DK, letterSpacing: '-0.02em' }}>Ranking</h1>
-        <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: GL }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: DK, letterSpacing: '-0.02em' }}>Ranking</h1>
+          {oposicionActiva && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: OBG, color: O, fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #fb923c40' }}>
+              🎯 {oposicionActiva.nombre}
+            </span>
+          )}
+        </div>
+        <p style={{ margin: 0, fontSize: '0.875rem', color: GL }}>
           Tu posición entre la comunidad de opositores de la plataforma.
         </p>
       </div>

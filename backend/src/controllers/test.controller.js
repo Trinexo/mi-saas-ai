@@ -25,6 +25,9 @@ export const generateTest = async (req, res, next) => {
       ...req.body,
       numeroPreguntas: numPreguntasFinal,
     });
+    if (data === null) {
+      return ok(res, null, 'No hay preguntas de repaso disponibles en este momento');
+    }
     return created(res, data, 'Test generado');
   } catch (error) {
     return next(error);

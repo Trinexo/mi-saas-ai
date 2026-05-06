@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { getDashboard, getUserStats, getTemaStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaTemas, getResumenOposicion, getProgresoMaterias, getProgresoTemasByMateria, getDetalleTema, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
-import { temaStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
+import { getDashboard, getUserStats, getBloqueStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaBloques, getResumenOposicion, getProgresoBloques, getProgresoBloquesByTema, getDetalleBloque, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { bloqueStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
 
 const router = Router();
 
@@ -22,16 +22,16 @@ router.get('/foco-hoy', requireAuth, getFocoHoy);
 router.get('/objetivo-diario', requireAuth, getObjetivoDiario);
 router.get('/gamificacion', requireAuth, getGamificacion);
 router.get('/user', requireAuth, getUserStats);
-router.get('/tema', requireAuth, validate(temaStatsQuerySchema, 'query'), getTemaStats);
+router.get('/bloque', requireAuth, validate(bloqueStatsQuerySchema, 'query'), getBloqueStats);
 router.get('/repaso', requireAuth, validate(repasoStatsQuerySchema, 'query'), getRepasoStats);
 router.get('/simulacros', requireAuth, validate(simulacrosStatsQuerySchema, 'query'), getSimulacrosStats);
 router.get('/evolucion', requireAuth, validate(evolucionQuerySchema, 'query'), getEvolucion);
 router.get('/racha', requireAuth, getRacha);
-router.get('/racha-temas', requireAuth, getRachaTemas);
+router.get('/racha-bloques', requireAuth, getRachaBloques);
 router.get('/resumen-oposicion', requireAuth, getResumenOposicion);
-router.get('/progreso-materias', requireAuth, getProgresoMaterias);
-router.get('/progreso-temas-materia', requireAuth, getProgresoTemasByMateria);
-router.get('/tema/:id/detalle', requireAuth, getDetalleTema);
+router.get('/progreso-bloques', requireAuth, getProgresoBloques);
+router.get('/progreso-bloques-tema', requireAuth, getProgresoBloquesByTema);
+router.get('/bloque/:id/detalle', requireAuth, getDetalleBloque);
 router.get('/mis-oposiciones', requireAuth, getMisOposiciones);
 
 export default router;

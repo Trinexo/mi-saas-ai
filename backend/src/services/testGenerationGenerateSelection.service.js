@@ -15,7 +15,7 @@ export const testGenerationGenerateSelectionService = {
       });
     }
 
-    if (preguntas.length < numeroPreguntas && !['simulacro', 'marcadas'].includes(modo) && temaId) {
+    if (preguntas.length < numeroPreguntas && !['simulacro', 'marcadas', 'repaso'].includes(modo) && temaId) {
       const excludeIds = preguntas.map((pregunta) => pregunta.id);
       const extra = await testRepository.pickAnyQuestions({
         userId,
@@ -31,6 +31,7 @@ export const testGenerationGenerateSelectionService = {
     }
 
     if (preguntas.length === 0) {
+      if (modo === 'repaso') return [];
       throw new ApiError(400, 'No hay preguntas disponibles para el test');
     }
 

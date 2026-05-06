@@ -37,8 +37,8 @@ export default function TemasDebilesWidget() {
 
   const onRefuerzo = () => {
     const top = data[0];
-    if (!top?.temaId) return;
-    navigate('/configurar-test', { state: { oposicionId: top.oposicionId, materiaId: top.materiaId, temaId: top.temaId } });
+    if (!top?.bloqueId) return;
+    navigate('/configurar-test', { state: { oposicionId: top.oposicionId, temaId: top.temaId, bloqueId: top.bloqueId } });
   };
 
   const top = data[0];
@@ -64,10 +64,10 @@ export default function TemasDebilesWidget() {
       {top ? (
         <>
           <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', lineHeight: 1.3, marginBottom: 8, maxWidth: 500 }}>
-            {top.temaNombre}
+            {top.bloqueNombre}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.materiaNombre}</span>
+            <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.temaNombre}</span>
             <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.oposicionNombre}</span>
             <span style={{
               background: pct < 50 ? 'rgba(220,38,38,.2)' : 'rgba(234,88,12,.18)',
@@ -78,7 +78,7 @@ export default function TemasDebilesWidget() {
             </span>
           </div>
           <button
-            disabled={!top?.temaId}
+            disabled={!top?.bloqueId}
             onClick={onRefuerzo}
             onMouseEnter={() => setHov(true)}
             onMouseLeave={() => setHov(false)}
@@ -91,7 +91,7 @@ export default function TemasDebilesWidget() {
               padding:      '10px 22px',
               fontWeight:   800,
               fontSize:     '0.88rem',
-              cursor:       top?.temaId ? 'pointer' : 'not-allowed',
+              cursor:       top?.bloqueId ? 'pointer' : 'not-allowed',
               boxShadow:    `0 4px 14px ${O}40`,
               transition:   'all .15s',
             }}

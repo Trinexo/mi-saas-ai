@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 import { useUserAccesos } from '../hooks/useUserAccesos';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { catalogApi } from '../services/catalogApi';
 import { testApi } from '../services/testApi';
 
@@ -145,22 +146,28 @@ export default function SimulacrosPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { accesos, loading: loadingAccesos, tieneAcceso } = useUserAccesos();
+  const { oposicionActiva } = useOposicionActiva();
   const { isLoading, runAction } = useAsyncAction();
 
   const [oposiciones, setOposiciones] = useState([]);
   const [historial,   setHistorial  ] = useState([]);
   const [loadingData, setLoadingData ] = useState(true);
-  const [activeOp,    setActiveOp   ] = useState(null); // oposición en proceso de generación
+  const [activeOp,    setActiveOp   ] = useState(null);
 
   useEffect(() => {
     Promise.all([
       catalogApi.getOposiciones().catch(() => []),
       testApi.history(token, { limit: 6, modo: 'simulacro' }).catch(() => []),
     ]).then(([ops, hist]) => {
-      setOposiciones(Array.isArray(ops) ? ops : (ops?.data ?? []));
+      let lista = Array.isArray(ops) ? ops : (ops?.data ?? []);
+      // Filtrar por oposición activa si hay una seleccionada
+      if (oposicionActiva?.id) {
+        lista = lista.filter((op) => Number(op.id) === Number(oposicionActiva.id));
+      }
+      setOposiciones(lista);
       setHistorial(Array.isArray(hist) ? hist.filter((h) => h.tipo_test === 'simulacro' || h.modo === 'simulacro') : []);
     }).finally(() => setLoadingData(false));
-  }, [token]);
+  }, [token, oposicionActiva]);
 
   const onIniciar = async (op) => {
     setActiveOp(op.id);

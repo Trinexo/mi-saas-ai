@@ -33,11 +33,11 @@ export const getProgresoMaterias = async (req, res, next) => {
   }
 };
 
-export const getProgresoTemasByMateria = async (req, res, next) => {
+export const getProgresoBloquesByTema = async (req, res, next) => {
   try {
-    const materiaId = req.query.materia_id ? Number(req.query.materia_id) : null;
-    if (!materiaId) return next(new ApiError(400, 'Se requiere materia_id'));
-    const data = await statsService.getProgresoTemasByMateria(req.user.userId, materiaId);
+    const temaId = req.query.tema_id ? Number(req.query.tema_id) : null;
+    if (!temaId) return next(new ApiError(400, 'Se requiere tema_id'));
+    const data = await statsService.getProgresoBloquesByTema(req.user.userId, temaId);
     return ok(res, data);
   } catch (error) {
     return next(error);

@@ -86,7 +86,7 @@ export default function HistorialTabla({ itemsOrdenados, onReintentar }) {
                 {t.oposicionNombre ? (
                   <Link to={`/oposicion/${t.oposicionId}`} style={{ color: '#64748b', textDecoration: 'none' }}>{t.oposicionNombre}</Link>
                 ) : null}
-                {t.materiaNombre ? <span style={{ color: '#94a3b8' }}> &rsaquo; {t.materiaNombre}</span> : null}
+                {t.bloqueNombre ? <span style={{ color: '#94a3b8' }}> &rsaquo; {t.bloqueNombre}</span> : null}
                 {t.temaId ? (
                   <> &rsaquo; <Link to={`/tema/${t.temaId}`} style={{ color: '#374151', fontWeight: 600, textDecoration: 'none' }}>{t.temaNombre}</Link></>
                 ) : (t.temaNombre ? <span> &rsaquo; {t.temaNombre}</span> : null)}

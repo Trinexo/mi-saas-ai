@@ -1,6 +1,9 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
 import { useAuth } from './state/auth.jsx';
+import { OposicionActivaProvider, useOposicionActiva } from './state/oposicionActiva.jsx';
+import SeleccionarOposicionPage from './pages/SeleccionarOposicionPage.jsx';
+import { useUserAccesos } from './hooks/useUserAccesos';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
@@ -22,7 +25,7 @@ import MisOposicionesPage from './pages/MisOposicionesPage.jsx';
 import ConfigurarTestPage from './pages/ConfigurarTestPage.jsx';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import AdminQuestionsPage from './pages/admin/AdminQuestionsPage.jsx';
-import AdminLayout from './pages/admin/AdminLayout.jsx';
+import AdminNuevaPreguntaPage from './pages/admin/AdminNuevaPreguntaPage.jsx';
 import AdminCatalogPage from './pages/admin/AdminCatalogPage.jsx';
 import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
 import AdminRevisionPage from './pages/admin/AdminRevisionPage.jsx';
@@ -30,13 +33,54 @@ import AdminAccesosPage from './pages/admin/AdminAccesosPage.jsx';
 import AdminPreciosPage from './pages/admin/AdminPreciosPage.jsx';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage.jsx';
 import AdminProfesoresPage from './pages/admin/AdminProfesoresPage.jsx';
-import ProfesorLayout from './pages/profesor/ProfesorLayout.jsx';
+import AdminOposicionesPage from './pages/admin/AdminOposicionesPage.jsx';
+import AdminSimulacrosPage from './pages/admin/AdminSimulacrosPage.jsx';
+import AdminEtiquetasPage from './pages/admin/AdminEtiquetasPage.jsx';
+import AdminTestsPage from './pages/admin/AdminTestsPage.jsx';
 import ProfesorDashboardPage from './pages/profesor/ProfesorDashboardPage.jsx';
 import ProfesorPreguntasPage from './pages/profesor/ProfesorPreguntasPage.jsx';
+import ProfesorTestsPage from './pages/profesor/ProfesorTestsPage.jsx';
+import ProfesorSimulacrosPage from './pages/profesor/ProfesorSimulacrosPage.jsx';
 import NotificacionesPage from './pages/NotificacionesPage.jsx';
 import SimulacrosPage from './pages/SimulacrosPage.jsx';
 import RankingPage from './pages/RankingPage.jsx';
 import { RevisionProvider } from './state/revisionContext.jsx';
+import { useEffect } from 'react';
+
+/**
+ * Redirige al usuario a /seleccionar-oposicion si tiene más de una oposición
+ * activa y no ha seleccionado ninguna todavía. Auto-selecciona si solo hay una.
+ */
+function OposicionGuard({ children }) {
+  const { user } = useAuth();
+  const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
+  const { accesos, loading } = useUserAccesos();
+  const navigate = useNavigate();
+
+  const esAlumno = user && user.role !== 'admin' && user.role !== 'profesor';
+
+  useEffect(() => {
+    if (!esAlumno || loading || oposicionActiva) return;
+    if (accesos.length === 0) {
+      navigate('/catalogo', { replace: true });
+    } else if (accesos.length === 1) {
+      setOposicionActiva({ id: accesos[0].oposicion_id, nombre: accesos[0].nombre });
+    } else {
+      navigate('/seleccionar-oposicion', { replace: true });
+    }
+  }, [esAlumno, loading, accesos, oposicionActiva, navigate, setOposicionActiva]);
+
+  if (esAlumno && loading && !oposicionActiva) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', border: '4px solid #fff7ed', borderTopColor: '#ea580c', animation: 'spin .8s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
+
+  return children;
+}
 
 function ProtectedRoute({ children }) {
   const { token, user } = useAuth();
@@ -63,17 +107,30 @@ function ProfesorRoute({ children }) {
 
 export default function App() {
   return (
+    <OposicionActivaProvider>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route
+        path="/seleccionar-oposicion"
+        element={
+          <ProtectedRoute>
+            <SeleccionarOposicionPage />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <MainLayout />
+            <OposicionGuard>
+              <RevisionProvider>
+                <MainLayout />
+              </RevisionProvider>
+            </OposicionGuard>
           </ProtectedRoute>
         }
       >
@@ -86,8 +143,8 @@ export default function App() {
         <Route path="marcadas" element={<MarcadasPage />} />
         <Route path="perfil" element={<ProfilePage />} />
         <Route path="oposicion/:id" element={<OposicionPage />} />
-        <Route path="materia/:id" element={<MateriaPage />} />
-        <Route path="tema/:id" element={<TemaPage />} />
+        <Route path="tema/:id" element={<MateriaPage />} />
+        <Route path="bloque/:id" element={<TemaPage />} />
         <Route path="mis-oposiciones" element={<MisOposicionesPage />} />
         <Route path="configurar-test" element={<ConfigurarTestPage />} />
         <Route path="planes" element={<PlanesPage />} />
@@ -99,14 +156,17 @@ export default function App() {
           path="admin"
           element={
             <AdminRoute>
-              <RevisionProvider>
-                <AdminLayout />
-              </RevisionProvider>
+              <Outlet />
             </AdminRoute>
           }
         >
+          <Route path="preguntas/nueva" element={<AdminNuevaPreguntaPage />} />
           <Route path="preguntas" element={<AdminQuestionsPage />} />
           <Route path="catalogo" element={<AdminCatalogPage />} />
+          <Route path="oposiciones" element={<AdminOposicionesPage />} />
+          <Route path="simulacros" element={<AdminSimulacrosPage />} />
+          <Route path="etiquetas" element={<AdminEtiquetasPage />} />
+          <Route path="tests" element={<AdminTestsPage />} />
           <Route path="usuarios" element={<AdminUsersPage />} />
           <Route path="accesos" element={<AdminAccesosPage />} />
           <Route path="precios" element={<AdminPreciosPage />} />
@@ -119,14 +179,17 @@ export default function App() {
           path="profesor"
           element={
             <ProfesorRoute>
-              <ProfesorLayout />
+              <Outlet />
             </ProfesorRoute>
           }
         >
           <Route path="preguntas" element={<ProfesorPreguntasPage />} />
+          <Route path="mis-tests" element={<ProfesorTestsPage />} />
+          <Route path="mis-simulacros" element={<ProfesorSimulacrosPage />} />
           <Route index element={<ProfesorDashboardPage />} />
         </Route>
       </Route>
     </Routes>
+    </OposicionActivaProvider>
   );
 }
