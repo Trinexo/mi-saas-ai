@@ -229,6 +229,72 @@ Cuando **no** hay `oposicionActiva` (caso catálogo, usuarios sin contexto), amb
 
 ---
 
+---
+
+## Reporte #5 — Errores 500 en endpoints admin tras migración 019 [Hotfix]
+
+**Procedencia:** Pruebas de integración post-rename  
+**Área:** Backend / Base de datos  
+**Prioridad:** Crítica (bloqueante en panel admin)
+
+> **Problema:** Los endpoints `/admin/stats/contenido`, `/admin/stats/top-oposiciones`, `/admin/actividad` y `/admin/preguntas` devolvían HTTP 500 porque el código ya usaba `temas`/`bloques`/`bloque_id` pero la base de datos aún tenía `materias`/`temas`/`tema_id`.
+
+### Causa raíz
+
+La migración `019_rename_materias_temas_to_temas_bloques.sql` no había sido aplicada al entorno de desarrollo local.
+
+### Solución aplicada
+
+```powershell
+$env:PGPASSWORD='postgres'
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -d plataforma_test -h localhost `
+  -f "database/migrations/019_rename_materias_temas_to_temas_bloques.sql"
+```
+
+### Verificación post-migración
+
+- Tabla `bloques` existe (era `temas`) ✅
+- Tabla `temas` existe (era `materias`) ✅
+- `preguntas.bloque_id` existe (era `tema_id`) ✅
+- `progreso_usuario.bloque_id` existe (era `tema_id`) ✅
+- `tests.bloque_id` existe (era `tema_id`) ✅
+
+### Archivos afectados
+
+- `database/migrations/019_rename_materias_temas_to_temas_bloques.sql` — debe ejecutarse en producción/staging antes del deploy del Reporte #4
+
+---
+
+## Reporte #6 — Split AdminQuestionsPage: separar creación de listado [UX Admin]
+
+**Procedencia:** Feedback profesores — página `/admin/preguntas` demasiado densa  
+**Área:** Frontend / Panel de administración  
+**Prioridad:** Media
+
+> **Feedback:** La página `/admin/preguntas` tenía todo en una sola pantalla (lista, edición inline, creación, CSV, reportes, auditoría — 841 líneas). Se solicitó separar la creación e importación en una página aparte.
+
+### Diseño
+
+| Ruta | Página | Contenido |
+|---|---|---|
+| `/admin/preguntas` | `AdminQuestionsPage.jsx` | Lista + filtros + edición inline + moderación reportes + auditoría |
+| `/admin/preguntas/nueva` | `AdminNuevaPreguntaPage.jsx` | Formulario creación + importador CSV |
+
+### Flujo de navegación
+
+- Botón **"+ Nueva pregunta"** en `/admin/preguntas` → navega a `/admin/preguntas/nueva`
+- Botón **"← Volver a preguntas"** en `/admin/preguntas/nueva` → navega a `/admin/preguntas`
+
+### Archivos creados / modificados
+
+| Archivo | Tipo | Cambio |
+|---|---|---|
+| `frontend/src/pages/admin/AdminNuevaPreguntaPage.jsx` | Nuevo | Formulario creación + CSV import |
+| `frontend/src/pages/admin/AdminQuestionsPage.jsx` | Modificado | Elimina sección creación y CSV; botón navega a `/nueva`; formulario edición solo aparece cuando `editingId !== null` |
+| `frontend/src/App.jsx` | Modificado | Import `AdminNuevaPreguntaPage`; añade ruta `preguntas/nueva` antes de `preguntas` bajo el bloque `admin` |
+
+---
+
 ## Notas de cierre
 
 > Se completa al cerrar el sprint.
