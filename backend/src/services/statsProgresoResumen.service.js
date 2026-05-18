@@ -9,6 +9,14 @@ export const statsProgresoResumenService = {
     return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null);
   },
 
+  async getProgresoTemasReal(userId, oposicionId) {
+    return progressStatsRepository.getProgresoTemasReal(userId, oposicionId ?? null);
+  },
+
+  async getProgresoTemaReal(userId, temaId) {
+    return progressStatsRepository.getProgresoTemaReal(userId, temaId);
+  },
+
   async getDashboard(userId) {
     return progressStatsRepository.getDashboard(userId);
   },

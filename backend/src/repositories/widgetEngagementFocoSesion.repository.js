@@ -94,7 +94,7 @@ export const widgetEngagementFocoSesionRepository = {
       const excluirNuevo = [Number(bloqueDebil.bloque_id), ...recientes];
       const nuevoResult = await pool.query(
         `SELECT bl.id AS bloque_id, bl.nombre AS bloque_nombre
-         FROM bloques bl
+         FROM colecciones bl
          JOIN preguntas p ON p.bloque_id = bl.id
          WHERE bl.id != ALL($2::bigint[])
            AND NOT EXISTS (

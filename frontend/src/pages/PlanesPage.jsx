@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { subscriptionApi } from '../services/subscriptionApi';
 import { useAuth } from '../state/auth';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 const PLANES = [
   {
@@ -78,6 +79,7 @@ const GARANTIAS = [
 
 export default function PlanesPage() {
   const { token } = useAuth();
+  const { isMobile, isTablet } = useBreakpoint();
   const [planActual, setPlanActual] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -111,7 +113,7 @@ export default function PlanesPage() {
       </div>
 
       {/* Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
         {PLANES.map((plan) => {
           const esPlanActual = !loading && planActual === plan.key;
           return (
@@ -224,7 +226,7 @@ export default function PlanesPage() {
       </div>
 
       {/* Garantías */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: 40, padding: '20px 24px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem', marginTop: 40, padding: '20px 24px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
         {GARANTIAS.map((g) => (
           <div key={g.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
             <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>{g.icon}</span>

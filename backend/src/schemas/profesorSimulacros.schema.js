@@ -35,11 +35,13 @@ export const updateSimulacroProfesorSchema = createSimulacroProfesorSchema
 export const createBloqueProfesorSchema = z.object({
   nombre: z.string().min(1).max(255),
   orden: z.number().int().min(0).optional(),
+  numero_preguntas: z.number().int().min(0).optional(),
 });
 
 export const updateBloqueProfesorSchema = z.object({
   nombre: z.string().min(1).max(255).optional(),
   orden: z.number().int().min(0).optional(),
+  numero_preguntas: z.number().int().min(0).optional(),
 }).refine(d => Object.keys(d).length > 0, { message: 'Proporciona al menos un campo' });
 
 export const asignarPreguntasProfesorSchema = z.object({

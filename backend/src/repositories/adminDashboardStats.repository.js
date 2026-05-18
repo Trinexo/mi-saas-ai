@@ -9,8 +9,11 @@ export const adminDashboardStatsRepository = {
         (SELECT COUNT(*)::int FROM tests WHERE estado = 'finalizado')              AS total_tests,
         (SELECT COUNT(*)::int FROM tests
           WHERE estado = 'finalizado'
-            AND fecha_creacion >= NOW() - INTERVAL '7 days')                      AS tests_esta_semana,
-        (SELECT ROUND(AVG(rt.nota)::numeric, 2)
+            AND fecha_creacion >= DATE_TRUNC('week', CURRENT_TIMESTAMP))          AS tests_esta_semana,
+        (SELECT ROUND(
+            100.0 * SUM(rt.aciertos)::numeric
+            / NULLIF(SUM(rt.aciertos + rt.errores + rt.blancos), 0)
+          , 1)
           FROM tests t JOIN resultados_test rt ON rt.test_id = t.id
           WHERE t.estado = 'finalizado')                                           AS nota_media_global
     `);
@@ -37,9 +40,12 @@ export const adminDashboardStatsRepository = {
         (SELECT COUNT(*)::int FROM tests WHERE estado = 'finalizado')                AS total_tests,
         (SELECT COUNT(*)::int FROM tests
            WHERE estado = 'finalizado'
-             AND fecha_creacion >= NOW() - INTERVAL '7 days')                       AS tests_esta_semana,
+             AND fecha_creacion >= DATE_TRUNC('week', CURRENT_TIMESTAMP))           AS tests_esta_semana,
         (SELECT COUNT(*)::int FROM simulacros WHERE estado = 'publicado')            AS simulacros_publicados,
-        (SELECT ROUND(AVG(rt.nota)::numeric, 2)
+        (SELECT ROUND(
+            100.0 * SUM(rt.aciertos)::numeric
+            / NULLIF(SUM(rt.aciertos + rt.errores + rt.blancos), 0)
+          , 1)
            FROM tests t JOIN resultados_test rt ON rt.test_id = t.id
            WHERE t.estado = 'finalizado')                                           AS nota_media_global,
         (SELECT COUNT(*)::int FROM oposiciones WHERE estado = 'activa')              AS oposiciones_activas,
@@ -67,23 +73,21 @@ export const adminDashboardStatsRepository = {
         (SELECT COUNT(*)::int FROM tests)       AS tests,
         (SELECT COUNT(*)::int FROM simulacros)  AS simulacros,
         (SELECT COUNT(*)::int FROM temas)       AS temas,
-        (SELECT COUNT(*)::int FROM bloques)      AS bloques
+        (SELECT COUNT(*)::int FROM colecciones)  AS bloques
     `);
     return result.rows[0];
   },
 
-  // B6 — Top oposiciones por actividad (nº tests realizados últimos 30 días)
+  // B6 — Top oposiciones por actividad (tests finalizados, todos los tiempos)
   async getTopOposiciones(limit = 5) {
     const result = await pool.query(
       `SELECT
          o.id, o.nombre, o.estado,
-         COUNT(t.id)::int AS total_tests_30d
+         COUNT(t.id)::int AS total_accesos
        FROM oposiciones o
-       LEFT JOIN tests t ON t.oposicion_id = o.id
-         AND t.estado = 'finalizado'
-         AND t.fecha_creacion >= NOW() - INTERVAL '30 days'
+       LEFT JOIN tests t ON t.oposicion_id = o.id AND t.estado = 'finalizado'
        GROUP BY o.id
-       ORDER BY total_tests_30d DESC
+       ORDER BY total_accesos DESC
        LIMIT $1`,
       [limit],
     );
@@ -106,29 +110,78 @@ export const adminDashboardStatsRepository = {
     return result.rows;
   },
 
-  // B5 — Log de actividad reciente (tabla actividad_global)
+  // B5 — Actividad reciente: tests finalizados + reportes + registros de usuario
   async getActividadReciente(limit = 20) {
-    const result = await pool.query(
-      `SELECT
-         ag.id, ag.tipo, ag.descripcion,
-         ag.entidad, ag.entidad_id, ag.fecha,
-         u.nombre AS usuario_nombre, u.email AS usuario_email
-       FROM actividad_global ag
-       LEFT JOIN usuarios u ON u.id = ag.usuario_id
-       ORDER BY ag.fecha DESC, ag.id DESC
-       LIMIT $1`,
-      [limit],
-    );
-    return result.rows;
+    try {
+      const result = await pool.query(
+        `WITH feed AS (
+           SELECT
+             'test_finalizado'::text                              AS tipo,
+             t.id::bigint                                         AS id,
+             COALESCE(t.fecha_fin, t.fecha_creacion)             AS fecha,
+             u.nombre                                             AS usuario_nombre,
+             u.email                                              AS usuario_email,
+             t.tipo_test || ' finalizado'                        AS descripcion,
+             o.nombre                                             AS entidad
+           FROM tests t
+           JOIN usuarios u ON u.id = t.usuario_id
+           LEFT JOIN oposiciones o ON o.id = t.oposicion_id
+           WHERE t.estado = 'finalizado'
+
+           UNION ALL
+
+           SELECT
+             'reporte'::text                                      AS tipo,
+             rp.id::bigint,
+             rp.fecha_creacion                                    AS fecha,
+             u.nombre                                             AS usuario_nombre,
+             u.email                                              AS usuario_email,
+             'Reporte de pregunta'                                AS descripcion,
+             o.nombre                                             AS entidad
+           FROM reportes_preguntas rp
+           JOIN preguntas p  ON p.id  = rp.pregunta_id
+           JOIN temas te     ON te.id = p.tema_id
+           JOIN oposiciones o ON o.id = te.oposicion_id
+           JOIN usuarios u   ON u.id  = rp.usuario_id
+
+           UNION ALL
+
+           SELECT
+             'registro'::text                                     AS tipo,
+             u.id::bigint,
+             u.fecha_registro                                     AS fecha,
+             u.nombre                                             AS usuario_nombre,
+             u.email                                              AS usuario_email,
+             'Nuevo usuario registrado'                           AS descripcion,
+             NULL::text                                           AS entidad
+           FROM usuarios u
+           WHERE u.deleted_at IS NULL
+         )
+         SELECT tipo, id, fecha, usuario_nombre, usuario_email, descripcion, entidad
+         FROM feed
+         ORDER BY fecha DESC
+         LIMIT $1`,
+        [limit],
+      );
+      return result.rows;
+    } catch (error) {
+      if (error?.code === '42P01') return [];
+      throw error;
+    }
   },
 
   // B5 — Insertar evento de actividad (llamado desde otros servicios)
   async insertActividad({ tipo, descripcion, usuarioId, entidad, entidadId }) {
-    await pool.query(
-      `INSERT INTO actividad_global (tipo, descripcion, usuario_id, entidad, entidad_id)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [tipo, descripcion, usuarioId ?? null, entidad ?? null, entidadId ?? null],
-    );
+    try {
+      await pool.query(
+        `INSERT INTO actividad_global (tipo, descripcion, usuario_id, entidad, entidad_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [tipo, descripcion, usuarioId ?? null, entidad ?? null, entidadId ?? null],
+      );
+    } catch (error) {
+      if (error?.code === '42P01') return;
+      throw error;
+    }
   },
 
   async getBloquesConMasErrores(limit) {

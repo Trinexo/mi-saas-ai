@@ -4,7 +4,7 @@ import { adminPanelUsersStatsService } from '../services/adminPanelUsersStats.se
 
 export const listReportes = async (req, res, next) => {
   try {
-    const data = await adminService.listReportes(req.query);
+    const data = await adminService.listReportes(req.query, req.user);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -13,7 +13,7 @@ export const listReportes = async (req, res, next) => {
 
 export const updateReporteEstado = async (req, res, next) => {
   try {
-    const data = await adminService.updateReporteEstado(req.params.id, req.body.estado, req.body.mensajeAdmin);
+    const data = await adminService.updateReporteEstado(req.params.id, req.body.estado, req.body.mensajeAdmin, req.user);
     return ok(res, data, 'Reporte actualizado');
   } catch (error) {
     return next(error);
@@ -22,7 +22,7 @@ export const updateReporteEstado = async (req, res, next) => {
 
 export const listAuditoria = async (req, res, next) => {
   try {
-    const data = await adminService.listAuditoria(req.query, { userId: req.user.id, role: req.user.role });
+    const data = await adminService.listAuditoria(req.query, { userId: req.user.userId, role: req.user.role });
     return ok(res, data);
   } catch (error) {
     return next(error);

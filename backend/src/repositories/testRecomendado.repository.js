@@ -111,7 +111,7 @@ export const testRecomendadoRepository = {
     const result = await pool.query(
       `SELECT bl.id AS bloque_id, bl.nombre AS bloque_nombre,
               COALESCE(pu.preguntas_vistas, 0) AS vistas
-       FROM bloques bl
+       FROM colecciones bl
        JOIN temas t ON t.id = bl.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        LEFT JOIN progreso_usuario pu ON pu.bloque_id = bl.id AND pu.usuario_id = $1

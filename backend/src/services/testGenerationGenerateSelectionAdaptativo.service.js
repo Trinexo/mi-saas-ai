@@ -1,11 +1,8 @@
 import { testRepository } from '../repositories/test.repository.js';
 
-const NIVEL_MAP = { facil: 1, media: 2, dificil: 3 };
-
 const calcCuotas = (numeroPreguntas) => {
-  const facil = Math.floor(numeroPreguntas * 0.3);
-  const dificil = Math.floor(numeroPreguntas * 0.3);
-  return { facil, dificil, media: numeroPreguntas - facil - dificil };
+  const tercio = Math.floor(numeroPreguntas / 3);
+  return { facil: tercio, media: numeroPreguntas - 2 * tercio, dificil: tercio };
 };
 
 export const testGenerationGenerateSelectionAdaptativoService = {
@@ -17,14 +14,14 @@ export const testGenerationGenerateSelectionAdaptativoService = {
 
     if (dificultad === 'mixto') {
       const cuotas = calcCuotas(numeroPreguntas);
-      const [pMedia, pFacil, pDificil] = await Promise.all([
-        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.media, nivelDificultad: NIVEL_MAP.media }),
-        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.facil, nivelDificultad: NIVEL_MAP.facil }),
-        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.dificil, nivelDificultad: NIVEL_MAP.dificil }),
+      const [pFacil, pMedia, pDificil] = await Promise.all([
+        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.facil,   nivelDificultad: 'facil' }),
+        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.media,   nivelDificultad: 'media' }),
+        pickPrimary({ userId, temaId, numeroPreguntas: cuotas.dificil, nivelDificultad: 'dificil' }),
       ]);
-      return [...pMedia, ...pFacil, ...pDificil];
+      return [...pFacil, ...pMedia, ...pDificil];
     }
 
-    return pickPrimary({ userId, temaId, numeroPreguntas, nivelDificultad: NIVEL_MAP[dificultad] });
+    return pickPrimary({ userId, temaId, numeroPreguntas, nivelDificultad: dificultad });
   },
 };

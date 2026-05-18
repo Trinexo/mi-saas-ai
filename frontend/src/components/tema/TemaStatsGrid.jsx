@@ -1,4 +1,7 @@
+import { useBreakpoint } from '../../hooks/useBreakpoint';
+
 export default function TemaStatsGrid({ tema }) {
+  const { isMobile } = useBreakpoint();
   const stats = [
     { label: 'Respondidas', value: tema.aciertos + tema.errores },
     { label: 'Aciertos', value: tema.aciertos, color: '#22c55e' },
@@ -7,7 +10,7 @@ export default function TemaStatsGrid({ tema }) {
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
       {stats.map(({ label, value, color }) => (
         <div key={label} style={{ background: '#fff', borderRadius: 12, padding: '18px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', textAlign: 'center' }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: color || '#111827' }}>{value}</div>

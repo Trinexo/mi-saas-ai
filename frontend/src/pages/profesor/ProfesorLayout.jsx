@@ -2,10 +2,18 @@ import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 
 const NAV_ITEMS = [
-  { to: '/profesor', end: true,       icon: '▦',  label: 'Dashboard' },
-  { to: '/profesor/preguntas',        icon: '❔', label: 'Mis preguntas' },
-  { to: '/profesor/mis-tests',        icon: '📊', label: 'Mis tests' },
-  { to: '/profesor/mis-simulacros',   icon: '📋', label: 'Mis simulacros' },
+  { to: '/profesor', end: true, icon: '▦', label: 'Dashboard' },
+  { to: '/profesor/oposiciones', icon: '▤', label: 'Mis oposiciones' },
+  { to: '/profesor/temario', icon: '▥', label: 'Temario' },
+  { to: '/profesor/tests', icon: '▣', label: 'Tests' },
+  { to: '/profesor/simulacros', icon: '▤', label: 'Simulacros' },
+  { to: '/profesor/preguntas', icon: '?', label: 'Preguntas' },
+  { to: '/profesor/alumnos', icon: '◉', label: 'Alumnos' },
+  { to: '/profesor/actividad', icon: '◐', label: 'Actividad' },
+  { to: '/profesor/estadisticas', icon: '◈', label: 'Estadísticas' },
+  { to: '/profesor/calendario', icon: '◷', label: 'Planificación' },
+  { to: '/profesor/revision', icon: '◎', label: 'Revisión' },
+  { to: '/profesor/notificaciones', icon: '◬', label: 'Notificaciones' },
 ];
 
 export default function ProfesorLayout() {
@@ -14,16 +22,19 @@ export default function ProfesorLayout() {
   const inicial = (user?.nombre || user?.email || 'P')[0].toUpperCase();
   const nombre = user?.nombre || user?.email || 'Profesor';
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <nav style={{ width: 240, background: '#111827', color: '#f9fafb', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #1f2937' }}>
-          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Panel</div>
+          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9ca3af', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Panel profesor</div>
           <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f9fafb', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#ea580c', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', flexShrink: 0 }}>👩‍🏫</span>
-            Profesor
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#6d28d9', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', flexShrink: 0 }}>P</span>
+            OpoTest
           </div>
         </div>
         <ul style={{ listStyle: 'none', padding: '12px 0', margin: 0, flex: 1 }}>
@@ -38,10 +49,10 @@ export default function ProfesorLayout() {
                   gap: 10,
                   padding: '10px 20px',
                   color: isActive ? '#f9fafb' : '#9ca3af',
-                  fontWeight: isActive ? 700 : 400,
+                  fontWeight: isActive ? 700 : 500,
                   textDecoration: 'none',
-                  borderLeft: isActive ? '3px solid #ea580c' : '3px solid transparent',
-                  background: isActive ? 'rgba(234,88,12,0.12)' : 'transparent',
+                  borderLeft: isActive ? '3px solid #6d28d9' : '3px solid transparent',
+                  background: isActive ? 'rgba(109,40,217,0.18)' : 'transparent',
                   fontSize: '0.875rem',
                   transition: 'background 0.15s',
                 })}
@@ -53,10 +64,9 @@ export default function ProfesorLayout() {
           ))}
         </ul>
         <div style={{ padding: '10px 14px 20px', borderTop: '1px solid #1f2937' }}>
-          <div style={{ marginBottom: 12, borderTop: '1px solid rgba(255,255,255,.07)' }} />
-          <Link to="/perfil" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/profesor/perfil" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: '50%', background: '#ea580c',
+              width: 36, height: 36, borderRadius: '50%', background: '#6d28d9',
               color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '0.9rem', fontWeight: 800, flexShrink: 0,
             }}>
@@ -79,7 +89,7 @@ export default function ProfesorLayout() {
               border: '1px solid rgba(255,255,255,.1)',
               borderRadius: 8, padding: '7px 12px',
               fontSize: '0.78rem', fontWeight: 600,
-              color: '#6b7280', cursor: 'pointer',
+              color: '#9ca3af', cursor: 'pointer',
             }}
           >
             Cerrar sesión

@@ -24,6 +24,14 @@ export const statsService = {
 		return statsProgresoService.getProgresoTemas(userId, ensurePositiveInteger(oposicionId, 'oposicion_id'));
 	},
 
+	getProgresoTemasReal(userId, oposicionId) {
+		return statsProgresoService.getProgresoTemasReal(userId, oposicionId ? ensurePositiveInteger(oposicionId, 'oposicion_id') : null);
+	},
+
+	getProgresoTemaReal(userId, temaId) {
+		return statsProgresoService.getProgresoTemaReal(userId, ensurePositiveInteger(temaId, 'tema_id'));
+	},
+
 	getProgresoTemasByMateria(userId, materiaId) {
 		return statsProgresoService.getProgresoBloquesByTema(userId, ensurePositiveInteger(materiaId, 'materia_id'));
 	},

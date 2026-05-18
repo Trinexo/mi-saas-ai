@@ -36,14 +36,11 @@ const parseCsvLine = (line, delimiter) => {
 const requiredHeaders = [
   'tema_id',
   'enunciado',
-  'explicacion',
-  'referencia_normativa',
-  'nivel_dificultad',
   'opcion_1',
   'opcion_2',
   'opcion_3',
   'opcion_4',
-  'opcion_correcta',
+  'explicacion',
 ];
 
 export const adminPreguntasImportCsvParserService = {

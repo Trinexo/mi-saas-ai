@@ -1,3 +1,11 @@
+const BACKEND_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace('/api', '');
+
+const DIFICULTAD_BADGE = {
+  facil:   { label: 'Fácil',    bg: '#dcfce7', color: '#166534' },
+  media:   { label: 'Media',    bg: '#fef9c3', color: '#854d0e' },
+  dificil: { label: 'Difícil',  bg: '#fee2e2', color: '#991b1b' },
+};
+
 export default function TestPregunta({ question, answers, onSelect, feedbackMode = false, confirmed = false, index = 0, total = 1, marcada = false, onToggleMarcada, onReportar }) {
   const selectedId = answers[question.id];
   const correctId = question.opcionCorrectaId;
@@ -79,6 +87,15 @@ export default function TestPregunta({ question, answers, onSelect, feedbackMode
           )}
         </div>
       </div>
+      {question.imagen_url && (
+        <div style={{ margin: '0 0 0.75rem', textAlign: 'center' }}>
+          <img
+            src={`${BACKEND_BASE}${question.imagen_url}`}
+            alt="Imagen de la pregunta"
+            style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, border: '1px solid #e5e7eb', objectFit: 'contain' }}
+          />
+        </div>
+      )}
       <p style={{ margin: '0 0 1rem', fontWeight: 500, color: '#111827', lineHeight: 1.5 }}>{question.enunciado}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '1rem 0' }}>
         {question.opciones.map((option) => (
@@ -94,6 +111,21 @@ export default function TestPregunta({ question, answers, onSelect, feedbackMode
       {feedbackMode && confirmed && question.explicacion && (
         <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 8, background: '#f9fafb', border: '1px solid #e5e7eb', fontSize: 13, color: '#475569' }}>
           <strong>Explicación:</strong> {question.explicacion}
+        </div>
+      )}
+      {feedbackMode && confirmed && question.nivel_dificultad && (() => {
+        const d = DIFICULTAD_BADGE[question.nivel_dificultad];
+        return d ? (
+          <div style={{ marginTop: 6 }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '2px 10px', borderRadius: 999, background: d.bg, color: d.color }}>
+              Dificultad: {d.label}
+            </span>
+          </div>
+        ) : null;
+      })()}
+      {feedbackMode && confirmed && question.audio_url && (
+        <div style={{ marginTop: 6 }}>
+          <audio controls src={`${BACKEND_BASE}${question.audio_url}`} style={{ width: '100%', height: 36 }} />
         </div>
       )}
     </>

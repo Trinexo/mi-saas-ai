@@ -54,7 +54,7 @@ export default function CatalogoPage() {
   const loading = loadingCatalogo || loadingAccesos;
 
   if (loading) return (
-    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
       <div style={{ width: 38, height: 38, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>Cargando catálogo…</p>
@@ -62,7 +62,7 @@ export default function CatalogoPage() {
   );
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
       {/* Cabecera */}
       <div style={{ marginBottom: 28 }}>

@@ -28,6 +28,15 @@ export const getBloques = async (req, res, next) => {
   }
 };
 
+export const getColecciones = async (req, res, next) => {
+  try {
+    const data = await catalogService.getColecciones(req.query.tema_id);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getPreguntas = async (req, res, next) => {
   try {
     const data = await catalogService.getPreguntas({

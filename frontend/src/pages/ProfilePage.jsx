@@ -38,7 +38,7 @@ export default function ProfilePage() {
   const planBadge = PLAN_BADGE[planActual] ?? PLAN_BADGE.free;
 
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
       {/* Cabecera */}
       <div style={{ marginBottom: 20 }}>

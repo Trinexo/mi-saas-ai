@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getErrorMessage } from '../../services/api';
 import { adminApi } from '../../services/adminApi';
 import { catalogApi } from '../../services/catalogApi';
 import { useAuth } from '../../state/auth.jsx';
+import MediaBrowserModal from '../../components/admin/MediaBrowserModal.jsx';
+import AudioRecorder from '../../components/admin/AudioRecorder.jsx';
+import AudioBrowserModal from '../../components/admin/AudioBrowserModal.jsx';
 
 const EMPTY_FORM = {
-  bloqueId: '',
+  temaId: '',
   enunciado: '',
   explicacion: '',
   referenciaNormativa: '',
-  nivelDificultad: 2,
+  nivelDificultad: 'media',
+  imagenUrl: null,
+  audioUrl: null,
   opciones: [
     { texto: '', correcta: true },
     { texto: '', correcta: false },
@@ -18,6 +23,8 @@ const EMPTY_FORM = {
     { texto: '', correcta: false },
   ],
 };
+
+const BACKEND_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace('/api', '');
 
 const TH = {
   padding: '0.5rem 0.75rem', textAlign: 'left',
@@ -30,11 +37,9 @@ const TD = {
   fontSize: '0.875rem', verticalAlign: 'middle',
 };
 const DIFICULTAD = {
-  1: { bg: '#dcfce7', color: '#166534', label: '1 — Muy fácil' },
-  2: { bg: '#d1fae5', color: '#065f46', label: '2 — Fácil' },
-  3: { bg: '#fef9c3', color: '#854d0e', label: '3 — Media' },
-  4: { bg: '#fee2e2', color: '#991b1b', label: '4 — Difícil' },
-  5: { bg: '#fecaca', color: '#7f1d1d', label: '5 — Muy difícil' },
+  facil:   { bg: '#dcfce7', color: '#166534', label: 'Fácil' },
+  media:   { bg: '#fef9c3', color: '#854d0e', label: 'Media' },
+  dificil: { bg: '#fee2e2', color: '#991b1b', label: 'Difícil' },
 };
 const BTN_PRIMARY = { background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
 const BTN_SECONDARY = { background: '#6b7280', color: '#fff', border: 'none', borderRadius: 6, padding: '0.35rem 0.9rem', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 };
@@ -54,7 +59,6 @@ export default function AdminQuestionsPage() {
   const [filters, setFilters] = useState({
     oposicionId: '',
     temaId: '',
-    bloqueId: '',
     nivelDificultad: '',
     page: 1,
     pageSize: 10,
@@ -70,6 +74,10 @@ export default function AdminQuestionsPage() {
   });
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
+  const [imgLoading, setImgLoading] = useState(false);
+  const [showMediaBrowser, setShowMediaBrowser] = useState(false);
+  const [audioUploading, setAudioUploading] = useState(false);
+  const [showAudioBrowser, setShowAudioBrowser] = useState(false);
 
   // Cascading selectors para filtros
   const [catOposiciones, setCatOposiciones] = useState([]);
@@ -80,35 +88,35 @@ export default function AdminQuestionsPage() {
   const [formOposicionId, setFormOposicionId] = useState('');
   const [formTemaId, setFormTemaId] = useState('');
   const [formTemas, setFormTemas] = useState([]);
-  const [formBloques, setFormBloques] = useState([]);
 
   useEffect(() => {
     catalogApi.getOposiciones().then(setCatOposiciones).catch(() => {});
   }, []);
 
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const oid = searchParams.get('oposicion_id');
+    if (oid) handleFiltroOposicion(oid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleFiltroOposicion = (oposicionId) => {
-    setFilters((prev) => ({ ...prev, oposicionId, temaId: '', bloqueId: '', page: 1 }));
+    setFilters((prev) => ({ ...prev, oposicionId, temaId: '', page: 1 }));
     setCatTemas([]);
-    setCatBloques([]);
     if (oposicionId) {
       catalogApi.getTemas(oposicionId).then(setCatTemas).catch(() => {});
     }
   };
 
   const handleFiltroTema = (temaId) => {
-    setFilters((prev) => ({ ...prev, temaId, bloqueId: '', page: 1 }));
-    setCatBloques([]);
-    if (temaId) {
-      catalogApi.getBloques(temaId).then(setCatBloques).catch(() => {});
-    }
+    setFilters((prev) => ({ ...prev, temaId, page: 1 }));
   };
 
   const handleFormOposicion = (oposicionId) => {
     setFormOposicionId(oposicionId);
     setFormTemaId('');
     setFormTemas([]);
-    setFormBloques([]);
-    setForm((prev) => ({ ...prev, bloqueId: '' }));
+    setForm((prev) => ({ ...prev, temaId: '' }));
     if (oposicionId) {
       catalogApi.getTemas(oposicionId).then(setFormTemas).catch(() => {});
     }
@@ -116,17 +124,12 @@ export default function AdminQuestionsPage() {
 
   const handleFormTema = (temaId) => {
     setFormTemaId(temaId);
-    setFormBloques([]);
-    setForm((prev) => ({ ...prev, bloqueId: '' }));
-    if (temaId) {
-      catalogApi.getBloques(temaId).then(setFormBloques).catch(() => {});
-    }
+    setForm((prev) => ({ ...prev, temaId }));
   };
 
   const buildPreguntasQuery = () => ({
     oposicion_id: filters.oposicionId,
     tema_id: filters.temaId,
-    bloque_id: filters.bloqueId,
     nivel_dificultad: filters.nivelDificultad,
     page: filters.page,
     page_size: filters.pageSize,
@@ -200,11 +203,13 @@ export default function AdminQuestionsPage() {
         setFormBloques(bls);
       }
       setForm({
-        bloqueId: String(pregunta.bloque_id),
+        temaId: String(pregunta.tema_id),
         enunciado: pregunta.enunciado,
         explicacion: pregunta.explicacion || '',
         referenciaNormativa: pregunta.referencia_normativa || '',
         nivelDificultad: pregunta.nivel_dificultad,
+        imagenUrl: pregunta.imagen_url || null,
+        audioUrl: pregunta.audio_url || null,
         opciones: pregunta.opciones.map((opt) => ({ texto: opt.texto, correcta: opt.correcta })),
       });
       setEditingId(id);
@@ -220,9 +225,66 @@ export default function AdminQuestionsPage() {
     setFormOposicionId('');
     setFormTemaId('');
     setFormTemas([]);
-    setFormBloques([]);
     setError('');
     setMsg('');
+  };
+
+  const onImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingId) return;
+    setImgLoading(true);
+    setError('');
+    try {
+      const result = await adminApi.uploadImagenPregunta(token, editingId, file);
+      setForm((prev) => ({ ...prev, imagenUrl: result.imagenUrl }));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setImgLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const onImageDelete = async () => {
+    if (!editingId) return;
+    setImgLoading(true);
+    setError('');
+    try {
+      await adminApi.deleteImagenPregunta(token, editingId);
+      setForm((prev) => ({ ...prev, imagenUrl: null }));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setImgLoading(false);
+    }
+  };
+
+  const onAudioRecorded = async (blob) => {
+    if (!editingId) return;
+    setAudioUploading(true);
+    setError('');
+    try {
+      const result = await adminApi.uploadAudioPregunta(token, editingId, blob);
+      setForm((prev) => ({ ...prev, audioUrl: result.audioUrl }));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setAudioUploading(false);
+    }
+  };
+
+  const onAudioDelete = async () => {
+    if (!editingId) return;
+    setAudioUploading(true);
+    setError('');
+    try {
+      await adminApi.deleteAudioPregunta(token, editingId);
+      setForm((prev) => ({ ...prev, audioUrl: null }));
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setAudioUploading(false);
+    }
   };
 
   const onUpdate = async (event) => {
@@ -232,8 +294,8 @@ export default function AdminQuestionsPage() {
     try {
       await adminApi.updatePregunta(token, editingId, {
         ...form,
-        bloqueId: Number(form.bloqueId),
-        nivelDificultad: Number(form.nivelDificultad),
+        temaId: Number(form.temaId),
+        nivelDificultad: form.nivelDificultad,
       });
       setMsg('Pregunta actualizada correctamente');
       setEditingId(null);
@@ -313,40 +375,27 @@ export default function AdminQuestionsPage() {
           >
             <option value="">— Tema —</option>
             {catTemas.map((m) => (
-              <option key={m.id} value={m.id}>{m.nombre}</option>
+              <option key={m.id} value={m.id}>{m.nombre} ({m.id})</option>
             ))}
           </select>
-          <select
-            value={filters.bloqueId}
-            onChange={(e) => setFilters((prev) => ({ ...prev, bloqueId: e.target.value, page: 1 }))}
-            disabled={!filters.temaId}
-            style={{ ...SELECT_STYLE, opacity: !filters.temaId ? 0.5 : 1 }}
-          >
-            <option value="">— Bloque —</option>
-            {catBloques.map((t) => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
+
           <select
             value={filters.nivelDificultad}
             onChange={(e) => setFilters((prev) => ({ ...prev, nivelDificultad: e.target.value, page: 1 }))}
             style={SELECT_STYLE}
           >
             <option value="">— Dificultad —</option>
-            <option value="1">1 — Muy fácil</option>
-            <option value="2">2 — Fácil</option>
-            <option value="3">3 — Media</option>
-            <option value="4">4 — Difícil</option>
-            <option value="5">5 — Muy difícil</option>
+            <option value="facil">Fácil</option>
+            <option value="media">Media</option>
+            <option value="dificil">Difícil</option>
           </select>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               type="button"
               style={BTN_OUTLINE}
               onClick={() => {
-                setFilters((prev) => ({ ...prev, oposicionId: '', temaId: '', bloqueId: '', nivelDificultad: '', page: 1 }));
+                setFilters((prev) => ({ ...prev, oposicionId: '', temaId: '', nivelDificultad: '', page: 1 }));
                 setCatTemas([]);
-                setCatBloques([]);
               }}
             >
               Limpiar
@@ -397,7 +446,7 @@ export default function AdminQuestionsPage() {
                       padding: '2px 8px', borderRadius: 10,
                       fontSize: '0.75rem', fontWeight: 600,
                     }}>
-                      {item.nivel_dificultad}
+                    {DIFICULTAD[item.nivel_dificultad]?.label ?? item.nivel_dificultad ?? '—'}
                     </span>
                   </td>
                   <td style={{ ...TD, textAlign: 'center' }}>
@@ -446,7 +495,7 @@ export default function AdminQuestionsPage() {
           {`Editando pregunta #${editingId}`}
         </h3>
         <form onSubmit={onUpdate} style={{ display: 'grid', gap: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
               Oposición *
               <select
@@ -472,22 +521,7 @@ export default function AdminQuestionsPage() {
               >
                 <option value="">— Selecciona tema —</option>
                 {formTemas.map((m) => (
-                  <option key={m.id} value={String(m.id)}>{m.nombre}</option>
-                ))}
-              </select>
-            </label>
-            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
-              Bloque *
-              <select
-                value={form.bloqueId}
-                required
-                disabled={!formTemaId}
-                onChange={(e) => setForm({ ...form, bloqueId: e.target.value })}
-                style={{ ...SELECT_STYLE, opacity: !formTemaId ? 0.5 : 1 }}
-              >
-                <option value="">— Selecciona bloque —</option>
-                {formBloques.map((t) => (
-                  <option key={t.id} value={String(t.id)}>{t.nombre}</option>
+                  <option key={m.id} value={String(m.id)}>{m.nombre} ({m.id})</option>
                 ))}
               </select>
             </label>
@@ -504,6 +538,64 @@ export default function AdminQuestionsPage() {
               style={{ ...INPUT_STYLE, resize: 'vertical' }}
             />
           </label>
+
+          {/* Imagen del enunciado — solo disponible al editar (necesita ID de pregunta) */}
+          {editingId && (
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>Imagen del enunciado (opcional)</p>
+              {form.imagenUrl ? (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <img
+                    src={`${BACKEND_URL}${form.imagenUrl}?t=${Date.now()}`}
+                    alt="Imagen enunciado"
+                    style={{ maxWidth: 260, maxHeight: 160, borderRadius: 6, border: '1px solid #e5e7eb', objectFit: 'contain', background: '#fff' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label style={{ cursor: 'pointer' }}>
+                      <span style={{ ...BTN_SECONDARY, display: 'inline-block', fontSize: '0.78rem', padding: '0.3rem 0.8rem', opacity: imgLoading ? 0.6 : 1 }}>
+                        {imgLoading ? 'Procesando...' : 'Cambiar imagen'}
+                      </span>
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={onImageUpload} style={{ display: 'none' }} disabled={imgLoading} />
+                    </label>
+                    <button type="button" onClick={() => setShowMediaBrowser(true)} disabled={imgLoading} style={{ ...BTN_OUTLINE, fontSize: '0.78rem', padding: '0.3rem 0.8rem' }}>
+                      Banco de medios
+                    </button>
+                    <button type="button" onClick={onImageDelete} disabled={imgLoading} style={{ ...BTN_DANGER, fontSize: '0.78rem', padding: '0.3rem 0.8rem' }}>
+                      Eliminar imagen
+                    </button>
+                    <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>Se convierte a WebP·calidad 75%</span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <label style={{ cursor: 'pointer' }}>
+                    <span style={{ ...BTN_OUTLINE, display: 'inline-block', fontSize: '0.82rem', opacity: imgLoading ? 0.6 : 1 }}>
+                      {imgLoading ? 'Procesando...' : '+ Subir imagen (JPG / PNG / WebP)'}
+                    </span>
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={onImageUpload} style={{ display: 'none' }} disabled={imgLoading} />
+                  </label>
+                  <button type="button" onClick={() => setShowMediaBrowser(true)} disabled={imgLoading} style={{ ...BTN_OUTLINE, fontSize: '0.82rem' }}>
+                    Banco de medios
+                  </button>
+                  <span style={{ fontSize: '0.72rem', color: '#6b7280' }}>Se convertirá a WebP·calidad 75%·máx 1200px</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Audio de explicación — solo disponible al editar */}
+          {editingId && (
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+              <p style={{ margin: '0 0 8px', fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>Audio de explicación (opcional)</p>
+              <AudioRecorder
+                existingUrl={form.audioUrl || null}
+                uploading={audioUploading}
+                onRecorded={onAudioRecorded}
+                onDelete={onAudioDelete}
+                onOpenBrowser={() => setShowAudioBrowser(true)}
+              />
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12 }}>
             <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -749,6 +841,23 @@ export default function AdminQuestionsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {showMediaBrowser && (
+        <MediaBrowserModal
+          onSelect={(url) => {
+            setForm((prev) => ({ ...prev, imagenUrl: url }));
+            setShowMediaBrowser(false);
+          }}
+          onClose={() => setShowMediaBrowser(false)}
+        />
+      )}
+
+      {showAudioBrowser && (
+        <AudioBrowserModal
+          onClose={() => setShowAudioBrowser(false)}
+          readOnly
+        />
       )}
     </div>
   );

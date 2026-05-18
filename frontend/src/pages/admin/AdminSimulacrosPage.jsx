@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { adminApi } from '../../services/adminApi';
+import { profesorApi } from '../../services/profesorApi';
 
 const SECTION = {
   background: '#fff', borderRadius: 16, padding: '20px 24px',
@@ -34,7 +36,9 @@ const emptyForm = {
 };
 
 export default function AdminSimulacrosPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const basePath = user?.role === 'profesor' ? '/profesor/simulacros' : '/admin/simulacros';
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -58,34 +62,26 @@ export default function AdminSimulacrosPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const res = await adminApi.listSimulacros(token, {
+      const api = user?.role === 'profesor' ? profesorApi.getMisSimulacros : adminApi.listSimulacros;
+      const res = await api(token, {
         q: q || undefined, estado: estado || undefined, page, page_size: PAGE_SIZE,
       });
       setItems(res?.items ?? []);
       setTotal(res?.total ?? 0);
     } catch { setError('No se pudieron cargar los simulacros.'); }
     finally { setLoading(false); }
-  }, [token, q, estado, page]);
+  }, [token, user?.role, q, estado, page]);
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setForm(emptyForm); setFormError(''); setModal('create'); };
-  const openEdit = (s) => {
-    setEditTarget(s);
-    setForm({
-      nombre: s.nombre, descripcion: s.descripcion ?? '',
-      estado: s.estado, oposicion_id: s.oposicion_id ?? '',
-      tiempo_limite_segundos: s.tiempo_limite_segundos ?? '',
-      puntuacion_maxima: s.puntuacion_maxima ?? 100,
-      penalizacion: s.penalizacion ?? 0,
-      mostrar_resultados_al_final: s.mostrar_resultados_al_final ?? true,
-    });
-    setFormError(''); setModal('edit');
-  };
+  const openCreate = () => navigate(`${basePath}/nuevo`);
+  const openEdit = (s) => navigate(`${basePath}/${s.id}/editar`);
   const openDetail = async (s) => {
     setModal('detail'); setDetailLoading(true);
     try {
-      const res = await adminApi.getSimulacro(token, s.id);
+      const res = user?.role === 'profesor'
+        ? await profesorApi.getMiSimulacro(token, s.id)
+        : await adminApi.getSimulacro(token, s.id);
       setDetailItem(res);
     } catch { setDetailItem(null); }
     finally { setDetailLoading(false); }
@@ -107,8 +103,10 @@ export default function AdminSimulacrosPage() {
     if (!form.nombre.trim()) { setFormError('El nombre es obligatorio.'); return; }
     setSaving(true); setFormError('');
     try {
-      if (modal === 'create') await adminApi.createSimulacro(token, buildPayload());
-      else await adminApi.updateSimulacro(token, editTarget.id, buildPayload());
+      const createApi = user?.role === 'profesor' ? profesorApi.createMiSimulacro : adminApi.createSimulacro;
+      const updateApi = user?.role === 'profesor' ? profesorApi.updateMiSimulacro : adminApi.updateSimulacro;
+      if (modal === 'create') await createApi(token, buildPayload());
+      else await updateApi(token, editTarget.id, buildPayload());
       closeModal(); load();
     } catch (e) { setFormError(e?.message ?? 'Error al guardar.'); }
     finally { setSaving(false); }
@@ -116,7 +114,12 @@ export default function AdminSimulacrosPage() {
 
   const handleDelete = async () => {
     setDeleting(true);
-    try { await adminApi.deleteSimulacro(token, deleteTarget.id); setDeleteTarget(null); load(); }
+    try {
+      const api = user?.role === 'profesor' ? profesorApi.deleteMiSimulacro : adminApi.deleteSimulacro;
+      await api(token, deleteTarget.id);
+      setDeleteTarget(null);
+      load();
+    }
     catch (e) { alert(e?.message ?? 'Error al eliminar.'); }
     finally { setDeleting(false); }
   };
@@ -130,7 +133,7 @@ export default function AdminSimulacrosPage() {
   const labelStyle = { display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 4 };
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
       {/* Cabecera */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
@@ -145,7 +148,7 @@ export default function AdminSimulacrosPage() {
 
       {/* Filtros */}
       <div style={{ ...SECTION, padding: '14px 20px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-        <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Buscarâ€¦"
+        <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Buscar..."
           style={{ flex: '1 1 180px', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: '0.875rem', outline: 'none' }} />
         <select value={estado} onChange={e => { setEstado(e.target.value); setPage(1); }}
           style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: '0.875rem', color: '#374151' }}>
@@ -161,7 +164,7 @@ export default function AdminSimulacrosPage() {
       {/* Tabla */}
       <div style={SECTION}>
         {loading ? (
-          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Cargandoâ€¦</p>
+          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Cargando...</p>
         ) : items.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Sin resultados.</p>
         ) : (
@@ -170,7 +173,7 @@ export default function AdminSimulacrosPage() {
               <thead>
                 <tr style={{ background: '#f9fafb' }}>
                   <th style={TH}>Nombre</th>
-                  <th style={TH}>OposiciÃ³n</th>
+                  <th style={TH}>Oposición</th>
                   <th style={TH}>Estado</th>
                   <th style={{ ...TH, textAlign: 'right' }}>Bloques</th>
                   <th style={{ ...TH, textAlign: 'right' }}>Preguntas</th>
@@ -190,7 +193,7 @@ export default function AdminSimulacrosPage() {
                       </button>
                       {s.descripcion && <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 2 }}>{s.descripcion}</div>}
                     </td>
-                    <td style={{ ...TD, color: '#6b7280' }}>{s.oposicion_nombre || 'â€”'}</td>
+                    <td style={{ ...TD, color: '#6b7280' }}>{s.oposicion_nombre || '-'}</td>
                     <td style={TD}>
                       <span style={{ ...(ESTADO_STYLES[s.estado] ?? {}), borderRadius: 12, padding: '2px 10px', fontSize: '0.77rem', fontWeight: 700 }}>
                         {s.estado}
@@ -199,7 +202,7 @@ export default function AdminSimulacrosPage() {
                     <td style={{ ...TD, textAlign: 'right' }}>{s.total_bloques ?? 0}</td>
                     <td style={{ ...TD, textAlign: 'right', fontWeight: 600 }}>{s.total_preguntas ?? 0}</td>
                     <td style={{ ...TD, textAlign: 'right', color: '#6b7280' }}>
-                      {s.tiempo_limite_segundos ? Math.round(s.tiempo_limite_segundos / 60) : 'â€”'}
+                      {s.tiempo_limite_segundos ? Math.round(s.tiempo_limite_segundos / 60) : '-'}
                     </td>
                     <td style={{ ...TD, textAlign: 'center' }}>
                       <button onClick={() => openEdit(s)}
@@ -221,10 +224,10 @@ export default function AdminSimulacrosPage() {
         {totalPages > 1 && (
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 16 }}>
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: '#374151' }}>â€¹</button>
+              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: '#374151' }}>Anterior</button>
             <span style={{ padding: '6px 14px', fontSize: '0.85rem', color: '#6b7280' }}>{page} / {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: '#374151' }}>â€º</button>
+              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: '#374151' }}>Siguiente</button>
           </div>
         )}
       </div>
@@ -241,7 +244,7 @@ export default function AdminSimulacrosPage() {
             <label style={labelStyle}>Nombre *</label>
             <input value={form.nombre} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} style={inputStyle} />
 
-            <label style={labelStyle}>DescripciÃ³n</label>
+            <label style={labelStyle}>Descripción</label>
             <textarea value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} rows={2}
               style={{ ...inputStyle, resize: 'vertical' }} />
 
@@ -256,22 +259,22 @@ export default function AdminSimulacrosPage() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>ID OposiciÃ³n</label>
+                <label style={labelStyle}>ID Oposición</label>
                 <input type="number" value={form.oposicion_id} onChange={e => setForm(p => ({ ...p, oposicion_id: e.target.value }))}
                   style={inputStyle} placeholder="(opcional)" />
               </div>
               <div>
-                <label style={labelStyle}>Tiempo lÃ­mite (seg)</label>
+                <label style={labelStyle}>Tiempo límite (seg)</label>
                 <input type="number" value={form.tiempo_limite_segundos} onChange={e => setForm(p => ({ ...p, tiempo_limite_segundos: e.target.value }))}
                   style={inputStyle} placeholder="(opcional)" />
               </div>
               <div>
-                <label style={labelStyle}>PuntuaciÃ³n mÃ¡xima</label>
+                <label style={labelStyle}>Puntuación máxima</label>
                 <input type="number" value={form.puntuacion_maxima} onChange={e => setForm(p => ({ ...p, puntuacion_maxima: e.target.value }))}
                   style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>PenalizaciÃ³n (0-1)</label>
+                <label style={labelStyle}>Penalización (0-1)</label>
                 <input type="number" step="0.01" min="0" max="1" value={form.penalizacion} onChange={e => setForm(p => ({ ...p, penalizacion: e.target.value }))}
                   style={inputStyle} />
               </div>
@@ -289,7 +292,7 @@ export default function AdminSimulacrosPage() {
               </button>
               <button onClick={handleSave} disabled={saving}
                 style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
-                {saving ? 'Guardandoâ€¦' : 'Guardar'}
+                {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>
@@ -301,7 +304,7 @@ export default function AdminSimulacrosPage() {
         <div style={MODAL_OVERLAY} onClick={closeModal}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 600, boxShadow: '0 8px 32px rgba(0,0,0,.18)', maxHeight: '85vh', overflowY: 'auto' }}
             onClick={e => e.stopPropagation()}>
-            {detailLoading && <p style={{ textAlign: 'center', color: '#9ca3af' }}>Cargandoâ€¦</p>}
+            {detailLoading && <p style={{ textAlign: 'center', color: '#9ca3af' }}>Cargando...</p>}
             {!detailLoading && !detailItem && <p style={{ color: '#dc2626' }}>No se pudo cargar el detalle.</p>}
             {!detailLoading && detailItem && (
               <>
@@ -317,9 +320,9 @@ export default function AdminSimulacrosPage() {
                 {detailItem.descripcion && <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: 16 }}>{detailItem.descripcion}</p>}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
                   {[
-                    { label: 'Tiempo', value: detailItem.tiempo_limite_segundos ? `${Math.round(detailItem.tiempo_limite_segundos / 60)} min` : 'â€”' },
-                    { label: 'PuntuaciÃ³n mÃ¡x.', value: detailItem.puntuacion_maxima ?? 'â€”' },
-                    { label: 'PenalizaciÃ³n', value: detailItem.penalizacion ?? 0 },
+                    { label: 'Tiempo', value: detailItem.tiempo_limite_segundos ? `${Math.round(detailItem.tiempo_limite_segundos / 60)} min` : '-' },
+                    { label: 'Puntuación máx.', value: detailItem.puntuacion_maxima ?? '-' },
+                    { label: 'Penalización', value: detailItem.penalizacion ?? 0 },
                   ].map(({ label, value }) => (
                     <div key={label} style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>{value}</div>
@@ -356,9 +359,9 @@ export default function AdminSimulacrosPage() {
         <div style={MODAL_OVERLAY} onClick={() => setDeleteTarget(null)}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 400, boxShadow: '0 8px 32px rgba(0,0,0,.18)' }}
             onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827' }}>Â¿Eliminar simulacro?</h3>
+            <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827' }}>¿Eliminar simulacro?</h3>
             <p style={{ margin: '0 0 20px', color: '#6b7280', fontSize: '0.9rem' }}>
-              Se eliminarÃ¡ <strong>{deleteTarget.nombre}</strong> junto con todos sus bloques y preguntas asignadas.
+              Se eliminará <strong>{deleteTarget.nombre}</strong> junto con todos sus bloques y preguntas asignadas.
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setDeleteTarget(null)} style={{ padding: '9px 20px', borderRadius: 9, border: '1px solid #e5e7eb', background: '#f9fafb', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
@@ -366,7 +369,7 @@ export default function AdminSimulacrosPage() {
               </button>
               <button onClick={handleDelete} disabled={deleting}
                 style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer' }}>
-                {deleting ? 'Eliminandoâ€¦' : 'Eliminar'}
+                {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>

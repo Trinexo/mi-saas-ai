@@ -26,24 +26,24 @@ export const notificacionesService = {
 
   async crearNotificacionReporte({ usuarioId, reporteId, preguntaEnunciado, nuevoEstado, mensajeAdmin }) {
     const estados = {
-      resuelto:   { titulo: 'Reporte resuelto',   emoji: '✅' },
-      descartado: { titulo: 'Reporte descartado', emoji: '⚠️' },
+      resuelto: 'Reporte resuelto',
+      descartado: 'Reporte descartado',
     };
 
-    const { titulo, emoji } = estados[nuevoEstado] ?? { titulo: 'Reporte actualizado', emoji: '📋' };
+    const titulo = estados[nuevoEstado] ?? 'Reporte actualizado';
     const enunciadoCorto = preguntaEnunciado?.length > 80
-      ? preguntaEnunciado.slice(0, 80) + '…'
+      ? `${preguntaEnunciado.slice(0, 80)}...`
       : preguntaEnunciado;
 
     const mensajes = {
-      resuelto:   `Tu reporte sobre la pregunta "${enunciadoCorto}" ha sido revisado y marcado como resuelto. Gracias por tu colaboración.`,
-      descartado: `Tu reporte sobre la pregunta "${enunciadoCorto}" ha sido revisado y descartado por el equipo de administración.`,
+      resuelto: `Tu reporte sobre la pregunta "${enunciadoCorto}" ha sido revisado y marcado como resuelto. Gracias por tu colaboracion.`,
+      descartado: `Tu reporte sobre la pregunta "${enunciadoCorto}" ha sido revisado y descartado por el equipo de administracion.`,
     };
 
     await notificacionesRepository.crear({
       usuarioId,
       tipo: 'reporte_actualizado',
-      titulo: `${emoji} ${titulo}`,
+      titulo,
       mensaje: mensajes[nuevoEstado] ?? 'El estado de tu reporte ha sido actualizado.',
       datosExtra: { reporteId, nuevoEstado, mensajeAdmin: mensajeAdmin || null },
     });

@@ -1,4 +1,4 @@
-import { ApiError } from '../utils/api-error.js';
+﻿import { ApiError } from '../utils/api-error.js';
 
 export const notFoundHandler = (req, res) => {
   return res.status(404).json({
@@ -13,6 +13,13 @@ export const errorHandler = (err, req, res, next) => {
       success: false,
       message: err.message,
       details: err.details,
+    });
+  }
+
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      message: 'El cuerpo de la peticion es demasiado grande. Maximo permitido: 10MB.',
     });
   }
 

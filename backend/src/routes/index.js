@@ -12,6 +12,9 @@ import accesosRoutes from './v1/accesos.routes.js';
 import billingRoutes from './v1/billing.routes.js';
 import notificacionesRoutes from './v1/notificaciones.routes.js';
 import profesorRoutes from './v1/profesor.routes.js';
+import planEstudioRoutes from './v1/planEstudio.routes.js';
+import simulacrosRoutes from './v1/simulacros.routes.js';
+import misTestsRoutes from './v1/misTests.routes.js';
 
 const router = Router();
 
@@ -32,5 +35,8 @@ router.use('/accesos', accesosRoutes);
 router.use('/billing', billingRoutes);
 router.use('/notificaciones', notificacionesRoutes);
 router.use('/profesor', profesorRoutes);
+router.use('/plan-estudio', planEstudioRoutes);
+router.use('/simulacros', simulacrosRoutes);
+router.use('/mis-tests', misTestsRoutes);
 
 export default router;

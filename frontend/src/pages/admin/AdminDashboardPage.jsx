@@ -242,7 +242,7 @@ export default function AdminDashboardPage() {
                 <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.78rem' }} />
-                <Line type="monotone" dataKey="usuarios" stroke={P} strokeWidth={2.5} dot={{ r: 3, fill: P }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="nuevos_usuarios" stroke={P} strokeWidth={2.5} dot={{ r: 3, fill: P }} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -353,11 +353,11 @@ export default function AdminDashboardPage() {
                       {op.nombre}
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.7rem', background: '#dcfce7', color: '#16a34a', borderRadius: 20, padding: '2px 9px', flexShrink: 0, fontWeight: 500 }}>
-                    Activa
+                  <span style={{ fontSize: '0.7rem', background: op.estado === 'activa' ? '#dcfce7' : '#f1f5f9', color: op.estado === 'activa' ? '#16a34a' : '#64748b', borderRadius: 20, padding: '2px 9px', flexShrink: 0, fontWeight: 500, textTransform: 'capitalize' }}>
+                    {op.estado ?? 'activa'}
                   </span>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, flexShrink: 0, minWidth: 40, textAlign: 'right' }}>
-                    {(op.total_accesos ?? op.accesos ?? 0).toLocaleString('es-ES')}
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, flexShrink: 0, minWidth: 40, textAlign: 'right' }} title="Tests finalizados totales">
+                    {(op.total_accesos ?? 0).toLocaleString('es-ES')} tests
                   </span>
                 </div>
               ))}

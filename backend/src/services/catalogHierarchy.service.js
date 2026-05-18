@@ -21,4 +21,12 @@ export const catalogHierarchyService = {
 
     return catalogRepository.getBloques(temaId);
   },
+
+  async getColecciones(temaId) {
+    if (!Number.isFinite(Number(temaId))) {
+      throw new ApiError(400, 'tema_id es obligatorio');
+    }
+
+    return catalogRepository.getColecciones(Number(temaId));
+  },
 };

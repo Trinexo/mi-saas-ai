@@ -10,30 +10,40 @@ export const profesorSimulacrosRepository = {
   // el comportamiento de preguntas propias.
   async getMisTests(userId, { oposicionId, q, limit, offset }) {
     const args = [userId];
-    const conds = ['t.usuario_id = $1'];
+    const conds = [
+      `EXISTS (
+        SELECT 1 FROM profesores_oposiciones po
+        WHERE po.user_id = $1 AND po.oposicion_id = at.oposicion_id
+      )`,
+    ];
 
-    if (oposicionId) { args.push(oposicionId); conds.push(`t.oposicion_id = $${args.length}`); }
-    if (q)           { args.push(`%${q}%`);    conds.push(`t.tipo_test ILIKE $${args.length}`); }
+    if (oposicionId) { args.push(oposicionId); conds.push(`at.oposicion_id = $${args.length}`); }
+    if (q)           { args.push(`%${q}%`);    conds.push(`at.nombre ILIKE $${args.length}`); }
 
     const where = conds.join(' AND ');
     args.push(limit, offset);
 
     const rows = await pool.query(
-      `SELECT t.id, t.tipo_test, t.numero_preguntas, t.estado,
-              t.fecha_creacion, t.duracion_segundos,
+      `SELECT at.id, at.nombre, at.descripcion, at.estado,
+              at.nivel_dificultad, at.duracion_minutos,
+              at.fecha_creacion, at.fecha_actualizacion,
+              at.oposicion_id, at.tema_id,
               o.nombre AS oposicion_nombre,
-              rt.nota, rt.aciertos, rt.errores, rt.blancos
-       FROM tests t
-       LEFT JOIN oposiciones o ON o.id = t.oposicion_id
-       LEFT JOIN resultados_test rt ON rt.test_id = t.id
+              te.nombre AS tema_nombre,
+              COUNT(DISTINCT atp.pregunta_id)::int AS total_preguntas
+       FROM admin_tests at
+       LEFT JOIN oposiciones o ON o.id = at.oposicion_id
+       LEFT JOIN temas te ON te.id = at.tema_id
+       LEFT JOIN admin_tests_preguntas atp ON atp.test_id = at.id
        WHERE ${where}
-       ORDER BY t.fecha_creacion DESC
+       GROUP BY at.id, o.nombre, te.nombre
+       ORDER BY at.fecha_creacion DESC
        LIMIT $${args.length - 1} OFFSET $${args.length}`,
       args,
     );
     const countArgs = args.slice(0, args.length - 2);
     const countRow = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM tests t WHERE ${where}`,
+      `SELECT COUNT(*)::int AS total FROM admin_tests at WHERE ${where}`,
       countArgs,
     );
     return { items: rows.rows, total: countRow.rows[0].total };
@@ -43,7 +53,13 @@ export const profesorSimulacrosRepository = {
   // El profesor puede crear/editar simulacros limitados a sus oposiciones asignadas.
   async getMisSimulacros(userId, { oposicionId, estado, q, limit, offset }) {
     const args = [userId];
-    const conds = ['s.creado_por = $1'];
+    const conds = [
+      's.creado_por = $1',
+      `EXISTS (
+        SELECT 1 FROM profesores_oposiciones po
+        WHERE po.user_id = $1 AND po.oposicion_id = s.oposicion_id
+      )`,
+    ];
 
     if (oposicionId) { args.push(oposicionId);    conds.push(`s.oposicion_id = $${args.length}`); }
     if (estado)      { args.push(estado);          conds.push(`s.estado = $${args.length}`); }

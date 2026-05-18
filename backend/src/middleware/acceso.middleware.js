@@ -1,4 +1,5 @@
 import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { profesorAccessRepository } from '../repositories/profesorAccess.repository.js';
 import { ApiError } from '../utils/api-error.js';
 
 /**
@@ -33,11 +34,41 @@ export const loadUserAccesos = async (req, res, next) => {
 export const requireAccesoOposicion = (mode = 'strict') => async (req, res, next) => {
   try {
     const rawId = req.body?.oposicionId ?? req.query?.oposicion_id ?? req.params?.oposicionId;
+    const rawBloqueId = req.body?.bloqueId ?? req.body?.temaId ?? req.query?.bloque_id ?? req.params?.bloqueId;
+    if (!rawId && req.user.role === 'profesor' && rawBloqueId) {
+      const asignado = await profesorAccessRepository.hasAssignedBloque(req.user.userId, Number(rawBloqueId));
+      if (!asignado) {
+        return next(
+          new ApiError(
+            403,
+            'No tienes asignado este bloque.',
+            { code: 'BLOQUE_PROFESOR_NO_ASIGNADO', bloqueId: Number(rawBloqueId) },
+          ),
+        );
+      }
+      return next();
+    }
+
     if (!rawId) {
       // Sin oposición concreta: modo demo permitido siempre
       return next();
     }
     const oposicionId = Number(rawId);
+    if (req.user.role === 'profesor') {
+      const asignada = await profesorAccessRepository.hasAssignedOposicion(req.user.userId, oposicionId);
+      if (!asignada) {
+        return next(
+          new ApiError(
+            403,
+            'No tienes asignada esta oposición.',
+            { code: 'OPOSICION_PROFESOR_NO_ASIGNADA', oposicionId },
+          ),
+        );
+      }
+      req.user.oposicionId = oposicionId;
+      return next();
+    }
+
     const tiene = await accesoOposicionRepository.tieneAcceso(req.user.userId, oposicionId);
     if (!tiene) {
       if (mode === 'demo') {

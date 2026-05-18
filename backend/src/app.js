@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import router from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware.js';
 
@@ -27,13 +29,20 @@ app.use(
 );
 
 // Para el webhook de Stripe se necesita el body crudo; lo guardamos en req.rawBody
+// Límite 10MB para soportar importaciones CSV grandes
 app.use(
   express.json({
+    limit: '10mb',
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Servir imágenes de preguntas de forma estática
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api', router);
 app.use(notFoundHandler);

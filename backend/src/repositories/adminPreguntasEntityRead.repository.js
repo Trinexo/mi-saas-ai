@@ -8,13 +8,12 @@ export const adminPreguntasEntityReadRepository = {
 
   async getFullPreguntaById(preguntaId) {
     const pregResult = await pool.query(
-      `SELECT p.id, p.bloque_id, p.enunciado, p.explicacion,
+      `SELECT p.id, p.tema_id, p.bloque_id, p.enunciado, p.explicacion,
               p.referencia_normativa, p.nivel_dificultad,
-              p.fecha_actualizacion,
-              bl.tema_id, t.oposicion_id
+              p.imagen_url, p.audio_url, p.fecha_actualizacion,
+              t.oposicion_id
        FROM preguntas p
-       JOIN bloques bl ON bl.id = p.bloque_id
-       JOIN temas t    ON t.id  = bl.tema_id
+       JOIN temas t ON t.id = p.tema_id
        WHERE p.id = $1`,
       [preguntaId],
     );
@@ -27,7 +26,7 @@ export const adminPreguntasEntityReadRepository = {
   },
 
   async existsTema(temaId) {
-    const result = await pool.query('SELECT id FROM bloques WHERE id = $1', [bloqueId]);
+    const result = await pool.query('SELECT id FROM temas WHERE id = $1', [temaId]);
     return result.rowCount > 0;
   },
 };

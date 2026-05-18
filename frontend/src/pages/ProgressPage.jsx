@@ -4,9 +4,7 @@ import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import ResumenGlobalSection from '../components/progress/ResumenGlobalSection';
 import RachaObjetivoSection from '../components/progress/RachaObjetivoSection';
 import EvolucionSection from '../components/progress/EvolucionSection';
-import EstadisticasPorTemaSection from '../components/progress/EstadisticasPorTemaSection';
-import ProgresoTemasSection from '../components/progress/ProgresoTemasSection';
-import RachaTemasSection from '../components/progress/RachaTemasSection';
+import ProgresoTemasOposicionSection from '../components/progress/ProgresoTemasOposicionSection';
 import AnaliticasAvanzadasSection from '../components/progress/AnaliticasAvanzadasSection';
 import ResumenSemanaWidget from '../components/widgets/ResumenSemanaWidget';
 import ProgresoSemanalWidget from '../components/widgets/ProgresoSemanalWidget';
@@ -16,8 +14,6 @@ import RendimientoModosWidget from '../components/widgets/RendimientoModosWidget
 import InsightMensualWidget from '../components/widgets/InsightMensualWidget';
 import EficienciaWidget from '../components/widgets/EficienciaWidget';
 import ConsistenciaDiariaWidget from '../components/widgets/ConsistenciaDiariaWidget';
-import RitmoPreguntaWidget from '../components/widgets/RitmoPreguntaWidget';
-import BalancePrecisionWidget from '../components/widgets/BalancePrecisionWidget';
 import TuNivelWidget from '../components/widgets/TuNivelWidget';
 
 const GRID2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 };
@@ -39,7 +35,7 @@ export default function ProgressPage() {
   const esPro   = hasAccess('pro');
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       {/* Cabecera */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
@@ -68,9 +64,7 @@ export default function ProgressPage() {
       <EvolucionSection />
 
       <SectionLabel>Temas</SectionLabel>
-      <EstadisticasPorTemaSection />
-      <ProgresoTemasSection />
-      <RachaTemasSection />
+      <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Análisis de rendimiento</SectionLabel>
       <TemasDebilesWidget />
@@ -83,10 +77,6 @@ export default function ProgressPage() {
       <div style={GRID2}>
         <EficienciaWidget />
         <ConsistenciaDiariaWidget />
-      </div>
-      <div style={GRID2}>
-        <RitmoPreguntaWidget />
-        <BalancePrecisionWidget />
       </div>
 
       <SectionLabel>Tu nivel</SectionLabel>

@@ -12,28 +12,28 @@ export const listSimulacros = async (req, res, next) => {
       oposicionId: oposicion_id ? Number(oposicion_id) : null,
       page: Number(page),
       pageSize: Number(page_size),
-    });
+    }, req.user);
     return ok(res, data);
   } catch (e) { return next(e); }
 };
 
 export const getSimulacro = async (req, res, next) => {
   try {
-    const data = await adminSimulacrosService.getSimulacro(req.params.id);
+    const data = await adminSimulacrosService.getSimulacro(req.params.id, req.user);
     return ok(res, data);
   } catch (e) { return next(e); }
 };
 
 export const createSimulacro = async (req, res, next) => {
   try {
-    const data = await adminSimulacrosService.createSimulacro(req.body, req.user.userId);
+    const data = await adminSimulacrosService.createSimulacro(req.body, req.user);
     return created(res, data, 'Simulacro creado');
   } catch (e) { return next(e); }
 };
 
 export const updateSimulacro = async (req, res, next) => {
   try {
-    const data = await adminSimulacrosService.updateSimulacro(req.params.id, req.body);
+    const data = await adminSimulacrosService.updateSimulacro(req.params.id, req.body, req.user);
     return ok(res, data, 'Simulacro actualizado');
   } catch (e) { return next(e); }
 };
@@ -51,8 +51,8 @@ export const createBloque = async (req, res, next) => {
   try {
     const data = await adminSimulacrosService.createBloque(
       req.params.id,
-      req.body.nombre,
-      req.body.orden,
+      req.body,
+      req.user,
     );
     return created(res, data, 'Bloque creado');
   } catch (e) { return next(e); }
@@ -60,14 +60,14 @@ export const createBloque = async (req, res, next) => {
 
 export const updateBloque = async (req, res, next) => {
   try {
-    const data = await adminSimulacrosService.updateBloque(req.params.bloqueId, req.body);
+    const data = await adminSimulacrosService.updateBloque(req.params.id, req.params.bloqueId, req.body, req.user);
     return ok(res, data, 'Bloque actualizado');
   } catch (e) { return next(e); }
 };
 
 export const deleteBloque = async (req, res, next) => {
   try {
-    const data = await adminSimulacrosService.deleteBloque(req.params.bloqueId);
+    const data = await adminSimulacrosService.deleteBloque(req.params.id, req.params.bloqueId, req.user);
     return ok(res, data, 'Bloque eliminado');
   } catch (e) { return next(e); }
 };
@@ -77,8 +77,10 @@ export const deleteBloque = async (req, res, next) => {
 export const asignarPreguntas = async (req, res, next) => {
   try {
     const data = await adminSimulacrosService.asignarPreguntas(
+      req.params.id,
       req.params.bloqueId,
       req.body.pregunta_ids,
+      req.user,
     );
     return created(res, data, 'Preguntas asignadas');
   } catch (e) { return next(e); }
@@ -87,8 +89,10 @@ export const asignarPreguntas = async (req, res, next) => {
 export const quitarPregunta = async (req, res, next) => {
   try {
     const data = await adminSimulacrosService.quitarPregunta(
+      req.params.id,
       req.params.bloqueId,
       req.params.preguntaId,
+      req.user,
     );
     return ok(res, data, 'Pregunta quitada del bloque');
   } catch (e) { return next(e); }

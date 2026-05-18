@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-const DIFICULTAD_LABEL = { 1: 'Fácil', 2: 'Media', 3: 'Difícil' };
+const DIFICULTAD_LABEL = { facil: 'Fácil', media: 'Media', dificil: 'Difícil' };
 
 export default function MarcadasPreguntaCard({ pregunta, onDesmarcar }) {
   return (

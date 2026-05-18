@@ -26,8 +26,7 @@ export const catalogAdminRepository = {
          COUNT(DISTINCT ao.usuario_id)::int     AS total_usuarios
        FROM oposiciones o
        LEFT JOIN temas    te ON te.oposicion_id = o.id
-       LEFT JOIN bloques   bl ON bl.tema_id      = te.id
-       LEFT JOIN preguntas p ON p.bloque_id     = bl.id
+       LEFT JOIN preguntas p ON p.tema_id       = te.id
        LEFT JOIN tests     t ON t.oposicion_id = o.id
        LEFT JOIN accesos_oposicion ao ON ao.oposicion_id = o.id AND ao.estado = 'activo'
        WHERE ($1::text IS NULL OR o.nombre ILIKE $1)
@@ -94,25 +93,60 @@ export const catalogAdminRepository = {
     return r.rows[0] ?? null;
   },
 
-  // --- BLOQUES ---
-  async createBloque(temaId, nombre) {
+  // --- COLECCIONES (antes: bloques) ---
+  async createColeccion(temaId, nombre, opciones = {}) {
     const r = await pool.query(
-      'INSERT INTO bloques (tema_id, nombre) VALUES ($1, $2) RETURNING id, tema_id, nombre',
-      [temaId, nombre],
+      `INSERT INTO colecciones (tema_id, nombre, descripcion, creado_por, publica)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, tema_id, nombre, descripcion, creado_por, publica`,
+      [temaId, nombre, opciones.descripcion ?? null, opciones.creadoPor ?? null, opciones.publica ?? true],
     );
     return r.rows[0];
   },
 
-  async updateBloque(id, nombre) {
+  // Alias para compatibilidad
+  async createBloque(temaId, nombre) {
+    return this.createColeccion(temaId, nombre);
+  },
+
+  async updateColeccion(id, nombre, opciones = {}) {
+    const setClauses = ['nombre = $1'];
+    const values = [nombre];
+    if (opciones.descripcion !== undefined) { values.push(opciones.descripcion); setClauses.push(`descripcion = $${values.length}`); }
+    if (opciones.publica !== undefined)     { values.push(opciones.publica);     setClauses.push(`publica = $${values.length}`); }
+    values.push(id);
     const r = await pool.query(
-      'UPDATE bloques SET nombre = $1 WHERE id = $2 RETURNING id, tema_id, nombre',
-      [nombre, id],
+      `UPDATE colecciones SET ${setClauses.join(', ')} WHERE id = $${values.length}
+       RETURNING id, tema_id, nombre, descripcion, publica`,
+      values,
     );
     return r.rows[0] ?? null;
   },
 
-  async deleteBloque(id) {
-    const r = await pool.query('DELETE FROM bloques WHERE id = $1 RETURNING id', [id]);
+  async updateBloque(id, nombre) {
+    return this.updateColeccion(id, nombre);
+  },
+
+  async deleteColeccion(id) {
+    const r = await pool.query('DELETE FROM colecciones WHERE id = $1 RETURNING id', [id]);
     return r.rows[0] ?? null;
+  },
+
+  async deleteBloque(id) {
+    return this.deleteColeccion(id);
+  },
+
+  async listColecciones(temaId) {
+    const r = await pool.query(
+      `SELECT c.id, c.nombre, c.descripcion, c.publica,
+              COUNT(cp.pregunta_id)::int AS total_preguntas
+       FROM colecciones c
+       LEFT JOIN colecciones_preguntas cp ON cp.coleccion_id = c.id
+       WHERE c.tema_id = $1
+       GROUP BY c.id
+       ORDER BY c.nombre`,
+      [temaId],
+    );
+    return r.rows;
   },
 };

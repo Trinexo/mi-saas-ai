@@ -140,8 +140,11 @@ export default function HistorialPage() {
       };
       if (config.tipoTest === 'simulacro') {
         payload.oposicionId = config.oposicionId;
-      } else {
+      } else if (config.temaId) {
         payload.temaId = config.temaId;
+        if (config.oposicionId) payload.oposicionId = config.oposicionId;
+      } else if (config.oposicionId) {
+        payload.oposicionId = config.oposicionId;
       }
       const test = await testApi.generate(token, payload);
       sessionStorage.setItem('active_test', JSON.stringify(test));
@@ -152,20 +155,20 @@ export default function HistorialPage() {
   };
 
   if (error) return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
       <div style={{ fontSize: '2rem', marginBottom: 8 }}>⚠️</div>
       <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
     </div>
   );
   if (!items) return (
-    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
       <div style={{ width: 40, height: 40, borderRadius: '50%', border: '4px solid #dbeafe', borderTopColor: '#1d4ed8', animation: 'spin 0.8s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Cargando historial…</p>
     </div>
   );
   if (items.length === 0) return (
-    <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center', padding: '3rem 1rem' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center', padding: '3rem 1rem' }}>
       <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📋</div>
       <p style={{ margin: 0, fontWeight: 700, color: '#111827', fontSize: '1rem' }}>Aún no tienes tests finalizados</p>
       <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: '0.875rem' }}>Completa tu primer test para ver el historial aquí.</p>
@@ -173,7 +176,7 @@ export default function HistorialPage() {
   );
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
         <div>

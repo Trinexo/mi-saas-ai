@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../state/auth.jsx';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
 
-/* ── Paleta ─────────────────────────────────────────── */
-const O    = '#ea580c';
-const OBG  = '#fff7ed';
-const BD   = '#e5e7eb';
-const DK   = '#111827';
-const G    = '#374151';
-const GL   = '#6b7280';
+const O   = '#ea580c';
+const OBG = '#fff7ed';
+const BD  = '#e5e7eb';
+const DK  = '#111827';
+const G   = '#374151';
+const GL  = '#6b7280';
 
 const CARD = {
   background: '#fff',
@@ -18,23 +17,8 @@ const CARD = {
   boxShadow: '0 1px 4px rgba(0,0,0,.06)',
 };
 
-/* ── Datos demo del ranking (top 10 posiciones) ─── */
-const TOP_DEMO = [
-  { pos: 1,  alias: 'Opositor_1891', pct: 97, tests: 142, racha: 38 },
-  { pos: 2,  alias: 'Preparando2025', pct: 95, tests: 128, racha: 22 },
-  { pos: 3,  alias: 'Jurista_M',      pct: 93, tests: 119, racha: 31 },
-  { pos: 4,  alias: 'Admin_Sevilla',  pct: 91, tests: 107, racha: 15 },
-  { pos: 5,  alias: 'L39_Pro',        pct: 89, tests: 98,  racha: 11 },
-  { pos: 6,  alias: 'ConstEsp22',     pct: 87, tests: 90,  racha: 9  },
-  { pos: 7,  alias: 'Ops_Valencia',   pct: 85, tests: 85,  racha: 7  },
-  { pos: 8,  alias: 'TÚ',             pct: null, tests: null, racha: null, isMe: true },
-  { pos: 9,  alias: 'Auxiliar_BCN',   pct: 79, tests: 67,  racha: 4  },
-  { pos: 10, alias: 'TestDaily',      pct: 77, tests: 62,  racha: 3  },
-];
+const MEDAL = { 1: '\uD83E\uDD47', 2: '\uD83E\uDD48', 3: '\uD83E\uDD49' };
 
-const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
-
-/* ── Spinner ──────────────────────────────────────── */
 function Spinner() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem', gap: 12 }}>
@@ -44,16 +28,13 @@ function Spinner() {
   );
 }
 
-/* ── Gauge de percentil ───────────────────────────── */
 function PercentilGauge({ pct }) {
   const deg = Math.round((pct / 100) * 180);
-  const color = pct >= 80 ? '#16a34a' : pct >= 50 ? O : '#dc2626';
-  const label = pct >= 80 ? 'Excelente' : pct >= 60 ? 'Bien' : pct >= 40 ? 'En progreso' : 'Empieza aquí';
-
+  const color = pct >= 70 ? '#16a34a' : pct >= 40 ? O : '#dc2626';
+  const label = pct >= 70 ? 'Excelente' : pct >= 40 ? 'En progreso' : 'Empieza aqui';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <div style={{ position: 'relative', width: 160, height: 80 }}>
-        {/* Track semicírculo */}
         <svg width="160" height="80" viewBox="0 0 160 80">
           <path d="M 10 80 A 70 70 0 0 1 150 80" fill="none" stroke="#f3f4f6" strokeWidth="14" strokeLinecap="round" />
           <path
@@ -78,115 +59,105 @@ function PercentilGauge({ pct }) {
   );
 }
 
-/* ── Fila ranking ─────────────────────────────────── */
-function RankingRow({ row, userPct, userTests, userRacha }) {
+function RankingRow({ row }) {
   const isMe = row.isMe;
-  const pct    = isMe ? userPct    : row.pct;
-  const tests  = isMe ? userTests  : row.tests;
-  const racha  = isMe ? userRacha  : row.racha;
-
+  const pct = row.rendimiento;
+  const color = pct >= 70 ? '#16a34a' : pct >= 40 ? O : '#dc2626';
   return (
     <tr style={{ background: isMe ? OBG : 'transparent', borderTop: `1px solid ${BD}` }}>
-      <td style={{ padding: '11px 8px', fontWeight: 800, fontSize: '0.9rem', color: MEDAL[row.pos] ? 'transparent' : G, textShadow: MEDAL[row.pos] ? 'none' : 'none', textAlign: 'center', width: 40 }}>
-        {MEDAL[row.pos] ? (
-          <span style={{ fontSize: '1.1rem' }}>{MEDAL[row.pos]}</span>
-        ) : (
-          <span style={{ color: isMe ? O : G }}>{row.pos}</span>
-        )}
+      <td style={{ padding: '11px 8px', textAlign: 'center', width: 44 }}>
+        {MEDAL[row.posicion]
+          ? <span style={{ fontSize: '1.1rem' }}>{MEDAL[row.posicion]}</span>
+          : <span style={{ fontWeight: 800, fontSize: '0.9rem', color: isMe ? O : G }}>{row.posicion}</span>}
       </td>
       <td style={{ padding: '11px 8px' }}>
         <span style={{ fontSize: '0.85rem', fontWeight: isMe ? 700 : 500, color: isMe ? O : DK }}>
-          {isMe ? '— Tú —' : row.alias}
+          {isMe ? '\u2014 Tu \u2014' : row.alias}
         </span>
       </td>
-      <td style={{ padding: '11px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, color: pct != null ? (pct >= 80 ? '#16a34a' : pct >= 50 ? O : '#dc2626') : GL }}>
-        {pct != null ? `${pct}%` : <span style={{ color: GL }}>—</span>}
+      <td style={{ padding: '11px 8px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, color }}>
+        {pct}%
       </td>
       <td style={{ padding: '11px 8px', textAlign: 'center', fontSize: '0.82rem', color: G }}>
-        {tests != null ? tests : <span style={{ color: GL }}>—</span>}
+        {row.testsRealizados}
       </td>
-      <td style={{ padding: '11px 8px', textAlign: 'center', fontSize: '0.82rem', color: G }}>
-        {racha != null ? `${racha} 🔥` : <span style={{ color: GL }}>—</span>}
+      <td style={{ padding: '11px 8px', textAlign: 'center', fontSize: '0.82rem', fontWeight: 700, color: '#7c3aed' }}>
+        {row.score} pts
       </td>
     </tr>
   );
 }
 
-/* ══════════════════════════════════════════════════
-   RankingPage
-   ══════════════════════════════════════════════════ */
 export default function RankingPage() {
   const { token } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
-  const [stats, setStats] = useState(null);
-  const [racha, setRacha] = useState(null);
+  const [ranking, setRanking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([
-      testApi.userStats(token).catch(() => null),
-      testApi.getRacha(token).catch(() => null),
-    ]).then(([s, r]) => {
-      setStats(s);
-      setRacha(r);
-    }).finally(() => setLoading(false));
-  }, [token]);
+    if (!token || !oposicionActiva?.id) {
+      setRanking(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    testApi.getRanking(token, oposicionActiva.id)
+      .then(setRanking)
+      .catch((err) => setError(err.message || 'No se pudo cargar el ranking'))
+      .finally(() => setLoading(false));
+  }, [token, oposicionActiva?.id]);
 
-  const total    = (stats?.aciertos || 0) + (stats?.errores || 0) + (stats?.blancos || 0);
-  const pctUser  = total > 0 ? Math.round((stats.aciertos / total) * 100) : null;
-  const totalTests = stats?.totalTests ?? null;
-  const rachaUser  = racha?.rachaActual ?? null;
+  const miScore = ranking?.miScore;
+  const percentil = ranking?.percentilSuperado ?? null;
+  const totalParticipantes = ranking?.totalParticipantes ?? 0;
+  const top = ranking?.top ?? [];
 
-  /* Posición simulada: percentil basado en aciertos */
-  const posicion = pctUser != null
-    ? pctUser >= 90 ? 3
-    : pctUser >= 80 ? 8
-    : pctUser >= 70 ? 15
-    : pctUser >= 55 ? 30
-    : 50
-    : null;
-
-  const rows = TOP_DEMO.map((r) => r.isMe ? { ...r, pct: pctUser, tests: totalTests, racha: rachaUser } : r);
-
-  /* ─── Render ─────────────────────────────────── */
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
-      {/* Encabezado */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: DK, letterSpacing: '-0.02em' }}>Ranking</h1>
           {oposicionActiva && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: OBG, color: O, fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #fb923c40' }}>
-              🎯 {oposicionActiva.nombre}
+              {oposicionActiva.nombre}
             </span>
           )}
         </div>
         <p style={{ margin: 0, fontSize: '0.875rem', color: GL }}>
-          Tu posición entre la comunidad de opositores de la plataforma.
+          Tu posicion entre los opositores de esta preparacion. Datos actualizados en tiempo real.
         </p>
       </div>
 
-      {loading ? <Spinner /> : (
+      {!oposicionActiva ? (
+        <div style={{ ...CARD, padding: '3rem', textAlign: 'center', color: GL }}>
+          Selecciona una oposicion activa para ver tu ranking.
+        </div>
+      ) : loading ? (
+        <Spinner />
+      ) : error ? (
+        <div style={{ ...CARD, padding: '2rem', color: '#dc2626', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>
+      ) : (
         <>
-          {/* Fila superior: percentil + stats personales */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
 
-            {/* Gauge */}
             <div style={{ ...CARD, padding: '28px 24px', flex: '0 0 auto', minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
               <div style={{ fontSize: '0.72rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tu percentil</div>
-              {pctUser != null
-                ? <PercentilGauge pct={pctUser} />
-                : <div style={{ fontSize: '0.85rem', color: GL, textAlign: 'center', padding: '1rem' }}>Completa tests para<br />calcular tu posición</div>}
+              {percentil > 0
+                ? <PercentilGauge pct={percentil} />
+                : <div style={{ fontSize: '0.85rem', color: GL, textAlign: 'center', padding: '1rem' }}>
+                    Completa tests para calcular tu posicion
+                  </div>}
             </div>
 
-            {/* KPIs personales */}
             <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { label: 'Tests realizados',  value: totalTests  != null ? String(totalTests)       : '—', icon: '📝', color: '#2563eb', bg: '#eff6ff'  },
-                { label: 'Tasa de aciertos',  value: pctUser     != null ? `${pctUser}%`            : '—', icon: '🎯', color: O,         bg: OBG        },
-                { label: 'Racha actual',       value: rachaUser   != null ? `${rachaUser} días`      : '—', icon: '🔥', color: O,         bg: OBG        },
-                { label: 'Posición estimada',  value: posicion    != null ? `Top ${posicion}%`       : '—', icon: '🏆', color: '#9333ea', bg: '#fdf4ff'  },
+                { label: 'Tests realizados',  value: miScore?.testsRealizados != null ? String(miScore.testsRealizados) : '\u2014', icon: '\uD83D\uDCDD', color: '#2563eb', bg: '#eff6ff' },
+                { label: 'Rendimiento',        value: miScore?.rendimiento != null ? `${miScore.rendimiento}%` : '\u2014',           icon: '\uD83C\uDFAF', color: O,         bg: OBG       },
+                { label: 'Tu puntuacion',      value: miScore?.score != null ? `${miScore.score} pts` : '\u2014',                    icon: '\u2B50',       color: '#7c3aed', bg: '#fdf4ff' },
+                { label: 'Opositores activos', value: totalParticipantes > 0 ? String(totalParticipantes) : '\u2014',                icon: '\uD83D\uDC65', color: '#0891b2', bg: '#ecfeff' },
               ].map(({ label, value, icon, color, bg }) => (
                 <div key={label} style={{ ...CARD, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
@@ -201,42 +172,44 @@ export default function RankingPage() {
             </div>
           </div>
 
-          {/* Tabla ranking */}
-          <div style={{ ...CARD, padding: '20px 24px', marginBottom: 24 }}>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: DK }}>Tabla de posiciones</div>
-              <div style={{ fontSize: '0.75rem', color: GL, marginTop: 3 }}>
-                Basada en tasa de aciertos · Actualizado diariamente
+          {top.length > 0 ? (
+            <div style={{ ...CARD, padding: '20px 24px', marginBottom: 24 }}>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: DK }}>Tabla de posiciones</div>
+                <div style={{ fontSize: '0.75rem', color: GL, marginTop: 3 }}>
+                  Puntuacion = 60% rendimiento + 25% actividad + 15% evolucion
+                  &nbsp;&middot;&nbsp;Los demas opositores aparecen de forma anonima
+                </div>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ fontSize: '0.68rem', color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    {['#', 'Opositor', 'Aciertos', 'Tests', 'Score'].map((h, i) => (
+                      <th key={h} style={{ fontWeight: 600, textAlign: i <= 1 ? 'center' : 'center', padding: '0 8px 10px', borderBottom: `1px solid ${BD}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {top.map((row) => <RankingRow key={`${row.posicion}-${row.isMe}`} row={row} />)}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ ...CARD, padding: '2.5rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: 12 }}>{'\uD83C\uDFC1'}</div>
+              <div style={{ fontWeight: 700, color: DK, marginBottom: 6 }}>Se el primero en el ranking</div>
+              <div style={{ fontSize: '0.85rem', color: GL }}>
+                Aun no hay opositores con actividad en esta preparacion.
+                Completa tu primer test para aparecer.
               </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ fontSize: '0.68rem', color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {['#', 'Opositor', 'Aciertos', 'Tests', 'Racha'].map((h, i) => (
-                    <th key={h} style={{ fontWeight: 600, textAlign: i <= 1 ? 'center' : 'center', padding: '0 8px 10px', borderBottom: `1px solid ${BD}` }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <RankingRow
-                    key={row.pos}
-                    row={row}
-                    userPct={pctUser}
-                    userTests={totalTests}
-                    userRacha={rachaUser}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          )}
 
-          {/* Aviso de datos */}
           <div style={{ ...CARD, padding: '14px 18px', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: '1rem', flexShrink: 0 }}>ℹ️</span>
+            <span style={{ fontSize: '1rem', flexShrink: 0 }}>{'\uD83D\uDD12'}</span>
             <span style={{ fontSize: '0.78rem', color: GL, lineHeight: 1.5 }}>
-              El ranking global mostrará datos reales de otros usuarios cuando el módulo esté disponible.
-              Los datos actuales son ilustrativos para que veas tu posición estimada.
+              Tu nombre no es visible para otros usuarios. El ranking muestra alias anonimos.
+              Solo tu profesor puede ver tu nombre y rendimiento real.
             </span>
           </div>
         </>
