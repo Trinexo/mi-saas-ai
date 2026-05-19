@@ -53,13 +53,13 @@ export const simulacrosPublicosRepository = {
                 json_build_object(
                   'id', po.id,
                   'texto', po.texto,
-                  'esCorrecta', po.es_correcta
-                ) ORDER BY po.orden
+                  'esCorrecta', po.correcta
+                ) ORDER BY po.id
               ) AS opciones
        FROM simulacros_bloques sb
        JOIN simulacros_preguntas sp ON sp.bloque_id = sb.id
        JOIN preguntas p             ON p.id = sp.pregunta_id
-       JOIN pregunta_opciones po    ON po.pregunta_id = p.id
+       JOIN opciones_respuesta po   ON po.pregunta_id = p.id
        WHERE sb.simulacro_id = $1
        GROUP BY p.id, sb.orden, sp.orden
        ORDER BY sb.orden, sp.orden`,
