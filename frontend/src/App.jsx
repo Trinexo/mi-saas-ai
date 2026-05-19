@@ -67,7 +67,7 @@ const ProfesorCalendarioPage = lazy(() => import('./pages/profesor/ProfesorCalen
  * activa y no ha seleccionado ninguna todavÃ­a. Auto-selecciona si solo hay una.
  */
 // Rutas accesibles sin tener ninguna oposición comprada (usuario free o nuevo)
-const RUTAS_LIBRES = ['/catalogo', '/planes', '/perfil', '/mis-oposiciones', '/configurar-test', '/notificaciones'];
+const RUTAS_LIBRES = ['/catalogo', '/configurar-test', '/planes', '/perfil', '/test', '/resultado'];
 
 function OposicionGuard({ children }) {
   const { user } = useAuth();
