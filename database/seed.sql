@@ -22,12 +22,11 @@ WHERE t.nombre = 'ConstituciÃ³n'
 ON CONFLICT DO NOTHING;
 
 -- Pregunta de prueba para CI (garantiza que haya al menos 1 oposición con preguntas)
-INSERT INTO preguntas (tema_id, enunciado, explicacion, nivel_dificultad, estado)
+INSERT INTO preguntas (tema_id, enunciado, explicacion, nivel_dificultad)
 SELECT t.id,
        'ÂżCuÃ¡ntos artÃ­culos tiene la ConstituciÃ³n EspaÃ±ola de 1978?',
        'La ConstituciÃ³n EspaÃ±ola de 1978 consta de 169 artÃ­culos.',
-       1,
-       'aprobada'
+       1
 FROM temas t
 WHERE t.nombre = 'ConstituciÃ³n'
 ON CONFLICT DO NOTHING;
