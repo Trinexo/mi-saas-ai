@@ -24,6 +24,8 @@ export const loadUserPlan = async (req, res, next) => {
  * @param {string} [feature] - Descripción de la funcionalidad bloqueada (para el mensaje)
  */
 export const requirePlan = (minPlan, feature = 'esta funcionalidad') => (req, res, next) => {
+  // Los admins tienen acceso a todas las funcionalidades independientemente del plan
+  if (req.user?.role === 'admin') return next();
   const userPlan = req.user?.plan ?? 'free';
   if (!planHasAccess(userPlan, minPlan)) {
     return next(
