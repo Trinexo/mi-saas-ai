@@ -44,6 +44,12 @@ export default function AdminUsersPage() {
   const [bulkPlan, setBulkPlan] = useState('');
   const [bulkWorking, setBulkWorking] = useState(false);
 
+  // Alta nuevo usuario
+  const [showNewUser, setShowNewUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({ nombre: '', email: '', password: '', role: 'alumno', plan: 'free' });
+  const [newUserWorking, setNewUserWorking] = useState(false);
+  const [newUserError, setNewUserError] = useState('');
+
   const load = async (f = filters) => {
     setError('');
     setSelected(new Set());
@@ -217,7 +223,28 @@ export default function AdminUsersPage() {
 
   const totalPages = Math.max(1, Math.ceil((data.pagination.total || 0) / (data.pagination.pageSize || filters.page_size)));
 
-  return (
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setNewUserError('');
+    if (!newUserForm.nombre.trim() || !newUserForm.email.trim() || !newUserForm.password.trim()) {
+      setNewUserError('Nombre, email y contraseña son obligatorios');
+      return;
+    }
+    setNewUserWorking(true);
+    try {
+      const created = await adminApi.createUser(token, newUserForm);
+      setMsg(`Usuario "${created.nombre}" (${created.email}) creado correctamente`);
+      setShowNewUser(false);
+      setNewUserForm({ nombre: '', email: '', password: '', role: 'alumno', plan: 'free' });
+      load({ ...filters, page: 1 });
+    } catch (e) {
+      setNewUserError(getErrorMessage(e));
+    } finally {
+      setNewUserWorking(false);
+    }
+  };
+
+
     <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
 
       {/* Cabecera */}
@@ -229,6 +256,13 @@ export default function AdminUsersPage() {
             <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>{data.pagination.total ?? 0} usuarios registrados</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => { setShowNewUser(true); setNewUserError(''); setMsg(''); setError(''); }}
+          style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          + Nuevo usuario
+        </button>
       </div>
 
       {/* Filtros */}
@@ -495,6 +529,100 @@ export default function AdminUsersPage() {
           Siguiente →
         </button>
       </div>
+
+      {/* Modal: nuevo usuario */}
+      {showNewUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '28px 32px', width: '100%', maxWidth: 420, boxShadow: '0 8px 32px rgba(0,0,0,.18)', position: 'relative' }}>
+            <button
+              onClick={() => setShowNewUser(false)}
+              style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#6b7280' }}
+            >
+              ✕
+            </button>
+            <h3 style={{ margin: '0 0 18px', fontSize: '1rem', fontWeight: 800, color: '#111827' }}>Nuevo usuario</h3>
+            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Nombre *</label>
+                <input
+                  type="text"
+                  value={newUserForm.nombre}
+                  onChange={(e) => setNewUserForm((p) => ({ ...p, nombre: e.target.value }))}
+                  placeholder="Nombre completo"
+                  required
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Email *</label>
+                <input
+                  type="email"
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="correo@ejemplo.com"
+                  required
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Contraseña *</label>
+                <input
+                  type="password"
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm((p) => ({ ...p, password: e.target.value }))}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  minLength={6}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Rol</label>
+                  <select
+                    value={newUserForm.role}
+                    onChange={(e) => setNewUserForm((p) => ({ ...p, role: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.875rem', background: '#fff' }}
+                  >
+                    {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Plan</label>
+                  <select
+                    value={newUserForm.plan}
+                    onChange={(e) => setNewUserForm((p) => ({ ...p, plan: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 8px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: '0.875rem', background: '#fff' }}
+                  >
+                    {PLANES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+              {newUserError && (
+                <div style={{ padding: '7px 12px', background: '#fef2f2', borderRadius: 8, color: '#dc2626', fontSize: '0.82rem' }}>
+                  ⚠️ {newUserError}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowNewUser(false)}
+                  style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={newUserWorking}
+                  style={{ padding: '7px 20px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: newUserWorking ? 'not-allowed' : 'pointer', opacity: newUserWorking ? 0.7 : 1 }}
+                >
+                  {newUserWorking ? 'Creando…' : 'Crear usuario'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

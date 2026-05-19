@@ -1,5 +1,7 @@
+import bcrypt from 'bcryptjs';
 import { ApiError } from '../utils/api-error.js';
 import { adminRepository } from '../repositories/admin.repository.js';
+import { adminDashboardUsersRepository } from '../repositories/adminDashboardUsers.repository.js';
 import { subscriptionService } from './subscription.service.js';
 
 export const adminPanelUsersRoleService = {
@@ -23,6 +25,19 @@ export const adminPanelUsersRoleService = {
       throw new ApiError(404, 'Usuario no encontrado');
     }
     return deleted;
+  },
+
+  async createUser({ nombre, email, password, role, plan }) {
+    const exists = await adminDashboardUsersRepository.findByEmail(email);
+    if (exists) throw new ApiError(409, 'El email ya está registrado');
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await adminDashboardUsersRepository.createUser({ nombre, email, passwordHash, role });
+    if (plan && plan !== 'free') {
+      try {
+        await subscriptionService.assignPlan({ targetUserId: user.id, plan });
+      } catch (_) { /* no bloquear si falla el plan */ }
+    }
+    return { id: user.id, nombre: user.nombre, email: user.email, role: user.role, plan: plan ?? 'free' };
   },
 
   async bulkUsers({ ids, action, value, requestingUser }) {

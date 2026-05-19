@@ -36,6 +36,7 @@ export const adminApi = {
 
   // Usuarios
   listUsers: (token, query = {}) => apiRequest('/admin/users', { token, query }),
+  createUser: (token, payload) => apiRequest('/admin/users', { method: 'POST', body: payload, token }),
   updateUserRole: (token, userId, role) =>
     apiRequest(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role }, token }),
   deleteUser: (token, userId) =>

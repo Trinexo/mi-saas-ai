@@ -85,4 +85,22 @@ export const adminDashboardUsersRepository = {
     );
     return result.rowCount;
   },
+
+  async createUser({ nombre, email, passwordHash, role }) {
+    const result = await pool.query(
+      `INSERT INTO usuarios (nombre, email, password_hash, role)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, nombre, email, role, fecha_registro`,
+      [nombre, email, passwordHash, role],
+    );
+    return result.rows[0];
+  },
+
+  async findByEmail(email) {
+    const result = await pool.query(
+      `SELECT id FROM usuarios WHERE email = $1 AND deleted_at IS NULL`,
+      [email],
+    );
+    return result.rows[0] ?? null;
+  },
 };

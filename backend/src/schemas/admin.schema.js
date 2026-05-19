@@ -92,6 +92,14 @@ export const profesorOposicionPayloadSchema = z.object({
   oposicionId: z.coerce.number().int().positive(),
 });
 
+export const createUserAdminSchema = z.object({
+  nombre: z.string().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(6).max(72),
+  role: z.enum(['alumno', 'admin']).optional().default('alumno'),
+  plan: z.enum(['free', 'pro', 'elite']).optional().default('free'),
+});
+
 export const bulkUsersSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(100),
   action: z.enum(['delete', 'set_role', 'set_plan']),
