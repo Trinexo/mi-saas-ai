@@ -3,7 +3,14 @@ import pool from '../config/db.js';
 export const catalogRepository = {
   async getOposiciones() {
     const result = await pool.query(
-      'SELECT id, nombre, descripcion, precio_mensual_cents, tiempo_limite_minutos FROM oposiciones ORDER BY nombre ASC',
+      `SELECT o.id, o.nombre, o.descripcion, o.precio_mensual_cents, o.tiempo_limite_minutos
+       FROM oposiciones o
+       WHERE EXISTS (
+         SELECT 1 FROM temas t
+         JOIN preguntas p ON p.tema_id = t.id
+         WHERE t.oposicion_id = o.id
+       )
+       ORDER BY o.nombre ASC`,
     );
     return result.rows;
   },
