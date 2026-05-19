@@ -66,18 +66,24 @@ const ProfesorCalendarioPage = lazy(() => import('./pages/profesor/ProfesorCalen
  * Redirige al usuario a /seleccionar-oposicion si tiene mÃ¡s de una oposiciÃ³n
  * activa y no ha seleccionado ninguna todavÃ­a. Auto-selecciona si solo hay una.
  */
+// Rutas accesibles sin tener ninguna oposición comprada (usuario free o nuevo)
+const RUTAS_LIBRES = ['/catalogo', '/planes', '/perfil', '/mis-oposiciones', '/configurar-test', '/notificaciones'];
+
 function OposicionGuard({ children }) {
   const { user } = useAuth();
   const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
   const { accesos, loading } = useUserAccesos();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const esAlumno = user && user.role !== 'admin' && user.role !== 'profesor';
 
   useEffect(() => {
     if (!esAlumno || loading || oposicionActiva) return;
     if (accesos.length === 0) {
-      navigate('/catalogo', { replace: true });
+      if (!RUTAS_LIBRES.some((r) => pathname.startsWith(r))) {
+        navigate('/catalogo', { replace: true });
+      }
     } else if (accesos.length === 1) {
       setOposicionActiva({ id: accesos[0].oposicion_id, nombre: accesos[0].nombre });
     } else {
@@ -85,7 +91,8 @@ function OposicionGuard({ children }) {
     }
   }, [esAlumno, loading, accesos, oposicionActiva, navigate, setOposicionActiva]);
 
-  if (esAlumno && loading && !oposicionActiva) {
+  const esRutaLibre = RUTAS_LIBRES.some((r) => pathname.startsWith(r));
+  if (esAlumno && loading && !oposicionActiva && !esRutaLibre) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 36, height: 36, borderRadius: '50%', border: '4px solid #fff7ed', borderTopColor: '#ea580c', animation: 'spin .8s linear infinite' }} />
