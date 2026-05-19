@@ -225,6 +225,7 @@ function PendienteCard({ test, onContinuar, onCerrar, loadingC, loadingX }) {
    ══════════════════════════════════════════════════════════ */
 export default function MisTestsPage() {
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   const [tests,     setTests    ] = useState([]);
   const [loading,   setLoading  ] = useState(true);
