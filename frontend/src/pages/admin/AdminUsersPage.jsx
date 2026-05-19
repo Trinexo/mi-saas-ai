@@ -244,7 +244,7 @@ export default function AdminUsersPage() {
     }
   };
 
-
+  return (
     <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
 
       {/* Cabecera */}
