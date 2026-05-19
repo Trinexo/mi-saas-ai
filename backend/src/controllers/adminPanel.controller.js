@@ -38,6 +38,15 @@ export const getAdminStats = async (req, res, next) => {
   }
 };
 
+export const createUser = async (req, res, next) => {
+  try {
+    const data = await adminService.createUser(req.body);
+    return ok(res, data, 'Usuario creado correctamente');
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const listUsers = async (req, res, next) => {
   try {
     const data = await adminService.listUsers(req.query);

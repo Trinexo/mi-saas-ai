@@ -22,6 +22,7 @@ import {
   listPreguntas,
   listReportes,
   listUsers,
+  createUser,
   updateReporteEstado,
   updatePregunta,
   updateUserRole,
@@ -54,6 +55,7 @@ import {
   updateReporteEstadoSchema,
   updateUserRoleSchema,
   bulkUsersSchema,
+  createUserAdminSchema,
   profesorAsignacionesQuerySchema,
   profesorOposicionPayloadSchema,
   listProfesoresQuerySchema,
@@ -107,6 +109,7 @@ router.get('/actividad', requireRole('admin'), getActividadReciente);
 
 // --- Usuarios ---
 router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
+router.post('/users', requireRole('admin'), validate(createUserAdminSchema), createUser);
 router.patch('/users/:id/role', requireRole('admin'), validate(idParamSchema, 'params'), validate(updateUserRoleSchema), updateUserRole);
 router.delete('/users/:id', requireRole('admin'), validate(idParamSchema, 'params'), deleteUser);
 router.post('/users/bulk', requireRole('admin'), validate(bulkUsersSchema), bulkUsers);
