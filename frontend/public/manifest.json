@@ -1,0 +1,48 @@
+{
+  "name": "AlbacerTest - Plataforma de Oposiciones",
+  "short_name": "AlbacerTest",
+  "description": "Prepara tus oposiciones con tests adaptativos, simulacros y estadísticas de progreso",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#ea580c",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Crear test",
+      "short_name": "Nuevo test",
+      "description": "Comienza un nuevo test de práctica",
+      "url": "/configurar-test",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mi progreso",
+      "short_name": "Progreso",
+      "description": "Ver tus estadísticas y progreso",
+      "url": "/progreso",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": []
+}
