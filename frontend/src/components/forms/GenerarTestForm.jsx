@@ -95,9 +95,9 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   const [repasoDisponible, setRepasoDisponible] = useState(false);
   const [adaptativoDisponible, setAdaptativoDisponible] = useState(false);
 
-  // Comprobar si hay pendientes de repaso al montar
+  // Comprobar si hay pendientes de repaso al montar (solo para usuarios pro/elite/admin)
   useEffect(() => {
-    if (!token) return;
+    if (!token || !hasPlanAccess('pro')) return;
     repasoApi.getPendientes(token, 1)
       .then((data) => setRepasoDisponible((data?.totalPendientes ?? 0) > 0))
       .catch(() => setRepasoDisponible(false));
