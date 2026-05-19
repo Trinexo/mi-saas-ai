@@ -47,8 +47,6 @@ CREATE TABLE IF NOT EXISTS preguntas (
   explicacion TEXT NOT NULL,
   referencia_normativa TEXT,
   nivel_dificultad SMALLINT NOT NULL,
-  estado TEXT NOT NULL DEFAULT 'aprobada'
-    CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW(),
   es_oficial BOOLEAN NOT NULL DEFAULT FALSE,
   puntos NUMERIC(5,2) NOT NULL DEFAULT 1.00,
