@@ -29,8 +29,6 @@ const NAV_LINKS = [
 const NAV_LINKS_FREE = [
   { to: '/catalogo',        label: 'Catálogo',   exact: false, icon: 'grid' },
   { to: '/configurar-test', label: 'Crear test', exact: false, icon: 'play' },
-  { to: '/perfil',          label: 'Perfil',     exact: false, icon: 'user' },
-  { to: '/planes',          label: 'Planes',     exact: false, icon: 'star' },
 ];
 
 const BOTTOM_NAV = [
