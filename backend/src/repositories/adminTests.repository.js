@@ -116,7 +116,7 @@ export const adminTestsRepository = {
       'nombre', 'descripcion', 'oposicion_id', 'tema_id', 'estado',
       'nivel_dificultad', 'duracion_minutos',
       'mezclar_preguntas', 'mostrar_resultados', 'mostrar_explicaciones',
-      'tipo_puntuacion', 'pts_acierto', 'pts_fallo', 'pts_blanco',
+      'tipo_puntuacion', 'pts_acierto', 'pts_fallo', 'pts_blanco', 'es_demo',
     ];
     const setClauses = [];
     const values = [];
@@ -187,6 +187,66 @@ export const adminTestsRepository = {
       'DELETE FROM admin_tests_preguntas WHERE test_id = $1 AND pregunta_id = $2',
       [testId, preguntaId],
     );
+  },
+
+  // ─── Test demo por oposición ─────────────────────────────────────────────────
+  // Devuelve el test marcado como demo para una oposición junto con sus preguntas completas
+  async getDemoTest(oposicionId) {
+    const row = await pool.query(
+      `SELECT t.id, t.nombre, t.mezclar_preguntas, t.mostrar_explicaciones,
+              t.mostrar_resultados, t.duracion_minutos
+       FROM admin_tests t
+       WHERE t.oposicion_id = $1 AND t.es_demo = TRUE
+       LIMIT 1`,
+      [oposicionId],
+    );
+    if (row.rows.length === 0) return null;
+    const test = row.rows[0];
+    const pregs = await pool.query(
+      `SELECT atp.pregunta_id AS id
+       FROM admin_tests_preguntas atp
+       WHERE atp.test_id = $1
+       ORDER BY atp.orden, atp.pregunta_id`,
+      [test.id],
+    );
+    test.pregunta_ids = pregs.rows.map((r) => r.id);
+    return test;
+  },
+
+  // Activa es_demo en el test indicado y lo desactiva en cualquier otro de la misma oposición
+  async setDemoTest(testId, activate) {
+    if (activate) {
+      // Primero obtener la oposicion_id del test
+      const tr = await pool.query('SELECT oposicion_id FROM admin_tests WHERE id = $1', [testId]);
+      if (tr.rows.length === 0) return null;
+      const oposicionId = tr.rows[0].oposicion_id;
+      if (!oposicionId) throw new Error('El test no tiene oposición asignada');
+      // Desactivar demo en cualquier otro test de la misma oposición
+      await pool.query(
+        `UPDATE admin_tests SET es_demo = FALSE WHERE oposicion_id = $1 AND id <> $2`,
+        [oposicionId, testId],
+      );
+    }
+    const r = await pool.query(
+      `UPDATE admin_tests SET es_demo = $1, fecha_actualizacion = NOW() WHERE id = $2 RETURNING *`,
+      [activate, testId],
+    );
+    return r.rows[0] ?? null;
+  },
+
+  // 10 primeras preguntas del Tema 1 (fallback cuando no hay test demo configurado)
+  async getDemoFallbackPreguntaIds(oposicionId) {
+    const r = await pool.query(
+      `SELECT p.id
+       FROM preguntas p
+       JOIN temas t ON t.id = p.tema_id
+       WHERE t.oposicion_id = $1
+         AND p.estado = 'aprobada'
+       ORDER BY t.id ASC, p.id ASC
+       LIMIT 10`,
+      [oposicionId],
+    );
+    return r.rows.map((row) => row.id);
   },
 
 };

@@ -3,6 +3,7 @@ import { testService } from '../services/test.service.js';
 import { testRecomendadoService } from '../services/testRecomendado.service.js';
 import { testContinuarService } from '../services/testContinuar.service.js';
 import { testPendientesService } from '../services/testPendientes.service.js';
+import { testDemoService } from '../services/testDemo.service.js';
 import { historyQuerySchema, reviewParamsSchema } from '../schemas/test.schema.js';
 import { ApiError } from '../utils/api-error.js';
 import { PLAN_LIMITS } from '../config/plans.config.js';
@@ -40,6 +41,16 @@ export const generateRefuerzo = async (req, res, next) => {
   try {
     const data = await testService.generateRefuerzo({ userId: req.user.userId, ...req.body });
     return created(res, data, 'Test de refuerzo generado');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const generateDemo = async (req, res, next) => {
+  try {
+    const { oposicionId } = req.body;
+    const data = await testDemoService.generateDemo({ userId: req.user.userId, oposicionId: Number(oposicionId) });
+    return created(res, data, 'Test demo generado');
   } catch (error) {
     return next(error);
   }

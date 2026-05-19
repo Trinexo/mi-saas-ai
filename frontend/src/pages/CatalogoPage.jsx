@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { catalogApi } from '../services/catalogApi';
 import { billingApi } from '../services/billingApi';
+import { testApi } from '../services/testApi';
 import { useUserAccesos } from '../hooks/useUserAccesos';
 import { useUserPlan } from '../hooks/useUserPlan';
 
@@ -25,6 +26,25 @@ export default function CatalogoPage() {
   const [oposiciones, setOposiciones] = useState([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);
   const [comprando, setComprando] = useState(null); // oposicionId en proceso de pago
+  const [iniciandoDemo, setIniciandoDemo] = useState(null); // oposicionId en proceso de demo
+
+  const onIniciarDemo = async (oposicionId) => {
+    if (!token) { navigate('/login'); return; }
+    setIniciandoDemo(oposicionId);
+    try {
+      const res = await testApi.generateDemo(token, oposicionId);
+      const testId = res?.testId ?? res?.data?.testId;
+      if (testId) {
+        navigate('/test', { state: { testId, fromDemo: true } });
+      } else {
+        alert('No se pudo iniciar el test de demo. Inténtalo de nuevo.');
+      }
+    } catch {
+      alert('Error al iniciar el demo. Inténtalo de nuevo.');
+    } finally {
+      setIniciandoDemo(null);
+    }
+  };
 
   const onComprar = async (oposicionId) => {
     if (!token) { navigate('/login'); return; }
@@ -155,10 +175,11 @@ export default function CatalogoPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
                     <button
-                      onClick={() => navigate('/configurar-test', { state: { oposicionId: op.id } })}
-                      style={{ padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', width: '100%' }}
+                      onClick={() => onIniciarDemo(op.id)}
+                      disabled={iniciandoDemo === op.id}
+                      style={{ padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: iniciandoDemo === op.id ? '#f3f4f6' : '#fff', color: '#374151', fontWeight: 600, fontSize: '0.82rem', cursor: iniciandoDemo === op.id ? 'not-allowed' : 'pointer', width: '100%' }}
                     >
-                      Probar demo (10 preguntas)
+                      {iniciandoDemo === op.id ? 'Cargando demo…' : 'Probar demo (10 preguntas)'}
                     </button>
                     <button
                       onClick={() => onComprar(op.id)}

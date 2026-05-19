@@ -103,4 +103,26 @@ export const adminTestsService = {
     await this.getTest(testId, caller);
     await adminTestsRepository.removePregunta(testId, preguntaId);
   },
+
+  // Activa/desactiva el flag es_demo para un test (solo profesor/admin propietario)
+  async setDemoTest(testId, activate, caller = {}) {
+    const test = await this.getTest(testId, caller);
+    if (activate && !test.oposicion_id) {
+      throw new ApiError(400, 'El test debe tener una oposición asignada para ser test demo');
+    }
+    if (activate && test.estado !== 'publicado') {
+      throw new ApiError(400, 'Solo los tests publicados pueden ser el test demo');
+    }
+    return adminTestsRepository.setDemoTest(testId, activate);
+  },
+
+  // Devuelve los IDs de preguntas para el demo: test configurado o fallback Tema 1
+  async getDemoPreguntaIds(oposicionId) {
+    const demoTest = await adminTestsRepository.getDemoTest(oposicionId);
+    if (demoTest && demoTest.pregunta_ids.length > 0) {
+      return { source: 'configured', preguntaIds: demoTest.pregunta_ids };
+    }
+    const fallbackIds = await adminTestsRepository.getDemoFallbackPreguntaIds(oposicionId);
+    return { source: 'fallback', preguntaIds: fallbackIds };
+  },
 };
