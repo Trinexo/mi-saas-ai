@@ -13,9 +13,16 @@
 --   9. Añadir endpoint-friendly: índices, constraints
 -- ==========================================================================
 
--- 1. Renombrar bloques → colecciones
---    PostgreSQL actualiza automáticamente todas las FK que apuntan a bloques
-ALTER TABLE bloques RENAME TO colecciones;
+-- 1. Renombrar bloques → colecciones (idempotente: se salta si colecciones ya existe)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'colecciones'
+  ) THEN
+    ALTER TABLE bloques RENAME TO colecciones;
+  END IF;
+END $$;
 
 -- 2. Añadir columnas descriptivas
 ALTER TABLE colecciones
@@ -61,9 +68,20 @@ ON CONFLICT DO NOTHING;
 -- 9. Índice en preguntas.tema_id (nuevo campo, muy consultado)
 CREATE INDEX IF NOT EXISTS idx_preguntas_tema_id ON preguntas(tema_id);
 
--- 10. VIEW bloques → colecciones (compatibilidad hacia atrás para todos los SELECT...JOIN bloques)
-CREATE OR REPLACE VIEW bloques AS
-  SELECT id, tema_id, nombre, descripcion, creado_por, publica FROM colecciones;
+-- 10. VIEW bloques → colecciones (solo si bloques ya no existe como tabla, sino el schema.sql ya lo gestiona)
+DO $$
+BEGIN
+  -- Solo crear la vista si bloques no existe como tabla base
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'bloques' AND table_type = 'BASE TABLE'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.views
+    WHERE table_schema = 'public' AND table_name = 'bloques'
+  ) THEN
+    EXECUTE 'CREATE VIEW bloques AS SELECT id, tema_id, nombre, descripcion, creado_por, publica FROM colecciones';
+  END IF;
+END $$;
 
 -- 11. Renombrar índice de bloque_id en colecciones si existe (era idx_bloques_tema_id)
 DO $$
