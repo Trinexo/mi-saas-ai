@@ -57,48 +57,6 @@ function relTime(fecha) {
   return `${Math.round(d / 1440)}d`;
 }
 
-const KPI_CFG = [
-  { key: 'totalUsuarios',   icon: '👥', label: 'Usuarios activos',  color: P,         bg: '#f5f3ff' },
-  { key: 'totalTests',      icon: '✅', label: 'Tests realizados',  color: '#2563eb', bg: '#eff6ff' },
-  { key: 'testsEstaSemana', icon: '📅', label: 'Tests esta semana', color: '#059669', bg: '#f0fdf4' },
-  {
-    key: 'notaMediaGlobal',
-    icon: '⭐',
-    label: 'Media de aciertos',
-    color: '#d97706',
-    bg: '#fffbeb',
-    fmt: (v) => v != null ? `${Number(v).toFixed(1)}%` : '—',
-  },
-];
-
-const TIPO_MAP = {
-  usuario_nuevo: { icon: '👤', color: '#10b981', bg: '#d1fae5' },
-  test_creado:   { icon: '📝', color: '#3b82f6', bg: '#dbeafe' },
-  simulacro:     { icon: '📋', color: '#f59e0b', bg: '#fef3c7' },
-  pregunta:      { icon: '✏️', color: '#6b7280', bg: '#f3f4f6' },
-  reporte:       { icon: '⚠️', color: '#ef4444', bg: '#fee2e2' },
-  default:       { icon: '🔔', color: P,         bg: '#ede9fe' },
-};
-
-function tipoStyle(tipo) {
-  const t = (tipo || '').toLowerCase();
-  if (t.includes('usuario') || t.includes('registro')) return TIPO_MAP.usuario_nuevo;
-  if (t.includes('test'))      return TIPO_MAP.test_creado;
-  if (t.includes('simulacro')) return TIPO_MAP.simulacro;
-  if (t.includes('pregunta'))  return TIPO_MAP.pregunta;
-  if (t.includes('reporte') || t.includes('comentario')) return TIPO_MAP.reporte;
-  return TIPO_MAP.default;
-}
-
-function relTime(fecha) {
-  if (!fecha) return '';
-  const d = Math.round((Date.now() - new Date(fecha).getTime()) / 60000);
-  if (d < 1) return 'ahora';
-  if (d < 60) return `${d} min`;
-  if (d < 1440) return `${Math.round(d / 60)}h`;
-  return `${Math.round(d / 1440)}d`;
-}
-
 export default function AdminDashboardPage() {
   const { token } = useAuth();
   const { reportesAbiertos } = useRevision();

@@ -129,34 +129,6 @@ function SidebarLink({ to, label, exact, icon, badge }) {
   );
 }
 
-const NAV_LINKS = [
-  { to: '/',                label: 'Inicio',        exact: true  },
-  { to: '/catalogo',        label: 'Catalogo',      exact: false },
-  { to: '/mis-oposiciones', label: 'Mis cursos',    exact: false },
-  { to: '/progreso',        label: 'Progreso',      exact: false },
-  { to: '/historial',       label: 'Historial',     exact: false },
-];
-
-const BOTTOM_NAV = [
-  { to: '/',                label: 'Inicio',    exact: true,  icon: 'home'     },
-  { to: '/catalogo',        label: 'Catalogo',  exact: false, icon: 'grid'     },
-  { to: '/configurar-test', label: 'Test',      exact: false, icon: 'play'     },
-  { to: '/progreso',        label: 'Progreso',  exact: false, icon: 'chart'    },
-  { to: '/perfil',          label: 'Perfil',    exact: false, icon: 'user'     },
-];
-
-const ICON_SVG = {
-  home:  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-  grid:  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
-  play:  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>',
-  chart: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-  user:  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-};
-
-function NavIcon({ name }) {
-  return <span dangerouslySetInnerHTML={{ __html: ICON_SVG[name] }} style={{ display: 'flex', alignItems: 'center' }} />;
-}
-
 function NavLink({ to, label, exact }) {
   const { pathname } = useLocation();
   const active = exact ? pathname === to : pathname.startsWith(to);
