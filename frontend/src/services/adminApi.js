@@ -1,5 +1,7 @@
 import { apiRequest } from './api';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
 export const adminApi = {
   listPreguntas: (token, query = {}) => apiRequest('/admin/preguntas', { token, query }),
   getPregunta: (token, id) => apiRequest(`/admin/preguntas/${id}`, { token }),
@@ -73,6 +75,8 @@ export const adminApi = {
   // Catálogo: oposiciones con stats
   listOposicionesConStats: (token, query = {}) =>
     apiRequest('/admin/catalogo/oposiciones', { token, query }),
+  listTemas: (token, oposicionId) =>
+    apiRequest('/temas', { token, query: { oposicion_id: oposicionId } }),
 
   // Simulacros
   listSimulacros: (token, query = {}) =>
@@ -85,6 +89,38 @@ export const adminApi = {
     apiRequest(`/admin/simulacros/${id}`, { method: 'PUT', body: payload, token }),
   deleteSimulacro: (token, id) =>
     apiRequest(`/admin/simulacros/${id}`, { method: 'DELETE', token }),
+
+  // Simulacros: gestión de bloques
+  createSimulacroBloque: (token, simulacroId, payload) =>
+    apiRequest(`/admin/simulacros/${simulacroId}/bloques`, { method: 'POST', body: payload, token }),
+  updateSimulacroBloque: (token, simulacroId, bloqueId, payload) =>
+    apiRequest(`/admin/simulacros/${simulacroId}/bloques/${bloqueId}`, { method: 'PUT', body: payload, token }),
+  deleteSimulacroBloque: (token, simulacroId, bloqueId) =>
+    apiRequest(`/admin/simulacros/${simulacroId}/bloques/${bloqueId}`, { method: 'DELETE', token }),
+
+  // Simulacros: gestión de preguntas en bloques
+  asignarPreguntasBloque: (token, simulacroId, bloqueId, preguntaIds) =>
+    apiRequest(`/admin/simulacros/${simulacroId}/bloques/${bloqueId}/preguntas`, { method: 'POST', body: { pregunta_ids: preguntaIds }, token }),
+  quitarPreguntaBloque: (token, simulacroId, bloqueId, preguntaId) =>
+    apiRequest(`/admin/simulacros/${simulacroId}/bloques/${bloqueId}/preguntas/${preguntaId}`, { method: 'DELETE', token }),
+
+  // Admin Tests (tests curados por admin/profesor)
+  listTests: (token, query = {}) =>
+    apiRequest('/admin/tests', { token, query }),
+  getTest: (token, id) =>
+    apiRequest(`/admin/tests/${id}`, { token }),
+  createTest: (token, payload) =>
+    apiRequest('/admin/tests', { method: 'POST', body: payload, token }),
+  updateTest: (token, id, payload) =>
+    apiRequest(`/admin/tests/${id}`, { method: 'PUT', body: payload, token }),
+  deleteTest: (token, id) =>
+    apiRequest(`/admin/tests/${id}`, { method: 'DELETE', token }),
+  addPreguntasTest: (token, testId, preguntaIds) =>
+    apiRequest(`/admin/tests/${testId}/preguntas`, { method: 'POST', body: { pregunta_ids: preguntaIds }, token }),
+  removePreguntaTest: (token, testId, preguntaId) =>
+    apiRequest(`/admin/tests/${testId}/preguntas/${preguntaId}`, { method: 'DELETE', token }),
+  seleccionarPreguntasAdmin: (token, payload) =>
+    apiRequest('/admin/tests/seleccion/preguntas', { method: 'POST', body: payload, token }),
 
   // Etiquetas
   listEtiquetas: (token, query = {}) =>
@@ -117,4 +153,40 @@ export const adminApi = {
     apiRequest('/admin/settings/stripe', { method: 'PATCH', body: payload, token }),
   testEmailSettings: (token, destinatario) =>
     apiRequest('/admin/settings/email/test', { method: 'POST', body: { destinatario }, token }),
+
+  // Imagen de pregunta
+  uploadImagenPregunta: async (token, preguntaId, file) => {
+    const formData = new FormData();
+    formData.append('imagen', file);
+    const response = await fetch(`${API_URL}/admin/preguntas/${preguntaId}/imagen`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload?.message || 'Error al subir imagen');
+    return payload?.data ?? null;
+  },
+  deleteImagenPregunta: (token, preguntaId) =>
+    apiRequest(`/admin/preguntas/${preguntaId}/imagen`, { method: 'DELETE', token }),
+  getMediaBrowser: (token) =>
+    apiRequest('/admin/media/preguntas', { token }),
+
+  // Audio de pregunta
+  uploadAudioPregunta: async (token, preguntaId, blob) => {
+    const formData = new FormData();
+    formData.append('audio', blob, 'grabacion.webm');
+    const response = await fetch(`${API_URL}/admin/preguntas/${preguntaId}/audio`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload?.message || 'Error al subir audio');
+    return payload?.data ?? null;
+  },
+  deleteAudioPregunta: (token, preguntaId) =>
+    apiRequest(`/admin/preguntas/${preguntaId}/audio`, { method: 'DELETE', token }),
+  getAudioBrowser: (token) =>
+    apiRequest('/admin/media/audios', { token }),
 };

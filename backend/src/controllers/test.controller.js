@@ -1,6 +1,8 @@
 import { created, ok } from '../utils/response.js';
 import { testService } from '../services/test.service.js';
 import { testRecomendadoService } from '../services/testRecomendado.service.js';
+import { testContinuarService } from '../services/testContinuar.service.js';
+import { testPendientesService } from '../services/testPendientes.service.js';
 import { historyQuerySchema, reviewParamsSchema } from '../schemas/test.schema.js';
 import { ApiError } from '../utils/api-error.js';
 import { PLAN_LIMITS } from '../config/plans.config.js';
@@ -101,6 +103,35 @@ export const getTestRecomendado = async (req, res, next) => {
     const plan = req.user.plan ?? 'free';
     const data = await testRecomendadoService.getSugerencia(req.user.userId, plan);
     return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getTestContinuar = async (req, res, next) => {
+  try {
+    const data = await testContinuarService.getContinuar(req.user.userId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getTestPendientes = async (req, res, next) => {
+  try {
+    const data = await testPendientesService.getPendientes(req.user.userId);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const cerrarTest = async (req, res, next) => {
+  try {
+    const testId = Number(req.params.testId);
+    if (!testId) return next(new ApiError(400, 'testId inválido'));
+    const data = await testPendientesService.cerrar(req.user.userId, testId);
+    return ok(res, data, 'Test cerrado');
   } catch (error) {
     return next(error);
   }

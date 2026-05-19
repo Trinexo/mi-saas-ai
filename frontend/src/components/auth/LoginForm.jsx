@@ -17,7 +17,7 @@ export default function LoginForm() {
     try {
       const data = await authApi.login(form);
       login(data.token, data.user);
-      const destino = ['admin', 'profesor'].includes(data.user?.role) ? '/admin' : '/';
+      const destino = data.user?.role === 'admin' ? '/admin' : data.user?.role === 'profesor' ? '/profesor' : '/';
       navigate(destino);
     } catch (e) {
       setError(getErrorMessage(e));

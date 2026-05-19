@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../services/adminApi';
+import { profesorApi } from '../../services/profesorApi';
 import { useAuth } from '../../state/auth.jsx';
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
@@ -15,15 +17,15 @@ const ESTADO_CFG = {
 };
 
 const DIFICULTAD_CFG = {
-  1: { label: 'Muy fácil', bg: '#dcfce7', color: '#16a34a' },
-  2: { label: 'Fácil',     bg: '#d1fae5', color: '#059669' },
-  3: { label: 'Media',     bg: '#fef9c3', color: '#92400e' },
-  4: { label: 'Difícil',   bg: '#fee2e2', color: '#dc2626' },
-  5: { label: 'Muy difícil',bg:'#fecaca', color: '#991b1b' },
+  facil:   { label: 'Fácil',    bg: '#dcfce7', color: '#16a34a' },
+  media:   { label: 'Media',    bg: '#fef9c3', color: '#92400e' },
+  dificil: { label: 'Difícil',  bg: '#fee2e2', color: '#dc2626' },
 };
 
 export default function AdminTestsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const basePath = user?.role === 'profesor' ? '/profesor/tests' : '/admin/tests';
   const [oposiciones, setOposiciones]   = useState([]);
   const [selectedOp,  setSelectedOp]    = useState(null);
   const [tests,       setTests]         = useState([]);
@@ -36,25 +38,38 @@ export default function AdminTestsPage() {
   // Carga oposiciones
   useEffect(() => {
     setLoadingOp(true);
-    adminApi
-      .listOposicionesConStats(token, { page_size: 100 })
-      .then((r) => setOposiciones(r?.items ?? r ?? []))
-      .catch(() => setOposiciones([]))
+    const request = user?.role === 'profesor'
+      ? profesorApi.getMisOposiciones(token)
+      : adminApi.listOposicionesConStats(token, { page_size: 100 });
+
+    Promise.resolve(request)
+      .then((r) => {
+        const items = r?.items ?? r ?? [];
+        setOposiciones(items);
+        setSelectedOp((current) => {
+          if (current && items.some((op) => String(op.id) === String(current.id))) return current;
+          if (user?.role === 'profesor' && items.length === 1) return items[0];
+          return null;
+        });
+      })
+      .catch(() => {
+        setOposiciones([]);
+        setSelectedOp(null);
+      })
       .finally(() => setLoadingOp(false));
-  }, [token]);
+  }, [token, user?.role]);
 
   // Carga tests para la oposición seleccionada
   useEffect(() => {
     if (!selectedOp) return;
     setLoadingTests(true);
     setTests([]);
-    // Intenta llamar al endpoint de tests admin; si no existe, muestra estado vacío
-    adminApi
-      .listTests?.(token, { oposicion_id: selectedOp.id, page_size: 100 })
+    const api = user?.role === 'profesor' ? profesorApi.getMisTests : adminApi.listTests;
+    api(token, { oposicion_id: selectedOp.id, page_size: 100 })
       .then((r) => setTests(r?.items ?? r ?? []))
       .catch(() => setTests([]))
       .finally(() => setLoadingTests(false));
-  }, [selectedOp, token]);
+  }, [selectedOp, token, user?.role]);
 
   const filteredTests = tests.filter((t) => {
     const matchQ = !q || (t.nombre || '').toLowerCase().includes(q.toLowerCase());
@@ -75,7 +90,7 @@ export default function AdminTestsPage() {
         </div>
         <button
           style={{ background: P, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
-          onClick={() => setMsg('La creación de tests estará disponible próximamente.')}
+          onClick={() => navigate(`${basePath}/nuevo`)}
         >
           + Nuevo test
         </button>
@@ -163,7 +178,7 @@ export default function AdminTestsPage() {
               </div>
               <button
                 style={{ background: P, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
-                onClick={() => setMsg(`Crear test para "${selectedOp.nombre}" estará disponible próximamente.`)}
+                onClick={() => navigate(`${basePath}/nuevo?oposicion_id=${selectedOp.id}`)}
               >
                 + Nuevo test
               </button>
@@ -225,8 +240,8 @@ export default function AdminTestsPage() {
                             </td>
                             <td style={{ ...TD, textAlign: 'right' }}>
                               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                                <button style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>👁</button>
-                                <button style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>✏️</button>
+                                <button onClick={() => navigate(`${basePath}/${t.id}/editar`)} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>👁</button>
+                                <button onClick={() => navigate(`${basePath}/${t.id}/editar`)} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>✏️</button>
                                 <button style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>⋯</button>
                               </div>
                             </td>

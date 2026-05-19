@@ -1,0 +1,4 @@
+tema_id,enunciado,opcion_1,opcion_2,opcion_3,opcion_4,explicacion,referencia_normativa,nivel_dificultad
+12,¿Cuál es el plazo para interponer un recurso de alzada?,*Un mes si el acto es expreso,Quince días hábiles,Dos meses desde la notificación,Tres meses,El recurso de alzada debe interponerse en el plazo de un mes si el acto fuera expreso,Art. 121 Ley 39/2015,facil
+12,¿Qué efecto produce el silencio administrativo positivo?,La solicitud se entiende estimada,*La solicitud se entiende estimada,El procedimiento queda suspendido,Se inicia un nuevo procedimiento,El silencio positivo implica la estimación de la solicitud por inactividad de la Administración,Art. 24 Ley 39/2015,media
+12,¿En qué plazo debe resolverse el procedimiento administrativo común?,3 meses,6 meses,*El fijado por la norma o en su defecto 3 meses,1 año,El plazo máximo para resolver y notificar es el fijado por la norma reguladora del procedimiento y a falta de norma expresa tres meses,,

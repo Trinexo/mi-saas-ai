@@ -5,7 +5,7 @@ import { rateLimit } from '../../middleware/rate-limit.middleware.js';
 import { loadUserPlan, requirePlan } from '../../middleware/plan.middleware.js';
 import { requireAccesoOposicion } from '../../middleware/acceso.middleware.js';
 import { generateTestSchema, submitTestSchema, generateRefuerzoSchema } from '../../schemas/test.schema.js';
-import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig, generateRefuerzo, getTestRecomendado } from '../../controllers/test.controller.js';
+import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig, generateRefuerzo, getTestRecomendado, getTestContinuar, getTestPendientes, cerrarTest } from '../../controllers/test.controller.js';
 
 const router = Router();
 
@@ -25,6 +25,11 @@ router.post('/submit', requireAuth, submitRateLimit, validate(submitTestSchema),
 router.get('/history', requireAuth, loadUserPlan, getTestHistory);
 // recomendado: sugerencia personalizada
 router.get('/recomendado', requireAuth, loadUserPlan, getTestRecomendado);
+// continuar: lógica inteligente de qué hacer a continuación
+router.get('/continuar', requireAuth, getTestContinuar);
+// pendientes: tests generados con al menos 1 respuesta (sin finalizar)
+router.get('/pendientes', requireAuth, getTestPendientes);
+router.post('/:testId/cerrar', requireAuth, cerrarTest);
 router.get('/:testId/review', requireAuth, getTestReview);
 router.get('/:testId/config', requireAuth, getTestConfig);
 

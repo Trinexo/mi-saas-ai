@@ -1,55 +1,70 @@
-import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+﻿import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
 import { useAuth } from './state/auth.jsx';
 import { OposicionActivaProvider, useOposicionActiva } from './state/oposicionActiva.jsx';
-import SeleccionarOposicionPage from './pages/SeleccionarOposicionPage.jsx';
 import { useUserAccesos } from './hooks/useUserAccesos';
-import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
-import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
-import HomePage from './pages/HomePage.jsx';
-import TestPage from './pages/TestPage.jsx';
-import ResultPage from './pages/ResultPage.jsx';
-import ProgressPage from './pages/ProgressPage.jsx';
-import HistorialPage from './pages/HistorialPage.jsx';
-import ReviewPage from './pages/ReviewPage.jsx';
-import MarcadasPage from './pages/MarcadasPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
-import PlanesPage from './pages/PlanesPage.jsx';
-import CatalogoPage from './pages/CatalogoPage.jsx';
-import OposicionPage from './pages/OposicionPage.jsx';
-import MateriaPage from './pages/MateriaPage.jsx';
-import TemaPage from './pages/TemaPage.jsx';
-import MisOposicionesPage from './pages/MisOposicionesPage.jsx';
-import ConfigurarTestPage from './pages/ConfigurarTestPage.jsx';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
-import AdminQuestionsPage from './pages/admin/AdminQuestionsPage.jsx';
-import AdminNuevaPreguntaPage from './pages/admin/AdminNuevaPreguntaPage.jsx';
-import AdminCatalogPage from './pages/admin/AdminCatalogPage.jsx';
-import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
-import AdminRevisionPage from './pages/admin/AdminRevisionPage.jsx';
-import AdminAccesosPage from './pages/admin/AdminAccesosPage.jsx';
-import AdminPreciosPage from './pages/admin/AdminPreciosPage.jsx';
-import AdminSettingsPage from './pages/admin/AdminSettingsPage.jsx';
-import AdminProfesoresPage from './pages/admin/AdminProfesoresPage.jsx';
-import AdminOposicionesPage from './pages/admin/AdminOposicionesPage.jsx';
-import AdminSimulacrosPage from './pages/admin/AdminSimulacrosPage.jsx';
-import AdminEtiquetasPage from './pages/admin/AdminEtiquetasPage.jsx';
-import AdminTestsPage from './pages/admin/AdminTestsPage.jsx';
-import ProfesorDashboardPage from './pages/profesor/ProfesorDashboardPage.jsx';
-import ProfesorPreguntasPage from './pages/profesor/ProfesorPreguntasPage.jsx';
-import ProfesorTestsPage from './pages/profesor/ProfesorTestsPage.jsx';
-import ProfesorSimulacrosPage from './pages/profesor/ProfesorSimulacrosPage.jsx';
-import NotificacionesPage from './pages/NotificacionesPage.jsx';
-import SimulacrosPage from './pages/SimulacrosPage.jsx';
-import RankingPage from './pages/RankingPage.jsx';
 import { RevisionProvider } from './state/revisionContext.jsx';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+
+const SeleccionarOposicionPage = lazy(() => import('./pages/SeleccionarOposicionPage.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const PlanEstudioPage = lazy(() => import('./pages/PlanEstudioPage.jsx'));
+const TestPage = lazy(() => import('./pages/TestPage.jsx'));
+const ResultPage = lazy(() => import('./pages/ResultPage.jsx'));
+const ProgressPage = lazy(() => import('./pages/ProgressPage.jsx'));
+const HistorialPage = lazy(() => import('./pages/HistorialPage.jsx'));
+const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
+const MarcadasPage = lazy(() => import('./pages/MarcadasPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const PlanesPage = lazy(() => import('./pages/PlanesPage.jsx'));
+const CatalogoPage = lazy(() => import('./pages/CatalogoPage.jsx'));
+const OposicionPage = lazy(() => import('./pages/OposicionPage.jsx'));
+const MateriaPage = lazy(() => import('./pages/MateriaPage.jsx'));
+const TemaPage = lazy(() => import('./pages/TemaPage.jsx'));
+const MisOposicionesPage = lazy(() => import('./pages/MisOposicionesPage.jsx'));
+const ConfigurarTestPage = lazy(() => import('./pages/ConfigurarTestPage.jsx'));
+const NotificacionesPage = lazy(() => import('./pages/NotificacionesPage.jsx'));
+const SimulacrosPage = lazy(() => import('./pages/SimulacrosPage.jsx'));
+const MisTestsPage = lazy(() => import('./pages/MisTestsPage.jsx'));
+const RankingPage = lazy(() => import('./pages/RankingPage.jsx'));
+
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'));
+const AdminQuestionsPage = lazy(() => import('./pages/admin/AdminQuestionsPage.jsx'));
+const AdminNuevaPreguntaPage = lazy(() => import('./pages/admin/AdminNuevaPreguntaPage.jsx'));
+const AdminCatalogPage = lazy(() => import('./pages/admin/AdminCatalogPage.jsx'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage.jsx'));
+const AdminRevisionPage = lazy(() => import('./pages/admin/AdminRevisionPage.jsx'));
+const AdminAccesosPage = lazy(() => import('./pages/admin/AdminAccesosPage.jsx'));
+const AdminPreciosPage = lazy(() => import('./pages/admin/AdminPreciosPage.jsx'));
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage.jsx'));
+const AdminProfesoresPage = lazy(() => import('./pages/admin/AdminProfesoresPage.jsx'));
+const AdminOposicionesPage = lazy(() => import('./pages/admin/AdminOposicionesPage.jsx'));
+const AdminSimulacrosPage = lazy(() => import('./pages/admin/AdminSimulacrosPage.jsx'));
+const AdminSimulacroWizardPage = lazy(() => import('./pages/admin/AdminSimulacroWizardPage.jsx'));
+const AdminEtiquetasPage = lazy(() => import('./pages/admin/AdminEtiquetasPage.jsx'));
+const AdminTestsPage = lazy(() => import('./pages/admin/AdminTestsPage.jsx'));
+const AdminEditTestPage = lazy(() => import('./pages/admin/AdminEditTestPage.jsx'));
+
+const ProfesorDashboardPage = lazy(() => import('./pages/profesor/ProfesorDashboardPage.jsx'));
+const ProfesorPreguntasPage = lazy(() => import('./pages/profesor/ProfesorPreguntasPage.jsx'));
+const ProfesorTestsPage = lazy(() => import('./pages/profesor/ProfesorTestsPage.jsx'));
+const ProfesorSimulacrosPage = lazy(() => import('./pages/profesor/ProfesorSimulacrosPage.jsx'));
+const ProfesorOposicionesPage = lazy(() => import('./pages/profesor/ProfesorOposicionesPage.jsx'));
+const ProfesorOposicionDetallePage = lazy(() => import('./pages/profesor/ProfesorOposicionDetallePage.jsx'));
+const ProfesorTemarioPage = lazy(() => import('./pages/profesor/ProfesorTemarioPage.jsx'));
+const ProfesorEstadisticasPage = lazy(() => import('./pages/profesor/ProfesorEstadisticasPage.jsx'));
+const ProfesorTemaDetallePage = lazy(() => import('./pages/profesor/ProfesorTemaDetallePage.jsx'));
+const ProfesorActividadPage = lazy(() => import('./pages/profesor/ProfesorActividadPage.jsx'));
+const ProfesorAlumnosPage = lazy(() => import('./pages/profesor/ProfesorAlumnosPage.jsx'));
+const ProfesorCalendarioPage = lazy(() => import('./pages/profesor/ProfesorCalendarioPage.jsx'));
 
 /**
- * Redirige al usuario a /seleccionar-oposicion si tiene más de una oposición
- * activa y no ha seleccionado ninguna todavía. Auto-selecciona si solo hay una.
+ * Redirige al usuario a /seleccionar-oposicion si tiene mÃ¡s de una oposiciÃ³n
+ * activa y no ha seleccionado ninguna todavÃ­a. Auto-selecciona si solo hay una.
  */
 function OposicionGuard({ children }) {
   const { user } = useAuth();
@@ -105,9 +120,18 @@ function ProfesorRoute({ children }) {
   return user?.role === 'profesor' ? children : <Navigate to="/" replace />;
 }
 
+function PageFallback() {
+  return (
+    <div style={{ minHeight: 260, display: 'grid', placeItems: 'center', color: '#64748b', fontWeight: 700 }}>
+      Cargando...
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <OposicionActivaProvider>
+    <Suspense fallback={<PageFallback />}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -135,6 +159,7 @@ export default function App() {
         }
       >
         <Route index element={<HomePage />} />
+        <Route path="plan-estudio" element={<PlanEstudioPage />} />
         <Route path="test" element={<TestPage />} />
         <Route path="resultado" element={<ResultPage />} />
         <Route path="progreso" element={<ProgressPage />} />
@@ -151,6 +176,7 @@ export default function App() {
         <Route path="catalogo" element={<CatalogoPage />} />
         <Route path="notificaciones" element={<NotificacionesPage />} />
         <Route path="simulacros" element={<SimulacrosPage />} />
+        <Route path="mis-tests" element={<MisTestsPage />} />
         <Route path="ranking" element={<RankingPage />} />
         <Route
           path="admin"
@@ -164,8 +190,12 @@ export default function App() {
           <Route path="preguntas" element={<AdminQuestionsPage />} />
           <Route path="catalogo" element={<AdminCatalogPage />} />
           <Route path="oposiciones" element={<AdminOposicionesPage />} />
+          <Route path="simulacros/nuevo" element={<AdminSimulacroWizardPage />} />
+          <Route path="simulacros/:id/editar" element={<AdminSimulacroWizardPage />} />
           <Route path="simulacros" element={<AdminSimulacrosPage />} />
           <Route path="etiquetas" element={<AdminEtiquetasPage />} />
+          <Route path="tests/nuevo" element={<AdminEditTestPage />} />
+          <Route path="tests/:id/editar" element={<AdminEditTestPage />} />
           <Route path="tests" element={<AdminTestsPage />} />
           <Route path="usuarios" element={<AdminUsersPage />} />
           <Route path="accesos" element={<AdminAccesosPage />} />
@@ -183,13 +213,34 @@ export default function App() {
             </ProfesorRoute>
           }
         >
+          <Route path="preguntas/nueva" element={<AdminNuevaPreguntaPage />} />
           <Route path="preguntas" element={<ProfesorPreguntasPage />} />
-          <Route path="mis-tests" element={<ProfesorTestsPage />} />
-          <Route path="mis-simulacros" element={<ProfesorSimulacrosPage />} />
+          <Route path="revision" element={<AdminRevisionPage />} />
+          <Route path="oposiciones/:id" element={<Navigate to="/profesor/oposiciones" replace />} />
+          <Route path="oposiciones" element={<ProfesorOposicionesPage />} />
+          <Route path="temario" element={<ProfesorTemarioPage />} />
+          <Route path="alumnos" element={<ProfesorAlumnosPage />} />
+          <Route path="estadisticas/:slug/:temaId" element={<ProfesorTemaDetallePage />} />
+          <Route path="estadisticas/:slug" element={<ProfesorOposicionDetallePage />} />
+          <Route path="estadisticas" element={<ProfesorEstadisticasPage />} />
+          <Route path="temas/:temaId" element={<Navigate to="/profesor/estadisticas" replace />} />
+          <Route path="actividad" element={<ProfesorActividadPage />} />
+          <Route path="calendario" element={<ProfesorCalendarioPage />} />
+          <Route path="mis-tests" element={<Navigate to="/profesor/tests" replace />} />
+          <Route path="mis-simulacros" element={<Navigate to="/profesor/simulacros" replace />} />
+          <Route path="tests/nuevo" element={<AdminEditTestPage />} />
+          <Route path="tests/:id/editar" element={<AdminEditTestPage />} />
+          <Route path="tests" element={<ProfesorTestsPage />} />
+          <Route path="simulacros/nuevo" element={<AdminSimulacroWizardPage />} />
+          <Route path="simulacros/:id/editar" element={<AdminSimulacroWizardPage />} />
+          <Route path="simulacros" element={<ProfesorSimulacrosPage />} />
+          <Route path="notificaciones" element={<NotificacionesPage />} />
+          <Route path="perfil" element={<ProfilePage />} />
           <Route index element={<ProfesorDashboardPage />} />
         </Route>
       </Route>
     </Routes>
+    </Suspense>
     </OposicionActivaProvider>
   );
 }

@@ -2,6 +2,16 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
 import {
+  uploadImagenPregunta,
+  deleteImagenPregunta,
+  getMediaBrowser,
+} from '../../controllers/adminImagenPregunta.controller.js';
+import {
+  uploadAudioPregunta,
+  deleteAudioPregunta,
+  getAudioBrowser,
+} from '../../controllers/adminAudioPregunta.controller.js';
+import {
   createPregunta,
   deletePregunta,
   getAdminStats,
@@ -58,14 +68,22 @@ router.use(requireAuth, requireRole('admin', 'profesor'));
 // --- Preguntas ---
 router.get('/preguntas', validate(listPreguntasQuerySchema, 'query'), listPreguntas);
 router.post('/preguntas', validate(createPreguntaSchema), createPregunta);
-router.post('/preguntas/import', requireRole('admin'), validate(importPreguntasCsvSchema), importPreguntasCsv);
-router.get('/preguntas/:id', requireRole('admin'), validate(idParamSchema, 'params'), getPregunta);
-router.put('/preguntas/:id', requireRole('admin'), validate(idParamSchema, 'params'), validate(updatePreguntaSchema), updatePregunta);
-router.delete('/preguntas/:id', requireRole('admin'), validate(idParamSchema, 'params'), deletePregunta);
+router.post('/preguntas/import', validate(importPreguntasCsvSchema), importPreguntasCsv);
+router.get('/preguntas/:id', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), getPregunta);
+router.put('/preguntas/:id', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), validate(updatePreguntaSchema), updatePregunta);
+router.delete('/preguntas/:id', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), deletePregunta);
+router.post('/preguntas/:id/imagen', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), uploadImagenPregunta);
+router.delete('/preguntas/:id/imagen', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), deleteImagenPregunta);
+router.post('/preguntas/:id/audio', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), uploadAudioPregunta);
+router.delete('/preguntas/:id/audio', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), deleteAudioPregunta);
+
+// --- Banco de medios ---
+router.get('/media/preguntas', requireRole('admin', 'profesor'), getMediaBrowser);
+router.get('/media/audios', requireRole('admin', 'profesor'), getAudioBrowser);
 
 // --- Reportes ---
-router.get('/reportes', requireRole('admin'), validate(listReportesQuerySchema, 'query'), listReportes);
-router.patch('/reportes/:id/estado', requireRole('admin'), validate(idParamSchema, 'params'), validate(updateReporteEstadoSchema), updateReporteEstado);
+router.get('/reportes', requireRole('admin', 'profesor'), validate(listReportesQuerySchema, 'query'), listReportes);
+router.patch('/reportes/:id/estado', requireRole('admin', 'profesor'), validate(idParamSchema, 'params'), validate(updateReporteEstadoSchema), updateReporteEstado);
 
 // --- Auditoría ---
 router.get('/auditoria', requireRole('admin'), validate(listAuditoriaQuerySchema, 'query'), listAuditoria);

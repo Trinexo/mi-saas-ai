@@ -16,13 +16,12 @@ export const testSessionHistoryRepository = {
     const [dataResult, countResult] = await Promise.all([
       pool.query(
         `SELECT t.id, t.fecha_creacion, t.tipo_test, t.duracion_segundos, t.numero_preguntas, t.estado,
-                t.bloque_id, bl.nombre AS bloque_nombre,
+                t.bloque_id, NULL AS bloque_nombre,
                 te.nombre AS tema_nombre,
                 t.oposicion_id, op.nombre AS oposicion_nombre,
                 rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
          FROM tests t
-         LEFT JOIN bloques bl ON bl.id = t.bloque_id
-         LEFT JOIN temas te ON te.id = bl.tema_id
+         LEFT JOIN temas te ON te.id = t.tema_id
          LEFT JOIN oposiciones op ON op.id = t.oposicion_id
          LEFT JOIN resultados_test rt ON rt.test_id = t.id
          WHERE ${where}

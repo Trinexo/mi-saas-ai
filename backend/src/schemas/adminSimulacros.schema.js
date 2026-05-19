@@ -36,15 +36,17 @@ export const updateSimulacroSchema = z.object({
 );
 
 export const createBloqueSchema = z.object({
-  nombre: z.string().min(2).max(200),
-  orden:  z.number().int().min(0).optional().default(0),
+  nombre:           z.string().min(2).max(200),
+  orden:            z.number().int().min(0).optional().default(0),
+  numero_preguntas: z.number().int().min(0).optional().default(0),
 });
 
 export const updateBloqueSchema = z.object({
-  nombre: z.string().min(2).max(200).optional(),
-  orden:  z.number().int().min(0).optional(),
+  nombre:           z.string().min(2).max(200).optional(),
+  orden:            z.number().int().min(0).optional(),
+  numero_preguntas: z.number().int().min(0).optional(),
 }).refine(
-  (d) => d.nombre !== undefined || d.orden !== undefined,
+  (d) => d.nombre !== undefined || d.orden !== undefined || d.numero_preguntas !== undefined,
   { message: 'Proporciona al menos un campo a actualizar' },
 );
 

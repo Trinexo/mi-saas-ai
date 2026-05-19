@@ -216,7 +216,7 @@ test('SMOKE-A03: crear pregunta', async () => {
       enunciado: 'Smoke test pregunta E2E',
       explicacion: 'Test explicación',
       referenciaNormativa: null,
-      nivelDificultad: 2,
+      nivelDificultad: 'media',
       opciones: [
         { texto: 'Opción A', correcta: true },
         { texto: 'Opción B', correcta: false },
@@ -243,7 +243,7 @@ test('SMOKE-A05: editar pregunta', async () => {
       enunciado: 'Smoke test pregunta E2E (editada)',
       explicacion: 'Explicación actualizada',
       referenciaNormativa: null,
-      nivelDificultad: 3,
+      nivelDificultad: 'dificil',
       opciones: [
         { texto: 'Opción A actualizada', correcta: false },
         { texto: 'Opción B actualizada', correcta: true },

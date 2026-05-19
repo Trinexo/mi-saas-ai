@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 const SELECT_DUE_QUESTIONS_SQL = `
-  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
+  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM repeticion_espaciada re
   JOIN preguntas p ON p.id = re.pregunta_id
@@ -54,20 +54,20 @@ const SELECT_ADAPTIVE_QUESTIONS_SQL = `
     ORDER BY ru.fecha_respuesta DESC
     LIMIT 1
   ) ru ON true
-  WHERE p.bloque_id = $2
+  WHERE p.tema_id = $2
     AND p.id != ALL($3::bigint[])
-    AND ($5::int IS NULL OR p.nivel_dificultad = $5)
+    AND ($5::text IS NULL OR p.nivel_dificultad = $5)
   ORDER BY score DESC, RANDOM()
   LIMIT $4
 `;
 
 export const testQuestionsAdaptiveRepository = {
-  async pickAdaptiveQuestions({ userId, bloqueId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
-    const result = await pool.query(SELECT_ADAPTIVE_QUESTIONS_SQL, [userId, bloqueId, excludePreguntaIds, numeroPreguntas, nivelDificultad]);
+  async pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
+    const result = await pool.query(SELECT_ADAPTIVE_QUESTIONS_SQL, [userId, temaId, excludePreguntaIds, numeroPreguntas, nivelDificultad]);
     return result.rows;
   },
 
-  async pickDueQuestions({ userId, bloqueId, numeroPreguntas }) {
+  async pickDueQuestionsByBloque({ userId, bloqueId, numeroPreguntas }) {
     const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, bloqueId, numeroPreguntas]);
     return result.rows;
   },

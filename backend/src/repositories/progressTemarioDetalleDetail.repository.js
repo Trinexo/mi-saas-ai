@@ -17,7 +17,7 @@ export const progressTemarioDetalleDetailRepository = {
            0
          ) AS porcentaje_acierto,
          COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas
-       FROM bloques bl
+       FROM colecciones bl
        JOIN temas t ON t.id = bl.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        LEFT JOIN preguntas p ON p.bloque_id = bl.id
@@ -71,7 +71,7 @@ export const progressTemarioDetalleDetailRepository = {
              ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
              0
            ) AS porcentaje_acierto
-         FROM bloques bl
+         FROM colecciones bl
          JOIN temas t ON t.id = bl.tema_id
          JOIN oposiciones o ON o.id = t.oposicion_id
          LEFT JOIN preguntas p ON p.bloque_id = bl.id

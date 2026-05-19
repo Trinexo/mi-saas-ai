@@ -17,7 +17,7 @@ export const testSessionDetailReviewRepository = {
     if (!testResult.rows[0]) return null;
 
     const preguntasResult = await pool.query(
-      `SELECT p.id AS pregunta_id, p.enunciado, p.explicacion,
+      `SELECT p.id AS pregunta_id, p.enunciado, p.explicacion, p.imagen_url, p.audio_url,
               ru.respuesta_id AS elegida_id, ru.correcta,
               (SELECT o2.id FROM opciones_respuesta o2 WHERE o2.pregunta_id = p.id AND o2.correcta = TRUE LIMIT 1) AS correcta_id,
               json_agg(json_build_object('id', o.id, 'texto', o.texto, 'correcta', o.correcta) ORDER BY o.id) AS opciones
@@ -51,6 +51,8 @@ export const testSessionDetailReviewRepository = {
         preguntaId: Number(p.pregunta_id),
         enunciado: p.enunciado,
         explicacion: p.explicacion || null,
+        imagen_url: p.imagen_url || null,
+        audio_url: p.audio_url || null,
         respuestaUsuarioId: p.elegida_id ? Number(p.elegida_id) : null,
         esCorrecta: Boolean(p.correcta),
         correctaId: Number(p.correcta_id),

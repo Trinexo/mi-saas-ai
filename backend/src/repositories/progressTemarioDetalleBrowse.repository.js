@@ -47,19 +47,15 @@ export const progressTemarioDetalleBrowseRepository = {
       `SELECT
          t.id AS tema_id,
          t.nombre AS tema_nombre,
-         COUNT(DISTINCT bl.id)::int AS total_bloques,
-         COUNT(DISTINCT CASE WHEN (pu.aciertos + pu.errores) > 0 THEN pu.bloque_id END)::int AS bloques_practicados,
          COUNT(DISTINCT p.id)::int AS total_preguntas,
+         COUNT(DISTINCT CASE WHEN ru.id IS NOT NULL THEN p.id END)::int AS preguntas_practicadas,
          COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas,
-         COALESCE(ROUND(AVG(
-           CASE WHEN (pu.aciertos + pu.errores) > 0
-             THEN (pu.aciertos::numeric / (pu.aciertos + pu.errores)) * 100
-           END
-         )::numeric, 1), 0) AS porcentaje_acierto
+         COALESCE(ROUND(
+           100.0 * COUNT(ru.id) FILTER (WHERE ru.correcta = true)::numeric
+           / NULLIF(COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL), 0)
+         , 1), 0) AS porcentaje_acierto
        FROM temas t
-       JOIN bloques bl ON bl.tema_id = t.id
-       LEFT JOIN preguntas p ON p.bloque_id = bl.id
-       LEFT JOIN progreso_usuario pu ON pu.bloque_id = bl.id AND pu.usuario_id = $1
+       LEFT JOIN preguntas p ON p.tema_id = t.id
        LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.estado = 'finalizado'
        LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
        WHERE t.oposicion_id = $2
@@ -75,13 +71,95 @@ export const progressTemarioDetalleBrowseRepository = {
       return {
         temaId: Number(row.tema_id),
         temaNombre: row.tema_nombre,
-        totalBloques: Number(row.total_bloques ?? 0),
-        bloquesPracticados: Number(row.bloques_practicados ?? 0),
+        totalBloques: totalPreguntas,
+        bloquesPracticados: Number(row.preguntas_practicadas ?? 0),
         totalPreguntas,
         dominadas,
         dominio,
         porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
       };
     });
+  },
+
+  async getProgresoTemasReal(userId, oposicionId) {
+    const result = await pool.query(
+      `SELECT
+         te.id AS tema_id,
+         te.nombre AS tema_nombre,
+         COUNT(DISTINCT p.id)::int AS total_preguntas,
+         COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL)::int AS intentos,
+         COUNT(ru.id) FILTER (WHERE ru.correcta = true)::int AS aciertos,
+         COUNT(ru.id) FILTER (WHERE ru.correcta = false)::int AS errores,
+         COALESCE(ROUND(
+           100.0 * COUNT(ru.id) FILTER (WHERE ru.correcta = true)::numeric
+           / NULLIF(COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL), 0)
+         , 1), 0) AS porcentaje_acierto
+       FROM temas te
+       LEFT JOIN preguntas p ON p.tema_id = te.id
+       LEFT JOIN respuestas_usuario ru ON ru.pregunta_id = p.id
+         AND EXISTS (
+           SELECT 1 FROM tests ts
+           WHERE ts.id = ru.test_id
+             AND ts.usuario_id = $1
+             AND ts.estado = 'finalizado'
+         )
+       WHERE te.oposicion_id = $2
+       GROUP BY te.id, te.nombre
+       ORDER BY te.nombre ASC`,
+      [userId, oposicionId],
+    );
+    return result.rows.map((row) => ({
+      temaId: Number(row.tema_id),
+      temaNombre: row.tema_nombre,
+      totalPreguntas: Number(row.total_preguntas ?? 0),
+      intentos: Number(row.intentos ?? 0),
+      aciertos: Number(row.aciertos ?? 0),
+      errores: Number(row.errores ?? 0),
+      porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
+    }));
+  },
+
+  async getProgresoTemaReal(userId, temaId) {
+    const result = await pool.query(
+      `SELECT
+         te.id AS tema_id,
+         te.nombre AS tema_nombre,
+         o.id AS oposicion_id,
+         o.nombre AS oposicion_nombre,
+         COUNT(DISTINCT p.id)::int AS total_preguntas,
+         COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL)::int AS intentos,
+         COUNT(ru.id) FILTER (WHERE ru.correcta = true)::int AS aciertos,
+         COUNT(ru.id) FILTER (WHERE ru.correcta = false)::int AS errores,
+         COALESCE(ROUND(
+           100.0 * COUNT(ru.id) FILTER (WHERE ru.correcta = true)::numeric
+           / NULLIF(COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL), 0)
+         , 1), 0) AS porcentaje_acierto
+       FROM temas te
+       JOIN oposiciones o ON o.id = te.oposicion_id
+       LEFT JOIN preguntas p ON p.tema_id = te.id
+       LEFT JOIN respuestas_usuario ru ON ru.pregunta_id = p.id
+         AND EXISTS (
+           SELECT 1 FROM tests ts
+           WHERE ts.id = ru.test_id
+             AND ts.usuario_id = $1
+             AND ts.estado = 'finalizado'
+         )
+       WHERE te.id = $2
+       GROUP BY te.id, te.nombre, o.id, o.nombre`,
+      [userId, temaId],
+    );
+    if (!result.rows[0]) return null;
+    const row = result.rows[0];
+    return {
+      temaId: Number(row.tema_id),
+      temaNombre: row.tema_nombre,
+      oposicionId: Number(row.oposicion_id),
+      oposicionNombre: row.oposicion_nombre,
+      totalPreguntas: Number(row.total_preguntas ?? 0),
+      intentos: Number(row.intentos ?? 0),
+      aciertos: Number(row.aciertos ?? 0),
+      errores: Number(row.errores ?? 0),
+      porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
+    };
   },
 };

@@ -30,18 +30,39 @@ CREATE TABLE IF NOT EXISTS bloques (
   nombre TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS colecciones (
+  id BIGSERIAL PRIMARY KEY,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  creado_por BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  publica BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 CREATE TABLE IF NOT EXISTS preguntas (
   id BIGSERIAL PRIMARY KEY,
-  bloque_id BIGINT NOT NULL REFERENCES bloques(id) ON DELETE CASCADE,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE RESTRICT,
+  bloque_id BIGINT REFERENCES bloques(id) ON DELETE SET NULL,
   enunciado TEXT NOT NULL,
   explicacion TEXT NOT NULL,
   referencia_normativa TEXT,
   nivel_dificultad SMALLINT NOT NULL,
+  estado TEXT NOT NULL DEFAULT 'aprobada'
+    CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW(),
   es_oficial BOOLEAN NOT NULL DEFAULT FALSE,
   puntos NUMERIC(5,2) NOT NULL DEFAULT 1.00,
   tipo_pregunta TEXT NOT NULL DEFAULT 'opcion_multiple'
-    CHECK (tipo_pregunta IN ('opcion_multiple', 'verdadero_falso', 'texto_libre'))
+    CHECK (tipo_pregunta IN ('opcion_multiple', 'verdadero_falso', 'texto_libre')),
+  imagen_url TEXT,
+  audio_url TEXT
+);
+
+CREATE TABLE IF NOT EXISTS colecciones_preguntas (
+  coleccion_id BIGINT NOT NULL REFERENCES colecciones(id) ON DELETE CASCADE,
+  pregunta_id  BIGINT NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+  orden        INT    NOT NULL DEFAULT 0,
+  PRIMARY KEY (coleccion_id, pregunta_id)
 );
 
 CREATE TABLE IF NOT EXISTS opciones_respuesta (
@@ -54,13 +75,16 @@ CREATE TABLE IF NOT EXISTS opciones_respuesta (
 CREATE TABLE IF NOT EXISTS tests (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  planificacion_id BIGINT,
+  tema_id BIGINT REFERENCES temas(id),
   bloque_id BIGINT REFERENCES bloques(id),
   oposicion_id BIGINT REFERENCES oposiciones(id),
   tipo_test TEXT NOT NULL,
   numero_preguntas INTEGER NOT NULL,
   duracion_segundos INTEGER,
   estado TEXT NOT NULL DEFAULT 'generado',
-  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW()
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT NOW(),
+  fecha_fin TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS tests_preguntas (
@@ -91,10 +115,33 @@ CREATE TABLE IF NOT EXISTS resultados_test (
   fecha TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS accesos_oposicion (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
+  estado TEXT NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo', 'expirado', 'cancelado')),
+  fecha_inicio TIMESTAMP NOT NULL DEFAULT NOW(),
+  fecha_fin TIMESTAMP,
+  precio_pagado NUMERIC(8,2),
+  notas TEXT,
+  creada_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  actualizada_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE(usuario_id, oposicion_id)
+);
+
+CREATE TABLE IF NOT EXISTS profesores_oposiciones (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, oposicion_id)
+);
+
 CREATE TABLE IF NOT EXISTS progreso_usuario (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  bloque_id BIGINT NOT NULL REFERENCES bloques(id) ON DELETE CASCADE,
+  tema_id BIGINT REFERENCES temas(id) ON DELETE CASCADE,
+  bloque_id BIGINT REFERENCES bloques(id) ON DELETE CASCADE,
   preguntas_vistas INTEGER NOT NULL DEFAULT 0,
   aciertos INTEGER NOT NULL DEFAULT 0,
   errores INTEGER NOT NULL DEFAULT 0,
@@ -112,19 +159,45 @@ CREATE TABLE IF NOT EXISTS reportes_preguntas (
 );
 
 CREATE INDEX IF NOT EXISTS idx_preguntas_bloque_id ON preguntas(bloque_id);
+CREATE INDEX IF NOT EXISTS idx_preguntas_tema_id ON preguntas(tema_id);
 CREATE INDEX IF NOT EXISTS idx_preguntas_nivel_dificultad ON preguntas(nivel_dificultad);
 CREATE INDEX IF NOT EXISTS idx_preguntas_es_oficial ON preguntas(es_oficial);
 CREATE INDEX IF NOT EXISTS idx_oposiciones_estado ON oposiciones(estado);
 CREATE INDEX IF NOT EXISTS idx_oposiciones_categoria ON oposiciones(categoria);
+CREATE INDEX IF NOT EXISTS idx_temas_oposicion ON temas(oposicion_id);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_fecha ON tests(usuario_id, fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_pregunta ON respuestas_usuario(test_id, pregunta_id);
-CREATE INDEX IF NOT EXISTS idx_materias_oposicion ON materias(oposicion_id);
-CREATE INDEX IF NOT EXISTS idx_temas_materia ON temas(materia_id);
+CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_usuario ON accesos_oposicion(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_oposicion ON accesos_oposicion(oposicion_id);
+CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_activo ON accesos_oposicion(usuario_id, estado) WHERE estado = 'activo';
+CREATE INDEX IF NOT EXISTS idx_profesores_oposiciones_user_id ON profesores_oposiciones(user_id);
+CREATE INDEX IF NOT EXISTS idx_profesores_oposiciones_oposicion_id ON profesores_oposiciones(oposicion_id);
 CREATE INDEX IF NOT EXISTS idx_reportes_estado ON reportes_preguntas(estado);
 CREATE INDEX IF NOT EXISTS idx_reportes_pregunta ON reportes_preguntas(pregunta_id);
 CREATE INDEX IF NOT EXISTS idx_reportes_estado_fecha_id ON reportes_preguntas(estado, fecha_creacion DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_progreso_usuario ON progreso_usuario(usuario_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_progreso_usuario_tema_unique
+  ON progreso_usuario(usuario_id, tema_id)
+  WHERE tema_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_progreso_usuario_tema ON progreso_usuario(usuario_id, tema_id);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_finalizados ON tests(usuario_id, id) WHERE estado = 'finalizado';
+
+CREATE TABLE IF NOT EXISTS notificaciones (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL DEFAULT 'sistema',
+  titulo TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  datos_extra JSONB,
+  leida BOOLEAN NOT NULL DEFAULT false,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario_fecha
+  ON notificaciones(usuario_id, creado_en DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario_no_leidas
+  ON notificaciones(usuario_id, leida, creado_en DESC, id DESC);
 
 CREATE TABLE IF NOT EXISTS auditoria_preguntas (
   id BIGSERIAL PRIMARY KEY,
@@ -141,6 +214,10 @@ CREATE INDEX IF NOT EXISTS idx_auditoria_usuario ON auditoria_preguntas(usuario_
 CREATE INDEX IF NOT EXISTS idx_auditoria_fecha ON auditoria_preguntas(fecha DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_scoring ON respuestas_usuario(pregunta_id, test_id, correcta, fecha_respuesta DESC);
 CREATE INDEX IF NOT EXISTS idx_tests_usuario_tema ON tests(usuario_id, tema_id, fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS idx_tests_tema ON tests(tema_id);
+CREATE INDEX IF NOT EXISTS idx_tests_planificacion_usuario
+  ON tests(planificacion_id, usuario_id, fecha_creacion DESC)
+  WHERE planificacion_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_preguntas_tema_dificultad ON preguntas(tema_id, nivel_dificultad);
 
 CREATE TABLE IF NOT EXISTS repeticion_espaciada (
@@ -229,6 +306,113 @@ CREATE INDEX IF NOT EXISTS idx_simulacros_creado_por  ON simulacros(creado_por);
 CREATE INDEX IF NOT EXISTS idx_sim_bloques_simulacro  ON simulacros_bloques(simulacro_id, orden);
 CREATE INDEX IF NOT EXISTS idx_sim_preguntas_bloque   ON simulacros_preguntas(bloque_id, orden);
 CREATE INDEX IF NOT EXISTS idx_sim_preguntas_pregunta ON simulacros_preguntas(pregunta_id);
+
+-- ─── Plantillas de test heredadas como admin_tests (migracion 023) ──────────
+CREATE TABLE IF NOT EXISTS admin_tests (
+  id                    BIGSERIAL PRIMARY KEY,
+  nombre                TEXT NOT NULL,
+  descripcion           TEXT,
+  oposicion_id          BIGINT REFERENCES oposiciones(id) ON DELETE SET NULL,
+  tema_id               BIGINT REFERENCES temas(id) ON DELETE SET NULL,
+  estado                TEXT NOT NULL DEFAULT 'borrador'
+                          CHECK (estado IN ('borrador', 'publicado', 'archivado')),
+  nivel_dificultad      SMALLINT CHECK (nivel_dificultad BETWEEN 1 AND 5),
+  duracion_minutos      SMALLINT,
+  mezclar_preguntas     BOOLEAN NOT NULL DEFAULT TRUE,
+  mostrar_resultados    BOOLEAN NOT NULL DEFAULT TRUE,
+  mostrar_explicaciones BOOLEAN NOT NULL DEFAULT TRUE,
+  tipo_puntuacion       TEXT NOT NULL DEFAULT 'estandar'
+                          CHECK (tipo_puntuacion IN ('estandar', 'personalizada')),
+  pts_acierto           NUMERIC(5,2) NOT NULL DEFAULT 1.00,
+  pts_fallo             NUMERIC(5,2) NOT NULL DEFAULT -0.25,
+  pts_blanco            NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  creado_por            BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  fecha_creacion        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  fecha_actualizacion   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS admin_tests_preguntas (
+  test_id     BIGINT NOT NULL REFERENCES admin_tests(id) ON DELETE CASCADE,
+  pregunta_id BIGINT NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+  orden       INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (test_id, pregunta_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_tests_oposicion ON admin_tests(oposicion_id);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_tema ON admin_tests(tema_id);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_estado ON admin_tests(estado);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_creado_por ON admin_tests(creado_por);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_preg_test ON admin_tests_preguntas(test_id);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_preg_preg ON admin_tests_preguntas(pregunta_id);
+
+-- ─── Planificaciones academicas (migracion 026) ─────────────────────────────
+CREATE TABLE IF NOT EXISTS planificaciones_academicas (
+  id BIGSERIAL PRIMARY KEY,
+  creado_por_usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  creado_por_rol TEXT NOT NULL DEFAULT 'profesor',
+  oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
+  destinatario_tipo TEXT NOT NULL DEFAULT 'oposicion'
+    CHECK (destinatario_tipo IN ('oposicion')),
+  tipo TEXT NOT NULL
+    CHECK (tipo IN ('simulacro', 'plantilla_test', 'tema_recomendado')),
+  estado TEXT NOT NULL DEFAULT 'borrador'
+    CHECK (estado IN ('borrador', 'publicada', 'archivada')),
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  fecha_inicio TIMESTAMPTZ NOT NULL,
+  fecha_fin TIMESTAMPTZ,
+  duracion_minutos INT,
+  simulacro_id BIGINT REFERENCES simulacros(id) ON DELETE SET NULL,
+  plantilla_test_id BIGINT REFERENCES admin_tests(id) ON DELETE SET NULL,
+  numero_preguntas INT,
+  dificultad TEXT,
+  modo_test TEXT,
+  intentos_maximos INT,
+  permitir_reintento BOOLEAN NOT NULL DEFAULT TRUE,
+  resultados_visibles_desde TEXT NOT NULL DEFAULT 'inmediato'
+    CHECK (resultados_visibles_desde IN ('inmediato', 'cierre')),
+  revision_visible_desde TEXT NOT NULL DEFAULT 'inmediato'
+    CHECK (revision_visible_desde IN ('inmediato', 'cierre', 'nunca')),
+  notificar_alumnos BOOLEAN NOT NULL DEFAULT FALSE,
+  notificada_en TIMESTAMPTZ,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS planificacion_academica_temas (
+  planificacion_id BIGINT NOT NULL REFERENCES planificaciones_academicas(id) ON DELETE CASCADE,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  PRIMARY KEY (planificacion_id, tema_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_planificaciones_academicas_oposicion_fecha
+  ON planificaciones_academicas (oposicion_id, fecha_inicio);
+CREATE INDEX IF NOT EXISTS idx_planificaciones_academicas_autor_fecha
+  ON planificaciones_academicas (creado_por_usuario_id, fecha_inicio);
+CREATE INDEX IF NOT EXISTS idx_planificaciones_academicas_estado_fecha
+  ON planificaciones_academicas (estado, fecha_inicio);
+CREATE INDEX IF NOT EXISTS idx_planificacion_academica_temas_tema
+  ON planificacion_academica_temas (tema_id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_attribute a
+      ON a.attrelid = c.conrelid
+     AND a.attnum = ANY(c.conkey)
+    WHERE c.conrelid = 'tests'::regclass
+      AND c.contype = 'f'
+      AND a.attname = 'planificacion_id'
+  ) THEN
+    ALTER TABLE tests
+      ADD CONSTRAINT fk_tests_planificacion
+      FOREIGN KEY (planificacion_id)
+      REFERENCES planificaciones_academicas(id)
+      ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ─── Actividad global (migración 018) ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS actividad_global (

@@ -9,6 +9,14 @@ export const adminReportesPreguntasRepository = {
       args.push(filters.estado);
       where.push(`rp.estado = $${args.length}`);
     }
+    if (filters.oposicionIds) {
+      if (filters.oposicionIds.length === 0) {
+        where.push('false');
+      } else {
+        args.push(filters.oposicionIds);
+        where.push(`t.oposicion_id = ANY($${args.length}::bigint[])`);
+      }
+    }
 
     args.push(limit, offset);
 
@@ -23,6 +31,7 @@ export const adminReportesPreguntasRepository = {
               u.email AS usuario_email
        FROM reportes_preguntas rp
        JOIN preguntas p ON p.id = rp.pregunta_id
+       LEFT JOIN temas t ON t.id = p.tema_id
        JOIN usuarios u ON u.id = rp.usuario_id
        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
        ORDER BY rp.fecha_creacion DESC, rp.id DESC
@@ -39,12 +48,22 @@ export const adminReportesPreguntasRepository = {
 
     if (filters.estado) {
       args.push(filters.estado);
-      where.push(`estado = $${args.length}`);
+      where.push(`rp.estado = $${args.length}`);
+    }
+    if (filters.oposicionIds) {
+      if (filters.oposicionIds.length === 0) {
+        where.push('false');
+      } else {
+        args.push(filters.oposicionIds);
+        where.push(`t.oposicion_id = ANY($${args.length}::bigint[])`);
+      }
     }
 
     const result = await pool.query(
       `SELECT COUNT(*)::int AS total
-       FROM reportes_preguntas
+       FROM reportes_preguntas rp
+       JOIN preguntas p ON p.id = rp.pregunta_id
+       LEFT JOIN temas t ON t.id = p.tema_id
        ${where.length ? `WHERE ${where.join(' AND ')}` : ''}`,
       args,
     );
@@ -72,9 +91,11 @@ export const adminReportesPreguntasRepository = {
               rp.motivo,
               rp.estado,
               rp.fecha_creacion,
-              p.enunciado AS pregunta_enunciado
+              p.enunciado AS pregunta_enunciado,
+              t.oposicion_id
        FROM reportes_preguntas rp
        JOIN preguntas p ON p.id = rp.pregunta_id
+       LEFT JOIN temas t ON t.id = p.tema_id
        WHERE rp.id = $1`,
       [reporteId],
     );

@@ -6,6 +6,8 @@ export const adminPreguntasCrudReadListPreguntasService = {
     const {
       page,
       page_size: pageSize,
+      q,
+      estado,
       oposicion_id: oposicionId,
       tema_id: temaId,
       bloque_id: bloqueId,
@@ -17,6 +19,8 @@ export const adminPreguntasCrudReadListPreguntasService = {
       temaId: temaId ?? null,
       bloqueId: bloqueId ?? null,
       nivelDificultad: nivelDificultad ?? null,
+      q: q ?? null,
+      estado: estado ?? null,
     };
 
     if (caller.role === 'profesor') {

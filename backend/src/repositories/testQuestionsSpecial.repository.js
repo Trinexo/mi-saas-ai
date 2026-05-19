@@ -1,11 +1,10 @@
 import pool from '../config/db.js';
 
 const SELECT_SIMULACRO_QUESTIONS_SQL = `
-  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
+  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
-  JOIN bloques bl ON bl.id = p.bloque_id
-  JOIN temas t ON t.id = bl.tema_id
+  JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE t.oposicion_id = $1
   GROUP BY p.id
@@ -14,7 +13,7 @@ const SELECT_SIMULACRO_QUESTIONS_SQL = `
 `;
 
 const SELECT_MARCADAS_QUESTIONS_SQL = `
-  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
+  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas_marcadas pm
   JOIN preguntas p ON p.id = pm.pregunta_id
@@ -26,14 +25,14 @@ const SELECT_MARCADAS_QUESTIONS_SQL = `
 `;
 
 const SELECT_DUE_QUESTIONS_SQL = `
-  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
+  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM repeticion_espaciada re
   JOIN preguntas p ON p.id = re.pregunta_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE re.usuario_id = $1
     AND re.proxima_revision <= NOW()
-    AND ($3::bigint IS NULL OR p.bloque_id = $3)
+    AND ($3::bigint IS NULL OR p.tema_id = $3)
   GROUP BY p.id, re.proxima_revision
   ORDER BY re.proxima_revision ASC
   LIMIT $2
@@ -50,12 +49,12 @@ const SELECT_REFUERZO_QUESTIONS_SQL = `
     ORDER BY cnt DESC, MAX(ru.fecha_respuesta) DESC
     LIMIT 200
   )
-  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad,
+  SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM failed f
   JOIN preguntas p ON p.id = f.pregunta_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE ($3::bigint IS NULL OR p.bloque_id = $3)
+  WHERE ($3::bigint IS NULL OR p.tema_id = $3)
   GROUP BY p.id, f.cnt
   ORDER BY f.cnt DESC, RANDOM()
   LIMIT $2
@@ -72,13 +71,13 @@ export const testQuestionsSpecialRepository = {
     return result.rows;
   },
 
-  async pickDueQuestions({ userId, bloqueId = null, numeroPreguntas }) {
-    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, numeroPreguntas, bloqueId ?? null]);
+  async pickDueQuestions({ userId, temaId = null, numeroPreguntas }) {
+    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, numeroPreguntas, temaId ?? null]);
     return result.rows;
   },
 
-  async pickRefuerzoQuestions({ userId, numeroPreguntas, bloqueId = null }) {
-    const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, bloqueId]);
+  async pickRefuerzoQuestions({ userId, numeroPreguntas, temaId = null }) {
+    const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, temaId]);
     return result.rows;
   },
 

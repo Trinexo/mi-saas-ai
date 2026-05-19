@@ -27,7 +27,7 @@ import {
 
 const router = Router();
 
-router.use(requireAuth, requireRole('admin', 'profesor'));
+router.use(requireAuth, requireRole('admin'));
 
 // ─── Simulacros ───────────────────────────────────────────────────────────────
 // GET    /api/admin/simulacros                           → listado paginado con filtros

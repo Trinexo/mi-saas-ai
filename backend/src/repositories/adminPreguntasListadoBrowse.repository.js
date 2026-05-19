@@ -14,15 +14,22 @@ const buildWhere = (filters, args) => {
   }
   if (filters.temaId) {
     args.push(filters.temaId);
-    where.push(`bl.tema_id = $${args.length}`);
+    where.push(`p.tema_id = $${args.length}`);
   }
-  if (filters.bloqueId) {
-    args.push(filters.bloqueId);
-    where.push(`p.bloque_id = $${args.length}`);
+  if (filters.coleccionId) {
+    args.push(filters.coleccionId);
+    where.push(`EXISTS (SELECT 1 FROM colecciones_preguntas cp WHERE cp.pregunta_id = p.id AND cp.coleccion_id = $${args.length})`);
   }
   if (filters.nivelDificultad) {
     args.push(filters.nivelDificultad);
     where.push(`p.nivel_dificultad = $${args.length}`);
+  }
+  if (filters.estado) {
+    // p.estado no existe en la tabla preguntas — filtro omitido
+  }
+  if (filters.q) {
+    args.push(`%${filters.q}%`);
+    where.push(`p.enunciado ILIKE $${args.length}`);
   }
 
   return where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -35,13 +42,11 @@ export const adminPreguntasListadoBrowseRepository = {
     args.push(limit, offset);
 
     const result = await pool.query(
-      `SELECT p.id, p.bloque_id, p.enunciado, p.nivel_dificultad,
-              bl.nombre AS bloque_nombre,
+      `SELECT p.id, p.tema_id, p.enunciado, p.nivel_dificultad,
               t.nombre  AS tema_nombre,
               o.nombre  AS oposicion_nombre
        FROM preguntas p
-       JOIN bloques bl ON bl.id = p.bloque_id
-       JOIN temas t    ON t.id  = bl.tema_id
+       JOIN temas t       ON t.id  = p.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        ${where}
        ORDER BY p.id DESC
@@ -59,8 +64,7 @@ export const adminPreguntasListadoBrowseRepository = {
     const result = await pool.query(
       `SELECT COUNT(*)::int AS total
        FROM preguntas p
-       JOIN bloques bl ON bl.id = p.bloque_id
-       JOIN temas t    ON t.id  = bl.tema_id
+       JOIN temas t ON t.id = p.tema_id
        ${where}`,
       args,
     );
@@ -76,16 +80,11 @@ export const adminPreguntasListadoBrowseRepository = {
     return result.rows.map((r) => r.oposicion_id);
   },
 
-  async existsBloqueInOposiciones(bloqueId, oposicionIds) {
+  async existsTemaInOposiciones(temaId, oposicionIds) {
     if (!oposicionIds || oposicionIds.length === 0) return false;
     const result = await pool.query(
-      `SELECT 1
-       FROM bloques bl
-       JOIN temas t ON t.id = bl.tema_id
-       WHERE bl.id = $1
-         AND t.oposicion_id = ANY($2::int[])
-       LIMIT 1`,
-      [bloqueId, oposicionIds],
+      `SELECT 1 FROM temas WHERE id = $1 AND oposicion_id = ANY($2::int[]) LIMIT 1`,
+      [temaId, oposicionIds],
     );
     return result.rows.length > 0;
   },

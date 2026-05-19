@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { adminApi } from '../../services/adminApi';
+import { profesorApi } from '../../services/profesorApi';
 import { useAuth } from '../../state/auth.jsx';
 
 const REPORTE_ESTADO_COLOR = {
@@ -23,7 +24,8 @@ const MODAL = {
 };
 
 export default function AdminRevisionPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isProfesor = user?.role === 'profesor';
 
   const [reportes, setReportes] = useState([]);
   const [reportesPag, setReportesPag] = useState({ page: 1, pageSize: 20, total: 0 });
@@ -34,9 +36,11 @@ export default function AdminRevisionPage() {
   const [mensajeModal, setMensajeModal] = useState('');
 
   const loadReportes = (page = 1) => {
+    if (!token || !user?.role) return;
     setReportesLoading(true);
-    adminApi
-      .listReportes(token, { page, page_size: 20 })
+    setReportesError('');
+    const api = isProfesor ? profesorApi.listReportes : adminApi.listReportes;
+    api(token, { page, page_size: 20 })
       .then((res) => {
         if (res) {
           setReportes(res.items ?? []);
@@ -47,12 +51,13 @@ export default function AdminRevisionPage() {
       .finally(() => setReportesLoading(false));
   };
 
-  useEffect(() => { loadReportes(1); }, [token]);
+  useEffect(() => { loadReportes(1); }, [token, user?.role]);
 
   const handleReporteEstado = async (reporteId, estado, mensajeAdmin) => {
     setUpdatingReporte(reporteId);
     try {
-      await adminApi.updateReporteEstado(token, reporteId, estado, mensajeAdmin || undefined);
+      const api = isProfesor ? profesorApi.updateReporteEstado : adminApi.updateReporteEstado;
+      await api(token, reporteId, estado, mensajeAdmin || undefined);
       setReportes((prev) => prev.map((r) => r.id === reporteId ? { ...r, estado } : r));
     } catch {
       setReportesError('No se pudo actualizar el estado del reporte.');
@@ -73,9 +78,13 @@ export default function AdminRevisionPage() {
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Reportes de usuarios</h2>
+        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>
+          {isProfesor ? 'Reportes de tus oposiciones' : 'Reportes de usuarios'}
+        </h2>
         <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-          Preguntas reportadas por los usuarios durante los tests
+          {isProfesor
+            ? 'Preguntas reportadas por alumnos en las oposiciones que tienes asignadas'
+            : 'Preguntas reportadas por los usuarios durante los tests'}
         </p>
       </div>
 

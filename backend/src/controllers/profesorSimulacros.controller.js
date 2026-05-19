@@ -3,7 +3,7 @@ import { ok, created } from '../utils/response.js';
 
 export const getMisTests = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { oposicion_id, q, page = 1, page_size = 20 } = req.query;
     const data = await profesorSimulacrosService.getMisTests(userId, {
       oposicionId: oposicion_id ? Number(oposicion_id) : undefined,
@@ -19,7 +19,7 @@ export const getMisTests = async (req, res, next) => {
 
 export const getMisSimulacros = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { oposicion_id, estado, q, page = 1, page_size = 20 } = req.query;
     const data = await profesorSimulacrosService.getMisSimulacros(userId, {
       oposicionId: oposicion_id ? Number(oposicion_id) : undefined,
@@ -36,7 +36,7 @@ export const getMisSimulacros = async (req, res, next) => {
 
 export const getSimulacro = async (req, res, next) => {
   try {
-    const data = await profesorSimulacrosService.getSimulacro(req.user.id, Number(req.params.id));
+    const data = await profesorSimulacrosService.getSimulacro(req.user.userId, Number(req.params.id));
     ok(res, data);
   } catch (err) {
     next(err);
@@ -45,7 +45,7 @@ export const getSimulacro = async (req, res, next) => {
 
 export const createSimulacro = async (req, res, next) => {
   try {
-    const data = await profesorSimulacrosService.createSimulacro(req.user.id, req.body);
+    const data = await profesorSimulacrosService.createSimulacro(req.user.userId, req.body);
     created(res, data, 'Simulacro creado');
   } catch (err) {
     next(err);
@@ -55,7 +55,7 @@ export const createSimulacro = async (req, res, next) => {
 export const updateSimulacro = async (req, res, next) => {
   try {
     const data = await profesorSimulacrosService.updateSimulacro(
-      req.user.id,
+      req.user.userId,
       Number(req.params.id),
       req.body
     );
@@ -67,7 +67,7 @@ export const updateSimulacro = async (req, res, next) => {
 
 export const deleteSimulacro = async (req, res, next) => {
   try {
-    const data = await profesorSimulacrosService.deleteSimulacro(req.user.id, Number(req.params.id));
+    const data = await profesorSimulacrosService.deleteSimulacro(req.user.userId, Number(req.params.id));
     ok(res, data);
   } catch (err) {
     next(err);
@@ -76,12 +76,10 @@ export const deleteSimulacro = async (req, res, next) => {
 
 export const createBloque = async (req, res, next) => {
   try {
-    const { nombre, orden } = req.body;
     const data = await profesorSimulacrosService.createBloque(
-      req.user.id,
+      req.user.userId,
       Number(req.params.id),
-      nombre,
-      orden
+      req.body
     );
     created(res, data, 'Bloque creado');
   } catch (err) {
@@ -92,7 +90,7 @@ export const createBloque = async (req, res, next) => {
 export const updateBloque = async (req, res, next) => {
   try {
     const data = await profesorSimulacrosService.updateBloque(
-      req.user.id,
+      req.user.userId,
       Number(req.params.id),
       Number(req.params.bloqueId),
       req.body
@@ -106,7 +104,7 @@ export const updateBloque = async (req, res, next) => {
 export const deleteBloque = async (req, res, next) => {
   try {
     const data = await profesorSimulacrosService.deleteBloque(
-      req.user.id,
+      req.user.userId,
       Number(req.params.id),
       Number(req.params.bloqueId)
     );
@@ -119,7 +117,7 @@ export const deleteBloque = async (req, res, next) => {
 export const asignarPreguntas = async (req, res, next) => {
   try {
     const data = await profesorSimulacrosService.asignarPreguntas(
-      req.user.id,
+      req.user.userId,
       Number(req.params.id),
       Number(req.params.bloqueId),
       req.body.pregunta_ids
@@ -133,7 +131,7 @@ export const asignarPreguntas = async (req, res, next) => {
 export const quitarPregunta = async (req, res, next) => {
   try {
     const data = await profesorSimulacrosService.quitarPregunta(
-      req.user.id,
+      req.user.userId,
       Number(req.params.id),
       Number(req.params.bloqueId),
       Number(req.params.preguntaId)

@@ -65,7 +65,7 @@ export default function AdminEtiquetasPage() {
 
   const handleSave = async () => {
     if (!form.nombre.trim()) { setFormError('El nombre es obligatorio.'); return; }
-    if (!hexValid(form.color)) { setFormError('El color debe ser un hexadecimal vÃ¡lido (#rrggbb).'); return; }
+    if (!hexValid(form.color)) { setFormError('El color debe ser un hexadecimal válido (#rrggbb).'); return; }
     setSaving(true); setFormError('');
     try {
       const payload = { nombre: form.nombre, color: form.color, descripcion: form.descripcion || null };
@@ -106,7 +106,7 @@ export default function AdminEtiquetasPage() {
 
       {/* Filtro */}
       <div style={{ ...SECTION, padding: '14px 20px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
-        <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Buscar etiquetaâ€¦"
+        <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Buscar etiqueta..."
           style={{ flex: '1 1 180px', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: '0.875rem', outline: 'none' }} />
       </div>
 
@@ -126,9 +126,9 @@ export default function AdminEtiquetasPage() {
               <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#111827' }}>{et.nombre}</span>
               <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>({et.total_preguntas ?? 0})</span>
               <button onClick={() => openEdit(et)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#6b7280', padding: '0 2px' }}>âœŽ</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#6b7280', padding: '0 2px' }}>Editar</button>
               <button onClick={() => setDeleteTarget(et)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#dc2626', padding: '0 2px' }}>âœ•</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#dc2626', padding: '0 2px' }}>Eliminar</button>
             </div>
           ))}
         </div>
@@ -137,9 +137,9 @@ export default function AdminEtiquetasPage() {
       {/* Tabla detallada */}
       <div style={SECTION}>
         {loading ? (
-          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Cargandoâ€¦</p>
+          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>Cargando...</p>
         ) : items.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>No hay etiquetas aÃºn. Crea la primera.</p>
+          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>No hay etiquetas aún. Crea la primera.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -147,7 +147,7 @@ export default function AdminEtiquetasPage() {
                 <tr style={{ background: '#f9fafb' }}>
                   <th style={TH}>Etiqueta</th>
                   <th style={TH}>Color</th>
-                  <th style={TH}>DescripciÃ³n</th>
+                  <th style={TH}>Descripción</th>
                   <th style={{ ...TH, textAlign: 'right' }}>Preguntas</th>
                   <th style={{ ...TH, textAlign: 'center' }}>Acciones</th>
                 </tr>
@@ -163,8 +163,8 @@ export default function AdminEtiquetasPage() {
                         <span style={{ fontWeight: 600 }}>{et.nombre}</span>
                       </div>
                     </td>
-                    <td style={{ ...TD, fontFamily: 'monospace', fontSize: '0.8rem', color: '#6b7280' }}>{et.color ?? 'â€”'}</td>
-                    <td style={{ ...TD, color: '#6b7280' }}>{et.descripcion || 'â€”'}</td>
+                    <td style={{ ...TD, fontFamily: 'monospace', fontSize: '0.8rem', color: '#6b7280' }}>{et.color ?? '-'}</td>
+                    <td style={{ ...TD, color: '#6b7280' }}>{et.descripcion || '-'}</td>
                     <td style={{ ...TD, textAlign: 'right', fontWeight: 600 }}>{et.total_preguntas ?? 0}</td>
                     <td style={{ ...TD, textAlign: 'center' }}>
                       <button onClick={() => openEdit(et)}
@@ -186,10 +186,10 @@ export default function AdminEtiquetasPage() {
         {totalPages > 1 && (
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 16 }}>
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: '#374151' }}>â€¹</button>
+              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer', color: '#374151' }}>Anterior</button>
             <span style={{ padding: '6px 14px', fontSize: '0.85rem', color: '#6b7280' }}>{page} / {totalPages}</span>
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: '#374151' }}>â€º</button>
+              style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer', color: '#374151' }}>Siguiente</button>
           </div>
         )}
       </div>
@@ -216,7 +216,7 @@ export default function AdminEtiquetasPage() {
                 style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: '0.9rem', fontFamily: 'monospace' }} />
             </div>
 
-            <label style={labelStyle}>DescripciÃ³n</label>
+            <label style={labelStyle}>Descripción</label>
             <textarea value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} rows={2}
               style={{ ...inputStyle, resize: 'vertical' }} />
 
@@ -241,7 +241,7 @@ export default function AdminEtiquetasPage() {
               </button>
               <button onClick={handleSave} disabled={saving}
                 style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
-                {saving ? 'Guardandoâ€¦' : 'Guardar'}
+                {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
           </div>
@@ -253,9 +253,9 @@ export default function AdminEtiquetasPage() {
         <div style={MODAL_OVERLAY} onClick={() => setDeleteTarget(null)}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 380, boxShadow: '0 8px 32px rgba(0,0,0,.18)' }}
             onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827' }}>Â¿Eliminar etiqueta?</h3>
+            <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827' }}>¿Eliminar etiqueta?</h3>
             <p style={{ margin: '0 0 20px', color: '#6b7280', fontSize: '0.9rem' }}>
-              Se eliminarÃ¡ <strong>{deleteTarget.nombre}</strong> y se desvincularÃ¡ de todas las preguntas.
+              Se eliminará <strong>{deleteTarget.nombre}</strong> y se desvinculará de todas las preguntas.
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => setDeleteTarget(null)} style={{ padding: '9px 20px', borderRadius: 9, border: '1px solid #e5e7eb', background: '#f9fafb', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
@@ -263,7 +263,7 @@ export default function AdminEtiquetasPage() {
               </button>
               <button onClick={handleDelete} disabled={deleting}
                 style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer' }}>
-                {deleting ? 'Eliminandoâ€¦' : 'Eliminar'}
+                {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>

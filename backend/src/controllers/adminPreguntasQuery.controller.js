@@ -3,7 +3,7 @@ import { adminService } from '../services/admin.service.js';
 
 export const listPreguntas = async (req, res, next) => {
   try {
-    const data = await adminService.listPreguntas(req.query, { userId: req.user.id, role: req.user.role });
+    const data = await adminService.listPreguntas(req.query, { userId: req.user.userId, role: req.user.role });
     return ok(res, data);
   } catch (error) {
     return next(error);

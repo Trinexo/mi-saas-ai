@@ -11,7 +11,7 @@ export default function OposicionMateriasTable({ temas, oposicionId, onPracticar
           <thead>
             <tr style={{ borderBottom: '2px solid #f1f5f9', textAlign: 'left' }}>
               <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600 }}>Tema</th>
-              <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>Bloques</th>
+              <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>Preguntas</th>
               <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, minWidth: 140 }}>Dominio</th>
               <th style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'center' }}>Acierto</th>
               <th style={{ padding: '8px 12px' }} />

@@ -29,7 +29,7 @@ export const countNoLeidas = async (req, res, next) => {
 export const marcarLeida = async (req, res, next) => {
   try {
     await notificacionesService.marcarLeida(req.params.id, req.user.userId);
-    return ok(res, null, 'Notificación marcada como leída');
+    return ok(res, null, 'Notificacion marcada como leida');
   } catch (error) {
     return next(error);
   }
@@ -38,7 +38,7 @@ export const marcarLeida = async (req, res, next) => {
 export const marcarTodasLeidas = async (req, res, next) => {
   try {
     const count = await notificacionesService.marcarTodasLeidas(req.user.userId);
-    return ok(res, { marcadas: count }, 'Todas las notificaciones marcadas como leídas');
+    return ok(res, { marcadas: count }, 'Todas las notificaciones marcadas como leidas');
   } catch (error) {
     return next(error);
   }

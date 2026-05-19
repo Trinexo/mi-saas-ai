@@ -1,136 +1,148 @@
-import { useEffect, useState } from 'react';
-import { getErrorMessage } from '../../services/api';
-import { profesorApi } from '../../services/profesorApi';
-import { useAuth } from '../../state/auth.jsx';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useAuth } from '../../state/auth.jsx';
+import { getErrorMessage } from '../../services/api';
+import { buildAlerts, buildOposicionCards, loadProfesorWorkspace } from './profesorWorkspaceData';
+import { A, B, Button, EmptyState, G, Header, KpiCard, P, PageShell, Panel, Progress, R, Select } from './ProfesorSharedUI';
 
 export default function ProfesorDashboardPage() {
   const { token, user } = useAuth();
-  const [data, setData] = useState(null);
+  const [workspace, setWorkspace] = useState(null);
+  const [oposicionesOptions, setOposicionesOptions] = useState([]);
   const [error, setError] = useState('');
+  const [oposicionId, setOposicionId] = useState('');
 
   useEffect(() => {
-    profesorApi.getDashboard(token)
-      .then(setData)
+    setError('');
+    loadProfesorWorkspace(token, { oposicion_id: oposicionId || undefined })
+      .then((data) => {
+        setWorkspace(data);
+        if (!oposicionId || oposicionesOptions.length === 0) {
+          setOposicionesOptions(data.oposiciones);
+        }
+        if (!oposicionId && data.oposiciones.length === 1) {
+          setOposicionId(String(data.oposiciones[0].id));
+        }
+      })
       .catch((e) => setError(getErrorMessage(e)));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, oposicionId]);
 
-  if (error) {
-    return (
-      <div style={{ padding: 20 }}>
-        <div style={{ padding: '12px 16px', background: '#fef2f2', color: '#dc2626', borderRadius: 10, fontSize: '0.9rem' }}>
-          {error}
-        </div>
-      </div>
-    );
-  }
+  const series = useMemo(() => workspace?.evolucion ?? [], [workspace]);
+  const cards = useMemo(() => workspace ? buildOposicionCards(workspace) : [], [workspace]);
+  const alerts = useMemo(() => workspace ? buildAlerts(workspace) : [], [workspace]);
 
-  if (!data) {
-    return <div style={{ padding: 20, color: '#6b7280' }}>Cargando…</div>;
-  }
+  if (error) return <div style={{ padding: 16, background: '#fef2f2', color: R, borderRadius: 10 }}>{error}</div>;
+  if (!workspace) return <div style={{ color: '#64748b' }}>Cargando...</div>;
 
-  const { oposiciones, stats, actividad } = data;
+  const activeStudents = workspace.kpis?.alumnos_activos ?? cards.reduce((acc, item) => acc + item.alumnos, 0);
+  const averageScore = workspace.kpis?.media_aciertos ?? (cards.length ? Math.round(cards.reduce((acc, item) => acc + item.aciertos, 0) / cards.length) : 0);
+  const activityItems = (workspace.actividad.length ? workspace.actividad : workspace.preguntas).slice(0, 6);
 
   return (
-    <div>
-      {/* Cabecera */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#111827' }}>
-          Hola, {user?.nombre ?? 'Profesor'}
-        </h1>
-        <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
-          Panel de profesor — resumen de tu actividad
-        </p>
+    <PageShell>
+      <Header
+        title={`Hola, ${user?.nombre ?? 'Profesor'}`}
+        subtitle="Aquí tienes un resumen académico de tus oposiciones."
+        action={<Button to="/profesor/preguntas/nueva">+ Nueva pregunta</Button>}
+      >
+        <input placeholder="Buscar alumnos, tests o preguntas..." style={{ width: 260, height: 38, border: '1px solid #e5e7eb', borderRadius: 8, padding: '0 12px', fontSize: '.82rem' }} />
+        <Select value={oposicionId} onChange={(event) => setOposicionId(event.target.value)}>
+          <option value="">Todas las oposiciones</option>
+          {oposicionesOptions.map((oposicion) => <option key={oposicion.id} value={oposicion.id}>{oposicion.nombre}</option>)}
+        </Select>
+      </Header>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 14 }}>
+        <KpiCard label="Alumnos activos" value={activeStudents} delta="Alumnos con acceso activo" color={G} to="/profesor/alumnos" />
+        <KpiCard label="Tests realizados hoy" value={workspace.kpis?.tests_realizados_hoy ?? workspace.totals.tests} delta="Sesiones finalizadas hoy" color={G} to="/profesor/tests" />
+        <KpiCard label="Media de aciertos" value={`${averageScore}%`} delta="Sobre sesiones finalizadas" color={G} to="/profesor/estadisticas" />
+        <KpiCard label="Simulacros completados" value={workspace.kpis?.simulacros_completados ?? workspace.totals.simulacros} delta="Modo simulacro" color={G} to="/profesor/simulacros" />
+        <KpiCard label="Preguntas pendientes revisión" value={workspace.kpis?.preguntas_pendientes_revision ?? workspace.totals.reportes} delta="Ver pendientes" color={P} to="/profesor/revision" />
       </div>
 
-      {/* Stats cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
-        {[
-          { label: 'Preguntas creadas', value: stats.total, bg: '#fff7ed', fg: '#ea580c', icon: '📝' },
-        ].map((c) => (
-            <div key={c.label} style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
-                {c.icon}
-              </div>
-              <span style={{ fontSize: '0.78rem', color: '#6b7280', fontWeight: 500 }}>{c.label}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 14, marginBottom: 14 }}>
+        <Panel title="Evolución del rendimiento" subtitle="Últimos 30 días">
+          {series.length ? (
+            <div style={{ height: 258, minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height={258}>
+                <LineChart data={series}>
+                  <CartesianGrid stroke="#eef2f7" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="aciertos" stroke={P} strokeWidth={3} dot={{ r: 3 }} name="Media aciertos (%)" />
+                  <Line type="monotone" dataKey="tiempo" stroke={G} strokeWidth={3} dot={{ r: 3 }} name="Tiempo medio (min)" />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: c.fg }}>{c.value}</div>
-          </div>
-        ))}
+          ) : (
+            <EmptyState title="Sin evolución todavía" text="Cuando los alumnos completen tests aparecerá la evolución real." />
+          )}
+        </Panel>
+
+        <Panel title="Actividad reciente" action={<Link to="/profesor/actividad" style={{ color: P, fontWeight: 800, fontSize: '.78rem', textDecoration: 'none' }}>Ver todo</Link>}>
+          {activityItems.map((item, index) => (
+            <div key={item.id ?? index} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: index < activityItems.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: index % 2 ? '#ede9fe' : '#dcfce7', color: index % 2 ? P : G, display: 'grid', placeItems: 'center', fontWeight: 900 }}>{index + 1}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ color: '#0f172a', fontWeight: 800, fontSize: '.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.enunciado ?? item.titulo ?? 'Actividad académica registrada'}</div>
+                <div style={{ color: '#64748b', fontSize: '.72rem', marginTop: 3 }}>{item.oposicion_nombre ?? 'Oposición'} · {item.fecha ? new Date(item.fecha).toLocaleDateString('es-ES') : 'Hoy'}</div>
+              </div>
+            </div>
+          ))}
+          {activityItems.length === 0 && <EmptyState title="Sin actividad reciente" text="Cuando crees contenido o recibas reportes aparecerá aquí." />}
+        </Panel>
       </div>
 
-      {/* Oposiciones asignadas */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginBottom: 20 }}>
-        <h2 style={{ margin: '0 0 12px', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>
-          Mis oposiciones ({oposiciones.length})
-        </h2>
-        {oposiciones.length === 0 ? (
-          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>
-            No tienes oposiciones asignadas. Contacta al administrador.
-          </p>
-        ) : (
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {oposiciones.map((o) => (
-              <div
-                key={o.id}
-                style={{
-                  background: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: 10,
-                  padding: '10px 16px',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: '#166534',
-                }}
-              >
-                {o.nombre}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
+        <Panel title="Mis oposiciones" subtitle="Workspaces académicos asignados">
+          {cards.length ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12 }}>
+              {cards.slice(0, 4).map((oposicion) => (
+                <Link key={oposicion.id} to={`/profesor/estadisticas/${oposicion.slug}`} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: 14, textDecoration: 'none', color: '#0f172a' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+                    <strong style={{ fontSize: '.86rem' }}>{oposicion.nombre}</strong>
+                    <span style={{ color: P, fontWeight: 900 }}>{oposicion.progreso}%</span>
+                  </div>
+                  <Progress value={oposicion.progreso} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14, color: '#64748b', fontSize: '.72rem' }}>
+                    <span>{oposicion.alumnos} alumnos</span>
+                    <span>{oposicion.tests} tests</span>
+                    <span>{oposicion.simulacros} simulacros</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="Sin oposiciones asignadas" text="Cuando tengas oposiciones asignadas aparecerán aquí." />
+          )}
+        </Panel>
 
-      {/* Actividad reciente */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e7eb', padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>
-            Actividad reciente
-          </h2>
-          <Link to="/profesor/preguntas" style={{ fontSize: '0.8rem', color: '#ea580c', textDecoration: 'none', fontWeight: 600 }}>
-            Ver todas →
-          </Link>
-        </div>
-        {actividad.length === 0 ? (
-          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>
-            Aún no has creado preguntas.
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {actividad.map((a) => (
-              <div key={a.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '8px 12px',
-                  background: '#f9fafb',
-                  borderRadius: 8,
-                  fontSize: '0.85rem',
-                }}
-              >
-                <span style={{ flex: 1, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {a.enunciado?.substring(0, 80)}{(a.enunciado?.length ?? 0) > 80 ? '…' : ''}
-                </span>
-                <span style={{ fontSize: '0.75rem', color: '#9ca3af', flexShrink: 0 }}>
-                  {a.oposicion_nombre} · {a.creado_en ? new Date(a.creado_en).toLocaleDateString() : ''}
-                </span>
-              </div>
-            ))}
+        <Panel title="Alertas importantes">
+          <div style={{ display: 'grid', gap: 10 }}>
+            {alerts.map((alert) => {
+              const color = alert.level === 'danger' ? R : alert.level === 'warning' ? A : B;
+              return (
+                <Link key={alert.title} to="/profesor/revision" style={{ display: 'block', padding: 12, borderRadius: 10, background: `${color}12`, color: '#0f172a', textDecoration: 'none', border: `1px solid ${color}22` }}>
+                  <div style={{ color, fontWeight: 900, fontSize: '.82rem' }}>{alert.title}</div>
+                  <div style={{ color: '#64748b', fontSize: '.75rem', marginTop: 4 }}>{alert.text}</div>
+                </Link>
+              );
+            })}
           </div>
-        )}
+          {series.length > 0 && (
+            <div style={{ height: 112, marginTop: 14, minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height={112}>
+                <AreaChart data={series}>
+                  <Area dataKey="actividad" stroke={P} fill="#ede9fe" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Panel>
       </div>
-    </div>
+    </PageShell>
   );
 }

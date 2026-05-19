@@ -3,6 +3,7 @@ import { useAuth } from '../../state/auth.jsx';
 import { testApi } from '../../services/testApi';
 import { getErrorMessage } from '../../services/api';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 /* ── Paleta ────────────────────────────────────────── */
 const O   = '#ea580c';
@@ -34,6 +35,7 @@ function DonutTooltip({ active, payload }) {
 
 export default function ResumenGlobalSection() {
   const { token } = useAuth();
+  const { isMobile } = useBreakpoint();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function ResumenGlobalSection() {
 
       {/* KPIs */}
       <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
           {kpis.map(({ value, label, icon, color, bg }) => (
             <div key={label} style={{ ...CARD, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>

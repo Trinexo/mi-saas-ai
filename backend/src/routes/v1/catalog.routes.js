@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validate } from '../../middleware/validate.middleware.js';
 import {
   getBloques,
+  getColecciones,
   getOposiciones,
   getPreguntas,
   getTemas,
@@ -13,6 +14,7 @@ const router = Router();
 router.get('/oposiciones', getOposiciones);
 router.get('/temas', validate(temasByOposicionQuerySchema, 'query'), getTemas);
 router.get('/bloques', validate(bloquesQuerySchema, 'query'), getBloques);
+router.get('/colecciones', validate(bloquesQuerySchema, 'query'), getColecciones);
 router.get('/preguntas', validate(preguntasQuerySchema, 'query'), getPreguntas);
 
 export default router;

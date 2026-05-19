@@ -12,12 +12,14 @@ const PLAN_BADGE = {
 
 const NAV_LINKS = [
   { to: '/',                label: 'Inicio',          exact: true,  icon: 'home'      },
-  { to: '/configurar-test', label: 'Mis tests',       exact: false, icon: 'clipboard' },
+  { to: '/plan-estudio',    label: 'Plan de estudio', exact: false, icon: 'clock'     },
+  { to: '/mis-tests',       label: 'Mis tests',        exact: false, icon: 'clipboard' },
+  { to: '/simulacros',      label: 'Simulacros',      exact: false, icon: 'simulacro' },
+  { to: '/configurar-test', label: 'Crear test',       exact: false, icon: 'play'      },
   { to: '/mis-oposiciones', label: 'Mis oposiciones', exact: false, icon: 'book'      },
   { to: '/catalogo',        label: 'Catálogo',        exact: false, icon: 'grid'      },
   { to: '/progreso',        label: 'Estadísticas',    exact: false, icon: 'chart'     },
   { to: '/historial',       label: 'Historial',       exact: false, icon: 'clock'     },
-  { to: '/simulacros',      label: 'Simulacros',      exact: false, icon: 'simulacro' },
   { to: '/ranking',         label: 'Ranking',         exact: false, icon: 'trophy'    },
   { to: '/marcadas',        label: 'Favoritos',       exact: false, icon: 'star'      },
 ];
@@ -32,6 +34,8 @@ const BOTTOM_NAV = [
 
 const ADMIN_NAV = [
   { to: '/admin',            exact: true,  icon: '▦', label: 'Dashboard' },
+  { to: '/admin/tests',      exact: false, icon: '▣', label: 'Tests' },
+  { to: '/admin/simulacros', exact: false, icon: '▤', label: 'Simulacros' },
   { to: '/admin/preguntas',  exact: false, icon: '❔', label: 'Preguntas' },
   { to: '/admin/catalogo',   exact: false, icon: '◈', label: 'Catálogo' },
   { to: '/admin/usuarios',   exact: false, icon: '◉', label: 'Usuarios' },
@@ -43,8 +47,17 @@ const ADMIN_NAV = [
 ];
 
 const PROFESOR_NAV = [
-  { to: '/profesor',           exact: true,  icon: '▦', label: 'Dashboard' },
-  { to: '/profesor/preguntas', exact: false, icon: '❔', label: 'Mis preguntas' },
+  { to: '/profesor',                exact: true,  icon: '▦', label: 'Dashboard' },
+  { to: '/profesor/oposiciones',    exact: false, icon: 'book', label: 'Mis oposiciones' },
+  { to: '/profesor/temario',        exact: false, icon: 'grid', label: 'Temario' },
+  { to: '/profesor/tests',          exact: false, icon: '▣', label: 'Tests' },
+  { to: '/profesor/simulacros',     exact: false, icon: '▤', label: 'Simulacros' },
+  { to: '/profesor/preguntas',      exact: false, icon: '❔', label: 'Preguntas' },
+  { to: '/profesor/alumnos',        exact: false, icon: 'user', label: 'Alumnos' },
+  { to: '/profesor/estadisticas',   exact: false, icon: 'chart', label: 'Estadísticas' },
+  { to: '/profesor/calendario',     exact: false, icon: 'clock', label: 'Planificación' },
+  { to: '/profesor/revision',       exact: false, icon: '◎', label: 'Revisión', hasBadge: true },
+  { to: '/profesor/notificaciones', exact: false, icon: 'bell', label: 'Notificaciones' },
 ];
 
 const ICON_SVG = {
@@ -80,8 +93,10 @@ function NavIcon({ name }) {
 
 function SidebarLink({ to, label, exact, icon, badge }) {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const active = exact ? pathname === to : pathname.startsWith(to);
   const [hov, setHov] = useState(false);
+  const accent = user?.role === 'profesor' ? '#6d28d9' : '#ea580c';
 
   return (
     <Link
@@ -96,7 +111,7 @@ function SidebarLink({ to, label, exact, icon, badge }) {
         borderRadius: 10,
         textDecoration: 'none',
         color: active ? '#ffffff' : hov ? '#ffffff' : '#9ca3af',
-        background: active ? '#ea580c' : hov ? 'rgba(255,255,255,.07)' : 'transparent',
+        background: active ? accent : hov ? 'rgba(255,255,255,.07)' : 'transparent',
         fontWeight: active ? 600 : 500,
         fontSize: '0.875rem',
         transition: 'all .15s',
@@ -114,6 +129,28 @@ function SidebarLink({ to, label, exact, icon, badge }) {
   );
 }
 
+function NavLink({ to, label, exact }) {
+  const { pathname } = useLocation();
+  const active = exact ? pathname === to : pathname.startsWith(to);
+  return (
+    <Link
+      to={to}
+      style={{
+        textDecoration: 'none',
+        fontSize: '0.85rem',
+        fontWeight: active ? 700 : 500,
+        color: active ? '#ea580c' : '#e5e7eb',
+        padding: '4px 2px',
+        borderBottom: active ? '2px solid #ea580c' : '2px solid transparent',
+        transition: 'color 0.15s',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
+
 function Shell() {
   const { user, logout, token } = useAuth();
   const { plan } = useUserPlan();
@@ -122,16 +159,21 @@ function Shell() {
   const inicial = (user?.nombre || user?.email || '?')[0].toUpperCase();
   const planBadge = PLAN_BADGE[plan] ?? null;
   const isStaff = user && ['admin', 'profesor'].includes(user.role);
+  const canUseNotifications = user?.role !== 'admin';
+  const notificationsPath = user?.role === 'profesor' ? '/profesor/notificaciones' : '/notificaciones';
   const [sinLeer, setSinLeer] = useState(0);
   const revision = useRevision();
   const totalBadge = revision?.reportesAbiertos ?? 0;
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !canUseNotifications) {
+      setSinLeer(0);
+      return;
+    }
     notificacionesApi.countSinLeer(token)
       .then((res) => { if (res) setSinLeer(res.total ?? 0); })
       .catch(() => {});
-  }, [token]);
+  }, [token, canUseNotifications]);
 
   const handleLogout = () => {
     logout();
@@ -139,6 +181,8 @@ function Shell() {
   };
 
   const nombre = user?.nombre || user?.email || 'Usuario';
+  const homePath = user?.role === 'admin' ? '/admin' : user?.role === 'profesor' ? '/profesor' : '/';
+  const profilePath = user?.role === 'profesor' ? '/profesor/perfil' : '/perfil';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f3f4f6' }}>
@@ -157,7 +201,7 @@ function Shell() {
         {/* Logo */}
         <div style={{ padding: '20px 20px 14px' }}>
           <Link
-            to={isStaff ? '/admin' : '/'}
+            to={homePath}
             style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9 }}
           >
             <div style={{
@@ -183,7 +227,9 @@ function Shell() {
           {user?.role === 'admin' && ADMIN_NAV.map((l) => (
             <SidebarLink key={l.to} {...l} badge={l.hasBadge ? totalBadge : 0} />
           ))}
-          {user?.role === 'profesor' && PROFESOR_NAV.map((l) => <SidebarLink key={l.to} {...l} />)}
+          {user?.role === 'profesor' && PROFESOR_NAV.map((l) => (
+            <SidebarLink key={l.to} {...l} badge={l.hasBadge ? totalBadge : 0} />
+          ))}
         </nav>
 
         {/* User block */}
@@ -217,17 +263,17 @@ function Shell() {
                 Planes
               </Link>
             )}
-            {!isStaff && (
+            {canUseNotifications && (
               <Link
-                to="/notificaciones"
+                to={notificationsPath}
                 title="Notificaciones"
-                style={{ position: 'relative', display: 'flex', color: '#6b7280', textDecoration: 'none' }}
+                style={{ position: 'relative', display: 'flex', color: '#6b7280', textDecoration: 'none', marginLeft: isStaff ? 'auto' : 0 }}
               >
                 <NavIcon name="bell" />
                 {sinLeer > 0 && (
                   <span style={{
                     position: 'absolute', top: -4, right: -5,
-                    background: '#ea580c', color: '#fff', borderRadius: 999,
+                background: user?.role === 'profesor' ? '#6d28d9' : '#ea580c', color: '#fff', borderRadius: 999,
                     fontSize: '0.55rem', fontWeight: 700, padding: '1px 4px',
                     lineHeight: '13px', minWidth: 13, textAlign: 'center',
                   }}>
@@ -239,7 +285,7 @@ function Shell() {
           </div>
 
           {/* Avatar + nombre */}
-          <Link to="/perfil" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to={profilePath} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%', background: '#ea580c',
               color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',

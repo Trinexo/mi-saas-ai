@@ -4,6 +4,7 @@ export const progressGeneralStatsRepository = {
   async getUserStats(userId) {
     const result = await pool.query(
       `SELECT COUNT(rt.test_id)::int AS total_tests,
+              COUNT(CASE WHEN t.tipo_test = 'simulacro' THEN 1 END)::int AS simulacros,
               COALESCE(SUM(rt.aciertos), 0)::int AS aciertos,
               COALESCE(SUM(rt.errores), 0)::int AS errores,
               COALESCE(SUM(rt.blancos), 0)::int AS blancos,
@@ -18,6 +19,7 @@ export const progressGeneralStatsRepository = {
     const row = result.rows[0];
     return {
       totalTests: Number(row.total_tests ?? 0),
+      simulacros: Number(row.simulacros ?? 0),
       aciertos: Number(row.aciertos ?? 0),
       errores: Number(row.errores ?? 0),
       blancos: Number(row.blancos ?? 0),

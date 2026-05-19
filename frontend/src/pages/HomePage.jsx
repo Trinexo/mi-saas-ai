@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
+import { planEstudioApi } from '../services/planEstudioApi';
 import { useAsyncAction } from '../hooks/useAsyncAction';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 /* ── Paleta ───────────────────────────────────────────────── */
 const O   = '#ea580c';
@@ -99,16 +101,26 @@ function KpiCard({ icon, iconBg, iconColor, value, delta, label }) {
 /* ── KPI Bar ──────────────────────────────────────────────── */
 function KpiBar() {
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const [stats, setStats] = useState(null);
   const [racha, setRacha] = useState(null);
+  const [ranking, setRanking] = useState(null);
 
   useEffect(() => {
     testApi.userStats(token).then(setStats).catch(() => {});
     testApi.getRacha(token).then(setRacha).catch(() => {});
   }, [token]);
 
+  useEffect(() => {
+    if (!oposicionActiva?.id) { setRanking(null); return; }
+    testApi.getRanking(token, oposicionActiva.id).then(setRanking).catch(() => setRanking(null));
+  }, [token, oposicionActiva?.id]);
+
   const total = (stats?.aciertos || 0) + (stats?.errores || 0) + (stats?.blancos || 0);
   const pctAciertos = total > 0 ? Math.round((stats.aciertos / total) * 100) : null;
+
+  const rankingValue = ranking?.miPosicion != null ? `Top ${Math.round(100 - ranking.percentilSuperado)}%` : '—';
+  const rankingDelta = ranking?.totalParticipantes > 0 ? `Entre ${ranking.totalParticipantes} opositores` : null;
 
   return (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -127,96 +139,161 @@ function KpiBar() {
         delta={racha?.estudioHoy ? '🔥 Racha activa' : null}
         label="Racha actual" />
       <KpiCard icon={<IconTrophy />} iconBg="#fdf4ff" iconColor="#9333ea"
-        value="Top 8%" delta="Entre 24.532 opositores" label="Posición global" />
+        value={rankingValue} delta={rankingDelta} label="Posición global" />
     </div>
   );
 }
 
 /* ── Continuar donde lo dejaste ──────────────────────────── */
+const TIPO_META = {
+  retomar:   { etiqueta: '🔄 Pendiente',  labelCard: 'Retomar test incompleto', btnTxt: 'Continuar test'  },
+  mejorar:   { etiqueta: null,             labelCard: 'Tema a mejorar',          btnTxt: 'Practicar ahora' },
+  siguiente: { etiqueta: '✨ Sin iniciar', labelCard: 'Siguiente en el plan',    btnTxt: 'Empezar tema'    },
+  repaso:    { etiqueta: '⭐ Al 90%+',     labelCard: '¡Gran nivel!',            btnTxt: 'Hacer repaso'    },
+  empezar:   { etiqueta: null,             labelCard: 'Empieza a estudiar',      btnTxt: null              },
+};
+
 function ContinuarCard() {
   const navigate  = useNavigate();
   const { token } = useAuth();
   const { isLoading, runAction } = useAsyncAction();
-  const [ultimo, setUltimo] = useState(null);
-  const [recom, setRecom]   = useState(null);
-  const [hov, setHov]       = useState(false);
+  const [sugerencia, setSugerencia] = useState(undefined); // undefined=cargando
+  const [hov, setHov] = useState(false);
 
   useEffect(() => {
-    testApi.history(token, { limit: 1 })
-      .then((h) => { if (Array.isArray(h) && h.length) setUltimo(h[0]); })
-      .catch(() => {});
-    testApi.getRecommended(token).then(setRecom).catch(() => {});
+    testApi.getContinuar(token).then(setSugerencia).catch(() => setSugerencia(null));
   }, [token]);
 
-  const onContinuar = async () => {
-    if (!recom) return;
-    let test;
-    if (recom.modo === 'refuerzo') {
-      const p = { numeroPreguntas: Number(recom.numeroPreguntas || 10) };
-      if (recom.temaId) p.temaId = Number(recom.temaId);
-      test = await runAction(() => testApi.generateRefuerzo(token, p));
-    } else {
-      const p = { modo: recom.modo || 'adaptativo', numeroPreguntas: Number(recom.numeroPreguntas || 10), dificultad: recom.dificultad || 'mixto' };
-      if (recom.temasMix?.length) p.temasMix = recom.temasMix;
-      else if (recom.temaId) p.temaId = Number(recom.temaId);
-      if (recom.oposicionId) p.oposicionId = Number(recom.oposicionId);
-      test = await runAction(() => testApi.generate(token, p));
+  const onAccion = async () => {
+    const s = sugerencia;
+    if (!s) return;
+
+    if (s.tipo === 'retomar') {
+      const activeTest = {
+        testId: s.config.id,
+        temaId: s.config.temaId,
+        oposicionId: s.config.oposicionId,
+        temaNombre: s.subtitulo || null,
+        oposicionNombre: s.titulo || null,
+        modo: s.config.tipoTest,
+        dificultad: 'mixto',
+        numeroPreguntas: s.config.numeroPreguntas,
+        duracionSegundos: null,
+        feedbackInmediato: false,
+        preguntas: s.config.preguntas,
+      };
+      sessionStorage.setItem('active_test', JSON.stringify(activeTest));
+      navigate('/test');
+      return;
     }
+    if (s.tipo === 'empezar') { navigate('/configurar-test'); return; }
+
+    const params = { modo: 'normal', numeroPreguntas: 10, dificultad: 'mixto' };
+    if (s.temaId) params.temaId = s.temaId;
+    else if (s.oposicionId) params.oposicionId = s.oposicionId;
+
+    const test = await runAction(() => testApi.generate(token, params));
     if (test) { sessionStorage.setItem('active_test', JSON.stringify(test)); navigate('/test'); }
   };
 
-  const titulo = ultimo?.oposicion_nombre || ultimo?.nombre || recom?.oposicionNombre || 'Test personalizado';
-  const pct    = ultimo ? Math.round(((ultimo.respondidas || 0) / (ultimo.total || 1)) * 100) : null;
-  const resp   = ultimo?.respondidas || 0;
-  const tot    = ultimo?.total || recom?.numeroPreguntas || 10;
+  /* ── Loading ──────────────────────────────────────────── */
+  if (sugerencia === undefined) {
+    return (
+      <div style={{ ...CARD, padding: '24px 26px', display: 'flex', alignItems: 'center', gap: 14, minHeight: 120 }}>
+        <div style={{ width: 36, height: 36, background: '#f3f4f6', borderRadius: 10, flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ height: 12, width: 120, background: '#f3f4f6', borderRadius: 6, marginBottom: 8 }} />
+          <div style={{ height: 10, width: 200, background: '#f9fafb', borderRadius: 6 }} />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Error ────────────────────────────────────────────── */
+  if (!sugerencia) {
+    return (
+      <div style={{ ...CARD, padding: '24px 26px' }}>
+        <Link to="/configurar-test" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: O, color: '#fff', borderRadius: 10,
+          padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
+          textDecoration: 'none', boxShadow: `0 3px 12px ${O}40`,
+        }}>
+          <IconPlay /> Empezar a estudiar
+        </Link>
+      </div>
+    );
+  }
+
+  const { tipo, titulo, motivo, pctAciertos } = sugerencia;
+  const meta  = TIPO_META[tipo] || TIPO_META.siguiente;
+  const badge = tipo === 'mejorar' ? `${pctAciertos}% aciertos` : meta.etiqueta;
 
   return (
-    <div style={{ ...CARD, padding: '24px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ ...CARD, padding: '24px 26px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Cabecera */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, background: OBG, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: O }}>
+        <div style={{ width: 36, height: 36, background: OBG, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: O, flexShrink: 0 }}>
           <IconPlay />
         </div>
-        <div>
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Continuar donde lo dejaste</div>
-          <div style={{ fontSize: '1rem', fontWeight: 700, color: DK, marginTop: 1 }}>{titulo}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              {meta.labelCard}
+            </span>
+            {badge && (
+              <span style={{
+                fontSize: '0.68rem', fontWeight: 700,
+                background: tipo === 'mejorar' ? '#fef2f2' : OBG,
+                color:      tipo === 'mejorar' ? '#dc2626' : O,
+                borderRadius: 8, padding: '1px 8px',
+              }}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <div style={{
+            fontSize: '0.92rem', fontWeight: 700, color: DK, marginTop: 2,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {tipo === 'empezar' ? 'Aún no has hecho ningún test' : titulo}
+          </div>
         </div>
       </div>
 
-      {pct != null && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: '0.8rem', color: G }}>{pct}% completado</span>
-            <span style={{ fontSize: '0.8rem', color: GL }}>{resp}/{tot} preguntas</span>
-          </div>
-          <ProgressBar pct={pct} />
-        </div>
-      )}
+      {/* Motivo */}
+      <div style={{ fontSize: '0.82rem', color: G, lineHeight: 1.5 }}>{motivo}</div>
 
-      {recom?.motivo && <div style={{ fontSize: '0.82rem', color: G, lineHeight: 1.5 }}>{recom.motivo}</div>}
-
+      {/* Botones */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <button
-          disabled={isLoading}
-          onClick={onContinuar}
-          onMouseEnter={() => setHov(true)}
-          onMouseLeave={() => setHov(false)}
-          style={{
+        {tipo === 'empezar' ? (
+          <Link to="/configurar-test" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: hov ? '#c2410c' : O, color: '#fff', border: 'none', borderRadius: 10,
+            background: O, color: '#fff', borderRadius: 10,
             padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
-            cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1,
-            boxShadow: `0 3px 12px ${O}40`, transition: 'all .15s',
-          }}
-        >
-          <IconPlay />{isLoading ? 'Generando…' : 'Continuar test'}
-        </button>
-        <Link to="/configurar-test" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '10px 18px', borderRadius: 10, textDecoration: 'none',
-          border: `1.5px solid ${BD}`, color: G, fontWeight: 600, fontSize: '0.88rem', background: SRF,
-        }}>
-          Nuevo test
-        </Link>
+            textDecoration: 'none', boxShadow: `0 3px 12px ${O}40`,
+          }}>
+            <IconPlay /> Hacer mi primer test
+          </Link>
+        ) : (
+          <>
+            <button
+              disabled={isLoading}
+              onClick={onAccion}
+              onMouseEnter={() => setHov(true)}
+              onMouseLeave={() => setHov(false)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: hov ? '#c2410c' : O, color: '#fff', border: 'none', borderRadius: 10,
+                padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
+                cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.7 : 1,
+                boxShadow: `0 3px 12px ${O}40`, transition: 'background .15s',
+              }}
+            >
+              <IconPlay />{isLoading ? 'Generando…' : meta.btnTxt}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -224,21 +301,136 @@ function ContinuarCard() {
 
 /* ── Plan de estudio semanal ──────────────────────────────── */
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const MATERIAS_DEMO = ['Derecho Constitucional', 'Derecho Administrativo', 'Unión Europea', 'Gestión Pública', 'Informática', null, null];
 
 function PlanSemanal() {
   const { token } = useAuth();
+  const navigate = useNavigate();
+  const { oposicionActiva } = useOposicionActiva();
   const [plan, setPlan] = useState(null);
+  const [actividades, setActividades] = useState([]);
+  const [startingId, setStartingId] = useState(null);
+  const [planError, setPlanError] = useState('');
 
   useEffect(() => {
     testApi.getProgresoSemanal(token).then(setPlan).catch(() => setPlan(null));
   }, [token]);
 
-  const todayIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; })();
+  useEffect(() => {
+    if (!token || !oposicionActiva?.id) {
+      setActividades([]);
+      return;
+    }
+    planEstudioApi.list(token, oposicionActiva.id)
+      .then((res) => setActividades(Array.isArray(res?.items) ? res.items.slice(0, 4) : []))
+      .catch(() => setActividades([]));
+  }, [token, oposicionActiva?.id]);
 
-  const sesiones = (plan?.dias && Array.isArray(plan.dias))
-    ? plan.dias
-    : DIAS.map((dia, i) => ({ dia, materia: MATERIAS_DEMO[i], completado: i < todayIdx, esHoy: i === todayIdx }));
+  const handleEmpezarPlan = async (item) => {
+    if (!item?.id || startingId) return;
+    setStartingId(item.id);
+    setPlanError('');
+    try {
+      const test = await planEstudioApi.empezar(token, item.id);
+      sessionStorage.setItem('active_test', JSON.stringify(test));
+      navigate('/test');
+    } catch (error) {
+      setPlanError(error.message || 'No se pudo iniciar esta actividad.');
+    } finally {
+      setStartingId(null);
+    }
+  };
+
+  if (actividades.length > 0) {
+    return (
+      <div style={{ ...CARD, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Plan de estudio</div>
+            <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Recomendado por tu profesor</div>
+          </div>
+          <Link to="/plan-estudio" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver todo</Link>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {actividades.map((item) => {
+            const date = item.fecha_inicio
+              ? new Date(item.fecha_inicio).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+              : 'Próximo';
+            const estado = item.estado_alumno || 'proximo';
+            const enabled = estado === 'disponible';
+            const completado = estado === 'completado';
+            const loading = startingId === item.id;
+            const nota = item.mi_mejor_nota != null ? Number(item.mi_mejor_nota) : null;
+            const estadoLabel = enabled
+              ? 'Disponible'
+              : completado
+                ? (nota != null ? `${nota.toFixed(1)} pts` : 'Completado')
+                : estado === 'cerrado'
+                  ? 'Cerrado'
+                  : 'Próximo';
+            return (
+              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'center', padding: '9px 10px', borderRadius: 10, border: `1px solid ${BD}`, background: enabled ? OBG : '#fff' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: DK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.titulo}</div>
+                  <div style={{ fontSize: '0.68rem', color: GL, marginTop: 2 }}>
+                    {date} · {completado ? 'Completado' : estadoLabel}
+                  </div>
+                </div>
+                {enabled ? (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleEmpezarPlan(item)}
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      color: '#fff',
+                      background: O,
+                      borderRadius: 8,
+                      padding: '6px 9px',
+                      border: 'none',
+                      cursor: loading ? 'wait' : 'pointer',
+                      opacity: loading ? 0.75 : 1,
+                    }}
+                  >
+                    {loading ? 'Abriendo...' : 'Empezar'}
+                  </button>
+                ) : (
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: completado ? '#15803d' : O, background: completado ? '#dcfce7' : OBG, padding: '4px 8px', borderRadius: 20 }}>
+                    {estadoLabel}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {planError && <div style={{ color: '#dc2626', fontSize: '0.72rem', marginTop: 10 }}>{planError}</div>}
+      </div>
+    );
+  }
+
+  if (!plan?.dias || !Array.isArray(plan.dias) || plan.dias.length === 0) {
+    return (
+      <div style={{ ...CARD, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Plan de estudio</div>
+            <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Aún no hay actividades programadas</div>
+          </div>
+          <Link to="/plan-estudio" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver plan</Link>
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+          {DIAS.map((dia) => (
+            <div key={dia} style={{ flex: 1, height: 4, borderRadius: 999, background: '#e5e7eb' }} />
+          ))}
+        </div>
+        <div style={{ padding: '14px 10px', borderRadius: 10, border: `1px dashed ${BD}`, background: '#fff', color: GL, fontSize: '0.78rem', lineHeight: 1.45 }}>
+          Tu profesor podrá publicar aquí simulacros, tests recomendados o temas para repasar.
+        </div>
+      </div>
+    );
+  }
+
+  const sesiones = plan.dias;
 
   const completadas = sesiones.filter((s) => s.completado).length;
 
@@ -249,7 +441,7 @@ function PlanSemanal() {
           <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Plan de estudio</div>
           <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>{completadas}/7 sesiones esta semana</div>
         </div>
-        <Link to="/mis-oposiciones" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver plan</Link>
+        <Link to="/plan-estudio" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver plan</Link>
       </div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
         {sesiones.map((s, i) => (
@@ -275,32 +467,131 @@ function PlanSemanal() {
   );
 }
 
-/* ── Recomendados ─────────────────────────────────────────── */
-const RECOMENDADOS = [
-  { to: '/configurar-test', label: 'Simulacro General',      desc: '100 preguntas · 90 min', meta: 'Ideal para ti',       pct: null, color: O,         bg: OBG        },
-  { to: '/configurar-test', label: 'Derecho Administrativo', desc: '56 preguntas',            meta: 'Difícil · 72%',       pct: 72,   color: '#16a34a', bg: '#f0fdf4'  },
-  { to: '/configurar-test', label: 'Ley 39/2015',            desc: '40 preguntas',            meta: 'Medio · 67%',         pct: 67,   color: '#2563eb', bg: '#eff6ff'  },
-  { to: '/configurar-test', label: 'Constitución Española',  desc: '50 preguntas',            meta: 'Fácil · 81%',         pct: 81,   color: '#9333ea', bg: '#fdf4ff'  },
-];
+/* ── Recomendados para ti (datos reales) ─────────────────── */
+function RecomendadoParaTi() {
+  const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
+  const navigate = useNavigate();
+  const { isMobile, isTablet } = useBreakpoint();
+  const [temas, setTemas] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [generandoId, setGenerandoId] = useState(null);
 
-function RecomendadoCard({ to, label, desc, meta, pct, color, bg }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <Link to={to} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ textDecoration: 'none', flex: 1, minWidth: 0 }}>
-      <div style={{ ...CARD, padding: '18px 16px', transform: hov ? 'translateY(-3px)' : 'none', boxShadow: hov ? `0 8px 24px ${color}20` : CARD.boxShadow, borderColor: hov ? `${color}40` : BD, transition: 'all .18s ease', display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <IconClipboard />
+  useEffect(() => {
+    if (!oposicionActiva?.id) { setCargando(false); return; }
+    testApi.getProgresoTemasReal(token, oposicionActiva.id)
+      .then((data) => {
+        const conActividad = (data || [])
+          .filter((t) => t.intentos > 0)
+          .sort((a, b) => a.porcentajeAcierto - b.porcentajeAcierto);
+        const sinActividad = (data || [])
+          .filter((t) => t.intentos === 0 && t.totalPreguntas > 0);
+        setTemas([...conActividad, ...sinActividad].slice(0, 4));
+      })
+      .catch(() => setTemas([]))
+      .finally(() => setCargando(false));
+  }, [token, oposicionActiva?.id]);
+
+  const onPracticar = async (tema) => {
+    if (generandoId) return;
+    setGenerandoId(tema.temaId);
+    try {
+      const test = await testApi.generate(token, {
+        modo: 'normal',
+        numeroPreguntas: 10,
+        dificultad: 'mixto',
+        temaId: tema.temaId,
+        ...(oposicionActiva?.id ? { oposicionId: oposicionActiva.id } : {}),
+      });
+      if (test) { sessionStorage.setItem('active_test', JSON.stringify(test)); navigate('/test'); }
+    } catch { /* silencioso */ } finally {
+      setGenerandoId(null);
+    }
+  };
+
+  if (!oposicionActiva?.id) return null;
+
+  if (cargando) {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Recomendados para ti</span>
         </div>
-        <div>
-          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: DK, lineHeight: 1.3, marginBottom: 3 }}>{label}</div>
-          <div style={{ fontSize: '0.72rem', color: GL }}>{desc}</div>
-        </div>
-        {pct != null && <ProgressBar pct={pct} color={color} />}
-        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: hov ? color : GL, display: 'flex', alignItems: 'center', gap: 4, marginTop: 'auto', transition: 'color .15s' }}>
-          {meta}{hov && <IconArrow />}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: 14 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} style={{ ...CARD, padding: '18px 16px', height: 150, background: '#f9fafb', animation: 'pulse 1.5s infinite' }} />
+          ))}
         </div>
       </div>
-    </Link>
+    );
+  }
+
+  if (!temas.length) {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Recomendados para ti</span>
+          <Link to="/mis-oposiciones" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+            Ver temario <IconArrow />
+          </Link>
+        </div>
+        <div style={{ ...CARD, padding: '20px 24px', color: GL, fontSize: '0.82rem', lineHeight: 1.6 }}>
+          Empieza a hacer tests para ver aquí tus temas más débiles y recibir recomendaciones personalizadas.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Recomendados para ti</span>
+          <span style={{ fontSize: '0.72rem', color: GL, marginLeft: 8 }}>temas que necesitan refuerzo</span>
+        </div>
+        <Link to="/progreso" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+          Ver estadísticas <IconArrow />
+        </Link>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: 14 }}>
+        {temas.map((tema) => {
+          const pct          = tema.intentos > 0 ? tema.porcentajeAcierto : null;
+          const sinPracticar = tema.intentos === 0;
+          const color        = sinPracticar ? '#2563eb' : pct < 50 ? '#dc2626' : pct < 70 ? O : '#16a34a';
+          const bg           = sinPracticar ? '#eff6ff' : pct < 50 ? '#fef2f2' : pct < 70 ? OBG : '#f0fdf4';
+          const meta         = sinPracticar
+            ? 'Sin practicar aún'
+            : `${pct}% aciertos · ${tema.intentos} intentos`;
+          const isGen        = generandoId === tema.temaId;
+          return (
+            <div key={tema.temaId} style={{ ...CARD, padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconClipboard />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: DK, lineHeight: 1.3, marginBottom: 3 }}>{tema.temaNombre}</div>
+                <div style={{ fontSize: '0.72rem', color: GL }}>{tema.totalPreguntas} preguntas disponibles</div>
+              </div>
+              {pct != null && <ProgressBar pct={pct} color={color} />}
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color }}>{meta}</div>
+              <button
+                disabled={!!generandoId}
+                onClick={() => onPracticar(tema)}
+                style={{
+                  padding: '7px 0', borderRadius: 8, border: `1.5px solid ${color}30`,
+                  background: isGen ? '#f3f4f6' : bg, color: isGen ? GL : color,
+                  fontWeight: 700, fontSize: '0.78rem',
+                  cursor: generandoId ? 'not-allowed' : 'pointer',
+                  transition: 'all .15s',
+                }}
+              >
+                {isGen ? 'Generando…' : sinPracticar ? 'Empezar' : 'Practicar'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -360,13 +651,14 @@ function HistorialReciente() {
 export default function HomePage() {
   const { user } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
+  const { isMobile, isTablet } = useBreakpoint();
   const nombre = user?.nombre?.split(' ')[0] || 'alumno';
   const hour   = new Date().getHours();
   const saludo = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fecha  = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div style={{ maxWidth: 1040, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
       {/* ── Saludo ───────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
@@ -397,23 +689,13 @@ export default function HomePage() {
       <KpiBar />
 
       {/* ── Continuar + Plan ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 310px', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 310px', gap: 16, alignItems: 'start' }}>
         <ContinuarCard />
-        <PlanSemanal />
+        {!isMobile && !isTablet && <PlanSemanal />}
       </div>
 
       {/* ── Recomendados ─────────────────────────────────── */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Recomendados para ti</span>
-          <Link to="/catalogo" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-            Ver todos <IconArrow />
-          </Link>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-          {RECOMENDADOS.map((r) => <RecomendadoCard key={r.label} {...r} />)}
-        </div>
-      </div>
+      <RecomendadoParaTi />
 
       {/* ── Historial ────────────────────────────────────── */}
       <HistorialReciente />

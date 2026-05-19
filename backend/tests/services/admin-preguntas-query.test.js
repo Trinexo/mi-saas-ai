@@ -41,7 +41,7 @@ test('admin preguntas query: acepta y normaliza filtros válidos', () => {
       oposicion_id: '1',
       materia_id: '2',
       tema_id: '3',
-      nivel_dificultad: '4',
+      nivel_dificultad: 'media',
     },
   };
 
@@ -56,7 +56,7 @@ test('admin preguntas query: acepta y normaliza filtros válidos', () => {
   assert.equal(req.query.oposicion_id, 1);
   assert.equal(req.query.materia_id, 2);
   assert.equal(req.query.tema_id, 3);
-  assert.equal(req.query.nivel_dificultad, 4);
+  assert.equal(req.query.nivel_dificultad, 'media');
 });
 
 test('admin preguntas query: aplica defaults en paginación', () => {

@@ -6,12 +6,15 @@ const opcionSchema = z.object({
 });
 
 const basePreguntaSchema = {
-  bloqueId: z.number().int().positive(),
+  temaId: z.number().int().positive(),
+  coleccionId: z.number().int().positive().optional().nullable(),
   enunciado: z.string().min(10),
-  explicacion: z.string().min(2),
+  explicacion: z.string().optional().nullable().default(''),
   referenciaNormativa: z.string().optional().nullable(),
-  nivelDificultad: z.number().int().min(1).max(5),
+  nivelDificultad: z.enum(['facil', 'media', 'dificil']),
   opciones: z.array(opcionSchema).length(4),
+  imagenUrl: z.string().optional().nullable(),
+  audioUrl: z.string().optional().nullable(),
 };
 
 export const createPreguntaSchema = z.object(basePreguntaSchema).refine(
@@ -51,11 +54,13 @@ export const listReportesQuerySchema = z.object({
 export const listPreguntasQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
+  q: z.string().max(200).optional(),
+  estado: z.enum(['pendiente', 'aprobada', 'rechazada']).optional(),
   oposicion_id: z.coerce.number().int().positive().optional(),
   materia_id: z.coerce.number().int().positive().optional(),
   tema_id: z.coerce.number().int().positive().optional(),
   bloque_id: z.coerce.number().int().positive().optional(),
-  nivel_dificultad: z.coerce.number().int().min(1).max(5).optional(),
+  nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional(),
 });
 
 export const listAuditoriaQuerySchema = z.object({

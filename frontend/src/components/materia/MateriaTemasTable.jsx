@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function MateriaTemasTable({ bloques, onPracticar }) {
+export default function MateriaTemasTable({ bloques = [], onPracticar }) {
   if (bloques.length === 0) {
     return (
       <p style={{ color: '#64748b', textAlign: 'center', marginTop: 40 }}>

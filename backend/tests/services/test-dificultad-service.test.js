@@ -42,13 +42,13 @@ describe('testRepository — filtro nivelDificultad', () => {
 });
 
 describe('testService.generate — dificultad específica', () => {
-  it('en modo "facil" llama al picker con nivelDificultad = 1', async () => {
+  it('en modo "facil" llama al picker con nivelDificultad = facil', async () => {
     const snap = cloneRepo();
     const llamadas = [];
 
     testRepository.pickAdaptiveQuestions = async (params) => {
       llamadas.push(params);
-      return [pregunta(1, 1), pregunta(2, 1)];
+      return [pregunta(1, 'facil'), pregunta(2, 'facil')];
     };
     testRepository.createTest = async () => ({ id: 99 });
     testRepository.insertTestPreguntas = async () => {};
@@ -56,17 +56,17 @@ describe('testService.generate — dificultad específica', () => {
     await testService.generate({ userId: 1, temaId: 1, numeroPreguntas: 2, dificultad: 'facil' });
 
     assert.equal(llamadas.length, 1);
-    assert.equal(llamadas[0].nivelDificultad, 1);
+    assert.equal(llamadas[0].nivelDificultad, 'facil');
     restoreRepo(snap);
   });
 
-  it('en modo "dificil" llama al picker con nivelDificultad = 3', async () => {
+  it('en modo "dificil" llama al picker con nivelDificultad = dificil', async () => {
     const snap = cloneRepo();
     const llamadas = [];
 
     testRepository.pickAdaptiveQuestions = async (params) => {
       llamadas.push(params);
-      return [pregunta(1, 3), pregunta(2, 3)];
+      return [pregunta(1, 'dificil'), pregunta(2, 'dificil')];
     };
     testRepository.createTest = async () => ({ id: 99 });
     testRepository.insertTestPreguntas = async () => {};
@@ -74,7 +74,7 @@ describe('testService.generate — dificultad específica', () => {
     await testService.generate({ userId: 1, temaId: 1, numeroPreguntas: 2, dificultad: 'dificil' });
 
     assert.equal(llamadas.length, 1);
-    assert.equal(llamadas[0].nivelDificultad, 3);
+    assert.equal(llamadas[0].nivelDificultad, 'dificil');
     restoreRepo(snap);
   });
 });
@@ -86,7 +86,7 @@ describe('testService.generate — dificultad mixto, distribución 40/30/30', ()
 
     testRepository.pickAdaptiveQuestions = async ({ numeroPreguntas, nivelDificultad }) => {
       nivelesLlamados.push({ nivelDificultad, cuota: numeroPreguntas });
-      return Array.from({ length: numeroPreguntas }, (_, i) => pregunta(nivelDificultad * 10 + i, nivelDificultad));
+      return Array.from({ length: numeroPreguntas }, (_, i) => pregunta(i + 1, nivelDificultad));
     };
     testRepository.createTest = async () => ({ id: 99 });
     testRepository.insertTestPreguntas = async () => {};
@@ -97,9 +97,9 @@ describe('testService.generate — dificultad mixto, distribución 40/30/30', ()
     assert.equal(nivelesLlamados.length, 3);
 
     const cuotaPorNivel = Object.fromEntries(nivelesLlamados.map((l) => [l.nivelDificultad, l.cuota]));
-    assert.equal(cuotaPorNivel[2], 4, 'media debe ser 40% → 4');
-    assert.equal(cuotaPorNivel[1], 3, 'facil debe ser 30% → 3');
-    assert.equal(cuotaPorNivel[3], 3, 'dificil debe ser 30% → 3');
+    assert.equal(cuotaPorNivel.media, 4, 'media debe ser 40% -> 4');
+    assert.equal(cuotaPorNivel.facil, 3, 'facil debe ser 30% -> 3');
+    assert.equal(cuotaPorNivel.dificil, 3, 'dificil debe ser 30% -> 3');
     restoreRepo(snap);
   });
 
@@ -107,7 +107,7 @@ describe('testService.generate — dificultad mixto, distribución 40/30/30', ()
     const snap = cloneRepo();
 
     testRepository.pickAdaptiveQuestions = async ({ numeroPreguntas, nivelDificultad }) =>
-      Array.from({ length: numeroPreguntas }, (_, i) => pregunta(nivelDificultad * 10 + i, nivelDificultad));
+      Array.from({ length: numeroPreguntas }, (_, i) => pregunta(i + 1, nivelDificultad));
     testRepository.createTest = async () => ({ id: 99 });
     testRepository.insertTestPreguntas = async () => {};
 

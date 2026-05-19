@@ -4,7 +4,7 @@ export const testSessionDetailConfigRepository = {
   async getTestConfig(userId, testId) {
     const result = await pool.query(
       `SELECT t.id, t.tema_id, t.oposicion_id, t.numero_preguntas, t.tipo_test, t.estado,
-              json_agg(json_build_object('id', p.id, 'enunciado', p.enunciado, 'nivel_dificultad', p.nivel_dificultad,
+              json_agg(json_build_object('id', p.id, 'enunciado', p.enunciado, 'nivel_dificultad', p.nivel_dificultad, 'imagen_url', p.imagen_url, 'audio_url', p.audio_url,
                 'opciones', (
                   SELECT json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id)
                   FROM opciones_respuesta o WHERE o.pregunta_id = p.id

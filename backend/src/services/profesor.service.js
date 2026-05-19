@@ -19,6 +19,8 @@ export const profesorService = {
     const pageSize = query.page_size ?? 20;
     const { rows, total } = await profesorDashboardRepository.getMisPreguntas(userId, {
       oposicionId: query.oposicion_id ?? null,
+      temaId: query.tema_id ?? null,
+      nivelDificultad: query.nivel_dificultad ?? null,
       estado: query.estado ?? null,
       q: query.q ?? null,
       page,

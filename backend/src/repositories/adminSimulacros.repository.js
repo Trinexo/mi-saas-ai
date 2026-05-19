@@ -2,8 +2,15 @@ import pool from '../config/db.js';
 
 export const adminSimulacrosRepository = {
   // ─── Listado con paginación y filtros ────────────────────────────────────────
-  async listSimulacros({ q, estado, oposicionId, limit, offset }) {
-    const params = [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, limit, offset];
+  async listSimulacros({ q, estado, oposicionId, allowedOposicionIds, limit, offset }) {
+    const params = [
+      q ? `%${q}%` : null,
+      estado ?? null,
+      oposicionId ?? null,
+      allowedOposicionIds ?? null,
+      limit,
+      offset,
+    ];
     const rows = await pool.query(
       `SELECT
          s.id, s.nombre, s.descripcion, s.estado,
@@ -20,17 +27,19 @@ export const adminSimulacrosRepository = {
        WHERE ($1::text IS NULL OR s.nombre ILIKE $1)
          AND ($2::text IS NULL OR s.estado = $2)
          AND ($3::bigint IS NULL OR s.oposicion_id = $3)
+         AND ($4::bigint[] IS NULL OR s.oposicion_id = ANY($4::bigint[]))
        GROUP BY s.id, o.nombre
        ORDER BY s.fecha_creacion DESC
-       LIMIT $4 OFFSET $5`,
+       LIMIT $5 OFFSET $6`,
       params,
     );
     const countRow = await pool.query(
       `SELECT COUNT(*)::int AS total FROM simulacros s
        WHERE ($1::text IS NULL OR s.nombre ILIKE $1)
          AND ($2::text IS NULL OR s.estado = $2)
-         AND ($3::bigint IS NULL OR s.oposicion_id = $3)`,
-      [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null],
+         AND ($3::bigint IS NULL OR s.oposicion_id = $3)
+         AND ($4::bigint[] IS NULL OR s.oposicion_id = ANY($4::bigint[]))`,
+      [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null],
     );
     return { items: rows.rows, total: countRow.rows[0].total };
   },
@@ -124,13 +133,37 @@ export const adminSimulacrosRepository = {
   },
 
   // ─── Bloques ─────────────────────────────────────────────────────────────────
-  async createBloque(simulacroId, nombre, orden) {
+  async createBloque(simulacroId, fields) {
     const r = await pool.query(
-      `INSERT INTO simulacros_bloques (simulacro_id, nombre, orden)
-       VALUES ($1, $2, $3) RETURNING *`,
-      [simulacroId, nombre, orden],
+      `INSERT INTO simulacros_bloques (simulacro_id, nombre, orden, numero_preguntas)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [
+        simulacroId,
+        fields.nombre,
+        fields.orden ?? 0,
+        fields.numero_preguntas ?? 0,
+      ],
     );
     return r.rows[0];
+  },
+
+  async bloqueBelongsToSimulacro(simulacroId, bloqueId) {
+    const result = await pool.query(
+      'SELECT 1 FROM simulacros_bloques WHERE simulacro_id = $1 AND id = $2 LIMIT 1',
+      [simulacroId, bloqueId],
+    );
+    return result.rows.length > 0;
+  },
+
+  async getSimulacroPreguntaIds(simulacroId) {
+    const result = await pool.query(
+      `SELECT sp.pregunta_id
+       FROM simulacros_preguntas sp
+       JOIN simulacros_bloques sb ON sb.id = sp.bloque_id
+       WHERE sb.simulacro_id = $1`,
+      [simulacroId],
+    );
+    return result.rows.map((row) => Number(row.pregunta_id));
   },
 
   async updateBloque(bloqueId, fields) {
@@ -138,6 +171,10 @@ export const adminSimulacrosRepository = {
     const values = [];
     if (fields.nombre !== undefined) { values.push(fields.nombre); setClauses.push(`nombre = $${values.length}`); }
     if (fields.orden !== undefined)  { values.push(fields.orden);  setClauses.push(`orden = $${values.length}`); }
+    if (fields.numero_preguntas !== undefined) {
+      values.push(fields.numero_preguntas);
+      setClauses.push(`numero_preguntas = $${values.length}`);
+    }
     if (setClauses.length === 0) return null;
     values.push(bloqueId);
     const r = await pool.query(
@@ -163,15 +200,6 @@ export const adminSimulacrosRepository = {
        RETURNING *`,
       [bloqueId, ...preguntaIds],
     );
-    // recalcular caché numero_preguntas en el bloque
-    await pool.query(
-      `UPDATE simulacros_bloques
-       SET numero_preguntas = (
-         SELECT COUNT(*) FROM simulacros_preguntas WHERE bloque_id = $1
-       )
-       WHERE id = $1`,
-      [bloqueId],
-    );
     return r.rows;
   },
 
@@ -179,15 +207,6 @@ export const adminSimulacrosRepository = {
     const r = await pool.query(
       'DELETE FROM simulacros_preguntas WHERE bloque_id=$1 AND pregunta_id=$2 RETURNING id',
       [bloqueId, preguntaId],
-    );
-    // recalcular caché
-    await pool.query(
-      `UPDATE simulacros_bloques
-       SET numero_preguntas = (
-         SELECT COUNT(*) FROM simulacros_preguntas WHERE bloque_id = $1
-       )
-       WHERE id = $1`,
-      [bloqueId],
     );
     return r.rows[0] ?? null;
   },

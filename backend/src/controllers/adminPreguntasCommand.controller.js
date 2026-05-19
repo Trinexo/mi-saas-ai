@@ -3,7 +3,7 @@ import { adminService } from '../services/admin.service.js';
 
 export const createPregunta = async (req, res, next) => {
   try {
-    const data = await adminService.createPregunta(req.body, { userId: req.user.id, role: req.user.role });
+    const data = await adminService.createPregunta(req.body, { userId: req.user.userId, role: req.user.role });
     return created(res, data, 'Pregunta creada');
   } catch (error) {
     return next(error);
@@ -12,7 +12,7 @@ export const createPregunta = async (req, res, next) => {
 
 export const updatePregunta = async (req, res, next) => {
   try {
-    const data = await adminService.updatePregunta(req.params.id, req.body, req.user.id, req.user.role);
+    const data = await adminService.updatePregunta(req.params.id, req.body, req.user.userId, req.user.role);
     return ok(res, data, 'Pregunta actualizada');
   } catch (error) {
     return next(error);
@@ -21,7 +21,7 @@ export const updatePregunta = async (req, res, next) => {
 
 export const deletePregunta = async (req, res, next) => {
   try {
-    const data = await adminService.deletePregunta(req.params.id, req.user.id, req.user.role);
+    const data = await adminService.deletePregunta(req.params.id, req.user.userId, req.user.role);
     return ok(res, data, 'Pregunta eliminada');
   } catch (error) {
     return next(error);
@@ -30,7 +30,7 @@ export const deletePregunta = async (req, res, next) => {
 
 export const importPreguntasCsv = async (req, res, next) => {
   try {
-    const data = await adminService.importPreguntasCsv(req.body);
+    const data = await adminService.importPreguntasCsv(req.body, { userId: req.user.userId, role: req.user.role });
     return ok(res, data, 'Importación procesada');
   } catch (error) {
     return next(error);

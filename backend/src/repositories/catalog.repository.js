@@ -18,7 +18,21 @@ export const catalogRepository = {
 
   async getBloques(temaId) {
     const result = await pool.query(
-      'SELECT id, tema_id, nombre FROM bloques WHERE tema_id = $1 ORDER BY nombre ASC',
+      'SELECT id, tema_id, nombre FROM colecciones WHERE tema_id = $1 ORDER BY nombre ASC',
+      [temaId],
+    );
+    return result.rows;
+  },
+
+  async getColecciones(temaId) {
+    const result = await pool.query(
+      `SELECT c.id, c.tema_id, c.nombre, c.descripcion, c.publica,
+              COUNT(cp.pregunta_id)::int AS total_preguntas
+       FROM colecciones c
+       LEFT JOIN colecciones_preguntas cp ON cp.coleccion_id = c.id
+       WHERE c.tema_id = $1 AND c.publica = TRUE
+       GROUP BY c.id
+       ORDER BY c.nombre ASC`,
       [temaId],
     );
     return result.rows;

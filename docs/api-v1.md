@@ -194,6 +194,191 @@ Estadísticas globales del usuario autenticado.
 
 ---
 
+## Workspace profesor - Sprint 127
+
+> Requieren `Authorization: Bearer <token>` y rol `profesor`.
+> Todos los resultados se filtran por `profesores_oposiciones`.
+
+### GET /profesor/workspace/dashboard
+
+Query opcional:
+
+```txt
+oposicion_id
+```
+
+Devuelve KPIs, evolucion, actividad reciente, oposiciones asignadas y alertas academicas.
+
+### GET /profesor/workspace/oposiciones
+
+Lista las oposiciones asignadas al profesor con resumen academico:
+
+- alumnos activos;
+- preguntas;
+- plantillas de test;
+- simulacros;
+- media de aciertos;
+- reportes abiertos.
+
+### GET /profesor/workspace/oposiciones/:id
+
+Devuelve detalle academico de una oposicion asignada:
+
+- resumen;
+- temario por temas;
+- preguntas problematicas;
+- alumnos activos;
+- simulacros activos.
+
+### GET /profesor/workspace/temario
+
+Query opcional:
+
+```txt
+oposicion_id
+```
+
+Devuelve temas con preguntas, reportes, aciertos, errores, blancos y media de aciertos.
+
+### GET /profesor/workspace/alumnos
+
+Query:
+
+```txt
+oposicion_id, q, page, page_size
+```
+
+Lista alumnos con acceso activo a las oposiciones asignadas al profesor. Incluye riesgo academico y ranking interno.
+
+### GET /profesor/workspace/alumnos/:id
+
+Devuelve resumen academico de un alumno si pertenece a una oposicion asignada al profesor.
+
+### GET /profesor/workspace/estadisticas
+
+Query opcional:
+
+```txt
+oposicion_id, desde, hasta
+```
+
+Devuelve evolucion, rendimiento por oposicion, rendimiento por tema, ranking, distribucion de dificultad y preguntas problematicas.
+
+### GET /profesor/workspace/preguntas-problematicas
+
+Query:
+
+```txt
+oposicion_id, tema_id, page, page_size
+```
+
+Una pregunta se marca problematica si tiene reportes abiertos, tasa de fallo alta o demasiadas respuestas en blanco.
+
+### GET /profesor/workspace/planificacion
+
+Query:
+
+```txt
+oposicion_id, desde, hasta
+```
+
+Lista planificaciones academicas del profesor.
+
+### POST /profesor/workspace/planificacion
+
+Body minimo para tema recomendado:
+
+```json
+{
+  "oposicion_id": 1,
+  "tipo": "tema_recomendado",
+  "estado": "publicada",
+  "titulo": "Repaso Tema 1",
+  "fecha_inicio": "2026-05-10T08:00:00.000Z",
+  "tema_ids": [1],
+  "numero_preguntas": 20,
+  "dificultad": "mixto",
+  "modo_test": "normal"
+}
+```
+
+Tipos:
+
+- `simulacro`;
+- `plantilla_test`;
+- `tema_recomendado`.
+
+Estados guardados:
+
+- `borrador`;
+- `publicada`;
+- `archivada`.
+
+### PUT /profesor/workspace/planificacion/:id
+
+Actualiza una planificacion si pertenece a una oposicion asignada al profesor.
+
+### DELETE /profesor/workspace/planificacion/:id
+
+Archiva la planificacion.
+
+### POST /profesor/workspace/seleccion/preguntas
+
+Solo propone preguntas, no guarda cambios.
+
+Payload simple:
+
+```json
+{
+  "oposicion_id": 1,
+  "tema_ids": [1, 2],
+  "cantidad": 20,
+  "dificultad": "media",
+  "exclude_ids": [10, 11],
+  "plantilla_test_id": 5,
+  "permitir_completar_con_otros_temas": true
+}
+```
+
+Payload detallado:
+
+```json
+{
+  "oposicion_id": 1,
+  "temas": [
+    { "tema_id": 1, "cantidad": 10 },
+    { "tema_id": 2, "cantidad": 15 }
+  ]
+}
+```
+
+---
+
+## Plan de estudio alumno - Sprint 127
+
+> Requiere `Authorization: Bearer <token>` y rol `alumno`.
+
+### GET /plan-estudio
+
+Query:
+
+```txt
+oposicion_id
+```
+
+Devuelve planificaciones publicadas y visibles para la oposicion activa del alumno.
+
+Estados calculados:
+
+- `proximo`;
+- `disponible`;
+- `cerrado`;
+- `completado`.
+
+No devuelve borradores, archivadas ni actividades bloqueadas por dependencias no publicadas.
+
+---
+
 ### GET /stats/tema?tema_id=1
 Estadísticas del usuario para un tema concreto.
 

@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { getDashboard, getUserStats, getBloqueStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaBloques, getResumenOposicion, getProgresoBloques, getProgresoBloquesByTema, getDetalleBloque, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { getDashboard, getUserStats, getBloqueStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaBloques, getResumenOposicion, getProgresoBloques, getProgresoBloquesByTema, getDetalleBloque, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getProgresoTemasReal, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { getRanking, getProgresoTemaReal } from '../../controllers/statsProgresoTema.controller.js';
 import { bloqueStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
 
 const router = Router();
@@ -16,6 +17,8 @@ router.get('/rendimiento-modos', requireAuth, getRendimientoModos);
 router.get('/insight-mensual', requireAuth, getInsightMensual);
 router.get('/temas-debiles', requireAuth, getTemasDebiles);
 router.get('/progreso-temas', requireAuth, getProgresoTemas);
+router.get('/progreso-temas-real', requireAuth, getProgresoTemasReal);
+router.get('/progreso-tema-real', requireAuth, getProgresoTemaReal);
 router.get('/actividad-14dias', requireAuth, getActividad14Dias);
 router.get('/resumen-semana', requireAuth, getResumenSemana);
 router.get('/foco-hoy', requireAuth, getFocoHoy);
@@ -33,5 +36,6 @@ router.get('/progreso-bloques', requireAuth, getProgresoBloques);
 router.get('/progreso-bloques-tema', requireAuth, getProgresoBloquesByTema);
 router.get('/bloque/:id/detalle', requireAuth, getDetalleBloque);
 router.get('/mis-oposiciones', requireAuth, getMisOposiciones);
+router.get('/ranking', requireAuth, getRanking);
 
 export default router;
