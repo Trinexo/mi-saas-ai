@@ -159,6 +159,10 @@ export default function GenerarTestForm({ modoSugerido = null }) {
             const stateTemaId = location.state?.temaId ? String(location.state.temaId) : null;
             if (stateTemaId && !locationStateApplied.current) {
               setTemasSeleccionados([stateTemaId]);
+            } else if (location.state?.oposicionId && !stateTemaId) {
+              // Llegó desde el catálogo con solo oposicionId → activar "Toda la oposición"
+              // para que el botón "Crear test" esté habilitado de inmediato
+              setOposicionCompleta(true);
             }
           }
         }
