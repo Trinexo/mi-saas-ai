@@ -2,7 +2,7 @@
 import { useAuth } from '../state/auth.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useUserAccesos } from '../hooks/useUserAccesos';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { notificacionesApi } from '../services/notificacionesApi';
 import { useRevision } from '../state/revisionContext.jsx';
 
@@ -170,8 +170,12 @@ function Shell() {
   const canUseNotifications = user?.role !== 'admin';
   const notificationsPath = user?.role === 'profesor' ? '/profesor/notificaciones' : '/notificaciones';
   const [sinLeer, setSinLeer] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const revision = useRevision();
   const totalBadge = revision?.reportesAbiertos ?? 0;
+
+  // Cerrar drawer al cambiar de ruta
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
 
   useEffect(() => {
     if (!token || !canUseNotifications) {
@@ -183,34 +187,31 @@ function Shell() {
       .catch(() => {});
   }, [token, canUseNotifications]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     logout();
     navigate('/login');
-  };
+  }, [logout, navigate]);
 
   const nombre = user?.nombre || user?.email || 'Usuario';
   const homePath = user?.role === 'admin' ? '/admin' : user?.role === 'profesor' ? '/profesor' : '/';
   const profilePath = user?.role === 'profesor' ? '/profesor/perfil' : '/perfil';
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f3f4f6' }}>
+  const navLinks = !isStaff
+    ? (tieneAlgunAcceso ? NAV_LINKS : NAV_LINKS_FREE)
+    : user?.role === 'admin'
+    ? ADMIN_NAV
+    : PROFESOR_NAV;
 
-      {/* ── Sidebar desktop ───────────────────────────────── */}
-      <aside className="sidebar" style={{
-        width: 240,
-        background: '#111827',
-        position: 'fixed',
-        top: 0, left: 0, bottom: 0,
-        flexDirection: 'column',
-        zIndex: 100,
-        overflowY: 'auto',
-      }}>
-
+  /* ── Sidebar interior (reutilizable en desktop + drawer móvil) ── */
+  function SidebarContent() {
+    return (
+      <>
         {/* Logo */}
-        <div style={{ padding: '20px 20px 14px' }}>
+        <div style={{ padding: '20px 20px 14px', flexShrink: 0 }}>
           <Link
             to={homePath}
             style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9 }}
+            onClick={() => setDrawerOpen(false)}
           >
             <div style={{
               width: 34, height: 34, background: '#ea580c', borderRadius: 9,
@@ -227,23 +228,17 @@ function Shell() {
         </div>
 
         {/* Divider */}
-        <div style={{ margin: '0 16px 10px', borderTop: '1px solid rgba(255,255,255,.07)' }} />
+        <div style={{ margin: '0 16px 10px', borderTop: '1px solid rgba(255,255,255,.07)', flexShrink: 0 }} />
 
         {/* Nav links */}
-        <nav style={{ flex: 1 }}>
-          {!isStaff && (tieneAlgunAcceso ? NAV_LINKS : NAV_LINKS_FREE).map((l) => <SidebarLink key={l.to} {...l} />)}
-          {user?.role === 'admin' && ADMIN_NAV.map((l) => (
-            <SidebarLink key={l.to} {...l} badge={l.hasBadge ? totalBadge : 0} />
-          ))}
-          {user?.role === 'profesor' && PROFESOR_NAV.map((l) => (
+        <nav style={{ flex: 1, overflowY: 'auto' }}>
+          {navLinks.map((l) => (
             <SidebarLink key={l.to} {...l} badge={l.hasBadge ? totalBadge : 0} />
           ))}
         </nav>
 
         {/* User block */}
-        <div style={{ padding: '10px 14px 20px', marginTop: 'auto' }}>
-
-          {/* Divider */}
+        <div style={{ padding: '10px 14px 20px', marginTop: 'auto', flexShrink: 0 }}>
           <div style={{ marginBottom: 12, borderTop: '1px solid rgba(255,255,255,.07)' }} />
 
           {/* Plan + notificaciones */}
@@ -265,7 +260,6 @@ function Shell() {
                   textDecoration: 'none', marginLeft: 'auto',
                   padding: '3px 8px', borderRadius: 6,
                   border: '1px solid rgba(255,255,255,.1)',
-                  transition: 'color .15s',
                 }}
               >
                 Planes
@@ -281,7 +275,7 @@ function Shell() {
                 {sinLeer > 0 && (
                   <span style={{
                     position: 'absolute', top: -4, right: -5,
-                background: user?.role === 'profesor' ? '#6d28d9' : '#ea580c', color: '#fff', borderRadius: 999,
+                    background: user?.role === 'profesor' ? '#6d28d9' : '#ea580c', color: '#fff', borderRadius: 999,
                     fontSize: '0.55rem', fontWeight: 700, padding: '1px 4px',
                     lineHeight: '13px', minWidth: 13, textAlign: 'center',
                   }}>
@@ -302,16 +296,10 @@ function Shell() {
               {inicial}
             </div>
             <div style={{ overflow: 'hidden', flex: 1 }}>
-              <div style={{
-                fontSize: '0.82rem', fontWeight: 600, color: '#fff',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {nombre}
               </div>
-              <div style={{
-                fontSize: '0.7rem', color: '#6b7280',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
+              <div style={{ fontSize: '0.7rem', color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user?.email || ''}
               </div>
             </div>
@@ -324,16 +312,138 @@ function Shell() {
               marginTop: 10, width: '100%',
               background: 'rgba(255,255,255,.05)',
               border: '1px solid rgba(255,255,255,.1)',
-              borderRadius: 8, padding: '7px 12px',
+              borderRadius: 8, padding: '8px 12px',
               fontSize: '0.78rem', fontWeight: 600,
               color: '#6b7280', cursor: 'pointer',
-              transition: 'all .15s',
+              minHeight: 36,
             }}
           >
             Cerrar sesión
           </button>
         </div>
+      </>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f3f4f6' }}>
+
+      {/* ── Sidebar desktop (oculta en móvil via CSS) ─────── */}
+      <aside className="sidebar" style={{
+        width: 240,
+        background: '#111827',
+        position: 'fixed',
+        top: 0, left: 0, bottom: 0,
+        flexDirection: 'column',
+        zIndex: 100,
+        overflowY: 'auto',
+      }}>
+        <SidebarContent />
       </aside>
+
+      {/* ── Drawer móvil (staff) ──────────────────────────── */}
+      {isStaff && drawerOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setDrawerOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)',
+              zIndex: 300, display: 'none',
+            }}
+            className="mobile-drawer-backdrop"
+          />
+          {/* Panel */}
+          <aside
+            style={{
+              position: 'fixed', top: 0, left: 0, bottom: 0, width: 260,
+              background: '#111827', zIndex: 310,
+              display: 'none', flexDirection: 'column',
+              animation: 'slideInRight .22s ease',
+            }}
+            className="mobile-drawer-panel"
+          >
+            <SidebarContent />
+          </aside>
+        </>
+      )}
+
+      {/* ── Top bar móvil (solo móvil, se muestra via CSS) ── */}
+      <header
+        className="mobile-top-bar"
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0,
+          background: '#111827',
+          borderBottom: '1px solid rgba(255,255,255,.08)',
+          zIndex: 100,
+          height: 52,
+          alignItems: 'center',
+          padding: '0 14px',
+          gap: 10,
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+      >
+        {/* Hamburger (solo staff) o logo */}
+        {isStaff ? (
+          <button
+            onClick={() => setDrawerOpen((v) => !v)}
+            style={{
+              background: 'transparent', border: 'none', color: '#9ca3af',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4,
+              minWidth: 36, minHeight: 36,
+            }}
+            aria-label="Abrir menú"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        ) : null}
+
+        <Link to={homePath} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 7, flex: 1 }}>
+          <div style={{
+            width: 28, height: 28, background: '#ea580c', borderRadius: 7,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff', letterSpacing: '-0.02em' }}>
+            Albacer<span style={{ color: '#ea580c' }}>Test</span>
+          </span>
+        </Link>
+
+        {/* Notificaciones */}
+        {canUseNotifications && (
+          <Link to={notificationsPath} style={{ position: 'relative', display: 'flex', color: '#6b7280', textDecoration: 'none', padding: 6 }}>
+            <NavIcon name="bell" />
+            {sinLeer > 0 && (
+              <span style={{
+                position: 'absolute', top: 2, right: 2,
+                background: '#ea580c', color: '#fff', borderRadius: 999,
+                fontSize: '0.55rem', fontWeight: 700, padding: '0 3px',
+                lineHeight: '13px', minWidth: 13, textAlign: 'center',
+              }}>
+                {sinLeer > 9 ? '9+' : sinLeer}
+              </span>
+            )}
+          </Link>
+        )}
+
+        {/* Avatar */}
+        <Link to={profilePath} style={{ textDecoration: 'none' }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', background: '#ea580c',
+            color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.8rem', fontWeight: 800,
+          }}>
+            {inicial}
+          </div>
+        </Link>
+      </header>
 
       {/* ── Contenido principal ───────────────────────────── */}
       <div className="app-shell-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
@@ -342,7 +452,7 @@ function Shell() {
         </main>
       </div>
 
-      {/* ── Bottom nav (solo móvil) ───────────────────────── */}
+      {/* ── Bottom nav (solo móvil, solo alumnos) ────────── */}
       {!isStaff && (
         <nav className="bottom-nav">
           {BOTTOM_NAV.map(({ to, label, exact, icon }) => {

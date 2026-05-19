@@ -1,5 +1,6 @@
 ﻿import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
+import InstallPrompt from './components/InstallPrompt.jsx';
 import { useAuth } from './state/auth.jsx';
 import { OposicionActivaProvider, useOposicionActiva } from './state/oposicionActiva.jsx';
 import { useUserAccesos } from './hooks/useUserAccesos';
@@ -248,6 +249,7 @@ export default function App() {
       </Route>
     </Routes>
     </Suspense>
+    <InstallPrompt />
     </OposicionActivaProvider>
   );
 }
