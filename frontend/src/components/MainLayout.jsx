@@ -1,6 +1,7 @@
 ﻿import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
+import { useUserAccesos } from '../hooks/useUserAccesos';
 import { useEffect, useState } from 'react';
 import { notificacionesApi } from '../services/notificacionesApi';
 import { useRevision } from '../state/revisionContext.jsx';
@@ -22,6 +23,14 @@ const NAV_LINKS = [
   { to: '/historial',       label: 'Historial',       exact: false, icon: 'clock'     },
   { to: '/ranking',         label: 'Ranking',         exact: false, icon: 'trophy'    },
   { to: '/marcadas',        label: 'Favoritos',       exact: false, icon: 'star'      },
+];
+
+// Solo estas opciones para plan free (sin oposición comprada)
+const NAV_LINKS_FREE = [
+  { to: '/catalogo',        label: 'Catálogo',   exact: false, icon: 'grid' },
+  { to: '/configurar-test', label: 'Crear test', exact: false, icon: 'play' },
+  { to: '/perfil',          label: 'Perfil',     exact: false, icon: 'user' },
+  { to: '/planes',          label: 'Planes',     exact: false, icon: 'star' },
 ];
 
 const BOTTOM_NAV = [
@@ -154,6 +163,7 @@ function NavLink({ to, label, exact }) {
 function Shell() {
   const { user, logout, token } = useAuth();
   const { plan } = useUserPlan();
+  const { tieneAlgunAcceso } = useUserAccesos();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const inicial = (user?.nombre || user?.email || '?')[0].toUpperCase();
@@ -223,7 +233,7 @@ function Shell() {
 
         {/* Nav links */}
         <nav style={{ flex: 1 }}>
-          {!isStaff && NAV_LINKS.map((l) => <SidebarLink key={l.to} {...l} />)}
+          {!isStaff && (tieneAlgunAcceso ? NAV_LINKS : NAV_LINKS_FREE).map((l) => <SidebarLink key={l.to} {...l} />)}
           {user?.role === 'admin' && ADMIN_NAV.map((l) => (
             <SidebarLink key={l.to} {...l} badge={l.hasBadge ? totalBadge : 0} />
           ))}

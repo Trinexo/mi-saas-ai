@@ -5,7 +5,7 @@ import { rateLimit } from '../../middleware/rate-limit.middleware.js';
 import { loadUserPlan, requirePlan } from '../../middleware/plan.middleware.js';
 import { requireAccesoOposicion } from '../../middleware/acceso.middleware.js';
 import { generateTestSchema, submitTestSchema, generateRefuerzoSchema } from '../../schemas/test.schema.js';
-import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig, generateRefuerzo, getTestRecomendado, getTestContinuar, getTestPendientes, cerrarTest } from '../../controllers/test.controller.js';
+import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig, generateRefuerzo, generateDemo, getTestRecomendado, getTestContinuar, getTestPendientes, cerrarTest } from '../../controllers/test.controller.js';
 
 const router = Router();
 
@@ -18,6 +18,8 @@ const submitRateLimit = rateLimit({
 
 // generate: valida acceso a la oposición (modo demo si no la tiene) + límites de plan
 router.post('/generate', requireAuth, loadUserPlan, requireAccesoOposicion('demo'), validate(generateTestSchema), generateTest);
+// generate-demo: genera el test demo fijo (test configurado por profesor o 10 primeras del Tema 1)
+router.post('/generate-demo', requireAuth, generateDemo);
 // generate-refuerzo: requiere plan pro o superior + acceso a la oposición del tema
 router.post('/generate-refuerzo', requireAuth, loadUserPlan, requirePlan('pro', 'el refuerzo de preguntas falladas'), validate(generateRefuerzoSchema), generateRefuerzo);
 router.post('/submit', requireAuth, submitRateLimit, validate(submitTestSchema), submitTest);

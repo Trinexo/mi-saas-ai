@@ -2,6 +2,7 @@ import { apiRequest } from './api';
 
 export const testApi = {
   generate: (token, payload) => apiRequest('/tests/generate', { method: 'POST', body: payload, token }),
+  generateDemo: (token, oposicionId) => apiRequest('/tests/generate-demo', { method: 'POST', body: { oposicionId }, token }),
   generateRefuerzo: (token, payload) => apiRequest('/tests/generate-refuerzo', { method: 'POST', body: payload, token }),
   getRecommended: (token) => apiRequest('/tests/recomendado', { token }),
   getContinuar: (token) => apiRequest('/tests/continuar', { token }),

@@ -38,6 +38,7 @@ import {
   deleteTest as deleteProfesorTest,
   addPreguntas as addPreguntasProfesorTest,
   removePregunta as removePreguntaProfesorTest,
+  setDemoTest as setDemoTestProfesor,
 } from '../../controllers/adminTests.controller.js';
 import {
   idParamSchema,
@@ -102,6 +103,7 @@ router.get('/mis-tests', validate(misTestsQuerySchema, 'query'), getMisTests);
 router.get('/mis-tests/:id', validate(idParamSchema, 'params'), getProfesorTest);
 router.post('/mis-tests', createProfesorTest);
 router.put('/mis-tests/:id', validate(idParamSchema, 'params'), updateProfesorTest);
+router.patch('/mis-tests/:id/demo', validate(idParamSchema, 'params'), setDemoTestProfesor);
 router.delete('/mis-tests/:id', validate(idParamSchema, 'params'), deleteProfesorTest);
 router.post('/mis-tests/:id/preguntas', validate(idParamSchema, 'params'), addPreguntasProfesorTest);
 router.delete('/mis-tests/:id/preguntas/:preguntaId', validate(testPreguntaParamSchema, 'params'), removePreguntaProfesorTest);

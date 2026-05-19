@@ -327,9 +327,13 @@ CREATE TABLE IF NOT EXISTS admin_tests (
   pts_fallo             NUMERIC(5,2) NOT NULL DEFAULT -0.25,
   pts_blanco            NUMERIC(5,2) NOT NULL DEFAULT 0.00,
   creado_por            BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  es_demo               BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   fecha_actualizacion   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_tests_demo_unico
+  ON admin_tests (oposicion_id) WHERE es_demo = TRUE;
 
 CREATE TABLE IF NOT EXISTS admin_tests_preguntas (
   test_id     BIGINT NOT NULL REFERENCES admin_tests(id) ON DELETE CASCADE,

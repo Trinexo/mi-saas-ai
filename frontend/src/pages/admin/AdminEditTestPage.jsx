@@ -301,6 +301,8 @@ export default function AdminEditTestPage() {
   const [saving,      setSaving]      = useState(false);
   const [error,       setError]       = useState('');
   const [showModal,   setShowModal]   = useState(false);
+  const [esDemoTest,  setEsDemoTest]  = useState(false);
+  const [savingDemo,  setSavingDemo]  = useState(false);
 
   const EMPTY = {
     nombre: '', descripcion: '', oposicion_id: '', tema_id: '', estado: 'borrador',
@@ -384,6 +386,7 @@ export default function AdminEditTestPage() {
           pts_fallo:            t.pts_fallo ?? -0.25,
           pts_blanco:           t.pts_blanco ?? 0,
         });
+        setEsDemoTest(t.es_demo ?? false);
         setPreguntas(t.preguntas ?? []);
       })
       .catch(() => setError('No se pudo cargar el test.'))
@@ -425,6 +428,18 @@ export default function AdminEditTestPage() {
       await testApi.removePregunta(token, id, preguntaId);
       setPreguntas(prev => prev.filter(p => p.id !== preguntaId));
     } catch { setError('Error al eliminar la pregunta.'); }
+  };
+
+  const handleToggleDemo = async (value) => {
+    setSavingDemo(true);
+    try {
+      await profesorApi.setDemoMiTest(token, id, value);
+      setEsDemoTest(value);
+    } catch (e) {
+      setError(e?.message ?? 'Error al cambiar el test demo.');
+    } finally {
+      setSavingDemo(false);
+    }
   };
 
   const handlePreguntasAdded = () => {
@@ -589,6 +604,41 @@ export default function AdminEditTestPage() {
             label="Mostrar explicación"
             desc="Se mostrará la explicación de cada pregunta"
           />
+
+          {/* Toggle TEST DEMO — solo para profesores, solo en edición, con oposición asignada */}
+          {isProfesor && !isNew && form.oposicion_id && (
+            <div style={{ marginTop: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', opacity: savingDemo ? 0.6 : 1 }}>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: esDemoTest ? '#7c3aed' : '#111827' }}>
+                    🎯 Test DEMO
+                    {esDemoTest && <span style={{ marginLeft: 8, fontSize: '0.72rem', background: '#ede9fe', color: '#6d28d9', borderRadius: 6, padding: '2px 7px', fontWeight: 700 }}>ACTIVO</span>}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 1 }}>Los alumnos free usarán este test al hacer el demo de la oposición</div>
+                  {form.estado !== 'publicado' && (
+                    <div style={{ fontSize: '0.72rem', color: '#dc2626', marginTop: 2 }}>⚠ El test debe estar publicado para activar el demo</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={savingDemo || form.estado !== 'publicado'}
+                  onClick={() => handleToggleDemo(!esDemoTest)}
+                  style={{
+                    width: 44, height: 24, borderRadius: 12, border: 'none',
+                    cursor: (savingDemo || form.estado !== 'publicado') ? 'not-allowed' : 'pointer',
+                    background: esDemoTest ? P : '#d1d5db', position: 'relative', flexShrink: 0,
+                    transition: 'background .2s', opacity: form.estado !== 'publicado' ? 0.4 : 1,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 2, left: esDemoTest ? 22 : 2,
+                    width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                    transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                  }} />
+                </button>
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid #f1f5f9' }}>
             <div style={{ ...LABEL, marginBottom: 10 }}>Puntuación</div>

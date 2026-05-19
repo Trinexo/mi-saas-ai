@@ -63,6 +63,14 @@ export const removePregunta = async (req, res, next) => {
   } catch (e) { return next(e); }
 };
 
+export const setDemoTest = async (req, res, next) => {
+  try {
+    const activate = req.body.es_demo === true;
+    const data = await adminTestsService.setDemoTest(req.params.id, activate, req.user);
+    return ok(res, data, activate ? 'Test marcado como demo' : 'Test desmarcado como demo');
+  } catch (e) { return next(e); }
+};
+
 export const seleccionarPreguntasAdmin = async (req, res, next) => {
   try {
     const data = await profesorWorkspaceSeleccionService.seleccionarAdmin(req.body);

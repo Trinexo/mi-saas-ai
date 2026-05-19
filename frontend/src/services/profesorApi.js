@@ -42,6 +42,8 @@ export const profesorApi = {
     apiRequest(`/profesor/mis-tests/${testId}/preguntas`, { method: 'POST', body: { pregunta_ids: preguntaIds }, token }),
   removePreguntaMiTest: (token, testId, preguntaId) =>
     apiRequest(`/profesor/mis-tests/${testId}/preguntas/${preguntaId}`, { method: 'DELETE', token }),
+  setDemoMiTest: (token, testId, esDemo) =>
+    apiRequest(`/profesor/mis-tests/${testId}/demo`, { method: 'PATCH', body: { es_demo: esDemo }, token }),
 
   // Simulacros propios (B8)
   getMisSimulacros: (token, query = {}) =>
