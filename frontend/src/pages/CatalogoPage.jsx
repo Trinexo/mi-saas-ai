@@ -174,13 +174,15 @@ export default function CatalogoPage() {
                   </button>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                    <button
-                      onClick={() => onIniciarDemo(op.id)}
-                      disabled={iniciandoDemo === op.id}
-                      style={{ padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: iniciandoDemo === op.id ? '#f3f4f6' : '#fff', color: '#374151', fontWeight: 600, fontSize: '0.82rem', cursor: iniciandoDemo === op.id ? 'not-allowed' : 'pointer', width: '100%' }}
-                    >
-                      {iniciandoDemo === op.id ? 'Cargando demo…' : 'Probar demo (10 preguntas)'}
-                    </button>
+                    {plan === 'free' && (
+                      <button
+                        onClick={() => onIniciarDemo(op.id)}
+                        disabled={iniciandoDemo === op.id}
+                        style={{ padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: iniciandoDemo === op.id ? '#f3f4f6' : '#fff', color: '#374151', fontWeight: 600, fontSize: '0.82rem', cursor: iniciandoDemo === op.id ? 'not-allowed' : 'pointer', width: '100%' }}
+                      >
+                        {iniciandoDemo === op.id ? 'Cargando demo…' : 'Probar demo (10 preguntas)'}
+                      </button>
+                    )}
                     <button
                       onClick={() => onComprar(op.id)}
                       disabled={comprando === op.id}
