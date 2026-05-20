@@ -157,6 +157,13 @@ td {
   gap: 16px;
 }
 
+/* Grid especial para 5 KPI cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
 /* ── Tabla responsive ─────────────────────────────────────── */
 .table-responsive {
   overflow-x: auto;
@@ -176,6 +183,9 @@ td {
   }
   .card-grid-3 {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -257,8 +267,9 @@ td {
   /* Cards responsivas en móvil */
   .card-grid-2,
   .card-grid-3,
-  .card-grid-4 {
-    grid-template-columns: 1fr;
+  .card-grid-4,
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   /* Animación de entrada de pantalla en móvil */

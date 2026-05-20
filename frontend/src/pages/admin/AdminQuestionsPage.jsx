@@ -415,9 +415,9 @@ export default function AdminQuestionsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead style={{ background: '#f9fafb' }}>
               <tr>
-                <th style={{ ...TH, width: 60 }}>ID</th>
+                <th className="col-hide-mobile" style={{ ...TH, width: 60 }}>ID</th>
                 <th style={TH}>Enunciado</th>
-                <th style={TH}>Tema</th>
+                <th className="col-hide-mobile" style={TH}>Tema</th>
                 <th style={{ ...TH, textAlign: 'center', width: 100 }}>Dificultad</th>
                 <th style={{ ...TH, textAlign: 'center', width: 130 }}>Acciones</th>
               </tr>
@@ -432,13 +432,13 @@ export default function AdminQuestionsPage() {
               )}
               {data.items.map((item) => (
                 <tr key={item.id} style={{ background: editingId === item.id ? '#fff7ed' : 'white' }}>
-                  <td style={{ ...TD, color: '#9ca3af', fontSize: '0.8rem' }}>{item.id}</td>
+                  <td className="col-hide-mobile" style={{ ...TD, color: '#9ca3af', fontSize: '0.8rem' }}>{item.id}</td>
                   <td style={{ ...TD, maxWidth: 420, lineHeight: 1.4 }}>
                     <span style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>
                       {item.enunciado}
                     </span>
                   </td>
-                  <td style={{ ...TD, color: '#6b7280', fontSize: '0.8rem' }}>{item.tema_nombre}</td>
+                  <td className="col-hide-mobile" style={{ ...TD, color: '#6b7280', fontSize: '0.8rem' }}>{item.tema_nombre}</td>
                   <td style={{ ...TD, textAlign: 'center' }}>
                     <span style={{
                       background: DIFICULTAD[item.nivel_dificultad]?.bg ?? '#f3f4f6',

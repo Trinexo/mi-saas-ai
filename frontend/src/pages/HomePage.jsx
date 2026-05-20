@@ -85,7 +85,7 @@ function ProgressBar({ pct, color = O }) {
 /* ── KPI Card ─────────────────────────────────────────────── */
 function KpiCard({ icon, iconBg, iconColor, value, delta, label }) {
   return (
-    <div style={{ ...CARD, padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+    <div style={{ ...CARD, padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
       <div style={{ width: 42, height: 42, borderRadius: 12, background: iconBg, color: iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {icon}
       </div>
@@ -123,7 +123,7 @@ function KpiBar() {
   const rankingDelta = ranking?.totalParticipantes > 0 ? `Entre ${ranking.totalParticipantes} opositores` : null;
 
   return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+    <div className="kpi-grid">
       <KpiCard icon={<IconDocument />} iconBg={OBG} iconColor={O}
         value={stats?.totalTests ?? '—'}
         delta={stats?.totalTests > 0 ? `+${Math.max(1, Math.round(stats.totalTests * 0.15))} esta semana` : null}
@@ -614,12 +614,14 @@ function HistorialReciente() {
           Ver todos <IconArrow />
         </Link>
       </div>
+      <div className="table-responsive">
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ fontSize: '0.68rem', color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {['Test', 'Preguntas', 'Resultado', 'Fecha'].map((h) => (
+            {['Test', 'Preguntas', 'Resultado'].map((h) => (
               <th key={h} style={{ fontWeight: 600, textAlign: 'left', padding: '0 0 10px', borderBottom: `1px solid ${BD}` }}>{h}</th>
             ))}
+            <th className="col-hide-mobile" style={{ fontWeight: 600, textAlign: 'left', padding: '0 0 10px', borderBottom: `1px solid ${BD}` }}>Fecha</th>
           </tr>
         </thead>
         <tbody>
@@ -637,12 +639,13 @@ function HistorialReciente() {
                 <td style={{ padding: '10px 0' }}>
                   {pct != null && <span style={{ fontSize: '0.78rem', fontWeight: 700, color: pct >= 70 ? '#16a34a' : pct >= 50 ? O : '#dc2626' }}>{pct}%</span>}
                 </td>
-                <td style={{ padding: '10px 0', fontSize: '0.78rem', color: GL }}>{fecha}</td>
+                <td className="col-hide-mobile" style={{ padding: '10px 0', fontSize: '0.78rem', color: GL }}>{fecha}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -662,9 +665,9 @@ export default function HomePage() {
 
       {/* ── Saludo ───────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-            <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: DK, letterSpacing: '-0.03em' }}>
+            <h1 style={{ margin: 0, fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 800, color: DK, letterSpacing: '-0.03em' }}>
               ¡{saludo}, {nombre}! 👋
             </h1>
             {oposicionActiva && (

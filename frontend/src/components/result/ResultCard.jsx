@@ -22,7 +22,7 @@ export default function ResultCard({ result, activeTest }) {
   const tiempoAgotado = !!result.timeoutSubmit;
 
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: '28px 32px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20, borderTop: `3px solid ${notaColor}` }}>
+    <div style={{ background: '#fff', borderRadius: 12, padding: 'clamp(18px, 4vw, 32px)', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 20, borderTop: `3px solid ${notaColor}` }}>
       {(modoLabel || dificultadLabel || tiempoAgotado) && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
           {modoLabel && <span style={BADGE_STYLE}>{modoLabel}</span>}

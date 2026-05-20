@@ -44,9 +44,9 @@ function TestHeader({ index, total, answered, elapsed, remaining, duracion, modo
     <>
       <style>{`@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
       <div style={{ background: '#fff', borderBottom: `1px solid ${BD}`, position: 'sticky', top: 0, zIndex: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 28px' }}>
+        <div className="test-header-row" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {badge && (
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, background: badge.bg, color: badge.color, padding: '3px 9px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span className="test-badge" style={{ fontSize: '0.68rem', fontWeight: 700, background: badge.bg, color: badge.color, padding: '3px 9px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0 }}>
               {badge.icon} {badge.text}
             </span>
           )}
@@ -56,7 +56,7 @@ function TestHeader({ index, total, answered, elapsed, remaining, duracion, modo
           <div style={{ flex: 1, height: 4, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden', minWidth: 48 }}>
             <div style={{ height: '100%', width: `${pctResp}%`, background: '#22c55e', borderRadius: 999, transition: 'width .3s' }} />
           </div>
-          <span style={{ fontSize: '0.72rem', color: GL, whiteSpace: 'nowrap', flexShrink: 0 }}>{answered}/{total} resp.</span>
+          <span className="test-resp-count" style={{ fontSize: '0.72rem', color: GL, whiteSpace: 'nowrap', flexShrink: 0 }}>{answered}/{total} resp.</span>
           <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.9rem', background: timerBg, color: timerColor, padding: '5px 11px', borderRadius: 8, letterSpacing: '0.03em', flexShrink: 0, ...pulse }}>
             ⏱ {label}
           </span>
@@ -319,10 +319,14 @@ export default function TestPage() {
         .test-breakout { margin: -28px -32px; }
         .test-nav-panel { display: block; }
         .test-body { display: flex; gap: 20px; padding: 24px 28px; align-items: flex-start; }
+        .test-header-row { padding: 11px 28px; }
         @media (max-width: 767px) {
           .test-breakout { margin: -16px -16px; }
           .test-nav-panel { display: none; }
           .test-body { padding: 14px 14px 96px; }
+          .test-header-row { padding: 9px 14px; gap: 8px; }
+          .test-header-row .test-badge { display: none; }
+          .test-header-row .test-resp-count { display: none; }
         }
       `}</style>
 
