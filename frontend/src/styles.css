@@ -312,6 +312,31 @@ td {
     color: var(--orange);
   }
 
+  /* Botón "Más" del bottom nav */
+  .bottom-nav-more {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px 8px;
+    color: var(--gray-light);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    gap: 3px;
+    transition: color .15s;
+    min-height: 56px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .bottom-nav-more.active {
+    color: var(--orange);
+  }
+
   .bottom-nav a .nav-icon {
     font-size: 1.3rem;
     line-height: 1;
@@ -426,6 +451,12 @@ td {
   /* Animación de entrada de pantalla en móvil */
   .page-enter {
     animation: slideInUp .25s cubic-bezier(.4,0,.2,1) both;
+  }
+
+  /* Animación de subida del bottom sheet de Más */
+  @keyframes slideUpSheet {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
   }
 
   /* Header de página compacto en móvil */
