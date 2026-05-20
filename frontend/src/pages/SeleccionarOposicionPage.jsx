@@ -30,10 +30,13 @@ function OposicionOpcionCard({ nombre, fechaFin, onClick }) {
         background: '#fff',
         border: `2px solid ${BD}`,
         borderRadius: 16,
-        padding: '24px 28px',
+        padding: 'clamp(16px, 4vw, 24px) clamp(16px, 5vw, 28px)',
         cursor: 'pointer',
         textAlign: 'left',
         width: '100%',
+        boxSizing: 'border-box',
+        minWidth: 0,
+        overflow: 'hidden',
         transition: 'border-color .15s, box-shadow .15s',
         boxShadow: '0 1px 4px rgba(0,0,0,.06)',
       }}
@@ -46,9 +49,9 @@ function OposicionOpcionCard({ nombre, fechaFin, onClick }) {
         e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,.06)';
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6, minWidth: 0 }}>
         <span style={{ fontSize: '1.4rem' }}>📋</span>
-        <span style={{ fontSize: '1rem', fontWeight: 800, color: DK }}>{nombre}</span>
+        <span style={{ fontSize: '1rem', fontWeight: 800, color: DK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>{nombre}</span>
         <span style={{ marginLeft: 'auto', background: '#dcfce7', color: '#166534', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>
           ✓ Activo
         </span>
@@ -87,7 +90,7 @@ export default function SeleccionarOposicionPage() {
   if (loading || accesos.length === 1) return <Spinner />;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
+    <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'clamp(24px, 5vw, 2rem) clamp(14px, 4vw, 1rem)', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
       {/* Logo / Marca */}
       <div style={{ marginBottom: 32, textAlign: 'center' }}>
         <div style={{ width: 52, height: 52, borderRadius: 16, background: OBG, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', margin: '0 auto 12px' }}>
