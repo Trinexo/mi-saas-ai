@@ -31,8 +31,17 @@
   touch-action: manipulation;
 }
 
+html {
+  /* Evita scroll horizontal global en móvil */
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
+  /* Evita scroll horizontal global en móvil */
+  overflow-x: hidden;
+  max-width: 100%;
   background: var(--bg);
   color: var(--dark);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
