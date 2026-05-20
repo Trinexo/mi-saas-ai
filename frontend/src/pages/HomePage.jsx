@@ -85,14 +85,14 @@ function ProgressBar({ pct, color = O }) {
 /* ── KPI Card ─────────────────────────────────────────────── */
 function KpiCard({ icon, iconBg, iconColor, value, delta, label }) {
   return (
-    <div style={{ ...CARD, padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-      <div style={{ width: 42, height: 42, borderRadius: 12, background: iconBg, color: iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div className="kpi-card" style={{ ...CARD, padding: '18px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div className="kpi-icon" style={{ width: 42, height: 42, borderRadius: 12, background: iconBg, color: iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {icon}
       </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: '1.65rem', fontWeight: 800, color: DK, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
-        {delta && <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600, marginTop: 2 }}>{delta}</div>}
-        <div style={{ fontSize: '0.75rem', color: GL, marginTop: 4, fontWeight: 500 }}>{label}</div>
+        <div className="kpi-value" style={{ fontSize: '1.65rem', fontWeight: 800, color: DK, lineHeight: 1, letterSpacing: '-0.03em' }}>{value}</div>
+        {delta && <div className="kpi-delta" style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600, marginTop: 2 }}>{delta}</div>}
+        <div className="kpi-label" style={{ fontSize: '0.75rem', color: GL, marginTop: 4, fontWeight: 500 }}>{label}</div>
       </div>
     </div>
   );
@@ -230,7 +230,7 @@ function ContinuarCard() {
   const badge = tipo === 'mejorar' ? `${pctAciertos}% aciertos` : meta.etiqueta;
 
   return (
-    <div style={{ ...CARD, padding: '24px 26px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ ...CARD, padding: 'clamp(14px, 4vw, 24px) clamp(14px, 4vw, 26px)', display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0, overflow: 'hidden' }}>
       {/* Cabecera */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 36, height: 36, background: OBG, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: O, flexShrink: 0 }}>
@@ -517,9 +517,9 @@ function RecomendadoParaTi() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <span style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Recomendados para ti</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: 14 }}>
+        <div className="temas-carousel">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} style={{ ...CARD, padding: '18px 16px', height: 150, background: '#f9fafb', animation: 'pulse 1.5s infinite' }} />
+            <div key={i} className="tema-card" style={{ ...CARD, padding: '18px 16px', height: 150, background: '#f9fafb', animation: 'pulse 1.5s infinite' }} />
           ))}
         </div>
       </div>
@@ -553,7 +553,7 @@ function RecomendadoParaTi() {
           Ver estadísticas <IconArrow />
         </Link>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="temas-carousel">
         {temas.map((tema) => {
           const pct          = tema.intentos > 0 ? tema.porcentajeAcierto : null;
           const sinPracticar = tema.intentos === 0;
@@ -564,7 +564,7 @@ function RecomendadoParaTi() {
             : `${pct}% aciertos · ${tema.intentos} intentos`;
           const isGen        = generandoId === tema.temaId;
           return (
-            <div key={tema.temaId} style={{ ...CARD, padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div key={tema.temaId} className="tema-card" style={{ ...CARD, padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <IconClipboard />
               </div>
