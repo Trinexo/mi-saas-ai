@@ -29,8 +29,8 @@ function OposicionOpcionCard({ nombre, fechaFin, onClick }) {
       style={{
         background: '#fff',
         border: `2px solid ${BD}`,
-        borderRadius: 16,
-        padding: 'clamp(16px, 4vw, 24px) clamp(16px, 5vw, 28px)',
+        borderRadius: 14,
+        padding: 'clamp(14px, 3vw, 20px) clamp(14px, 4vw, 24px)',
         cursor: 'pointer',
         textAlign: 'left',
         width: '100%',
@@ -61,7 +61,7 @@ function OposicionOpcionCard({ nombre, fechaFin, onClick }) {
           Acceso hasta {new Date(fechaFin).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
       )}
-      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6, color: O, fontSize: '0.85rem', fontWeight: 700 }}>
+      <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, color: O, fontSize: '0.82rem', fontWeight: 700 }}>
         Seleccionar esta oposición <span style={{ fontSize: '1rem' }}>→</span>
       </div>
     </button>
@@ -90,20 +90,20 @@ export default function SeleccionarOposicionPage() {
   if (loading || accesos.length === 1) return <Spinner />;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'clamp(24px, 5vw, 2rem) clamp(14px, 4vw, 1rem)', boxSizing: 'border-box', width: '100%', overflow: 'hidden' }}>
+    <div className="auth-screen">
       {/* Logo / Marca */}
-      <div style={{ marginBottom: 32, textAlign: 'center' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 16, background: OBG, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', margin: '0 auto 12px' }}>
+      <div className="auth-logo-area">
+        <div style={{ width: 44, height: 44, borderRadius: 14, background: OBG, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', margin: '0 auto 10px' }}>
           🎯
         </div>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: DK }}>¿Con qué oposición trabajamos hoy?</h1>
-        <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: GL }}>
-          Tienes acceso a {accesos.length} oposiciones. Elige una para filtrar toda la plataforma.
+        <h1 style={{ margin: 0, fontSize: 'clamp(1.1rem, 5vw, 1.5rem)', fontWeight: 900, color: DK }}>¿Con qué oposición trabajamos hoy?</h1>
+        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: GL }}>
+          Tienes acceso a {accesos.length} oposicion{accesos.length !== 1 ? 'es' : ''}. Elige una.
         </p>
       </div>
 
       {/* Tarjetas */}
-      <div style={{ width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="auth-cards-list">
         {accesos.map((acceso) => (
           <OposicionOpcionCard
             key={acceso.oposicion_id}
@@ -114,8 +114,8 @@ export default function SeleccionarOposicionPage() {
         ))}
       </div>
 
-      <p style={{ marginTop: 28, fontSize: '0.78rem', color: '#9ca3af', textAlign: 'center' }}>
-        Puedes cambiar de oposición en cualquier momento desde tu perfil.
+      <p style={{ marginTop: 16, fontSize: '0.72rem', color: '#9ca3af', textAlign: 'center', flexShrink: 0 }}>
+        Puedes cambiar de oposición desde tu perfil.
       </p>
     </div>
   );
