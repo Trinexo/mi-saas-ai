@@ -164,6 +164,13 @@ td {
   gap: 12px;
 }
 
+/* Carrusel horizontal de temas recomendados en móvil */
+.temas-carousel {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
 /* ── Tabla responsive ─────────────────────────────────────── */
 .table-responsive {
   overflow-x: auto;
@@ -185,6 +192,9 @@ td {
     grid-template-columns: repeat(2, 1fr);
   }
   .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .temas-carousel {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -270,6 +280,49 @@ td {
   .card-grid-4,
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* KPI cards: más compactas en 2 columnas */
+  .kpi-card {
+    padding: 12px !important;
+  }
+  .kpi-card .kpi-icon {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+  }
+  .kpi-card .kpi-value {
+    font-size: 1.25rem !important;
+  }
+  .kpi-card .kpi-delta {
+    display: none !important;
+  }
+  .kpi-card .kpi-label {
+    font-size: 0.65rem !important;
+    margin-top: 2px !important;
+  }
+
+  /* Carrusel horizontal de temas en móvil */
+  .temas-carousel {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding-bottom: 4px;
+    /* Salir del padding del app-main para que se vea el peek del siguiente */
+    margin-left: -14px;
+    margin-right: -14px;
+    padding-left: 14px;
+    padding-right: 28px;
+    scrollbar-width: none;
+  }
+  .temas-carousel::-webkit-scrollbar { display: none; }
+  .temas-carousel .tema-card {
+    flex-shrink: 0 !important;
+    width: 72vw !important;
+    scroll-snap-align: start;
   }
 
   /* Animación de entrada de pantalla en móvil */
