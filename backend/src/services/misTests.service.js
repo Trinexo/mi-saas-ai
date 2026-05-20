@@ -4,10 +4,10 @@ import { testGenerationGeneratePersistenceService } from './testGenerationGenera
 import { ApiError } from '../utils/api-error.js';
 
 export const misTestsService = {
-  async getPublicados(userId) {
+  async getPublicados(userId, plan = 'free') {
     const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
     const oposicionIds = accesos.map((a) => a.oposicion_id);
-    return misTestsRepository.getPublicados(oposicionIds);
+    return misTestsRepository.getPublicados(oposicionIds, plan);
   },
 
   async iniciar(userId, testId) {
