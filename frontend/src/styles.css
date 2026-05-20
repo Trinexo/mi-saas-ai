@@ -31,8 +31,17 @@
   touch-action: manipulation;
 }
 
+html {
+  /* Evita scroll horizontal global en móvil */
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
+  /* Evita scroll horizontal global en móvil */
+  overflow-x: hidden;
+  max-width: 100%;
   background: var(--bg);
   color: var(--dark);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
@@ -42,6 +51,48 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   /* Evitar overscroll bounce en iOS cuando la app está instalada */
   overscroll-behavior: none;
+}
+
+/* ── Auth pages: pantalla completa estilo app nativa ─────── */
+.auth-screen {
+  min-height: 100vh;
+  height: 100vh;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 24px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.auth-logo-area {
+  margin-bottom: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.auth-card-box {
+  max-width: 400px;
+  width: 100%;
+  padding: 2.5rem 2rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.10);
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid #1d4ed8;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.auth-cards-list {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 form {
@@ -200,6 +251,19 @@ td {
 }
 
 @media (max-width: 768px) {
+  /* Previene el auto-zoom de iOS Safari al enfocar inputs con font-size < 16px */
+  input,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
   .bottom-nav {
     display: flex;
     position: fixed;
@@ -280,6 +344,35 @@ td {
   .card-grid-4,
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Auth pages fullscreen en móvil: ocupa exactamente la pantalla visible */
+  .auth-screen {
+    height: 100svh; /* small viewport height: excluye barra del browser */
+    min-height: unset;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)) 16px;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .auth-logo-area {
+    margin-bottom: 16px !important;
+  }
+
+  .auth-logo-area p {
+    font-size: 0.72rem !important;
+    margin-top: 3px !important;
+  }
+
+  .auth-card-box {
+    padding: 20px 18px !important;
+  }
+
+  .auth-cards-list {
+    gap: 10px !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: calc(100svh - 200px);
   }
 
   /* Formulario configurar test: padding compacto en móvil */
