@@ -27,44 +27,51 @@
 /* ── Reset base ───────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
-  /* Mejorar tap delay en móvil */
-  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
+  }
 }
 
 html {
-  /* Evita scroll horizontal global en móvil */
-  overflow-x: hidden;
-  max-width: 100%;
+overflow-x: auto;
+max-width: none;
 }
 
 body {
-  margin: 0;
-  /* Evita scroll horizontal global en móvil */
-  overflow-x: hidden;
-  max-width: 100%;
-  background: var(--bg);
-  color: var(--dark);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  font-size: 16px;
-  /* espacio para bottom nav en móvil + notch inferior */
-  padding-bottom: env(safe-area-inset-bottom);
-  /* Evitar overscroll bounce en iOS cuando la app está instalada */
-  overscroll-behavior: none;
+margin: 0;
+overflow-x: auto;
+max-width: none;
+background: var(--bg);
+color: var(--dark);
+font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+-webkit-font-smoothing: antialiased;
+font-size: 16px;
+padding-bottom: env(safe-area-inset-bottom);
+overscroll-behavior: auto;
 }
+
+
 
 /* ── Auth pages: pantalla completa estilo app nativa ─────── */
 .auth-screen {
-  min-height: 100vh;
-  height: 100vh;
-  background: #f9fafb;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(16px, 4vw, 24px);
-  box-sizing: border-box;
-  overflow: hidden;
+min-height: 100vh;
+height: auto;
+background: #f9fafb;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: clamp(16px, 4vw, 24px);
+box-sizing: border-box;
+overflow: auto;
 }
 
 .auth-logo-area {
