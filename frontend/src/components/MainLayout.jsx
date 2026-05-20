@@ -36,7 +36,15 @@ const BOTTOM_NAV = [
   { to: '/catalogo',        label: 'Catálogo', exact: false, icon: 'grid'  },
   { to: '/configurar-test', label: 'Test',     exact: false, icon: 'play'  },
   { to: '/progreso',        label: 'Progreso', exact: false, icon: 'chart' },
-  { to: '/perfil',          label: 'Perfil',   exact: false, icon: 'user'  },
+];
+
+const MORE_ITEMS = [
+  { to: '/plan-estudio', label: 'Plan de estudio', icon: 'clock'     },
+  { to: '/mis-tests',    label: 'Mis tests',        icon: 'clipboard' },
+  { to: '/simulacros',   label: 'Simulacros',       icon: 'simulacro' },
+  { to: '/historial',    label: 'Historial',        icon: 'clock'     },
+  { to: '/ranking',      label: 'Ranking',          icon: 'trophy'    },
+  { to: '/marcadas',     label: 'Favoritos',        icon: 'star'      },
 ];
 
 const ADMIN_NAV = [
@@ -171,11 +179,12 @@ function Shell() {
   const notificationsPath = user?.role === 'profesor' ? '/profesor/notificaciones' : '/notificaciones';
   const [sinLeer, setSinLeer] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const revision = useRevision();
   const totalBadge = revision?.reportesAbiertos ?? 0;
 
-  // Cerrar drawer al cambiar de ruta
-  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+  // Cerrar drawers al cambiar de ruta
+  useEffect(() => { setDrawerOpen(false); setMoreOpen(false); }, [pathname]);
 
   useEffect(() => {
     if (!token || !canUseNotifications) {
@@ -453,19 +462,95 @@ function Shell() {
       </div>
 
       {/* ── Bottom nav (solo móvil, solo alumnos) ────────── */}
-      {!isStaff && (
-        <nav className="bottom-nav">
-          {BOTTOM_NAV.map(({ to, label, exact, icon }) => {
-            const active = exact ? pathname === to : pathname.startsWith(to);
-            return (
-              <Link key={to} to={to} className={active ? 'active' : ''}>
-                <span className="nav-icon"><NavIcon name={icon} /></span>
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-      )}
+      {!isStaff && (() => {
+        const moreActive = MORE_ITEMS.some(({ to }) => pathname.startsWith(to));
+        return (
+          <>
+            {/* Backdrop del sheet de Más */}
+            {moreOpen && (
+              <div
+                onClick={() => setMoreOpen(false)}
+                style={{
+                  position: 'fixed', inset: 0,
+                  background: 'rgba(0,0,0,.45)',
+                  zIndex: 490,
+                }}
+              />
+            )}
+
+            {/* Bottom sheet de Más */}
+            {moreOpen && (
+              <div style={{
+                position: 'fixed',
+                bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+                left: 0, right: 0,
+                background: '#fff',
+                borderRadius: '16px 16px 0 0',
+                zIndex: 500,
+                padding: '12px 16px 20px',
+                boxShadow: '0 -4px 24px rgba(0,0,0,.18)',
+                animation: 'slideUpSheet .2s ease',
+              }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e5e7eb', margin: '0 auto 14px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {MORE_ITEMS.map(({ to, label, icon }) => {
+                    const active = pathname.startsWith(to);
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => setMoreOpen(false)}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          gap: 7, padding: '14px 8px',
+                          borderRadius: 12,
+                          background: active ? 'rgba(234,88,12,.08)' : '#f9fafb',
+                          color: active ? '#ea580c' : '#374151',
+                          textDecoration: 'none',
+                          fontSize: '0.72rem',
+                          fontWeight: active ? 700 : 500,
+                          border: active ? '1px solid rgba(234,88,12,.2)' : '1px solid #f3f4f6',
+                          lineHeight: 1.2,
+                          textAlign: 'center',
+                        }}
+                      >
+                        <NavIcon name={icon} />
+                        <span>{label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <nav className="bottom-nav">
+              {BOTTOM_NAV.map(({ to, label, exact, icon }) => {
+                const active = exact ? pathname === to : pathname.startsWith(to);
+                return (
+                  <Link key={to} to={to} className={active ? 'active' : ''}>
+                    <span className="nav-icon"><NavIcon name={icon} /></span>
+                    {label}
+                  </Link>
+                );
+              })}
+              <button
+                onClick={() => setMoreOpen(v => !v)}
+                className={`bottom-nav-more${moreActive || moreOpen ? ' active' : ''}`}
+                aria-label="Más opciones"
+              >
+                <span className="nav-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="5" cy="12" r="2"/>
+                    <circle cx="12" cy="12" r="2"/>
+                    <circle cx="19" cy="12" r="2"/>
+                  </svg>
+                </span>
+                Más
+              </button>
+            </nav>
+          </>
+        );
+      })()}
 
     </div>
   );
