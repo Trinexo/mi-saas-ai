@@ -5,7 +5,7 @@ export const misTestsRepository = {
    * Devuelve plantillas de test publicadas para una lista de oposicionIds.
    * Agrupa por tema para que el frontend pueda ordenarlas.
    */
-  async getPublicados(oposicionIds) {
+  async getPublicados(oposicionIds, plan = 'free') {
     if (!oposicionIds.length) return [];
     const result = await pool.query(
       `SELECT at.id,
@@ -24,9 +24,10 @@ export const misTestsRepository = {
        LEFT JOIN admin_tests_preguntas atp ON atp.test_id = at.id
        WHERE at.oposicion_id = ANY($1)
          AND at.estado = 'publicado'
+         AND (at.es_demo = FALSE OR $2 = 'free')
        GROUP BY at.id, o.nombre, te.nombre
        ORDER BY te.nombre ASC NULLS LAST, at.nombre ASC`,
-      [oposicionIds],
+      [oposicionIds, plan],
     );
     return result.rows;
   },
