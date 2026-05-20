@@ -267,7 +267,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(300px, 1.35fr) minmax(250px, 1fr)', gap: 20, alignItems: 'stretch' }}>
 
         {/* ─── Card 1: Contenido ────────────────────────────────────────────── */}
-        <div style={CARD}>
+        <div className="gtf-card" style={{ ...CARD, minWidth: 0, overflow: 'hidden' }}>
 
           {/* Oposición */}
           <h2 style={{ margin: '0 0 14px', fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Oposición</h2>
@@ -327,12 +327,12 @@ export default function GenerarTestForm({ modoSugerido = null }) {
                   <span style={{ flex: 1 }}>Toda la oposición</span>
                   {oposicionCompleta && <span style={{ fontSize: '0.68rem', color: O, fontWeight: 700, background: '#fed7aa', padding: '2px 6px', borderRadius: 4 }}>ACTIVO</span>}
                 </label>
-                <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8, padding: '4px' }}>
+                <div style={{ maxHeight: 240, overflowY: 'auto', overflowX: 'hidden', border: '1px solid #e2e8f0', borderRadius: 8, padding: '4px', width: '100%' }}>
                   {temas.map((t) => {
                     const checked = temasSeleccionados.includes(String(t.id));
                     const blocked = !oposicionCompleta && !checked && temasSeleccionados.length >= 10;
                     return (
-                      <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', borderRadius: 6, cursor: oposicionCompleta || blocked ? 'not-allowed' : 'pointer', background: checked ? '#fff7ed' : 'transparent', marginBottom: 1 }}>
+                      <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 8px', borderRadius: 6, cursor: oposicionCompleta || blocked ? 'not-allowed' : 'pointer', background: checked ? '#fff7ed' : 'transparent', marginBottom: 1, minWidth: 0 }}>
                         <input type="checkbox" checked={checked} disabled={oposicionCompleta || blocked} onChange={() => toggleTema(String(t.id))} style={{ accentColor: O }} />
                         <span style={{ fontSize: '0.875rem', color: oposicionCompleta ? '#94a3b8' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{t.nombre}</span>
                       </label>
@@ -351,7 +351,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
         </div>
 
         {/* ─── Card 2: Parámetros ───────────────────────────────────────────── */}
-        <div style={CARD}>
+        <div className="gtf-card" style={{ ...CARD, minWidth: 0, overflow: 'hidden' }}>
           <h2 style={{ margin: '0 0 14px', fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Parámetros del test</h2>
 
           {/* Nº preguntas inline */}

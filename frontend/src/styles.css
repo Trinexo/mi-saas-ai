@@ -282,6 +282,11 @@ td {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Formulario configurar test: padding compacto en móvil */
+  .gtf-card {
+    padding: 16px !important;
+  }
+
   /* KPI cards: más compactas en 2 columnas */
   .kpi-card {
     padding: 12px !important;
