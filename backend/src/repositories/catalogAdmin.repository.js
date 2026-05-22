@@ -80,6 +80,16 @@ export const catalogAdminRepository = {
     return r.rows[0];
   },
 
+  async syncTemaIdSequence() {
+    await pool.query(
+      `SELECT setval(
+         pg_get_serial_sequence('public.temas', 'id'),
+         GREATEST((SELECT COALESCE(MAX(id), 0) FROM public.temas), 1),
+         (SELECT COALESCE(MAX(id), 0) FROM public.temas) > 0
+       )`,
+    );
+  },
+
   async updateTema(id, nombre) {
     const r = await pool.query(
       'UPDATE temas SET nombre = $1 WHERE id = $2 RETURNING id, oposicion_id, nombre',
