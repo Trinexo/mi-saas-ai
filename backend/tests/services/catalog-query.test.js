@@ -5,11 +5,17 @@ import { materiasQuerySchema, preguntasQuerySchema, temasQuerySchema } from '../
 import { ApiError } from '../../src/utils/api-error.js';
 import { catalogHierarchyService } from '../../src/services/catalogHierarchy.service.js';
 import { catalogRepository } from '../../src/repositories/catalog.repository.js';
+import { catalogAdminService } from '../../src/services/catalogAdmin.service.js';
+import { catalogAdminRepository } from '../../src/repositories/catalogAdmin.repository.js';
 
 const originalGetOposiciones = catalogRepository.getOposiciones;
+const originalCreateTema = catalogAdminRepository.createTema;
+const originalSyncTemaIdSequence = catalogAdminRepository.syncTemaIdSequence;
 
 test.afterEach(() => {
   catalogRepository.getOposiciones = originalGetOposiciones;
+  catalogAdminRepository.createTema = originalCreateTema;
+  catalogAdminRepository.syncTemaIdSequence = originalSyncTemaIdSequence;
 });
 
 test('catalog materias query: rechaza oposicion_id inválido', () => {
@@ -92,4 +98,46 @@ test('catalog oposiciones: alumno y anonimo mantienen filtro de preguntas', asyn
   await catalogHierarchyService.getOposiciones();
 
   assert.deepEqual(calls, [{ includeEmpty: false }, { includeEmpty: false }]);
+});
+
+test('admin catalog temas: resincroniza secuencia y reintenta si choca temas_pkey', async () => {
+  let createCalls = 0;
+  let syncCalls = 0;
+
+  catalogAdminRepository.createTema = async () => {
+    createCalls += 1;
+    if (createCalls === 1) {
+      const error = new Error('duplicate key value violates unique constraint "temas_pkey"');
+      error.code = '23505';
+      error.constraint = 'temas_pkey';
+      throw error;
+    }
+    return { id: 32, oposicion_id: 7, nombre: 'Tema nuevo' };
+  };
+  catalogAdminRepository.syncTemaIdSequence = async () => {
+    syncCalls += 1;
+  };
+
+  const result = await catalogAdminService.createTema(7, 'Tema nuevo');
+
+  assert.deepEqual(result, { id: 32, oposicion_id: 7, nombre: 'Tema nuevo' });
+  assert.equal(createCalls, 2);
+  assert.equal(syncCalls, 1);
+});
+
+test('admin catalog temas: no reintenta duplicados que no son drift de secuencia', async () => {
+  catalogAdminRepository.createTema = async () => {
+    const error = new Error('duplicate topic name');
+    error.code = '23505';
+    error.constraint = 'temas_oposicion_id_nombre_key';
+    throw error;
+  };
+  catalogAdminRepository.syncTemaIdSequence = async () => {
+    throw new Error('no deberia sincronizar');
+  };
+
+  await assert.rejects(
+    () => catalogAdminService.createTema(7, 'Tema repetido'),
+    (error) => error.code === '23505' && error.constraint === 'temas_oposicion_id_nombre_key',
+  );
 });
