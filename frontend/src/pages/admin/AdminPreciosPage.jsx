@@ -17,7 +17,7 @@ export default function AdminPreciosPage() {
 
   useEffect(() => {
     catalogApi
-      .getOposiciones()
+      .getOposiciones(token)
       .then((data) => {
         const items = Array.isArray(data) ? data : (data?.data ?? []);
         setOposiciones(items);

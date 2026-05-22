@@ -73,7 +73,7 @@ export default function AnaliticasAvanzadasSection() {
       setInsight(ins);
       setRitmo(rit);
     });
-    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
+    catalogApi.getOposiciones(token).then(setOposiciones).catch(() => {});
     return () => { cancelled = true; };
   }, [token]);
 

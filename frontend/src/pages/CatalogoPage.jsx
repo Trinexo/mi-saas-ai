@@ -65,11 +65,11 @@ export default function CatalogoPage() {
   };
 
   useEffect(() => {
-    catalogApi.getOposiciones()
+    catalogApi.getOposiciones(token)
       .then((data) => setOposiciones(Array.isArray(data) ? data : (data?.data ?? [])))
       .catch(() => setOposiciones([]))
       .finally(() => setLoadingCatalogo(false));
-  }, []);
+  }, [token]);
 
   const loading = loadingCatalogo || loadingAccesos;
 

@@ -647,7 +647,7 @@ export default function AdminSimulacroWizardPage() {
         const r = await adminApi.listOposicionesConStats(token, { page_size: 100 });
         return r?.items ?? r ?? [];
       } catch {
-        return catalogApi.getOposiciones();
+        return catalogApi.getOposiciones(token);
       }
     };
 

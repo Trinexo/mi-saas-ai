@@ -83,7 +83,7 @@ export default function AdminCatalogPage() {
   const [error, setError] = useState('');
 
   const loadOposiciones = () =>
-    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
+    catalogApi.getOposiciones(token).then(setOposiciones).catch(() => {});
 
   const loadTemas = (opId) =>
     catalogApi.getTemas(opId).then(setTemas).catch(() => setTemas([]));

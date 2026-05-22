@@ -53,7 +53,7 @@ export default function MisOposicionesPage() {
   useEffect(() => {
     Promise.all([
       testApi.getMisOposiciones(token),
-      catalogApi.getOposiciones(),
+      catalogApi.getOposiciones(token),
     ])
       .then(([statsData, catalogoData]) => {
         setStatsOps(Array.isArray(statsData) ? statsData : []);

@@ -36,7 +36,7 @@ export default function AdminAccesosPage() {
 
   const loadOposiciones = async () => {
     try {
-      const data = await catalogApi.getOposiciones();
+      const data = await catalogApi.getOposiciones(token);
       setOposiciones(Array.isArray(data) ? data : (data?.data ?? []));
     } catch (_) { /* ignore */ }
   };

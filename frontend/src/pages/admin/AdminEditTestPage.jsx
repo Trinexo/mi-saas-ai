@@ -333,7 +333,7 @@ export default function AdminEditTestPage() {
         const ops = await adminApi.listOposicionesConStats(token, { page_size: 100 });
         return ops?.items ?? ops ?? [];
       } catch {
-        return catalogApi.getOposiciones();
+        return catalogApi.getOposiciones(token);
       }
     };
 

@@ -62,10 +62,10 @@ export default function AdminProfesoresPage() {
   }, [filters.page]);
 
   useEffect(() => {
-    catalogApi.getOposiciones()
+    catalogApi.getOposiciones(token)
       .then((d) => setOposiciones(Array.isArray(d) ? d : (d?.oposiciones ?? [])))
       .catch(() => {});
-  }, []);
+  }, [token]);
 
   // --- Buscar profesores ---
   const handleSearchList = (e) => {

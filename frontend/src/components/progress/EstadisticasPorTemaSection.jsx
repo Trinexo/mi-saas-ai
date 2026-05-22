@@ -44,12 +44,12 @@ export default function EstadisticasPorTemaSection() {
     let cancelled = false;
     setLoadingCatalog(true);
     setCatalogError('');
-    catalogApi.getOposiciones()
+    catalogApi.getOposiciones(token)
       .then((data) => { if (!cancelled) setOposiciones(data); })
       .catch((e) => { if (!cancelled) setCatalogError(getErrorMessage(e, 'No se pudo cargar el catálogo de progreso')); })
       .finally(() => { if (!cancelled) setLoadingCatalog(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [token]);
 
   // Cambio de oposición: cargar temas + simulacros
   useEffect(() => {

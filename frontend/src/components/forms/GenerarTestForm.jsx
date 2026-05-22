@@ -144,7 +144,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   useEffect(() => {
     let cancelled = false;
     catalogApi
-      .getOposiciones()
+      .getOposiciones(token)
       .then(async (ops) => {
         if (cancelled) return;
         setOposiciones(ops);
