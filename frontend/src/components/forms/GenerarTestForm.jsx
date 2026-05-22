@@ -291,7 +291,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
               </select>
               {!loadingAccesos && oposicionId && !tieneAcceso(Number(oposicionId)) && modo !== 'marcadas' && (
                 <div style={{ marginTop: 8, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5 }}>
-                  <strong>Modo demo</strong> — Las preguntas estarán limitadas. Para acceso completo, <a href="/catalogo" style={{ color: '#1d4ed8', fontWeight: 600 }}>compra el curso</a>.
+                  <strong>Modo demo</strong> — Las preguntas estarán limitadas. Para acceso completo, <a href="/catalogo" style={{ color: 'var(--orange)', fontWeight: 600 }}>compra el curso</a>.
                 </div>
               )}
             </div>
