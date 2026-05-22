@@ -3,7 +3,12 @@ import { ApiError } from '../utils/api-error.js';
 
 const isTemaPrimaryKeySequenceCollision = (error) => (
   error?.code === '23505'
-  && (error?.constraint === 'temas_pkey' || String(error?.message ?? '').includes('temas_pkey'))
+  && (
+    error?.table === 'temas'
+    || ['temas_pkey', 'materias_pkey'].includes(error?.constraint)
+    || String(error?.message ?? '').includes('temas_pkey')
+    || String(error?.message ?? '').includes('materias_pkey')
+  )
 );
 
 export const catalogAdminTaxonomiaService = {

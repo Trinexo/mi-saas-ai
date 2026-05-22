@@ -125,6 +125,56 @@ test('admin catalog temas: resincroniza secuencia y reintenta si choca temas_pke
   assert.equal(syncCalls, 1);
 });
 
+test('admin catalog temas: resincroniza si la PK conserva nombre legacy materias_pkey', async () => {
+  let createCalls = 0;
+  let syncCalls = 0;
+
+  catalogAdminRepository.createTema = async () => {
+    createCalls += 1;
+    if (createCalls === 1) {
+      const error = new Error('duplicate key value violates unique constraint "materias_pkey"');
+      error.code = '23505';
+      error.constraint = 'materias_pkey';
+      throw error;
+    }
+    return { id: 32, oposicion_id: 7, nombre: 'Tema nuevo' };
+  };
+  catalogAdminRepository.syncTemaIdSequence = async () => {
+    syncCalls += 1;
+  };
+
+  const result = await catalogAdminService.createTema(7, 'Tema nuevo');
+
+  assert.deepEqual(result, { id: 32, oposicion_id: 7, nombre: 'Tema nuevo' });
+  assert.equal(createCalls, 2);
+  assert.equal(syncCalls, 1);
+});
+
+test('admin catalog temas: resincroniza si postgres informa table=temas', async () => {
+  let createCalls = 0;
+  let syncCalls = 0;
+
+  catalogAdminRepository.createTema = async () => {
+    createCalls += 1;
+    if (createCalls === 1) {
+      const error = new Error('duplicate key value violates unique constraint "primary"');
+      error.code = '23505';
+      error.table = 'temas';
+      throw error;
+    }
+    return { id: 33, oposicion_id: 7, nombre: 'Tema nuevo' };
+  };
+  catalogAdminRepository.syncTemaIdSequence = async () => {
+    syncCalls += 1;
+  };
+
+  const result = await catalogAdminService.createTema(7, 'Tema nuevo');
+
+  assert.deepEqual(result, { id: 33, oposicion_id: 7, nombre: 'Tema nuevo' });
+  assert.equal(createCalls, 2);
+  assert.equal(syncCalls, 1);
+});
+
 test('admin catalog temas: no reintenta duplicados que no son drift de secuencia', async () => {
   catalogAdminRepository.createTema = async () => {
     const error = new Error('duplicate topic name');
