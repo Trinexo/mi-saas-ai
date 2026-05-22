@@ -687,11 +687,14 @@ Fuentes combinadas:
 - El Home del alumno cambia el bloque semanal para enlazar a `/plan-estudio` mediante "Ver todo" y usa la misma ruta en el estado vacio.
 - Se anadio cobertura de servicio para Plan de estudio: control de acceso por oposicion, listado permitido, bloqueo de actividades no disponibles e inicio de tema recomendado con vinculacion de `planificacion_id`.
 - El arranque de actividades del Plan de estudio valida tambien que una plantilla de test o simulacro pertenezca a la misma oposicion planificada antes de crear la sesion del alumno.
+- El catalogo de oposiciones queda corregido por rol: alumno y usuario anonimo siguen viendo solo oposiciones con preguntas, mientras que admin y profesor pueden ver oposiciones sin preguntas para poder crear estructura, subir contenido y mantener Gestion Procesal, Tramitacion y Auxiliar Administrativo aunque esten vacias.
+- El endpoint publico `/api/oposiciones` carga autenticacion opcional; si llega token de `admin` o `profesor`, devuelve tambien oposiciones sin preguntas.
+- Las pantallas autenticadas que consumen `catalogApi.getOposiciones` envian token para respetar el comportamiento por rol.
 
 ### Verificacion
 
 - `frontend`: `npm.cmd run build` correcto.
-- `backend`: `npm.cmd test -- --runInBand` correcto, 189 tests en verde.
+- `backend`: `npm.cmd test -- --runInBand` correcto, 210 tests en verde.
 - `backend`: importacion de `src/app.js` correcta tras registrar `/plan-estudio`.
 - `backend`: consulta de planificacion del profesor validada con `planificacion query OK`.
 - `backend`: SQL de actualizacion de progreso validado con `updateProgress SQL OK`.

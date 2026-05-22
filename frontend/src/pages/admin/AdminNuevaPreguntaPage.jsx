@@ -71,7 +71,7 @@ export default function AdminNuevaPreguntaPage() {
   useEffect(() => {
     const request = isProfesor
       ? profesorApi.getMisOposiciones(token)
-      : catalogApi.getOposiciones();
+      : catalogApi.getOposiciones(token);
 
     Promise.resolve(request)
       .then((items) => {

@@ -35,8 +35,8 @@ export default function HistorialPage() {
   const [consistenciaFiltro, setConsistenciaFiltro] = useState('todos');
 
   useEffect(() => {
-    catalogApi.getOposiciones().then(setOposiciones).catch(() => {});
-  }, []);
+    catalogApi.getOposiciones(token).then(setOposiciones).catch(() => {});
+  }, [token]);
 
   // Pre-seleccionar la oposición activa al montar
   useEffect(() => {

@@ -3,7 +3,7 @@ import { catalogService } from '../services/catalog.service.js';
 
 export const getOposiciones = async (req, res, next) => {
   try {
-    const data = await catalogService.getOposiciones();
+    const data = await catalogService.getOposiciones({ user: req.user });
     return ok(res, data);
   } catch (error) {
     return next(error);

@@ -2,8 +2,9 @@ import { ApiError } from '../utils/api-error.js';
 import { catalogRepository } from '../repositories/catalog.repository.js';
 
 export const catalogHierarchyService = {
-  async getOposiciones() {
-    return catalogRepository.getOposiciones();
+  async getOposiciones({ user } = {}) {
+    const includeEmpty = ['admin', 'profesor'].includes(user?.role);
+    return catalogRepository.getOposiciones({ includeEmpty });
   },
 
   async getTemas(oposicionId) {

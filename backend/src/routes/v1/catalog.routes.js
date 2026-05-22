@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { validate } from '../../middleware/validate.middleware.js';
+import { optionalAuth } from '../../middleware/auth.middleware.js';
 import {
   getBloques,
   getColecciones,
@@ -11,7 +12,7 @@ import { bloquesQuerySchema, preguntasQuerySchema, temasByOposicionQuerySchema }
 
 const router = Router();
 
-router.get('/oposiciones', getOposiciones);
+router.get('/oposiciones', optionalAuth, getOposiciones);
 router.get('/temas', validate(temasByOposicionQuerySchema, 'query'), getTemas);
 router.get('/bloques', validate(bloquesQuerySchema, 'query'), getBloques);
 router.get('/colecciones', validate(bloquesQuerySchema, 'query'), getColecciones);

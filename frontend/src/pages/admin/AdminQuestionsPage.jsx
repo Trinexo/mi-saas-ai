@@ -90,8 +90,8 @@ export default function AdminQuestionsPage() {
   const [formTemas, setFormTemas] = useState([]);
 
   useEffect(() => {
-    catalogApi.getOposiciones().then(setCatOposiciones).catch(() => {});
-  }, []);
+    catalogApi.getOposiciones(token).then(setCatOposiciones).catch(() => {});
+  }, [token]);
 
   const [searchParams] = useSearchParams();
   useEffect(() => {

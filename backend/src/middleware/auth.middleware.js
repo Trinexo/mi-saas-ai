@@ -19,6 +19,24 @@ export const requireAuth = (req, res, next) => {
   }
 };
 
+export const optionalAuth = (req, res, next) => {
+  const header = req.headers.authorization;
+
+  if (!header || !header.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = header.slice('Bearer '.length);
+
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    req.user = null;
+  }
+
+  return next();
+};
+
 export const requireRole = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
     return next(new ApiError(403, 'No autorizado para este recurso'));

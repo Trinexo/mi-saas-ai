@@ -17,7 +17,7 @@ export default function SimulacroForm() {
   const [simulacro, setSimulacro] = useState({ oposicionId: '', numeroPreguntas: 60, duracion: '' });
 
   useEffect(() => {
-    catalogApi.getOposiciones().then((ops) => {
+    catalogApi.getOposiciones(token).then((ops) => {
       setOposiciones(Array.isArray(ops) ? ops : (ops?.data ?? []));
       // Auto-seleccionar la oposición activa y su tiempo configurado
       if (oposicionActiva?.id) {

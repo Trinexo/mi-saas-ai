@@ -1,16 +1,17 @@
 import pool from '../config/db.js';
 
 export const catalogRepository = {
-  async getOposiciones() {
+  async getOposiciones({ includeEmpty = false } = {}) {
     const result = await pool.query(
       `SELECT o.id, o.nombre, o.descripcion, o.precio_mensual_cents, o.tiempo_limite_minutos
        FROM oposiciones o
-       WHERE EXISTS (
+       WHERE ($1::boolean = TRUE OR EXISTS (
          SELECT 1 FROM temas t
          JOIN preguntas p ON p.tema_id = t.id
          WHERE t.oposicion_id = o.id
-       )
+       ))
        ORDER BY o.nombre ASC`,
+      [includeEmpty],
     );
     return result.rows;
   },
