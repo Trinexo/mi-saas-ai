@@ -1,9 +1,21 @@
 import { catalogAdminRepository } from '../repositories/catalogAdmin.repository.js';
 import { ApiError } from '../utils/api-error.js';
 
+const isTemaPrimaryKeySequenceCollision = (error) => (
+  error?.code === '23505'
+  && (error?.constraint === 'temas_pkey' || String(error?.message ?? '').includes('temas_pkey'))
+);
+
 export const catalogAdminTaxonomiaService = {
   async createTema(oposicionId, nombre) {
-    return catalogAdminRepository.createTema(oposicionId, nombre);
+    try {
+      return await catalogAdminRepository.createTema(oposicionId, nombre);
+    } catch (error) {
+      if (!isTemaPrimaryKeySequenceCollision(error)) throw error;
+
+      await catalogAdminRepository.syncTemaIdSequence();
+      return catalogAdminRepository.createTema(oposicionId, nombre);
+    }
   },
 
   async updateTema(id, nombre) {
