@@ -2,10 +2,12 @@ import pool from '../config/db.js';
 
 export const catalogAdminRepository = {
   // --- OPOSICIONES ---
-  async createOposicion(nombre, descripcion) {
+  async createOposicion(nombre, descripcion, slug) {
     const r = await pool.query(
-      'INSERT INTO oposiciones (nombre, descripcion) VALUES ($1, $2) RETURNING id, nombre, descripcion',
-      [nombre, descripcion ?? null],
+      `INSERT INTO oposiciones (nombre, descripcion, slug)
+       VALUES ($1, $2, $3)
+       RETURNING id, nombre, descripcion, slug`,
+      [nombre, descripcion ?? null, slug],
     );
     return r.rows[0];
   },

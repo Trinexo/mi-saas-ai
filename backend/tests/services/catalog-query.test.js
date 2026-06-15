@@ -129,6 +129,44 @@ test('admin catalog oposiciones: resincroniza secuencia y reintenta si choca opo
   assert.equal(syncCalls, 1);
 });
 
+test('admin catalog oposiciones: genera slug al crear una oposicion', async () => {
+  let receivedSlug = null;
+
+  catalogAdminRepository.createOposicion = async (nombre, descripcion, slug) => {
+    receivedSlug = slug;
+    return { id: 5, nombre, descripcion, slug };
+  };
+
+  const result = await catalogAdminService.createOposicion(
+    'Auxiliar Administrativo Castilla-La Mancha',
+    'Descripcion',
+  );
+
+  assert.equal(receivedSlug, 'auxiliar-administrativo-castilla-la-mancha');
+  assert.equal(result.slug, receivedSlug);
+});
+
+test('admin catalog oposiciones: genera un slug alternativo si ya existe', async () => {
+  const receivedSlugs = [];
+
+  catalogAdminRepository.createOposicion = async (nombre, descripcion, slug) => {
+    receivedSlugs.push(slug);
+    if (receivedSlugs.length === 1) {
+      const error = new Error('duplicate key value violates unique constraint "oposiciones_slug_idx"');
+      error.code = '23505';
+      error.constraint = 'oposiciones_slug_idx';
+      throw error;
+    }
+    return { id: 6, nombre, descripcion, slug };
+  };
+
+  const result = await catalogAdminService.createOposicion('Auxiliar Administrativo');
+
+  assert.equal(receivedSlugs[0], 'auxiliar-administrativo');
+  assert.match(receivedSlugs[1], /^auxiliar-administrativo-[a-z0-9]+$/);
+  assert.equal(result.slug, receivedSlugs[1]);
+});
+
 test('admin catalog oposiciones: no reintenta duplicados ajenos a la clave primaria', async () => {
   catalogAdminRepository.createOposicion = async () => {
     const error = new Error('duplicate opposition name');
