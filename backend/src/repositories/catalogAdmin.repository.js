@@ -10,6 +10,16 @@ export const catalogAdminRepository = {
     return r.rows[0];
   },
 
+  async syncOposicionIdSequence() {
+    await pool.query(
+      `SELECT setval(
+         pg_get_serial_sequence('public.oposiciones', 'id'),
+         GREATEST((SELECT COALESCE(MAX(id), 0) FROM public.oposiciones), 1),
+         (SELECT COALESCE(MAX(id), 0) FROM public.oposiciones) > 0
+       )`,
+    );
+  },
+
   async listOposicionesConStats({ q, estado, categoria, limit, offset }) {
     const params = [
       q ? `%${q}%` : null,

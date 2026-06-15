@@ -1,6 +1,15 @@
 import { catalogAdminRepository } from '../repositories/catalogAdmin.repository.js';
 import { ApiError } from '../utils/api-error.js';
 
+const isOposicionPrimaryKeySequenceCollision = (error) => (
+  error?.code === '23505'
+  && (
+    error?.table === 'oposiciones'
+    || error?.constraint === 'oposiciones_pkey'
+    || String(error?.message ?? '').includes('oposiciones_pkey')
+  )
+);
+
 export const catalogAdminOposicionService = {
   async listOposicionesConStats({ q, estado, categoria, page, pageSize }) {
     const limit  = pageSize;
@@ -9,7 +18,14 @@ export const catalogAdminOposicionService = {
   },
 
   async createOposicion(nombre, descripcion) {
-    return catalogAdminRepository.createOposicion(nombre, descripcion);
+    try {
+      return await catalogAdminRepository.createOposicion(nombre, descripcion);
+    } catch (error) {
+      if (!isOposicionPrimaryKeySequenceCollision(error)) throw error;
+
+      await catalogAdminRepository.syncOposicionIdSequence();
+      return catalogAdminRepository.createOposicion(nombre, descripcion);
+    }
   },
 
   async updateOposicion(id, fields) {

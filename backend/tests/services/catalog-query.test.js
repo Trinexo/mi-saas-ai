@@ -9,11 +9,15 @@ import { catalogAdminService } from '../../src/services/catalogAdmin.service.js'
 import { catalogAdminRepository } from '../../src/repositories/catalogAdmin.repository.js';
 
 const originalGetOposiciones = catalogRepository.getOposiciones;
+const originalCreateOposicion = catalogAdminRepository.createOposicion;
+const originalSyncOposicionIdSequence = catalogAdminRepository.syncOposicionIdSequence;
 const originalCreateTema = catalogAdminRepository.createTema;
 const originalSyncTemaIdSequence = catalogAdminRepository.syncTemaIdSequence;
 
 test.afterEach(() => {
   catalogRepository.getOposiciones = originalGetOposiciones;
+  catalogAdminRepository.createOposicion = originalCreateOposicion;
+  catalogAdminRepository.syncOposicionIdSequence = originalSyncOposicionIdSequence;
   catalogAdminRepository.createTema = originalCreateTema;
   catalogAdminRepository.syncTemaIdSequence = originalSyncTemaIdSequence;
 });
@@ -98,6 +102,48 @@ test('catalog oposiciones: alumno y anonimo mantienen filtro de preguntas', asyn
   await catalogHierarchyService.getOposiciones();
 
   assert.deepEqual(calls, [{ includeEmpty: false }, { includeEmpty: false }]);
+});
+
+test('admin catalog oposiciones: resincroniza secuencia y reintenta si choca oposiciones_pkey', async () => {
+  let createCalls = 0;
+  let syncCalls = 0;
+
+  catalogAdminRepository.createOposicion = async () => {
+    createCalls += 1;
+    if (createCalls === 1) {
+      const error = new Error('duplicate key value violates unique constraint "oposiciones_pkey"');
+      error.code = '23505';
+      error.constraint = 'oposiciones_pkey';
+      throw error;
+    }
+    return { id: 5, nombre: 'Nueva oposicion', descripcion: null };
+  };
+  catalogAdminRepository.syncOposicionIdSequence = async () => {
+    syncCalls += 1;
+  };
+
+  const result = await catalogAdminService.createOposicion('Nueva oposicion');
+
+  assert.deepEqual(result, { id: 5, nombre: 'Nueva oposicion', descripcion: null });
+  assert.equal(createCalls, 2);
+  assert.equal(syncCalls, 1);
+});
+
+test('admin catalog oposiciones: no reintenta duplicados ajenos a la clave primaria', async () => {
+  catalogAdminRepository.createOposicion = async () => {
+    const error = new Error('duplicate opposition name');
+    error.code = '23505';
+    error.constraint = 'oposiciones_nombre_key';
+    throw error;
+  };
+  catalogAdminRepository.syncOposicionIdSequence = async () => {
+    throw new Error('no deberia sincronizar');
+  };
+
+  await assert.rejects(
+    () => catalogAdminService.createOposicion('Oposicion repetida'),
+    (error) => error.code === '23505' && error.constraint === 'oposiciones_nombre_key',
+  );
 });
 
 test('admin catalog temas: resincroniza secuencia y reintenta si choca temas_pkey', async () => {
