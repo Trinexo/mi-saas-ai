@@ -1,8 +1,11 @@
 export const adminPreguntasImportCsvMapperService = {
   buildItem(values, indexes) {
-    const rawOpciones = [1, 2, 3, 4].map((n) => ({
-      raw: values[indexes[`opcion_${n}`]] ?? '',
-    }));
+    const rawOpciones = [1, 2, 3, 4]
+      .filter((n) => indexes[`opcion_${n}`] !== undefined)
+      .map((n) => ({
+        raw: values[indexes[`opcion_${n}`]] ?? '',
+      }))
+      .filter((opcion) => opcion.raw.trim() !== '');
 
     const correctaCount = rawOpciones.filter((o) => o.raw.startsWith('*')).length;
 

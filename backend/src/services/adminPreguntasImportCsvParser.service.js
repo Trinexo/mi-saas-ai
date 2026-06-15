@@ -38,8 +38,6 @@ const requiredHeaders = [
   'enunciado',
   'opcion_1',
   'opcion_2',
-  'opcion_3',
-  'opcion_4',
   'explicacion',
 ];
 
