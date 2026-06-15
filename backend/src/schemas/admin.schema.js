@@ -12,7 +12,7 @@ const basePreguntaSchema = {
   explicacion: z.string().optional().nullable().default(''),
   referenciaNormativa: z.string().optional().nullable(),
   nivelDificultad: z.enum(['facil', 'media', 'dificil']),
-  opciones: z.array(opcionSchema).length(4),
+  opciones: z.array(opcionSchema).min(2).max(4),
   imagenUrl: z.string().optional().nullable(),
   audioUrl: z.string().optional().nullable(),
 };

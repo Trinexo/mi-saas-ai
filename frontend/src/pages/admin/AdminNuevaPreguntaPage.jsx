@@ -195,7 +195,7 @@ export default function AdminNuevaPreguntaPage() {
   };
 
   const CSV_REQUIRED_HEADERS = [
-    'tema_id', 'enunciado', 'opcion_1', 'opcion_2', 'opcion_3', 'opcion_4',
+    'tema_id', 'enunciado', 'opcion_1', 'opcion_2',
     'explicacion',
   ];
 
@@ -449,11 +449,11 @@ export default function AdminNuevaPreguntaPage() {
         <form onSubmit={onImportCsv} style={{ display: 'grid', gap: 12 }}>
           <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
             Columnas obligatorias: <code style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3, fontSize: '0.78rem' }}>
-              tema_id, enunciado, opcion_1, opcion_2, opcion_3, opcion_4, explicacion
+              tema_id, enunciado, opcion_1, opcion_2, explicacion
             </code>
             <br />
             Columnas opcionales: <code style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3, fontSize: '0.78rem' }}>
-              referencia_normativa, nivel_dificultad
+              opcion_3, opcion_4, referencia_normativa, nivel_dificultad
             </code>{' '}(si se omiten: sin referencia y dificultad media)
             <br />
             <span style={{ fontSize: '0.76rem', color: '#9ca3af' }}>
