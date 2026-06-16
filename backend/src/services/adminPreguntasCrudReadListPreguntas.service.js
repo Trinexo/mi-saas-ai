@@ -3,6 +3,11 @@ import { adminRepository } from '../repositories/admin.repository.js';
 
 export const adminPreguntasCrudReadListPreguntasService = {
   async listPreguntas(query, caller = {}) {
+    const temaIds = String(query.tema_ids ?? '')
+      .split(',')
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isInteger(value) && value > 0);
+
     const {
       page,
       page_size: pageSize,
@@ -17,6 +22,7 @@ export const adminPreguntasCrudReadListPreguntasService = {
     const filters = {
       oposicionId: oposicionId ?? null,
       temaId: temaId ?? null,
+      temaIds: temaIds.length ? [...new Set(temaIds)] : null,
       bloqueId: bloqueId ?? null,
       nivelDificultad: nivelDificultad ?? null,
       q: q ?? null,

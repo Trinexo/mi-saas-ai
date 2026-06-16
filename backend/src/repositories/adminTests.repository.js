@@ -1,8 +1,11 @@
 import pool from '../config/db.js';
 
-export const adminTestsRepository = {
+const mapTemaRows = (rows) => rows.map((row) => ({
+  id: Number(row.id),
+  nombre: row.nombre,
+}));
 
-  // ─── Listado paginado ────────────────────────────────────────────────────────
+export const adminTestsRepository = {
   async listTests({ q, estado, oposicionId, allowedOposicionIds, limit, offset }) {
     const params = [
       q ? `%${q}%` : null,
@@ -21,24 +24,35 @@ export const adminTestsRepository = {
          t.oposicion_id, t.tema_id,
          o.nombre AS oposicion_nombre,
          te.nombre AS tema_nombre,
+         COALESCE(tt.temas_resumen, te.nombre) AS temas_resumen,
+         COALESCE(tt.tema_ids, CASE WHEN t.tema_id IS NULL THEN ARRAY[]::bigint[] ELSE ARRAY[t.tema_id] END) AS tema_ids,
          COUNT(DISTINCT atp.pregunta_id)::int AS total_preguntas
        FROM admin_tests t
        LEFT JOIN oposiciones o ON o.id = t.oposicion_id
-       LEFT JOIN temas te      ON te.id = t.tema_id
+       LEFT JOIN temas te ON te.id = t.tema_id
+       LEFT JOIN LATERAL (
+         SELECT
+           ARRAY_AGG(att.tema_id ORDER BY tm.nombre, tm.id) AS tema_ids,
+           STRING_AGG(tm.nombre, ' | ' ORDER BY tm.nombre, tm.id) AS temas_resumen
+         FROM admin_tests_temas att
+         JOIN temas tm ON tm.id = att.tema_id
+         WHERE att.test_id = t.id
+       ) tt ON TRUE
        LEFT JOIN admin_tests_preguntas atp ON atp.test_id = t.id
-       WHERE ($1::text   IS NULL OR t.nombre ILIKE $1)
-         AND ($2::text   IS NULL OR t.estado = $2)
+       WHERE ($1::text IS NULL OR t.nombre ILIKE $1)
+         AND ($2::text IS NULL OR t.estado = $2)
          AND ($3::bigint IS NULL OR t.oposicion_id = $3)
          AND ($4::bigint[] IS NULL OR t.oposicion_id = ANY($4::bigint[]))
-       GROUP BY t.id, o.nombre, te.nombre
+       GROUP BY t.id, o.nombre, te.nombre, tt.temas_resumen, tt.tema_ids
        ORDER BY t.fecha_creacion DESC
        LIMIT $5 OFFSET $6`,
       params,
     );
     const countRow = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM admin_tests t
-       WHERE ($1::text   IS NULL OR t.nombre ILIKE $1)
-         AND ($2::text   IS NULL OR t.estado = $2)
+      `SELECT COUNT(*)::int AS total
+       FROM admin_tests t
+       WHERE ($1::text IS NULL OR t.nombre ILIKE $1)
+         AND ($2::text IS NULL OR t.estado = $2)
          AND ($3::bigint IS NULL OR t.oposicion_id = $3)
          AND ($4::bigint[] IS NULL OR t.oposicion_id = ANY($4::bigint[]))`,
       [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null],
@@ -46,7 +60,6 @@ export const adminTestsRepository = {
     return { items: rows.rows, total: countRow.rows[0].total };
   },
 
-  // ─── Detalle con preguntas ───────────────────────────────────────────────────
   async getTest(id) {
     const row = await pool.query(
       `SELECT
@@ -55,13 +68,15 @@ export const adminTestsRepository = {
          te.nombre AS tema_nombre
        FROM admin_tests t
        LEFT JOIN oposiciones o ON o.id = t.oposicion_id
-       LEFT JOIN temas te      ON te.id = t.tema_id
+       LEFT JOIN temas te ON te.id = t.tema_id
        WHERE t.id = $1
        GROUP BY t.id, o.nombre, te.nombre`,
       [id],
     );
     if (row.rows.length === 0) return null;
     const test = row.rows[0];
+    test.temas = await this.getTestTemas(id);
+    test.tema_ids = test.temas.map((tema) => tema.id);
 
     const pregsRow = await pool.query(
       `SELECT
@@ -79,7 +94,18 @@ export const adminTestsRepository = {
     return test;
   },
 
-  // ─── Crear ───────────────────────────────────────────────────────────────────
+  async getTestTemas(testId) {
+    const result = await pool.query(
+      `SELECT t.id, t.nombre
+       FROM admin_tests_temas att
+       JOIN temas t ON t.id = att.tema_id
+       WHERE att.test_id = $1
+       ORDER BY t.nombre ASC, t.id ASC`,
+      [testId],
+    );
+    return mapTemaRows(result.rows);
+  },
+
   async createTest(fields, creadoPor) {
     const r = await pool.query(
       `INSERT INTO admin_tests
@@ -110,7 +136,19 @@ export const adminTestsRepository = {
     return r.rows[0];
   },
 
-  // ─── Actualizar ──────────────────────────────────────────────────────────────
+  async replaceTemas(testId, temaIds) {
+    await pool.query('DELETE FROM admin_tests_temas WHERE test_id = $1', [testId]);
+    if (!temaIds?.length) return;
+    for (const temaId of temaIds) {
+      await pool.query(
+        `INSERT INTO admin_tests_temas (test_id, tema_id)
+         VALUES ($1, $2)
+         ON CONFLICT (test_id, tema_id) DO NOTHING`,
+        [testId, temaId],
+      );
+    }
+  },
+
   async updateTest(id, fields) {
     const allowed = [
       'nombre', 'descripcion', 'oposicion_id', 'tema_id', 'estado',
@@ -136,18 +174,16 @@ export const adminTestsRepository = {
     return r.rows[0] ?? null;
   },
 
-  // ─── Eliminar ────────────────────────────────────────────────────────────────
   async deleteTest(id) {
     await pool.query('DELETE FROM admin_tests WHERE id = $1', [id]);
   },
 
-  // ─── Preguntas del test ──────────────────────────────────────────────────────
   async getTestPreguntas(testId) {
     const r = await pool.query(
       `SELECT p.id, p.enunciado, p.nivel_dificultad,
               atp.orden, te.nombre AS tema_nombre
        FROM admin_tests_preguntas atp
-       JOIN preguntas p   ON p.id = atp.pregunta_id
+       JOIN preguntas p ON p.id = atp.pregunta_id
        LEFT JOIN temas te ON te.id = p.tema_id
        WHERE atp.test_id = $1
        ORDER BY atp.orden, p.id`,
@@ -189,8 +225,6 @@ export const adminTestsRepository = {
     );
   },
 
-  // ─── Test demo por oposición ─────────────────────────────────────────────────
-  // Devuelve el test marcado como demo para una oposición junto con sus preguntas completas
   async getDemoTest(oposicionId) {
     const row = await pool.query(
       `SELECT t.id, t.nombre, t.mezclar_preguntas, t.mostrar_explicaciones,
@@ -213,15 +247,12 @@ export const adminTestsRepository = {
     return test;
   },
 
-  // Activa es_demo en el test indicado y lo desactiva en cualquier otro de la misma oposición
   async setDemoTest(testId, activate) {
     if (activate) {
-      // Primero obtener la oposicion_id del test
       const tr = await pool.query('SELECT oposicion_id FROM admin_tests WHERE id = $1', [testId]);
       if (tr.rows.length === 0) return null;
       const oposicionId = tr.rows[0].oposicion_id;
-      if (!oposicionId) throw new Error('El test no tiene oposición asignada');
-      // Desactivar demo en cualquier otro test de la misma oposición
+      if (!oposicionId) throw new Error('El test no tiene oposicion asignada');
       await pool.query(
         `UPDATE admin_tests SET es_demo = FALSE WHERE oposicion_id = $1 AND id <> $2`,
         [oposicionId, testId],
@@ -234,7 +265,6 @@ export const adminTestsRepository = {
     return r.rows[0] ?? null;
   },
 
-  // 10 primeras preguntas del Tema 1 (fallback cuando no hay test demo configurado)
   async getDemoFallbackPreguntaIds(oposicionId) {
     const r = await pool.query(
       `SELECT p.id
@@ -247,5 +277,4 @@ export const adminTestsRepository = {
     );
     return r.rows.map((row) => row.id);
   },
-
 };

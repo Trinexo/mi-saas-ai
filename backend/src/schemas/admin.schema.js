@@ -59,6 +59,7 @@ export const listPreguntasQuerySchema = z.object({
   oposicion_id: z.coerce.number().int().positive().optional(),
   materia_id: z.coerce.number().int().positive().optional(),
   tema_id: z.coerce.number().int().positive().optional(),
+  tema_ids: z.string().optional(),
   bloque_id: z.coerce.number().int().positive().optional(),
   nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional(),
 });

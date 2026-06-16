@@ -41,7 +41,7 @@ export const profesorDashboardRepository = {
     return result.rows;
   },
 
-  async getMisPreguntas(userId, { oposicionId, temaId, nivelDificultad, estado, q, page, pageSize }) {
+  async getMisPreguntas(userId, { oposicionId, temaId, temaIds, nivelDificultad, estado, q, page, pageSize }) {
     const args = [userId];
     const conditions = ['po.user_id = $1'];
 
@@ -52,6 +52,10 @@ export const profesorDashboardRepository = {
     if (temaId) {
       args.push(temaId);
       conditions.push(`p.tema_id = $${args.length}`);
+    }
+    if (temaIds?.length) {
+      args.push(temaIds);
+      conditions.push(`p.tema_id = ANY($${args.length}::int[])`);
     }
     if (q) {
       args.push(`%${q}%`);

@@ -17,9 +17,14 @@ export const profesorService = {
   async getMisPreguntas(userId, query) {
     const page = query.page ?? 1;
     const pageSize = query.page_size ?? 20;
+    const temaIds = String(query.tema_ids ?? '')
+      .split(',')
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isInteger(value) && value > 0);
     const { rows, total } = await profesorDashboardRepository.getMisPreguntas(userId, {
       oposicionId: query.oposicion_id ?? null,
       temaId: query.tema_id ?? null,
+      temaIds: temaIds.length ? [...new Set(temaIds)] : null,
       nivelDificultad: query.nivel_dificultad ?? null,
       estado: query.estado ?? null,
       q: query.q ?? null,

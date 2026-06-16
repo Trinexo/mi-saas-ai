@@ -159,7 +159,7 @@ export default function ProfesorTestsPage() {
                       )}
                     </td>
                     <td style={{ ...TD, color: '#6b7280' }}>{test.oposicion_nombre ?? '-'}</td>
-                    <td style={{ ...TD, color: '#6b7280' }}>{test.tema_nombre ?? '-'}</td>
+                    <td style={{ ...TD, color: '#6b7280' }}>{test.temas_resumen ?? test.tema_nombre ?? '-'}</td>
                     <td style={TD}>
                       {test.estado ? (
                         <span style={{ ...(ESTADO_STYLES[test.estado] ?? {}), borderRadius: 12, padding: '2px 10px', fontSize: '0.77rem', fontWeight: 700 }}>

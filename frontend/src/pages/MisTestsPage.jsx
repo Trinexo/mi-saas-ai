@@ -101,6 +101,12 @@ function TestCard({ test, onIniciar, loading, errorMsg }) {
         </span>
       </div>
 
+      {(test.temas_resumen || test.tema_nombre) && (
+        <div style={{ fontSize: '0.74rem', color: G, lineHeight: 1.45 }}>
+          <strong style={{ color: DK }}>Temas:</strong> {test.temas_resumen || test.tema_nombre}
+        </div>
+      )}
+
       {/* Error */}
       {errorMsg && (
         <div style={{ fontSize: '0.78rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>
@@ -281,7 +287,7 @@ export default function MisTestsPage() {
   const porTema = useMemo(() => {
     const mapa = new Map();
     for (const t of testsFiltrados) {
-      const clave = t.tema_nombre || '__sin_tema__';
+      const clave = t.temas_resumen || t.tema_nombre || '__sin_tema__';
       if (!mapa.has(clave)) mapa.set(clave, []);
       mapa.get(clave).push(t);
     }
