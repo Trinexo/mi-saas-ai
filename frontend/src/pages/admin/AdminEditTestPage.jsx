@@ -526,6 +526,14 @@ export default function AdminEditTestPage() {
   const selectedOposicion = oposiciones.find((item) => String(item.id) === String(form.oposicion_id));
   const selectedTemas = temas.filter((tema) => form.tema_ids.includes(String(tema.id)));
   const selectedDificultad = DIFICULTAD[form.nivel_dificultad];
+  const canToggleDemo = !isNew && Boolean(form.oposicion_id) && form.estado === 'publicado';
+  const demoHelperText = isNew
+    ? 'Guarda el test primero para poder marcarlo como demo.'
+    : !form.oposicion_id
+      ? 'Selecciona una oposicion para poder usar este test como demo.'
+      : form.estado !== 'publicado'
+        ? 'El test debe estar publicado para activar el demo.'
+        : 'Los alumnos free usaran este test en la demo de la oposicion.';
 
   if (loading) {
     return (
@@ -617,28 +625,25 @@ export default function AdminEditTestPage() {
           <Toggle value={form.mezclar_preguntas} onChange={(value) => setField('mezclar_preguntas', value)} label="Mezclar preguntas" desc="El orden de las preguntas sera aleatorio" />
           <Toggle value={form.mostrar_explicaciones} onChange={(value) => setField('mostrar_explicaciones', value)} label="Mostrar explicacion" desc="Se mostrara la explicacion de cada pregunta" />
 
-          {!isNew && form.oposicion_id && (
-            <div style={{ marginTop: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', opacity: savingDemo ? .6 : 1 }}>
-                <div>
-                  <div style={{ fontSize: '.875rem', fontWeight: 700, color: esDemoTest ? '#7c3aed' : '#111827' }}>
-                    Test DEMO
-                    {esDemoTest && <span style={{ marginLeft: 8, fontSize: '.72rem', background: '#ede9fe', color: '#6d28d9', borderRadius: 6, padding: '2px 7px', fontWeight: 700 }}>ACTIVO</span>}
-                  </div>
-                  <div style={{ fontSize: '.75rem', color: '#9ca3af', marginTop: 1 }}>Los alumnos free usaran este test en la demo de la oposicion</div>
-                  {form.estado !== 'publicado' && <div style={{ fontSize: '.72rem', color: '#dc2626', marginTop: 2 }}>El test debe estar publicado para activar el demo</div>}
+          <div style={{ marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', opacity: savingDemo ? .6 : 1 }}>
+              <div>
+                <div style={{ fontSize: '.875rem', fontWeight: 700, color: esDemoTest ? '#7c3aed' : '#111827' }}>
+                  Test DEMO
+                  {esDemoTest && <span style={{ marginLeft: 8, fontSize: '.72rem', background: '#ede9fe', color: '#6d28d9', borderRadius: 6, padding: '2px 7px', fontWeight: 700 }}>ACTIVO</span>}
                 </div>
-                <button
-                  type="button"
-                  disabled={savingDemo || form.estado !== 'publicado'}
-                  onClick={() => handleToggleDemo(!esDemoTest)}
-                  style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: (savingDemo || form.estado !== 'publicado') ? 'not-allowed' : 'pointer', background: esDemoTest ? P : '#d1d5db', position: 'relative', opacity: form.estado !== 'publicado' ? .4 : 1 }}
-                >
-                  <span style={{ position: 'absolute', top: 2, left: esDemoTest ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
-                </button>
+                <div style={{ fontSize: '.75rem', color: canToggleDemo ? '#9ca3af' : '#dc2626', marginTop: 1 }}>{demoHelperText}</div>
               </div>
+              <button
+                type="button"
+                disabled={savingDemo || !canToggleDemo}
+                onClick={() => handleToggleDemo(!esDemoTest)}
+                style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: (savingDemo || !canToggleDemo) ? 'not-allowed' : 'pointer', background: esDemoTest ? P : '#d1d5db', position: 'relative', opacity: canToggleDemo ? 1 : .4 }}
+              >
+                <span style={{ position: 'absolute', top: 2, left: esDemoTest ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+              </button>
             </div>
-          )}
+          </div>
 
           <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid #f1f5f9' }}>
             <div style={{ ...LABEL, marginBottom: 10 }}>Puntuacion</div>
