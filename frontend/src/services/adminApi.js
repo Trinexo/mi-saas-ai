@@ -120,6 +120,8 @@ export const adminApi = {
     apiRequest(`/admin/tests/${testId}/preguntas`, { method: 'POST', body: { pregunta_ids: preguntaIds }, token }),
   removePreguntaTest: (token, testId, preguntaId) =>
     apiRequest(`/admin/tests/${testId}/preguntas/${preguntaId}`, { method: 'DELETE', token }),
+  setDemoTest: (token, testId, esDemo) =>
+    apiRequest(`/admin/tests/${testId}/demo`, { method: 'PATCH', body: { es_demo: esDemo }, token }),
   seleccionarPreguntasAdmin: (token, payload) =>
     apiRequest('/admin/tests/seleccion/preguntas', { method: 'POST', body: payload, token }),
 
