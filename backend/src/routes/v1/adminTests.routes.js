@@ -9,6 +9,7 @@ import {
   deleteTest,
   addPreguntas,
   removePregunta,
+  setDemoTest,
   seleccionarPreguntasAdmin,
 } from '../../controllers/adminTests.controller.js';
 import { seleccionPreguntasSchema } from '../../schemas/profesorWorkspace.schema.js';
@@ -35,6 +36,7 @@ router.delete('/:id', requireRole('admin'), deleteTest);
 
 router.post('/:id/preguntas',                       addPreguntas);
 router.delete('/:id/preguntas/:preguntaId',          removePregunta);
+router.patch('/:id/demo',                            setDemoTest);
 
 // Selección automática de preguntas (solo admin)
 // POST /api/admin/tests/seleccion/preguntas

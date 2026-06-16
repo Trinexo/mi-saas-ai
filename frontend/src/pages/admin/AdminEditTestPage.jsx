@@ -61,11 +61,13 @@ function Toggle({ value, onChange, label, desc }) {
 }
 
 // ─── Modal Añadir Preguntas ───────────────────────────────────────────────────
-function ModalAnadirPreguntas({ testId, oposicionId, onClose, onAdded, token, isProfesor }) {
+function ModalAnadirPreguntas({ testId, oposicionId, existingQuestionIds = [], onClose, onAdded, token, isProfesor }) {
   const [preguntas, setPreguntas]   = useState([]);
   const [temas,     setTemas]       = useState([]);
   const [loading,   setLoading]     = useState(false);
   const [q,         setQ]           = useState('');
+  const [temaId,    setTemaId]      = useState('');
+  const [dificultadFiltro, setDificultadFiltro] = useState('');
   const [selected,  setSelected]    = useState([]);
   const [adding,    setAdding]      = useState(false);
   const [autoLoading, setAutoLoading] = useState(false);
@@ -84,17 +86,21 @@ function ModalAnadirPreguntas({ testId, oposicionId, onClose, onAdded, token, is
         ? await profesorApi.getMisPreguntas(token, {
           q: q || undefined,
           oposicion_id: oposicionId || undefined,
+          tema_id: temaId || undefined,
+          nivel_dificultad: dificultadFiltro || undefined,
           page, page_size: PAGE_SIZE,
         })
         : await adminApi.listPreguntas(token, {
         q: q || undefined,
         oposicion_id: oposicionId || undefined,
+        tema_id: temaId || undefined,
+        nivel_dificultad: dificultadFiltro || undefined,
         page, page_size: PAGE_SIZE,
       });
       setPreguntas(res?.items ?? []);
       setTotal(res?.pagination?.total ?? res?.total ?? 0);
     } finally { setLoading(false); }
-  }, [token, q, oposicionId, page, isProfesor]);
+  }, [token, q, oposicionId, temaId, dificultadFiltro, page, isProfesor]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -111,7 +117,15 @@ function ModalAnadirPreguntas({ testId, oposicionId, onClose, onAdded, token, is
     }
   }, [isProfesor, oposicionId, token]);
 
-  const toggle = (id) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  const existingQuestionIdSet = useMemo(
+    () => new Set(existingQuestionIds.map((questionId) => Number(questionId))),
+    [existingQuestionIds],
+  );
+
+  const toggle = (id) => {
+    if (existingQuestionIdSet.has(Number(id))) return;
+    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  };
 
   const handleAdd = async () => {
     if (!selected.length) return;
@@ -136,7 +150,7 @@ function ModalAnadirPreguntas({ testId, oposicionId, onClose, onAdded, token, is
         cantidad: Number(autoCantidad || 10),
         dificultad: autoDificultad || null,
         plantilla_test_id: testId ? Number(testId) : undefined,
-        exclude_ids: selected,
+        exclude_ids: [...new Set([...selected, ...existingQuestionIds])],
         permitir_completar_con_otros_temas: true,
       };
       const res = isProfesor
@@ -162,12 +176,22 @@ function ModalAnadirPreguntas({ testId, oposicionId, onClose, onAdded, token, is
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#9ca3af' }}>×</button>
         </div>
         {/* Filtros */}
-        <div style={{ padding: '14px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: 10 }}>
+        <div style={{ padding: '14px 24px', borderBottom: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: 'minmax(180px, 1.2fr) minmax(170px, .9fr) 150px auto', gap: 10, alignItems: 'center' }}>
           <input
             value={q} onChange={e => { setQ(e.target.value); setPage(1); }}
             placeholder="Buscar pregunta…"
             style={{ ...INPUT, marginBottom: 0, flex: 1 }}
           />
+          <select value={temaId} onChange={e => { setTemaId(e.target.value); setPage(1); }} style={{ ...INPUT, marginBottom: 0 }}>
+            <option value="">Todos los temas</option>
+            {temas.map((tema) => <option key={tema.tema_id} value={tema.tema_id}>{tema.tema_nombre}</option>)}
+          </select>
+          <select value={dificultadFiltro} onChange={e => { setDificultadFiltro(e.target.value); setPage(1); }} style={{ ...INPUT, marginBottom: 0 }}>
+            <option value="">Todas las dificultades</option>
+            <option value="facil">Fácil</option>
+            <option value="media">Media</option>
+            <option value="dificil">Difícil</option>
+          </select>
           {selected.length > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem', color: P, fontWeight: 600, whiteSpace: 'nowrap' }}>
               {selected.length} seleccionadas
@@ -213,17 +237,23 @@ function ModalAnadirPreguntas({ testId, oposicionId, onClose, onAdded, token, is
                 {preguntas.map(p => {
                   const dif = DIFICULTAD[p.nivel_dificultad];
                   const checked = selected.includes(p.id);
+                  const alreadyLinked = existingQuestionIdSet.has(Number(p.id));
                   return (
                     <tr key={p.id} onClick={() => toggle(p.id)}
-                      style={{ cursor: 'pointer', background: checked ? 'rgba(124,58,237,.04)' : '' }}>
+                      style={{ cursor: alreadyLinked ? 'default' : 'pointer', background: checked ? 'rgba(124,58,237,.04)' : (alreadyLinked ? '#f8fafc' : '') }}>
                       <td style={TD}>
-                        <input type="checkbox" checked={checked} onChange={() => toggle(p.id)}
-                          style={{ accentColor: P, cursor: 'pointer' }} onClick={e => e.stopPropagation()} />
+                        <input type="checkbox" checked={checked || alreadyLinked} disabled={alreadyLinked} onChange={() => toggle(p.id)}
+                          style={{ accentColor: P, cursor: alreadyLinked ? 'not-allowed' : 'pointer' }} onClick={e => e.stopPropagation()} />
                       </td>
                       <td style={{ ...TD, maxWidth: 500 }}>
                         <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {p.enunciado}
                         </span>
+                        {alreadyLinked && (
+                          <div style={{ marginTop: 6, fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>
+                            Ya añadida al test
+                          </div>
+                        )}
                       </td>
                       <td style={TD}>
                         {dif ? (
@@ -433,7 +463,8 @@ export default function AdminEditTestPage() {
   const handleToggleDemo = async (value) => {
     setSavingDemo(true);
     try {
-      await profesorApi.setDemoMiTest(token, id, value);
+      const setDemoApi = isProfesor ? profesorApi.setDemoMiTest : adminApi.setDemoTest;
+      await setDemoApi(token, id, value);
       setEsDemoTest(value);
     } catch (e) {
       setError(e?.message ?? 'Error al cambiar el test demo.');
@@ -449,6 +480,16 @@ export default function AdminEditTestPage() {
   const selectedOposicion = oposiciones.find(o => String(o.id) === String(form.oposicion_id));
   const selectedTema = temas.find(t => String(t.id) === String(form.tema_id));
   const selectedDificultad = DIFICULTAD[form.nivel_dificultad];
+  const temasEnPreguntas = Array.from(new Set(
+    preguntas
+      .map((pregunta) => pregunta.tema_nombre ?? pregunta.bloque_nombre ?? null)
+      .filter(Boolean),
+  ));
+  const isMultiTema = !!form.oposicion_id && !form.tema_id;
+  const temaResumen = selectedTema?.nombre
+    ?? (isMultiTema
+      ? (temasEnPreguntas.length > 1 ? `${temasEnPreguntas.length} temas` : 'Varios temas')
+      : '-');
 
   if (loading) {
     return (
@@ -532,16 +573,19 @@ export default function AdminEditTestPage() {
               </select>
             </div>
             <div>
-              <label style={LABEL}>Tema</label>
+              <label style={LABEL}>Tema principal</label>
               <select
                 value={form.tema_id}
                 onChange={e => set('tema_id', e.target.value)}
                 disabled={!form.oposicion_id}
                 style={{ ...INPUT, color: form.tema_id ? '#111827' : '#9ca3af', opacity: !form.oposicion_id ? .5 : 1 }}
               >
-                <option value="">Sin tema</option>
+                <option value="">Varios temas / sin tema principal</option>
                 {temas.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
+              <div style={{ marginTop: 6, fontSize: '0.74rem', color: '#64748b', lineHeight: 1.45 }}>
+                Deja el test sin tema principal si va a mezclar preguntas de varios temas de la misma oposición.
+              </div>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={LABEL}>Descripción</label>
@@ -605,8 +649,8 @@ export default function AdminEditTestPage() {
             desc="Se mostrará la explicación de cada pregunta"
           />
 
-          {/* Toggle TEST DEMO — solo para profesores, solo en edición, con oposición asignada */}
-          {isProfesor && !isNew && form.oposicion_id && (
+          {/* Toggle TEST DEMO — disponible para admin y profesor, solo en edición, con oposición asignada */}
+          {!isNew && form.oposicion_id && (
             <div style={{ marginTop: 4 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', opacity: savingDemo ? 0.6 : 1 }}>
                 <div>
@@ -692,7 +736,7 @@ export default function AdminEditTestPage() {
             ['Preguntas', preguntas.length],
             ['Duración', form.duracion_minutos ? `${form.duracion_minutos} min` : '-'],
             ['Dificultad', selectedDificultad?.label ?? '-'],
-            ['Tema', selectedTema?.nombre ?? '-'],
+            ['Tema', temaResumen],
             ['Oposición', selectedOposicion?.nombre ?? '-'],
             ['Estado', form.estado === 'publicado' ? 'Publicado' : 'Borrador'],
           ].map(([label, value]) => (
@@ -786,6 +830,7 @@ export default function AdminEditTestPage() {
         <ModalAnadirPreguntas
           testId={id}
           oposicionId={form.oposicion_id || null}
+          existingQuestionIds={preguntas.map((pregunta) => pregunta.id)}
           token={token}
           isProfesor={isProfesor}
           onClose={() => setShowModal(false)}
