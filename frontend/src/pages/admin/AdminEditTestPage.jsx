@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../services/adminApi';
 import { catalogApi } from '../../services/catalogApi';
 import { profesorApi } from '../../services/profesorApi';
+import TemaMultiSelect from '../../components/forms/TemaMultiSelect.jsx';
 import { useAuth } from '../../state/auth.jsx';
 
 const P = '#7c3aed';
@@ -100,45 +101,6 @@ function Toggle({ value, onChange, label, desc }) {
       >
         <span style={{ position: 'absolute', top: 2, left: value ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
       </button>
-    </div>
-  );
-}
-
-function MultiTemaSelector({ temas, selectedTemaIds, disabled, onToggle }) {
-  if (!temas.length) {
-    return (
-      <div style={{ ...INPUT, minHeight: 46, display: 'flex', alignItems: 'center', color: '#9ca3af', opacity: .8 }}>
-        No hay temas para esta oposicion
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8, opacity: disabled ? .6 : 1 }}>
-      {temas.map((tema) => {
-        const checked = selectedTemaIds.includes(String(tema.id));
-        return (
-          <label
-            key={tema.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              border: `1px solid ${checked ? '#c4b5fd' : '#e5e7eb'}`,
-              background: checked ? '#f5f3ff' : '#fff',
-              borderRadius: 8,
-              padding: '9px 10px',
-              fontSize: '.82rem',
-              fontWeight: 600,
-              color: '#111827',
-              cursor: disabled ? 'not-allowed' : 'pointer',
-            }}
-          >
-            <input type="checkbox" checked={checked} disabled={disabled} onChange={() => onToggle(String(tema.id))} style={{ accentColor: P }} />
-            <span>{tema.nombre}</span>
-          </label>
-        );
-      })}
     </div>
   );
 }
@@ -618,7 +580,14 @@ export default function AdminEditTestPage() {
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={LABEL}>Temas del test</label>
-              <MultiTemaSelector temas={temas} selectedTemaIds={form.tema_ids} disabled={!form.oposicion_id} onToggle={toggleTema} />
+              <TemaMultiSelect
+                options={temas.map((tema) => ({ value: String(tema.id), label: tema.nombre }))}
+                selectedValues={form.tema_ids}
+                disabled={!form.oposicion_id}
+                onToggle={toggleTema}
+                placeholder="Selecciona uno o varios temas"
+                emptyText="No hay temas para esta oposicion"
+              />
               <div style={{ marginTop: 6, fontSize: '.74rem', color: '#64748b', lineHeight: 1.45 }}>
                 Selecciona uno o varios temas. Las preguntas disponibles para este test se filtraran con esta seleccion.
               </div>
