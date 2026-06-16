@@ -90,7 +90,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   const [oposicionCompleta, setOposicionCompleta] = useState(false);
   const [modo, setModo] = useState(modoSugerido ?? 'adaptativo');
   const [dificultades, setDificultades] = useState({ facil: true, media: true, dificil: true });
-  const [numeroPreguntas, setNumeroPreguntas] = useState(10);
+  const [numeroPreguntas, setNumeroPreguntas] = useState('10');
   const [feedbackInmediato, setFeedbackInmediato] = useState(false);
   const [repasoDisponible, setRepasoDisponible] = useState(false);
   const [adaptativoDisponible, setAdaptativoDisponible] = useState(false);
@@ -206,6 +206,34 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     });
   };
 
+  const normalizeNumeroPreguntas = () => {
+    const n = Number(numeroPreguntas);
+    if (!Number.isInteger(n) || n < 1) {
+      setNumeroPreguntas('1');
+      return;
+    }
+    if (n > 100) {
+      setNumeroPreguntas('100');
+      return;
+    }
+    setNumeroPreguntas(String(n));
+  };
+
+  const onChangeNumeroPreguntas = (value) => {
+    if (value === '') {
+      setNumeroPreguntas('');
+      return;
+    }
+    if (!/^\d+$/.test(value)) return;
+    setNumeroPreguntas(value);
+  };
+
+  const stepNumeroPreguntas = (delta) => {
+    const current = Number(numeroPreguntas);
+    const safeCurrent = Number.isInteger(current) && current >= 1 ? current : 1;
+    setNumeroPreguntas(String(Math.max(1, Math.min(100, safeCurrent + delta))));
+  };
+
   const onGenerate = async () => {
     clearError();
     const n = Number(numeroPreguntas);
@@ -235,7 +263,12 @@ export default function GenerarTestForm({ modoSugerido = null }) {
 
   const onGenerateRefuerzo = async () => {
     clearError();
-    const payload = { numeroPreguntas: Number(numeroPreguntas) };
+    const n = Number(numeroPreguntas);
+    if (!Number.isInteger(n) || n < 1 || n > 100) {
+      setErrorMessage('Indica un numero de preguntas entre 1 y 100');
+      return;
+    }
+    const payload = { numeroPreguntas: n };
     if (temasSeleccionados.length === 1) payload.temaId = Number(temasSeleccionados[0]);
     const test = await runAction(() => testApi.generateRefuerzo(token, payload));
     if (test) {
@@ -358,9 +391,9 @@ export default function GenerarTestForm({ modoSugerido = null }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <label style={{ ...LBL, margin: 0 }}>Número de preguntas</label>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <button onClick={() => setNumeroPreguntas((n) => Math.max(1, n - 1))} style={{ width: 32, height: 34, borderRadius: '7px 0 0 7px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#374151', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-              <input type="number" min="1" max="100" value={numeroPreguntas} onChange={(e) => setNumeroPreguntas(Math.max(1, Math.min(100, Number(e.target.value) || 1)))} style={{ width: 68, height: 34, border: '1px solid #e2e8f0', borderLeft: 'none', borderRight: 'none', textAlign: 'center', fontSize: '1rem', fontWeight: 700, color: '#111827', outline: 'none', background: '#fff', MozAppearance: 'textfield' }} />
-              <button onClick={() => setNumeroPreguntas((n) => Math.min(100, n + 1))} style={{ width: 32, height: 34, borderRadius: '0 7px 7px 0', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#374151', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+              <button onClick={() => stepNumeroPreguntas(-1)} style={{ width: 32, height: 34, borderRadius: '7px 0 0 7px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#374151', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+              <input type="number" min="1" max="100" value={numeroPreguntas} onChange={(e) => onChangeNumeroPreguntas(e.target.value)} onBlur={normalizeNumeroPreguntas} style={{ width: 68, height: 34, border: '1px solid #e2e8f0', borderLeft: 'none', borderRight: 'none', textAlign: 'center', fontSize: '1rem', fontWeight: 700, color: '#111827', outline: 'none', background: '#fff', MozAppearance: 'textfield' }} />
+              <button onClick={() => stepNumeroPreguntas(1)} style={{ width: 32, height: 34, borderRadius: '0 7px 7px 0', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#374151', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
             </div>
           </div>
 
@@ -424,7 +457,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
             ['Oposición', oposicionNombre || '—'],
             ['Temas', modo === 'marcadas' ? 'Tus marcadas' : oposicionCompleta ? 'Toda la oposición' : temasSeleccionados.length > 0 ? `${temasSeleccionados.length} tema${temasSeleccionados.length > 1 ? 's' : ''}` : '—'],
             ['Modo', MODO_OPTIONS.find((m) => m.value === modo)?.label ?? '—'],
-            ['Preguntas', String(numeroPreguntas)],
+            ['Preguntas', numeroPreguntas || '--'],
           ].map(([label, value]) => (
             <div key={label} style={{ padding: '0 20px 0 0', borderRight: '1px solid #f1f5f9', marginRight: 20, marginBottom: 8 }}>
               <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 2 }}>{label}</div>
@@ -476,3 +509,4 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     </div>
   );
 }
+
