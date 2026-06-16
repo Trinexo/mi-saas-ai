@@ -16,6 +16,10 @@ const buildWhere = (filters, args) => {
     args.push(filters.temaId);
     where.push(`p.tema_id = $${args.length}`);
   }
+  if (filters.temaIds?.length) {
+    args.push(filters.temaIds);
+    where.push(`p.tema_id = ANY($${args.length}::int[])`);
+  }
   if (filters.coleccionId) {
     args.push(filters.coleccionId);
     where.push(`EXISTS (SELECT 1 FROM colecciones_preguntas cp WHERE cp.pregunta_id = p.id AND cp.coleccion_id = $${args.length})`);

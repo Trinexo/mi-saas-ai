@@ -5,6 +5,17 @@ import { ApiError } from '../utils/api-error.js';
 const isProfesor = (caller = {}) => caller.role === 'profesor';
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
+const uniqTemaIds = (value) => {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map((item) => Number(item))
+      .filter((item) => Number.isInteger(item) && item > 0),
+  )];
+};
+
+const resolveStoredTemaId = (temaIds) => (temaIds.length === 1 ? temaIds[0] : null);
+
 export const adminTestsService = {
   async getAllowedOposicionIds(caller = {}) {
     if (!isProfesor(caller)) return null;
@@ -27,6 +38,12 @@ export const adminTestsService = {
     if (!temaOposicionId) throw new ApiError(404, 'Tema no encontrado');
     if (Number(temaOposicionId) !== Number(oposicionId)) {
       throw new ApiError(400, 'El tema no pertenece a la oposicion seleccionada');
+    }
+  },
+
+  async assertTemasMatchOposicion(temaIds, oposicionId) {
+    for (const temaId of temaIds) {
+      await this.assertTemaMatchesOposicion(temaId, oposicionId);
     }
   },
 
@@ -68,8 +85,13 @@ export const adminTestsService = {
     if (!body.nombre?.trim()) throw new ApiError(400, 'El nombre es obligatorio');
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
     this.assertOposicionAllowed(body.oposicion_id, allowedOposicionIds);
-    await this.assertTemaMatchesOposicion(body.tema_id, body.oposicion_id);
-    const test = await adminTestsRepository.createTest(body, caller.userId);
+    const temaIds = uniqTemaIds(body.tema_ids);
+    await this.assertTemasMatchOposicion(temaIds, body.oposicion_id);
+    const test = await adminTestsRepository.createTest(
+      { ...body, tema_id: resolveStoredTemaId(temaIds) },
+      caller.userId,
+    );
+    await adminTestsRepository.replaceTemas(test.id, temaIds);
     return this.getTest(test.id, caller);
   },
 
@@ -77,12 +99,21 @@ export const adminTestsService = {
     const current = await this.getTest(id, caller);
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
     const oposicionId = hasOwn(body, 'oposicion_id') ? body.oposicion_id : current.oposicion_id;
-    const temaId = hasOwn(body, 'tema_id') ? body.tema_id : current.tema_id;
+    const temaIds = hasOwn(body, 'tema_ids')
+      ? uniqTemaIds(body.tema_ids)
+      : (current.temas ?? []).map((tema) => Number(tema.id));
     this.assertOposicionAllowed(oposicionId, allowedOposicionIds);
-    await this.assertTemaMatchesOposicion(temaId, oposicionId);
+    await this.assertTemasMatchOposicion(temaIds, oposicionId);
     await this.assertExistingPreguntasMatchOposicion(id, oposicionId);
-    const updated = await adminTestsRepository.updateTest(id, body);
+    const payload = {
+      ...body,
+      tema_id: resolveStoredTemaId(temaIds),
+    };
+    const updated = await adminTestsRepository.updateTest(id, payload);
     if (!updated) throw new ApiError(500, 'No se pudo actualizar el test');
+    if (hasOwn(body, 'tema_ids')) {
+      await adminTestsRepository.replaceTemas(id, temaIds);
+    }
     return this.getTest(id, caller);
   },
 
@@ -104,11 +135,10 @@ export const adminTestsService = {
     await adminTestsRepository.removePregunta(testId, preguntaId);
   },
 
-  // Activa/desactiva el flag es_demo para un test (solo profesor/admin propietario)
   async setDemoTest(testId, activate, caller = {}) {
     const test = await this.getTest(testId, caller);
     if (activate && !test.oposicion_id) {
-      throw new ApiError(400, 'El test debe tener una oposición asignada para ser test demo');
+      throw new ApiError(400, 'El test debe tener una oposicion asignada para ser test demo');
     }
     if (activate && test.estado !== 'publicado') {
       throw new ApiError(400, 'Solo los tests publicados pueden ser el test demo');
@@ -116,7 +146,6 @@ export const adminTestsService = {
     return adminTestsRepository.setDemoTest(testId, activate);
   },
 
-  // Devuelve los IDs de preguntas para el demo: test configurado o fallback Tema 1
   async getDemoPreguntaIds(oposicionId) {
     const demoTest = await adminTestsRepository.getDemoTest(oposicionId);
     if (demoTest && demoTest.pregunta_ids.length > 0) {

@@ -65,6 +65,7 @@ const misPreguntasQuerySchema = z.object({
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
   oposicion_id: z.coerce.number().int().positive().optional(),
   tema_id: z.coerce.number().int().positive().optional(),
+  tema_ids: z.string().optional(),
   nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional(),
   q: z.string().optional(),
 });
