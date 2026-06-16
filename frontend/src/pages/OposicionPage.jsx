@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import OposicionAcciones from '../components/oposicion/OposicionAcciones';
 import OposicionMaestriaBar from '../components/oposicion/OposicionMaestriaBar';
 import OposicionMateriasTable from '../components/oposicion/OposicionMateriasTable';
@@ -11,6 +12,7 @@ export default function OposicionPage() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { setOposicionActiva } = useOposicionActiva();
   const [resumen, setResumen] = useState(null);
   const [temas, setTemas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,14 @@ export default function OposicionPage() {
       .catch((e) => setError(e.message || 'No se pudo cargar el resumen'))
       .finally(() => setLoading(false));
   }, [token, id]);
+
+  useEffect(() => {
+    if (!id || !resumen?.oposicionNombre) return;
+    setOposicionActiva({
+      id: Number(id),
+      nombre: resumen.oposicionNombre,
+    });
+  }, [id, resumen?.oposicionNombre, setOposicionActiva]);
 
   if (loading) return (
     <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
