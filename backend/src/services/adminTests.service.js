@@ -77,7 +77,7 @@ export const adminTestsService = {
     const test = await adminTestsRepository.getTest(id);
     if (!test) throw new ApiError(404, 'Test no encontrado');
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
-    this.assertOposicionAllowed(test.oposicion_id, allowedOposicionIds);
+    this.assertOposicionAllowed(test.oposicion_id ?? test.resolved_oposicion_id, allowedOposicionIds);
     return test;
   },
 
@@ -98,7 +98,8 @@ export const adminTestsService = {
   async updateTest(id, body, caller = {}) {
     const current = await this.getTest(id, caller);
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
-    const oposicionId = hasOwn(body, 'oposicion_id') ? body.oposicion_id : current.oposicion_id;
+    const currentOposicionId = current.oposicion_id ?? current.resolved_oposicion_id;
+    const oposicionId = hasOwn(body, 'oposicion_id') ? body.oposicion_id : currentOposicionId;
     const temaIds = hasOwn(body, 'tema_ids')
       ? uniqTemaIds(body.tema_ids)
       : (current.temas ?? []).map((tema) => Number(tema.id));
@@ -109,6 +110,9 @@ export const adminTestsService = {
       ...body,
       tema_id: resolveStoredTemaId(temaIds),
     };
+    if (!hasOwn(body, 'oposicion_id') && current.oposicion_id == null && currentOposicionId != null) {
+      payload.oposicion_id = currentOposicionId;
+    }
     const updated = await adminTestsRepository.updateTest(id, payload);
     if (!updated) throw new ApiError(500, 'No se pudo actualizar el test');
     if (hasOwn(body, 'tema_ids')) {
@@ -125,7 +129,7 @@ export const adminTestsService = {
   async addPreguntas(testId, preguntaIds, caller = {}) {
     const test = await this.getTest(testId, caller);
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
-    await this.assertPreguntasAllowed(preguntaIds, test.oposicion_id, allowedOposicionIds);
+    await this.assertPreguntasAllowed(preguntaIds, test.oposicion_id ?? test.resolved_oposicion_id, allowedOposicionIds);
     await adminTestsRepository.addPreguntas(testId, preguntaIds);
     return adminTestsRepository.getTestPreguntas(testId);
   },
@@ -137,7 +141,8 @@ export const adminTestsService = {
 
   async setDemoTest(testId, activate, caller = {}) {
     const test = await this.getTest(testId, caller);
-    if (activate && !test.oposicion_id) {
+    const oposicionId = test.oposicion_id ?? test.resolved_oposicion_id;
+    if (activate && !oposicionId) {
       throw new ApiError(400, 'El test debe tener una oposicion asignada para ser test demo');
     }
     if (activate && test.estado !== 'publicado') {
