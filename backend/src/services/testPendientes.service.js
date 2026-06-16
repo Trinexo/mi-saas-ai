@@ -7,6 +7,7 @@ export const testPendientesService = {
               t.numero_preguntas,
               t.tipo_test,
               t.fecha_creacion,
+              t.oposicion_id,
               op.nombre AS oposicion_nombre,
               te.nombre AS tema_nombre,
               COUNT(ru.id)::int AS respondidas
@@ -16,7 +17,7 @@ export const testPendientesService = {
        LEFT JOIN respuestas_usuario   ru ON ru.test_id = t.id
        WHERE t.usuario_id = $1
          AND t.estado = 'generado'
-       GROUP BY t.id, op.nombre, te.nombre
+       GROUP BY t.id, t.oposicion_id, op.nombre, te.nombre
        ORDER BY t.fecha_creacion DESC`,
       [userId],
     );
@@ -26,6 +27,7 @@ export const testPendientesService = {
       numeroPreguntas: Number(r.numero_preguntas),
       tipoTest:        r.tipo_test,
       fechaCreacion:   r.fecha_creacion,
+      oposicionId:     r.oposicion_id ? Number(r.oposicion_id) : null,
       oposicionNombre: r.oposicion_nombre ?? null,
       temaNombre:      r.tema_nombre ?? null,
       respondidas:     r.respondidas,
