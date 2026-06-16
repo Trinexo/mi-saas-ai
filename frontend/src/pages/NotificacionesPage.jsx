@@ -20,6 +20,12 @@ const TIPO_COLOR = {
 
 const isPlanEstudioNotification = (tipo) => tipo === 'plan_estudio' || tipo === 'plan_estudio_recordatorio';
 
+const getNotificationOposicionNombre = (notificacion) => (
+  notificacion?.datos_extra?.oposicionNombre
+  || notificacion?.datos_extra?.oposicion_nombre
+  || null
+);
+
 export default function NotificacionesPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -155,6 +161,7 @@ export default function NotificacionesPage() {
           {items.map((n) => {
             const estilo = TIPO_COLOR[n.tipo] ?? TIPO_COLOR.sistema;
             const icono = TIPO_ICON[n.tipo] ?? 'i';
+            const oposicionNombre = getNotificationOposicionNombre(n);
             return (
               <div
                 key={n.id}
@@ -175,6 +182,22 @@ export default function NotificacionesPage() {
                     <span style={{ fontWeight: 700, color: n.leida ? '#374151' : estilo.color, fontSize: '0.9rem' }}>
                       {n.titulo}
                     </span>
+                    {oposicionNombre && (
+                      <span
+                        style={{
+                          background: n.leida ? '#f3f4f6' : '#fff',
+                          color: n.leida ? '#4b5563' : estilo.color,
+                          border: `1px solid ${n.leida ? '#e5e7eb' : estilo.border}`,
+                          borderRadius: 999,
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          padding: '1px 8px',
+                          maxWidth: '100%',
+                        }}
+                      >
+                        {oposicionNombre}
+                      </span>
+                    )}
                     {!n.leida && (
                       <span style={{ background: '#1d4ed8', color: '#fff', borderRadius: 999, fontSize: '0.65rem', fontWeight: 700, padding: '1px 6px' }}>
                         NUEVA
