@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { misTestsApi } from '../services/misTestsApi';
 import { testApi } from '../services/testApi';
 import { getErrorMessage } from '../services/api';
@@ -226,6 +227,7 @@ function PendienteCard({ test, onContinuar, onCerrar, loadingC, loadingX }) {
 export default function MisTestsPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { oposicionActiva } = useOposicionActiva();
 
   const [tests,     setTests    ] = useState([]);
   const [loading,   setLoading  ] = useState(true);
@@ -255,19 +257,36 @@ export default function MisTestsPage() {
       .finally(() => setLoadingPend(false));
   }, [token]);
 
-  /* Filtrar simulacros (van a su propia página) */
-  const pendientesSinSim = useMemo(() => pendientes.filter((t) => t.tipoTest !== 'simulacro'), [pendientes]);
+  const getOposicionId = (item) => (
+    Number(item?.oposicionId ?? item?.oposicion_id ?? item?.oposicion?.id ?? 0) || null
+  );
+
+  const isInActiveOposicion = (item) => {
+    if (!oposicionActiva?.id) return true;
+    return getOposicionId(item) === Number(oposicionActiva.id);
+  };
+
+  /* Filtrar simulacros (van a su propia página) y respetar la oposición activa */
+  const pendientesSinSim = useMemo(
+    () => pendientes.filter((t) => t.tipoTest !== 'simulacro' && isInActiveOposicion(t)),
+    [pendientes, oposicionActiva?.id],
+  );
+
+  const testsFiltrados = useMemo(
+    () => tests.filter((t) => isInActiveOposicion(t)),
+    [tests, oposicionActiva?.id],
+  );
 
   /* Agrupar por tema */
   const porTema = useMemo(() => {
     const mapa = new Map();
-    for (const t of tests) {
+    for (const t of testsFiltrados) {
       const clave = t.tema_nombre || '__sin_tema__';
       if (!mapa.has(clave)) mapa.set(clave, []);
       mapa.get(clave).push(t);
     }
     return mapa;
-  }, [tests]);
+  }, [testsFiltrados]);
 
   const onIniciar = async (test) => {
     if (activeId) return;
@@ -396,7 +415,7 @@ export default function MisTestsPage() {
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: B, letterSpacing: '-0.01em' }}>📋 Tests del profesor</h2>
           {!loading && (
             <span style={{ fontSize: '0.72rem', fontWeight: 700, background: BBG, color: B, borderRadius: 10, padding: '2px 10px', border: `1px solid ${BD}` }}>
-              {tests.length}
+              {testsFiltrados.length}
             </span>
           )}
         </div>
@@ -406,7 +425,7 @@ export default function MisTestsPage() {
       {/* Cuerpo */}
       {loading ? (
         <Spinner />
-      ) : tests.length === 0 ? (
+      ) : testsFiltrados.length === 0 ? (
         <div style={{ ...CARD, padding: '3rem', textAlign: 'center', background: GR }}>
           <div style={{ fontSize: '2.2rem', marginBottom: 12 }}>📭</div>
           <p style={{ margin: '0 0 6px', fontWeight: 700, color: DK, fontSize: '0.95rem' }}>
@@ -451,3 +470,4 @@ export default function MisTestsPage() {
     </div>
   );
 }
+
