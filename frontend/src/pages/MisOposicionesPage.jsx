@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { catalogApi } from '../services/catalogApi';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { useUserAccesos } from '../hooks/useUserAccesos';
 import OposicionCard from '../components/misoposiciones/OposicionCard';
 
@@ -44,6 +45,7 @@ function AccesoSinActividadCard({ nombre, fechaFin, onPracticar, onVerCatalogo }
 export default function MisOposicionesPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { setOposicionActiva } = useOposicionActiva();
   const { accesos, loading: loadingAccesos } = useUserAccesos();
   const [statsOps, setStatsOps] = useState(null);
   const [catalogo, setCatalogo] = useState([]);
@@ -91,6 +93,24 @@ export default function MisOposicionesPage() {
 
   // Demos: oposiciones con actividad pero sin acceso comprado
   const demos = statsOps.filter((op) => !idsConAcceso.has(op.oposicionId));
+
+  const activarOposicion = (oposicionId, nombre) => {
+    if (!oposicionId) return;
+    setOposicionActiva({
+      id: Number(oposicionId),
+      nombre: nombre ?? nombreMap[oposicionId] ?? `Oposicion ${oposicionId}`,
+    });
+  };
+
+  const irAOposicion = (oposicionId, nombre) => {
+    activarOposicion(oposicionId, nombre);
+    navigate(`/oposicion/${oposicionId}`);
+  };
+
+  const irAConfigurarTest = (oposicionId, nombre) => {
+    activarOposicion(oposicionId, nombre);
+    navigate('/configurar-test', { state: { oposicionId } });
+  };
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -141,8 +161,8 @@ export default function MisOposicionesPage() {
                 </div>
                 <OposicionCard
                   op={c.stats}
-                  onNavigate={(id) => navigate(`/oposicion/${id}`)}
-                  onPracticar={(id) => navigate('/configurar-test', { state: { oposicionId: id } })}
+                  onNavigate={(id) => irAOposicion(id, c.nombre)}
+                  onPracticar={(id) => irAConfigurarTest(id, c.nombre)}
                 />
               </div>
             ) : (
@@ -150,7 +170,7 @@ export default function MisOposicionesPage() {
                 key={c.oposicionId}
                 nombre={c.nombre}
                 fechaFin={c.fechaFin}
-                onPracticar={() => navigate('/configurar-test', { state: { oposicionId: c.oposicionId } })}
+                onPracticar={() => irAConfigurarTest(c.oposicionId, c.nombre)}
               />
             )
           )}
@@ -182,8 +202,8 @@ export default function MisOposicionesPage() {
                   </div>
                   <OposicionCard
                     op={op}
-                    onNavigate={(id) => navigate(`/oposicion/${id}`)}
-                    onPracticar={(id) => navigate('/configurar-test', { state: { oposicionId: id } })}
+                    onNavigate={(id) => irAOposicion(id, op.nombre)}
+                    onPracticar={(id) => irAConfigurarTest(id, op.nombre)}
                   />
                 </div>
               ))}
