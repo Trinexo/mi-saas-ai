@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { profesorApi } from '../../services/profesorApi';
+import TemaMultiSelect from '../../components/forms/TemaMultiSelect.jsx';
 import { useAuth } from '../../state/auth.jsx';
 import { Button, EmptyState, Header, P, PageShell, Panel } from './ProfesorSharedUI';
 
@@ -388,14 +389,13 @@ export default function ProfesorCalendarioPage() {
                 </div>
                 <div>
                   <span style={labelStyle}>Temas</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 8 }}>
-                    {temasFiltrados.map((tema) => (
-                      <label key={tema.tema_id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, display: 'flex', gap: 8, alignItems: 'center', color: '#0f172a', fontSize: '.8rem', fontWeight: 800 }}>
-                        <input type="checkbox" checked={form.tema_ids.includes(tema.tema_id)} onChange={() => toggleTema(tema.tema_id)} />
-                        <span>{tema.tema_nombre}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <TemaMultiSelect
+                    options={temasFiltrados.map((tema) => ({ value: tema.tema_id, label: tema.tema_nombre }))}
+                    selectedValues={form.tema_ids}
+                    onToggle={toggleTema}
+                    placeholder="Selecciona uno o varios temas"
+                    emptyText="No hay temas disponibles para esta oposicion"
+                  />
                 </div>
               </>
             )}
