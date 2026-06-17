@@ -194,7 +194,7 @@ function MobileNavSheet({ open, onOpen, onClose, preguntas, answers, index, setI
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               boxShadow: '0 -12px 30px rgba(15,23,42,.18)',
-              padding: '14px 14px 18px',
+              padding: '14px 14px 60px',
               maxHeight: '62vh',
               overflowY: 'auto',
             }}
