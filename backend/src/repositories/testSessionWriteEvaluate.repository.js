@@ -6,14 +6,24 @@ export const testSessionWriteEvaluateRepository = {
 
   async getCorrectAnswersByTest(client, testId) {
     const result = await client.query(
-      `SELECT tp.pregunta_id, o.id AS opcion_id
+      `SELECT tp.pregunta_id,
+              o.id AS opcion_id,
+              COUNT(all_options.id)::int AS total_opciones
        FROM tests_preguntas tp
        JOIN opciones_respuesta o ON o.pregunta_id = tp.pregunta_id AND o.correcta = TRUE
-       WHERE tp.test_id = $1`,
+       JOIN opciones_respuesta all_options ON all_options.pregunta_id = tp.pregunta_id
+       WHERE tp.test_id = $1
+       GROUP BY tp.pregunta_id, o.id`,
       [testId],
     );
 
-    return new Map(result.rows.map((row) => [Number(row.pregunta_id), Number(row.opcion_id)]));
+    return new Map(result.rows.map((row) => [
+      Number(row.pregunta_id),
+      {
+        opcionId: Number(row.opcion_id),
+        totalOpciones: Number(row.total_opciones),
+      },
+    ]));
   },
 
   async insertRespuesta(client, payload) {

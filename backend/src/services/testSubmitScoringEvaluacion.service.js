@@ -5,9 +5,13 @@ export const testSubmitScoringEvaluacionService = {
     let aciertos = 0;
     let errores = 0;
     let blancos = 0;
+    const penalizacionErrores = [];
 
     const respuestasEvaluadas = respuestas.map((respuesta) => {
-      const correctaId = mapaRespuestasCorrectas.get(respuesta.preguntaId);
+      const correctaConfig = mapaRespuestasCorrectas.get(respuesta.preguntaId);
+      const correctaId = typeof correctaConfig === 'object'
+        ? correctaConfig.opcionId
+        : correctaConfig;
       let correcta = false;
 
       if (!respuesta.respuestaId) {
@@ -17,6 +21,9 @@ export const testSubmitScoringEvaluacionService = {
         correcta = true;
       } else {
         errores += 1;
+        penalizacionErrores.push(typeof correctaConfig === 'object'
+          ? testSubmitScoringNotaService.getPenalizacionPorOpciones(correctaConfig.totalOpciones)
+          : 0.33);
       }
 
       return {
@@ -28,7 +35,7 @@ export const testSubmitScoringEvaluacionService = {
 
     const total = mapaRespuestasCorrectas.size;
     blancos = Math.max(blancos, total - (aciertos + errores));
-    const nota = testSubmitScoringNotaService.calcNota({ aciertos, errores, total });
+    const nota = testSubmitScoringNotaService.calcNota({ aciertos, errores, total, penalizacionErrores });
 
     return {
       aciertos,
