@@ -22,27 +22,36 @@ export const adminTestsRepository = {
          t.mezclar_preguntas, t.mostrar_resultados, t.mostrar_explicaciones,
          t.tipo_puntuacion, t.fecha_creacion, t.fecha_actualizacion,
          t.oposicion_id, t.tema_id,
+         COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) AS resolved_oposicion_id,
          o.nombre AS oposicion_nombre,
          te.nombre AS tema_nombre,
          COALESCE(tt.temas_resumen, te.nombre) AS temas_resumen,
          COALESCE(tt.tema_ids, CASE WHEN t.tema_id IS NULL THEN ARRAY[]::bigint[] ELSE ARRAY[t.tema_id] END) AS tema_ids,
          COUNT(DISTINCT atp.pregunta_id)::int AS total_preguntas
        FROM admin_tests t
-       LEFT JOIN oposiciones o ON o.id = t.oposicion_id
-       LEFT JOIN temas te ON te.id = t.tema_id
        LEFT JOIN LATERAL (
          SELECT
            ARRAY_AGG(att.tema_id ORDER BY tm.nombre, tm.id) AS tema_ids,
-           STRING_AGG(tm.nombre, ' | ' ORDER BY tm.nombre, tm.id) AS temas_resumen
+           STRING_AGG(tm.nombre, ' | ' ORDER BY tm.nombre, tm.id) AS temas_resumen,
+           CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS temas_oposicion_id
          FROM admin_tests_temas att
          JOIN temas tm ON tm.id = att.tema_id
          WHERE att.test_id = t.id
        ) tt ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS preguntas_oposicion_id
+         FROM admin_tests_preguntas atp2
+         JOIN preguntas p2 ON p2.id = atp2.pregunta_id
+         JOIN temas tm ON tm.id = p2.tema_id
+         WHERE atp2.test_id = t.id
+       ) tp ON TRUE
+       LEFT JOIN oposiciones o ON o.id = COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id)
+       LEFT JOIN temas te ON te.id = t.tema_id
        LEFT JOIN admin_tests_preguntas atp ON atp.test_id = t.id
        WHERE ($1::text IS NULL OR t.nombre ILIKE $1)
          AND ($2::text IS NULL OR t.estado = $2)
-         AND ($3::bigint IS NULL OR t.oposicion_id = $3)
-         AND ($4::bigint[] IS NULL OR t.oposicion_id = ANY($4::bigint[]))
+         AND ($3::bigint IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = $3)
+         AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))
        GROUP BY t.id, o.nombre, te.nombre, tt.temas_resumen, tt.tema_ids
        ORDER BY t.fecha_creacion DESC
        LIMIT $5 OFFSET $6`,
@@ -51,10 +60,23 @@ export const adminTestsRepository = {
     const countRow = await pool.query(
       `SELECT COUNT(*)::int AS total
        FROM admin_tests t
+       LEFT JOIN LATERAL (
+         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS temas_oposicion_id
+         FROM admin_tests_temas att
+         JOIN temas tm ON tm.id = att.tema_id
+         WHERE att.test_id = t.id
+       ) tt ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS preguntas_oposicion_id
+         FROM admin_tests_preguntas atp
+         JOIN preguntas p ON p.id = atp.pregunta_id
+         JOIN temas tm ON tm.id = p.tema_id
+         WHERE atp.test_id = t.id
+       ) tp ON TRUE
        WHERE ($1::text IS NULL OR t.nombre ILIKE $1)
          AND ($2::text IS NULL OR t.estado = $2)
-         AND ($3::bigint IS NULL OR t.oposicion_id = $3)
-         AND ($4::bigint[] IS NULL OR t.oposicion_id = ANY($4::bigint[]))`,
+         AND ($3::bigint IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = $3)
+         AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))`,
       [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null],
     );
     return { items: rows.rows, total: countRow.rows[0].total };
@@ -64,10 +86,24 @@ export const adminTestsRepository = {
     const row = await pool.query(
       `SELECT
          t.*,
+         COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) AS resolved_oposicion_id,
          o.nombre AS oposicion_nombre,
          te.nombre AS tema_nombre
        FROM admin_tests t
-       LEFT JOIN oposiciones o ON o.id = t.oposicion_id
+       LEFT JOIN LATERAL (
+         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS temas_oposicion_id
+         FROM admin_tests_temas att
+         JOIN temas tm ON tm.id = att.tema_id
+         WHERE att.test_id = t.id
+       ) tt ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS preguntas_oposicion_id
+         FROM admin_tests_preguntas atp
+         JOIN preguntas p ON p.id = atp.pregunta_id
+         JOIN temas tm ON tm.id = p.tema_id
+         WHERE atp.test_id = t.id
+       ) tp ON TRUE
+       LEFT JOIN oposiciones o ON o.id = COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id)
        LEFT JOIN temas te ON te.id = t.tema_id
        WHERE t.id = $1
        GROUP BY t.id, o.nombre, te.nombre`,
