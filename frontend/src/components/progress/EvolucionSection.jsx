@@ -26,7 +26,7 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-export default function EvolucionSection() {
+export default function EvolucionSection({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +34,12 @@ export default function EvolucionSection() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    testApi.evolucionStats(token, 30)
+    testApi.evolucionStats(token, 30, oposicionId)
       .then((d) => { if (!cancelled) setData(Array.isArray(d) ? d : []); })
       .catch(() => { if (!cancelled) setData([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, oposicionId]);
 
   if (loading || !data || data.length < 2) return null;
 

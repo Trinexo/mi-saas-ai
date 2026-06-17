@@ -141,7 +141,7 @@ export const widgetEngagementFocoSesionRepository = {
     };
   },
 
-  async getObjetivoDiario(userId) {
+  async getObjetivoDiario(userId, oposicionId = null) {
     const result = await pool.query(
       `WITH objetivo AS (
          SELECT COALESCE(objetivo_diario_preguntas, 10)::int AS valor
@@ -152,12 +152,13 @@ export const widgetEngagementFocoSesionRepository = {
          FROM respuestas_usuario ru
          JOIN tests t ON t.id = ru.test_id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND ru.fecha_respuesta::date = CURRENT_DATE
        )
        SELECT
          (SELECT valor FROM objetivo) AS objetivo_preguntas_dia,
          (SELECT valor FROM respondidas) AS preguntas_respondidas_hoy`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const objetivoPreguntasDia = Number(result.rows[0]?.objetivo_preguntas_dia ?? 30);

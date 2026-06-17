@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function TuNivelWidget() {
+export default function TuNivelWidget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getGamificacion(token)
+    testApi.getGamificacion(token, oposicionId)
       .then(setData)
       .catch(() => setData({ xpTotal: 0, nivelActual: 1, xpSiguienteNivel: 100, progresoNivel: 0 }));
-  }, [token]);
+  }, [token, oposicionId]);
 
   const progresoNivel = Number(data?.progresoNivel ?? 0);
   const xpSiguienteNivel = Number(data?.xpSiguienteNivel ?? 100);

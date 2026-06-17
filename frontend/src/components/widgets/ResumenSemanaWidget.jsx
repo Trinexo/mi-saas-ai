@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function ResumenSemanaWidget() {
+export default function ResumenSemanaWidget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getResumenSemana(token)
+    testApi.getResumenSemana(token, oposicionId)
       .then(setData)
       .catch(() => setData({ testsUltimos7Dias: 0, notaMediaUltimos7Dias: 0, tiempoMedioSegundosUltimos7Dias: 0, aciertosTotalesUltimos7Dias: 0 }));
-  }, [token]);
+  }, [token, oposicionId]);
 
   const tiempoMedioMin = Math.round(Number(data?.tiempoMedioSegundosUltimos7Dias || 0) / 60);
 

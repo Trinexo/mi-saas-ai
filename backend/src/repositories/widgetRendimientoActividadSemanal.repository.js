@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const widgetRendimientoActividadSemanalRepository = {
-  async getProgresoSemanal(userId) {
+  async getProgresoSemanal(userId, oposicionId = null) {
     const diasResult = await pool.query(
       `SELECT
          gs::date::text AS fecha,
@@ -22,12 +22,13 @@ export const widgetRendimientoActividadSemanalRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '6 days'
          GROUP BY rt.fecha::date
        ) a ON a.dia = gs::date
        ORDER BY fecha ASC`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const dias = diasResult.rows.map((row) => ({
@@ -50,7 +51,7 @@ export const widgetRendimientoActividadSemanalRepository = {
     };
   },
 
-  async getResumenSemana(userId) {
+  async getResumenSemana(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT
          COUNT(*)::int AS tests_ultimos_7_dias,
@@ -60,9 +61,10 @@ export const widgetRendimientoActividadSemanalRepository = {
        FROM tests t
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
+         AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          AND t.estado = 'finalizado'
          AND t.fecha_fin >= NOW() - INTERVAL '7 days'`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const row = result.rows[0] ?? {};

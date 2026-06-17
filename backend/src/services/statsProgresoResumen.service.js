@@ -17,16 +17,16 @@ export const statsProgresoResumenService = {
     return progressStatsRepository.getProgresoTemaReal(userId, temaId);
   },
 
-  async getDashboard(userId) {
-    return progressStatsRepository.getDashboard(userId);
+  async getDashboard(userId, oposicionId = null) {
+    return progressStatsRepository.getDashboard(userId, oposicionId);
   },
 
-  async getUserStats(userId) {
-    return progressStatsRepository.getUserStats(userId);
+  async getUserStats(userId, oposicionId = null) {
+    return progressStatsRepository.getUserStats(userId, oposicionId);
   },
 
-  async getEvolucion(userId, limit = 30) {
-    return progressStatsRepository.getEvolucion(userId, limit);
+  async getEvolucion(userId, limit = 30, oposicionId = null) {
+    return progressStatsRepository.getEvolucion(userId, limit, oposicionId);
   },
 
   async getMisOposiciones(userId) {

@@ -1,12 +1,13 @@
 import pool from '../config/db.js';
 
 export const widgetEngagementRachaGamificacionRepository = {
-  async getGamificacion(userId) {
+  async getGamificacion(userId, oposicionId = null) {
     const result = await pool.query(
       `WITH tests_finalizados AS (
          SELECT COUNT(*)::int AS total
          FROM tests
          WHERE usuario_id = $1
+           AND ($2::bigint IS NULL OR oposicion_id = $2)
            AND estado = 'finalizado'
        ),
        aciertos_totales AS (
@@ -14,12 +15,13 @@ export const widgetEngagementRachaGamificacionRepository = {
          FROM resultados_test rt
          JOIN tests t ON t.id = rt.test_id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
        )
        SELECT
          (SELECT total FROM tests_finalizados) AS total_tests,
          (SELECT total FROM aciertos_totales) AS total_aciertos`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const totalTests = Number(result.rows[0]?.total_tests ?? 0);

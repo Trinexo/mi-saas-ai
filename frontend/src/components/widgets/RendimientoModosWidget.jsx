@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function RendimientoModosWidget() {
+export default function RendimientoModosWidget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    testApi.getRendimientoModos(token)
+    testApi.getRendimientoModos(token, oposicionId)
       .then((d) => setData(Array.isArray(d) ? d : []))
       .catch(() => setData([]));
-  }, [token]);
+  }, [token, oposicionId]);
 
   return (
     <div style={SECTION}>

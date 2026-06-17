@@ -11,21 +11,21 @@ const G   = '#374151';
 const GL  = '#9ca3af';
 const CARD = { background: '#fff', borderRadius: 16, border: `1px solid ${BD}`, boxShadow: '0 1px 4px rgba(0,0,0,.06)' };
 
-export default function RachaObjetivoSection() {
+export default function RachaObjetivoSection({ oposicionId }) {
   const { token } = useAuth();
   const [rachaData, setRachaData] = useState(null);
   const [objetivoData, setObjetivoData] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    testApi.getRacha(token)
+    testApi.getRacha(token, oposicionId)
       .then((data) => { if (!cancelled) setRachaData(data); })
       .catch(() => {});
-    testApi.getObjetivoDiario(token)
+    testApi.getObjetivoDiario(token, oposicionId)
       .then((data) => { if (!cancelled) setObjetivoData(data); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, oposicionId]);
 
   if (!rachaData && !objetivoData) return null;
 

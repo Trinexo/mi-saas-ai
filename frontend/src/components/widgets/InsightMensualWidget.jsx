@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function InsightMensualWidget() {
+export default function InsightMensualWidget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getInsightMensual(token)
+    testApi.getInsightMensual(token, oposicionId)
       .then(setData)
       .catch(() => setData({ testsUltimos30Dias: 0, aciertosUltimos30Dias: 0, notaMediaUltimos30Dias: 0, deltaNota7Dias: 0, tendencia: 'estable' }));
-  }, [token]);
+  }, [token, oposicionId]);
 
   return (
     <div style={SECTION}>
