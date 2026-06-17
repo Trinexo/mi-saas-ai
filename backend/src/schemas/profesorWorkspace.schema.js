@@ -5,6 +5,7 @@ const optionalDate = z.string().datetime().optional().nullable();
 
 export const workspaceListQuerySchema = z.object({
   oposicion_id: id.optional(),
+  dias: z.coerce.number().int().min(7).max(90).optional(),
   desde: optionalDate,
   hasta: optionalDate,
   page: z.coerce.number().int().min(1).default(1),

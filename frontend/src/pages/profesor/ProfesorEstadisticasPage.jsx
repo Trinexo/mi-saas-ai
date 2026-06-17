@@ -7,6 +7,8 @@ import { B, EmptyState, G, Header, P, PageShell, Panel, R, Select } from './Prof
 export default function ProfesorEstadisticasPage() {
   const { token } = useAuth();
   const [stats, setStats] = useState(null);
+  const [oposiciones, setOposiciones] = useState([]);
+  const [oposicionId, setOposicionId] = useState('');
   const [range, setRange] = useState('30');
   const series = useMemo(() => stats?.evolucion ?? [], [stats]);
   const cards = stats?.rendimientoPorOposicion ?? [];
@@ -14,10 +16,26 @@ export default function ProfesorEstadisticasPage() {
   const problematicas = stats?.preguntasProblematicas ?? [];
 
   useEffect(() => {
-    profesorApi.getWorkspaceEstadisticas(token, { page: 1, page_size: 20 })
+    profesorApi.getWorkspaceOposiciones(token)
+      .then((data) => {
+        const items = data?.items ?? [];
+        setOposiciones(items);
+        if (items.length === 1) setOposicionId(String(items[0].id));
+      })
+      .catch(() => setOposiciones([]));
+  }, [token]);
+
+  useEffect(() => {
+    setStats(null);
+    profesorApi.getWorkspaceEstadisticas(token, {
+      page: 1,
+      page_size: 20,
+      dias: range,
+      oposicion_id: oposicionId || undefined,
+    })
       .then(setStats)
       .catch(() => setStats({ evolucion: [], rendimientoPorOposicion: [], rankingAlumnos: [], preguntasProblematicas: [], distribucionDificultad: [] }));
-  }, [token, range]);
+  }, [token, range, oposicionId]);
 
   if (!stats) return <div style={{ color: '#64748b' }}>Cargando...</div>;
 
@@ -34,6 +52,12 @@ export default function ProfesorEstadisticasPage() {
   return (
     <PageShell>
       <Header title="Estadísticas" subtitle="Panel analítico para decidir dónde reforzar contenido y seguimiento.">
+        <Select value={oposicionId} onChange={(e) => setOposicionId(e.target.value)}>
+          <option value="">Todas mis oposiciones</option>
+          {oposiciones.map((oposicion) => (
+            <option key={oposicion.id} value={oposicion.id}>{oposicion.nombre}</option>
+          ))}
+        </Select>
         <Select value={range} onChange={(e) => setRange(e.target.value)}>
           <option value="7">Últimos 7 días</option>
           <option value="30">Últimos 30 días</option>

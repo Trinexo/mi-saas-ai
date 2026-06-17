@@ -160,18 +160,22 @@ export const profesorWorkspaceAnalyticsService = {
 
   async estadisticas(userId, query = {}) {
     const oposicionId = query.oposicion_id ?? null;
+    const days = query.dias ?? 30;
     await this.assertOposicion(userId, oposicionId);
     const [evolucion, oposiciones, temario, alumnos, problematicas, dificultad] = await Promise.all([
-      profesorWorkspaceAnalyticsRepository.getEvolucion(userId, oposicionId, 30),
+      profesorWorkspaceAnalyticsRepository.getEvolucion(userId, oposicionId, days),
       profesorWorkspaceAnalyticsRepository.listOposiciones(userId),
       profesorWorkspaceAnalyticsRepository.getTemario(userId, oposicionId),
       profesorWorkspaceAnalyticsRepository.listAlumnos(userId, { oposicionId, limit: 10, offset: 0 }),
       profesorWorkspaceAnalyticsRepository.getPreguntasProblematicas(userId, { oposicionId, limit: 10, offset: 0 }),
       profesorWorkspaceAnalyticsRepository.getDistribucionDificultad(userId, oposicionId),
     ]);
+    const filteredOposiciones = oposicionId
+      ? oposiciones.filter((item) => Number(item.id) === Number(oposicionId))
+      : oposiciones;
     return {
       evolucion,
-      rendimientoPorOposicion: oposiciones.map((row) => this.normalizeOposicion(row)),
+      rendimientoPorOposicion: filteredOposiciones.map((row) => this.normalizeOposicion(row)),
       rendimientoPorTema: temario,
       rankingAlumnos: alumnos.items.map(this.normalizeAlumno).sort((a, b) => b.rankingScore - a.rankingScore),
       preguntasProblematicas: problematicas,
