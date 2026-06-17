@@ -5,6 +5,10 @@ const mapTemaRows = (rows) => rows.map((row) => ({
   nombre: row.nombre,
 }));
 
+const isMissingAdminTestsTemasTable = (error) => (
+  error?.code === '42P01' && String(error?.message ?? '').includes('admin_tests_temas')
+);
+
 export const adminTestsRepository = {
   async listTests({ q, estado, oposicionId, allowedOposicionIds, limit, offset }) {
     const params = [
@@ -136,14 +140,18 @@ export const adminTestsRepository = {
       if (temaResult.rows[0]?.oposicion_id) return Number(temaResult.rows[0].oposicion_id);
     }
 
-    const temasResult = await pool.query(
-      `SELECT CASE WHEN COUNT(DISTINCT t.oposicion_id) = 1 THEN MIN(t.oposicion_id) END AS oposicion_id
-       FROM admin_tests_temas att
-       JOIN temas t ON t.id = att.tema_id
-       WHERE att.test_id = $1`,
-      [testId],
-    );
-    if (temasResult.rows[0]?.oposicion_id) return Number(temasResult.rows[0].oposicion_id);
+    try {
+      const temasResult = await pool.query(
+        `SELECT CASE WHEN COUNT(DISTINCT t.oposicion_id) = 1 THEN MIN(t.oposicion_id) END AS oposicion_id
+         FROM admin_tests_temas att
+         JOIN temas t ON t.id = att.tema_id
+         WHERE att.test_id = $1`,
+        [testId],
+      );
+      if (temasResult.rows[0]?.oposicion_id) return Number(temasResult.rows[0].oposicion_id);
+    } catch (error) {
+      if (!isMissingAdminTestsTemasTable(error)) throw error;
+    }
 
     const preguntasResult = await pool.query(
       `SELECT CASE WHEN COUNT(DISTINCT t.oposicion_id) = 1 THEN MIN(t.oposicion_id) END AS oposicion_id
@@ -157,15 +165,28 @@ export const adminTestsRepository = {
   },
 
   async getTestTemas(testId) {
-    const result = await pool.query(
-      `SELECT t.id, t.nombre
-       FROM admin_tests_temas att
-       JOIN temas t ON t.id = att.tema_id
-       WHERE att.test_id = $1
-       ORDER BY t.nombre ASC, t.id ASC`,
-      [testId],
-    );
-    return mapTemaRows(result.rows);
+    try {
+      const result = await pool.query(
+        `SELECT t.id, t.nombre
+         FROM admin_tests_temas att
+         JOIN temas t ON t.id = att.tema_id
+         WHERE att.test_id = $1
+         ORDER BY t.nombre ASC, t.id ASC`,
+        [testId],
+      );
+      return mapTemaRows(result.rows);
+    } catch (error) {
+      if (!isMissingAdminTestsTemasTable(error)) throw error;
+
+      const legacyResult = await pool.query(
+        `SELECT t.id, t.nombre
+         FROM admin_tests at
+         JOIN temas t ON t.id = at.tema_id
+         WHERE at.id = $1 AND at.tema_id IS NOT NULL`,
+        [testId],
+      );
+      return mapTemaRows(legacyResult.rows);
+    }
   },
 
   async createTest(fields, creadoPor) {
@@ -199,15 +220,19 @@ export const adminTestsRepository = {
   },
 
   async replaceTemas(testId, temaIds) {
-    await pool.query('DELETE FROM admin_tests_temas WHERE test_id = $1', [testId]);
-    if (!temaIds?.length) return;
-    for (const temaId of temaIds) {
-      await pool.query(
-        `INSERT INTO admin_tests_temas (test_id, tema_id)
-         VALUES ($1, $2)
-         ON CONFLICT (test_id, tema_id) DO NOTHING`,
-        [testId, temaId],
-      );
+    try {
+      await pool.query('DELETE FROM admin_tests_temas WHERE test_id = $1', [testId]);
+      if (!temaIds?.length) return;
+      for (const temaId of temaIds) {
+        await pool.query(
+          `INSERT INTO admin_tests_temas (test_id, tema_id)
+           VALUES ($1, $2)
+           ON CONFLICT (test_id, tema_id) DO NOTHING`,
+          [testId, temaId],
+        );
+      }
+    } catch (error) {
+      if (!isMissingAdminTestsTemasTable(error)) throw error;
     }
   },
 
