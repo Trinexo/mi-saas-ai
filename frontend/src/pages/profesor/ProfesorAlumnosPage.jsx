@@ -34,7 +34,7 @@ function RiesgoBadge({ riesgo }) {
   );
 }
 
-function AlumnoDetalle({ alumnoId, token }) {
+function AlumnoDetalle({ alumnoId, token, oposicionId }) {
   const [detalle, setDetalle] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,11 +42,11 @@ function AlumnoDetalle({ alumnoId, token }) {
     if (!alumnoId) return;
     setLoading(true);
     setDetalle(null);
-    profesorApi.getWorkspaceAlumno(token, alumnoId)
+    profesorApi.getWorkspaceAlumno(token, alumnoId, { oposicion_id: oposicionId || undefined })
       .then((data) => setDetalle(data))
       .catch(() => setDetalle(null))
       .finally(() => setLoading(false));
-  }, [token, alumnoId]);
+  }, [token, alumnoId, oposicionId]);
 
   if (loading) return <div style={{ color: '#64748b', fontSize: 13 }}>Cargando detalle...</div>;
   if (!detalle) return <div style={{ color: '#94a3b8', fontSize: 13 }}>No se pudo cargar el detalle.</div>;
@@ -124,24 +124,46 @@ function AlumnoDetalle({ alumnoId, token }) {
 export default function ProfesorAlumnosPage() {
   const { token } = useAuth();
   const [students, setStudents] = useState(null);
+  const [oposiciones, setOposiciones] = useState([]);
+  const [oposicionId, setOposicionId] = useState('');
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    profesorApi.getWorkspaceAlumnos(token, { page: 1, page_size: 50 })
+    profesorApi.getWorkspaceOposiciones(token)
+      .then((data) => {
+        const items = data?.items ?? [];
+        setOposiciones(items);
+        if (items.length === 1) setOposicionId(String(items[0].id));
+      })
+      .catch(() => setOposiciones([]));
+  }, [token]);
+
+  useEffect(() => {
+    setStudents(null);
+    profesorApi.getWorkspaceAlumnos(token, {
+      page: 1,
+      page_size: 50,
+      oposicion_id: oposicionId || undefined,
+    })
       .then((data) => {
         const items = data?.items ?? [];
         setStudents(items);
         setSelected(items[0] ?? null);
       })
       .catch(() => setStudents([]));
-  }, [token]);
+  }, [token, oposicionId]);
 
   if (!students) return <div style={{ color: '#64748b' }}>Cargando...</div>;
 
   return (
     <PageShell>
       <Header title="Alumnos" subtitle="Seguimiento académico individual y detección temprana de riesgo.">
-        <Select value="" onChange={() => {}}><option>Todos los estados</option></Select>
+        <Select value={oposicionId} onChange={(event) => setOposicionId(event.target.value)}>
+          <option value="">Todas mis oposiciones</option>
+          {oposiciones.map((oposicion) => (
+            <option key={oposicion.id} value={oposicion.id}>{oposicion.nombre}</option>
+          ))}
+        </Select>
       </Header>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }}>
@@ -196,7 +218,7 @@ export default function ProfesorAlumnosPage() {
           subtitle="Progreso por tema y últimos tests"
         >
           {selected
-            ? <AlumnoDetalle alumnoId={selected.id} token={token} />
+            ? <AlumnoDetalle alumnoId={selected.id} token={token} oposicionId={oposicionId} />
             : <div style={{ color: '#94a3b8', fontSize: 13 }}>Selecciona un alumno para ver su detalle.</div>}
         </Panel>
       </div>
