@@ -1,20 +1,20 @@
 import { widgetStatsRepository } from '../repositories/widgetStats.repository.js';
 
 export const statsWidgetEngagementActividadService = {
-  async getConsistenciaDiaria(userId) {
-    return widgetStatsRepository.getConsistenciaDiaria(userId);
+  async getConsistenciaDiaria(userId, oposicionId = null) {
+    return widgetStatsRepository.getConsistenciaDiaria(userId, oposicionId);
   },
 
-  async getProgresoSemanal(userId) {
-    return widgetStatsRepository.getProgresoSemanal(userId);
+  async getProgresoSemanal(userId, oposicionId = null) {
+    return widgetStatsRepository.getProgresoSemanal(userId, oposicionId);
   },
 
-  async getActividad14Dias(userId) {
-    return widgetStatsRepository.getActividad14Dias(userId);
+  async getActividad14Dias(userId, oposicionId = null) {
+    return widgetStatsRepository.getActividad14Dias(userId, oposicionId);
   },
 
-  async getResumenSemana(userId) {
-    return widgetStatsRepository.getResumenSemana(userId);
+  async getResumenSemana(userId, oposicionId = null) {
+    return widgetStatsRepository.getResumenSemana(userId, oposicionId);
   },
 
   async getFocoHoy(userId) {

@@ -1,15 +1,15 @@
 import { widgetStatsRepository } from '../repositories/widgetStats.repository.js';
 
 export const statsWidgetRendimientoEficienciaService = {
-  async getRitmoPregunta(userId) {
-    return widgetStatsRepository.getRitmoPregunta(userId);
+  async getRitmoPregunta(userId, oposicionId = null) {
+    return widgetStatsRepository.getRitmoPregunta(userId, oposicionId);
   },
 
-  async getEficienciaTiempo(userId) {
-    return widgetStatsRepository.getEficienciaTiempo(userId);
+  async getEficienciaTiempo(userId, oposicionId = null) {
+    return widgetStatsRepository.getEficienciaTiempo(userId, oposicionId);
   },
 
-  async getRendimientoModos(userId) {
-    return widgetStatsRepository.getRendimientoModos(userId);
+  async getRendimientoModos(userId, oposicionId = null) {
+    return widgetStatsRepository.getRendimientoModos(userId, oposicionId);
   },
 };

@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function EficienciaWidget() {
+export default function EficienciaWidget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getEficienciaTiempo(token)
+    testApi.getEficienciaTiempo(token, oposicionId)
       .then(setData)
       .catch(() => setData({ tiempoMedioPorTestSegundos: 0, aciertosPorMinuto: 0, testsAnalizados: 0, tendenciaTiempo: 'estable' }));
-  }, [token]);
+  }, [token, oposicionId]);
 
   return (
     <div style={SECTION}>

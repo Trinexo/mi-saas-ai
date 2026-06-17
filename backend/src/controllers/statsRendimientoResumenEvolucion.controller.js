@@ -1,9 +1,11 @@
 import { ok } from '../utils/response.js';
 import { statsService } from '../services/stats.service.js';
 
+const getOposicionId = (req) => (req.query.oposicion_id ? Number(req.query.oposicion_id) : null);
+
 export const getUserStats = async (req, res, next) => {
   try {
-    const data = await statsService.getUserStats(req.user.userId);
+    const data = await statsService.getUserStats(req.user.userId, getOposicionId(req));
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -12,7 +14,7 @@ export const getUserStats = async (req, res, next) => {
 
 export const getEvolucion = async (req, res, next) => {
   try {
-    const data = await statsService.getEvolucion(req.user.userId, req.query.limit);
+    const data = await statsService.getEvolucion(req.user.userId, req.query.limit, getOposicionId(req));
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -21,7 +23,7 @@ export const getEvolucion = async (req, res, next) => {
 
 export const getRacha = async (req, res, next) => {
   try {
-    const data = await statsService.getRacha(req.user.userId);
+    const data = await statsService.getRacha(req.user.userId, getOposicionId(req));
     return ok(res, data);
   } catch (error) {
     return next(error);

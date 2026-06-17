@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function Actividad14Widget() {
+export default function Actividad14Widget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getActividad14Dias(token)
+    testApi.getActividad14Dias(token, oposicionId)
       .then(setData)
       .catch(() => setData({ diasActivos14: 0, estudioHoy: false, actividad14Dias: [] }));
-  }, [token]);
+  }, [token, oposicionId]);
 
   return (
     <div style={SECTION}>
