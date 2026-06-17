@@ -1,13 +1,14 @@
 import pool from '../config/db.js';
 
 export const widgetRendimientoActividadConsistenciaRepository = {
-  async getConsistenciaDiaria(userId) {
+  async getConsistenciaDiaria(userId, oposicionId = null) {
     const summaryResult = await pool.query(
       `WITH actividad_30 AS (
          SELECT DISTINCT rt.fecha::date AS dia
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '29 days'
        )
@@ -15,7 +16,7 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          COUNT(*)::int AS dias_activos_30,
          ROUND((COUNT(*)::numeric / 30) * 100, 2) AS porcentaje_constancia
        FROM actividad_30`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const trendResult = await pool.query(
@@ -24,6 +25,7 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '13 days'
        ),
@@ -32,13 +34,14 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '27 days'
            AND rt.fecha::date < CURRENT_DATE - INTERVAL '13 days'
        )
        SELECT
          (SELECT dias_activos FROM ultimos14) - (SELECT dias_activos FROM previos14) AS delta_dias_activos`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const row = summaryResult.rows[0] ?? {};
@@ -59,7 +62,7 @@ export const widgetRendimientoActividadConsistenciaRepository = {
     };
   },
 
-  async getActividad14Dias(userId) {
+  async getActividad14Dias(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT gs::date::text AS fecha,
               COALESCE(a.tests, 0)::int AS tests
@@ -69,12 +72,13 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '13 days'
          GROUP BY rt.fecha::date
        ) a ON a.dia = gs::date
        ORDER BY fecha ASC`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const actividad14Dias = result.rows.map((row) => ({

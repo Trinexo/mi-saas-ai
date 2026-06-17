@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const progressGeneralStatsRepository = {
-  async getUserStats(userId) {
+  async getUserStats(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT COUNT(rt.test_id)::int AS total_tests,
               COUNT(CASE WHEN t.tipo_test = 'simulacro' THEN 1 END)::int AS simulacros,
@@ -13,8 +13,9 @@ export const progressGeneralStatsRepository = {
        FROM tests t
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
+         AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          AND t.estado = 'finalizado'`,
-      [userId],
+      [userId, oposicionId],
     );
     const row = result.rows[0];
     return {
@@ -28,24 +29,29 @@ export const progressGeneralStatsRepository = {
     };
   },
 
-  async getDashboard(userId) {
+  async getDashboard(userId, oposicionId = null) {
     const result = await pool.query(
       `WITH total_tests AS (
          SELECT COUNT(*)::int AS valor
          FROM tests
-         WHERE usuario_id = $1 AND estado = 'finalizado'
+         WHERE usuario_id = $1
+           AND ($2::bigint IS NULL OR oposicion_id = $2)
+           AND estado = 'finalizado'
        ),
        nota_media AS (
          SELECT COALESCE(ROUND(AVG(rt.nota)::numeric, 1), 0) AS valor
          FROM resultados_test rt
          JOIN tests t ON t.id = rt.test_id
-         WHERE t.usuario_id = $1 AND t.estado = 'finalizado'
+         WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           AND t.estado = 'finalizado'
        ),
        mejor_simulacro AS (
          SELECT COALESCE(MAX(rt.nota), 0) AS valor
          FROM resultados_test rt
          JOIN tests t ON t.id = rt.test_id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.tipo_test = 'simulacro'
            AND t.estado = 'finalizado'
        ),
@@ -65,7 +71,7 @@ export const progressGeneralStatsRepository = {
          (SELECT valor FROM mejor_simulacro)   AS mejor_simulacro,
          (SELECT valor FROM pendientes_repaso) AS pendientes_repaso,
          (SELECT valor FROM total_marcadas)    AS total_marcadas`,
-      [userId],
+      [userId, oposicionId],
     );
     const r = result.rows[0];
     return {

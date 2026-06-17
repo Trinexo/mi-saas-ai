@@ -46,7 +46,7 @@ const calcCurrentStreak = (dayIndexesDesc, todayIndex) => {
 };
 
 export const widgetEngagementRachaStreaksRepository = {
-  async getRacha(userId) {
+  async getRacha(userId, oposicionId = null) {
     const [todayResult, daysResult, activity7DaysResult] = await Promise.all([
       pool.query('SELECT CURRENT_DATE::text AS today'),
       pool.query(
@@ -54,9 +54,10 @@ export const widgetEngagementRachaStreaksRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
          ORDER BY dia DESC`,
-        [userId],
+        [userId, oposicionId],
       ),
       pool.query(
         `SELECT gs::date::text AS fecha,
@@ -67,12 +68,13 @@ export const widgetEngagementRachaStreaksRepository = {
            FROM tests t
            JOIN resultados_test rt ON rt.test_id = t.id
            WHERE t.usuario_id = $1
+             AND ($2::bigint IS NULL OR t.oposicion_id = $2)
              AND t.estado = 'finalizado'
              AND rt.fecha::date >= CURRENT_DATE - INTERVAL '6 days'
            GROUP BY rt.fecha::date
          ) a ON a.dia = gs::date
          ORDER BY fecha ASC`,
-        [userId],
+        [userId, oposicionId],
       ),
     ]);
 

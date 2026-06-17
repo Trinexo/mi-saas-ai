@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const widgetEngagementFocoTemasRepository = {
-  async getTemasDebiles(userId) {
+  async getTemasDebiles(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT
          pu.bloque_id,
@@ -18,10 +18,11 @@ export const widgetEngagementFocoTemasRepository = {
        JOIN temas t ON t.id = bl.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        WHERE pu.usuario_id = $1
+         AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          AND (pu.aciertos + pu.errores) >= 5
        ORDER BY porcentaje_acierto ASC NULLS FIRST, pu.errores DESC
        LIMIT 3`,
-      [userId],
+      [userId, oposicionId],
     );
 
     return result.rows.map((row) => ({

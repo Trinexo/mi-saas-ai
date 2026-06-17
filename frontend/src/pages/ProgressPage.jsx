@@ -51,42 +51,42 @@ export default function ProgressPage() {
 
       <SectionLabel>Resumen global</SectionLabel>
       <ResumenGlobalSection oposicionId={oposicionActiva?.id} />
-      <RachaObjetivoSection />
+      <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Esta semana</SectionLabel>
       <div style={GRID2}>
-        <ResumenSemanaWidget />
-        <ProgresoSemanalWidget />
+        <ResumenSemanaWidget oposicionId={oposicionActiva?.id} />
+        <ProgresoSemanalWidget oposicionId={oposicionActiva?.id} />
       </div>
-      <Actividad14Widget />
+      <Actividad14Widget oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Evolución</SectionLabel>
-      <EvolucionSection />
+      <EvolucionSection oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Temas</SectionLabel>
       <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Análisis de rendimiento</SectionLabel>
-      <TemasDebilesWidget />
+      <TemasDebilesWidget oposicionId={oposicionActiva?.id} />
       <div style={GRID2}>
-        <RendimientoModosWidget />
-        <InsightMensualWidget />
+        <RendimientoModosWidget oposicionId={oposicionActiva?.id} />
+        <InsightMensualWidget oposicionId={oposicionActiva?.id} />
       </div>
 
       <SectionLabel>Estadísticas detalladas</SectionLabel>
       <div style={GRID2}>
-        <EficienciaWidget />
-        <ConsistenciaDiariaWidget />
+        <EficienciaWidget oposicionId={oposicionActiva?.id} />
+        <ConsistenciaDiariaWidget oposicionId={oposicionActiva?.id} />
       </div>
 
       <SectionLabel>Tu nivel</SectionLabel>
-      <TuNivelWidget />
+      <TuNivelWidget oposicionId={oposicionActiva?.id} />
 
       {/* Analíticas avanzadas — solo Elite */}
       {!loading && esElite && (
         <>
           <SectionLabel>Analíticas avanzadas</SectionLabel>
-          <AnaliticasAvanzadasSection />
+          <AnaliticasAvanzadasSection oposicionId={oposicionActiva?.id} />
         </>
       )}
 
