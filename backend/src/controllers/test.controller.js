@@ -121,7 +121,8 @@ export const getTestRecomendado = async (req, res, next) => {
 
 export const getTestContinuar = async (req, res, next) => {
   try {
-    const data = await testContinuarService.getContinuar(req.user.userId);
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const data = await testContinuarService.getContinuar(req.user.userId, oposicionId);
     return ok(res, data);
   } catch (error) {
     return next(error);

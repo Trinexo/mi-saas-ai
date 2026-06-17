@@ -1,11 +1,17 @@
 import pool from '../config/db.js';
 import { testSessionDetailConfigRepository } from '../repositories/testSessionDetailConfig.repository.js';
 import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { ApiError } from '../utils/api-error.js';
 
 export const testContinuarService = {
-  async getContinuar(userId) {
+  async getContinuar(userId, requestedOposicionId = null) {
     const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const oposicionId = accesos.length > 0 ? Number(accesos[0].oposicion_id) : null;
+    const activeIds = accesos.map((acceso) => Number(acceso.oposicion_id));
+    const oposicionId = requestedOposicionId ? Number(requestedOposicionId) : activeIds[0] ?? null;
+
+    if (requestedOposicionId && !activeIds.includes(oposicionId)) {
+      throw new ApiError(403, 'No tienes acceso a esta oposicion');
+    }
 
     /* ── 1. Test sin terminar ─────────────────────────────── */
     const pendienteRes = await pool.query(
@@ -17,6 +23,7 @@ export const testContinuarService = {
        LEFT JOIN temas       te ON te.id = t.tema_id
        WHERE t.usuario_id = $1
          AND t.estado = 'generado'
+         AND ($2::bigint IS NULL OR COALESCE(t.oposicion_id, te.oposicion_id) = $2)
          AND EXISTS (
            SELECT 1 FROM respuestas_usuario ru WHERE ru.test_id = t.id
          )
@@ -32,7 +39,7 @@ export const testContinuarService = {
          )
        ORDER BY t.fecha_creacion DESC
        LIMIT 1`,
-      [userId],
+      [userId, oposicionId],
     );
 
     if (pendienteRes.rows.length > 0) {
