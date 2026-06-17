@@ -141,35 +141,40 @@ function MobileNavSheet({ open, onOpen, onClose, preguntas, answers, index, setI
         onClick={onOpen}
         className="test-mobile-nav-trigger"
         style={{
-          position: 'fixed',
-          left: 12,
-          right: 12,
-          bottom: 12,
-          zIndex: 55,
           display: 'none',
           alignItems: 'center',
           gap: 12,
           textAlign: 'left',
-          border: `1px solid ${BD}`,
+          width: '100%',
+          marginBottom: 14,
+          border: '1px solid #c4b5fd',
           borderRadius: 16,
-          background: 'rgba(255,255,255,.98)',
-          boxShadow: '0 14px 34px rgba(15,23,42,.16)',
+          background: 'linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%)',
+          boxShadow: '0 8px 24px rgba(124,58,237,.12)',
           padding: '12px 14px',
         }}
       >
+        <div style={{ width: 36, height: 36, borderRadius: 12, background: '#ede9fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem', fontWeight: 800 }}>
+          #
+        </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Navegacion
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Navegador del test
           </div>
           <div style={{ fontSize: '0.86rem', color: DK, fontWeight: 700, marginTop: 2 }}>
             Pregunta {index + 1} de {total}
           </div>
           <div style={{ fontSize: '0.76rem', color: G, marginTop: 2 }}>
-            {answered}/{total} respondidas
+            {answered}/{total} respondidas. Toca para saltar entre preguntas.
           </div>
         </div>
-        <div style={{ flexShrink: 0, color: BL, fontSize: '0.78rem', fontWeight: 700 }}>
-          Ver panel
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: '#6d28d9', fontSize: '0.78rem', fontWeight: 700 }}>
+            Abrir
+          </span>
+          <span style={{ color: '#6d28d9', fontSize: '0.95rem', fontWeight: 800 }}>
+            v
+          </span>
         </div>
       </button>
 
@@ -475,7 +480,7 @@ export default function TestPage() {
         @media (max-width: 767px) {
           .test-breakout { margin: -16px -16px; }
           .test-nav-panel { display: none; }
-          .test-body { padding: 14px 14px 96px; }
+          .test-body { padding: 14px 14px 20px; display: block; }
           .test-header-row { padding: 9px 14px; gap: 8px; }
           .test-header-row .test-badge { display: none; }
           .test-header-row .test-resp-count { display: none; }
