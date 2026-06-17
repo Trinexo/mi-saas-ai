@@ -161,11 +161,8 @@ function MobileNavSheet({ open, onOpen, onClose, preguntas, answers, index, setI
           <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Navegador del test
           </div>
-          <div style={{ fontSize: '0.86rem', color: DK, fontWeight: 700, marginTop: 2 }}>
-            Pregunta {index + 1} de {total}
-          </div>
-          <div style={{ fontSize: '0.76rem', color: G, marginTop: 2 }}>
-            {answered}/{total} respondidas. Toca para saltar entre preguntas.
+          <div style={{ fontSize: '0.76rem', color: G, marginTop: 4 }}>
+            {answered}/{total} respondidas. Navega por todas las preguntas del test.
           </div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
