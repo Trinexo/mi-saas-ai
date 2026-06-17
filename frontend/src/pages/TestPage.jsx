@@ -9,40 +9,39 @@ import TestNavGrid from '../components/test/TestNavGrid';
 import TestPregunta from '../components/test/TestPregunta';
 import ReviewReportDialog from '../components/review/ReviewReportDialog';
 
-/* ——— Paleta ——————————————————————————————————————————————— */
-const O    = '#ea580c';
-const OBG  = '#fff7ed';
-const BD   = '#e5e7eb';
-const DK   = '#111827';
-const G    = '#374151';
-const GL   = '#6b7280';
-const BL   = '#2563eb';
+const O = '#ea580c';
+const OBG = '#fff7ed';
+const BD = '#e5e7eb';
+const DK = '#111827';
+const G = '#374151';
+const GL = '#6b7280';
+const BL = '#2563eb';
 const BLBG = '#eff6ff';
 
 function fmt(s) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-/* ——— Header sticky ———————————————————————————————————————— */
 function TestHeader({ index, total, answered, elapsed, remaining, duracion, modo }) {
-  const isUrgent  = remaining != null && remaining <= 300 && remaining > 60;
-  const isWarning = remaining != null && remaining <= 60  && remaining > 0;
+  const isUrgent = remaining != null && remaining <= 300 && remaining > 60;
+  const isWarning = remaining != null && remaining <= 60 && remaining > 0;
   const isExpired = remaining === 0;
   const timerColor = (isExpired || isWarning) ? '#dc2626' : isUrgent ? '#d97706' : GL;
-  const timerBg    = (isExpired || isWarning) ? '#fef2f2' : isUrgent ? '#fffbeb' : '#f3f4f6';
-  const pulse      = (isWarning || isExpired) ? { animation: 'timerPulse .8s ease-in-out infinite' } : {};
-  const label      = remaining != null ? fmt(remaining) : fmt(elapsed);
-  const pctResp    = total > 0 ? Math.round((answered / total) * 100) : 0;
-  const pctTime    = duracion > 0 && remaining != null ? Math.max(0, Math.round((remaining / duracion) * 100)) : null;
+  const timerBg = (isExpired || isWarning) ? '#fef2f2' : isUrgent ? '#fffbeb' : '#f3f4f6';
+  const pulse = (isWarning || isExpired) ? { animation: 'timerPulse .8s ease-in-out infinite' } : {};
+  const label = remaining != null ? fmt(remaining) : fmt(elapsed);
+  const pctResp = total > 0 ? Math.round((answered / total) * 100) : 0;
+  const pctTime = duracion > 0 && remaining != null ? Math.max(0, Math.round((remaining / duracion) * 100)) : null;
   const BADGE = {
-    simulacro:  { bg: BLBG,      color: BL,        icon: '🎯', text: 'SIMULACRO'  },
-    refuerzo:   { bg: OBG,       color: O,          icon: '🔁', text: 'REFUERZO'   },
-    adaptativo: { bg: '#f0fdf4', color: '#16a34a',  icon: '🧠', text: 'ADAPTATIVO' },
+    simulacro: { bg: BLBG, color: BL, icon: 'Target', text: 'SIMULACRO' },
+    refuerzo: { bg: OBG, color: O, icon: 'Refuerzo', text: 'REFUERZO' },
+    adaptativo: { bg: '#f0fdf4', color: '#16a34a', icon: 'Adaptativo', text: 'ADAPTATIVO' },
   };
   const badge = BADGE[modo];
+
   return (
     <>
-      <style>{`@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+      <style>{'@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.4}}'}</style>
       <div style={{ background: '#fff', borderBottom: `1px solid ${BD}`, position: 'sticky', top: 0, zIndex: 40 }}>
         <div className="test-header-row" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {badge && (
@@ -56,9 +55,11 @@ function TestHeader({ index, total, answered, elapsed, remaining, duracion, modo
           <div style={{ flex: 1, height: 4, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden', minWidth: 48 }}>
             <div style={{ height: '100%', width: `${pctResp}%`, background: '#22c55e', borderRadius: 999, transition: 'width .3s' }} />
           </div>
-          <span className="test-resp-count" style={{ fontSize: '0.72rem', color: GL, whiteSpace: 'nowrap', flexShrink: 0 }}>{answered}/{total} resp.</span>
+          <span className="test-resp-count" style={{ fontSize: '0.72rem', color: GL, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            {answered}/{total} resp.
+          </span>
           <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.9rem', background: timerBg, color: timerColor, padding: '5px 11px', borderRadius: 8, letterSpacing: '0.03em', flexShrink: 0, ...pulse }}>
-            ⏱ {label}
+            T {label}
           </span>
         </div>
         {pctTime !== null && (
@@ -68,12 +69,12 @@ function TestHeader({ index, total, answered, elapsed, remaining, duracion, modo
         )}
         {isWarning && !isExpired && (
           <div style={{ background: '#fef2f2', color: '#dc2626', borderTop: '1px solid #fecaca', padding: '6px 28px', fontSize: '0.78rem', fontWeight: 700, textAlign: 'center', ...pulse }}>
-            🚨 ¡Menos de 1 minuto! El test se enviará automáticamente.
+            Menos de 1 minuto. El test se enviara automaticamente.
           </div>
         )}
         {isUrgent && !isWarning && !isExpired && (
           <div style={{ background: '#fffbeb', color: '#d97706', borderTop: '1px solid #fde68a', padding: '6px 28px', fontSize: '0.78rem', fontWeight: 600, textAlign: 'center' }}>
-            ⚠ Menos de 5 minutos. El test se enviará automáticamente al terminar.
+            Menos de 5 minutos. El test se enviara automaticamente al terminar.
           </div>
         )}
       </div>
@@ -81,48 +82,168 @@ function TestHeader({ index, total, answered, elapsed, remaining, duracion, modo
   );
 }
 
-/* ——— Panel izquierdo (solo desktop) ——————————————————————— */
+function NavLegend() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      {[
+        { color: BL, bg: BLBG, label: 'Actual' },
+        { color: '#15803d', bg: '#dcfce7', label: 'Respondida' },
+        { color: '#d97706', bg: '#fffbeb', label: 'Marcada' },
+        { color: GL, bg: '#f9fafb', label: 'Sin responder' },
+      ].map(({ color, bg, label }) => (
+        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 18, height: 18, borderRadius: 5, background: bg, border: `1.5px solid ${color}`, flexShrink: 0 }} />
+          <span style={{ fontSize: '0.71rem', color: G }}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LeftPanel({ preguntas, answers, index, setIndex, marcadas, answered }) {
   const total = preguntas.length;
   return (
     <div style={{
-      width: 260, flexShrink: 0,
-      background: '#fff', borderRadius: 16, border: `1px solid ${BD}`,
-      boxShadow: '0 1px 4px rgba(0,0,0,.05)', padding: '18px 14px',
-      position: 'sticky', top: 64, alignSelf: 'flex-start',
-      maxHeight: 'calc(100vh - 80px)', overflowY: 'auto',
+      width: 260,
+      flexShrink: 0,
+      background: '#fff',
+      borderRadius: 16,
+      border: `1px solid ${BD}`,
+      boxShadow: '0 1px 4px rgba(0,0,0,.05)',
+      padding: '18px 14px',
+      position: 'sticky',
+      top: 64,
+      alignSelf: 'flex-start',
+      maxHeight: 'calc(100vh - 80px)',
+      overflowY: 'auto',
     }}>
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Navegación</div>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Navegacion</div>
         <div style={{ fontSize: '0.75rem', color: G, marginTop: 3 }}>
           <strong style={{ color: DK }}>{answered}</strong> / {total} respondidas
         </div>
       </div>
       <TestNavGrid preguntas={preguntas} answers={answers} index={index} setIndex={setIndex} marcadas={marcadas} />
-      <div style={{ paddingTop: 14, marginTop: 12, borderTop: `1px solid ${BD}`, display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {[
-          { color: BL,        bg: BLBG,      label: 'Actual'        },
-          { color: '#15803d', bg: '#dcfce7',  label: 'Respondida'    },
-          { color: '#d97706', bg: '#fffbeb',  label: 'Marcada'       },
-          { color: GL,        bg: '#f9fafb',  label: 'Sin responder' },
-        ].map(({ color, bg, label }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 18, height: 18, borderRadius: 5, background: bg, border: `1.5px solid ${color}`, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.71rem', color: G }}>{label}</span>
-          </div>
-        ))}
+      <div style={{ paddingTop: 14, marginTop: 12, borderTop: `1px solid ${BD}` }}>
+        <NavLegend />
       </div>
     </div>
   );
 }
 
-/* ——— Controles —————————————————————————————————————————— */
+function MobileNavSheet({ open, onOpen, onClose, preguntas, answers, index, setIndex, marcadas, answered }) {
+  const total = preguntas.length;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="test-mobile-nav-trigger"
+        style={{
+          position: 'fixed',
+          left: 12,
+          right: 12,
+          bottom: 12,
+          zIndex: 55,
+          display: 'none',
+          alignItems: 'center',
+          gap: 12,
+          textAlign: 'left',
+          border: `1px solid ${BD}`,
+          borderRadius: 16,
+          background: 'rgba(255,255,255,.98)',
+          boxShadow: '0 14px 34px rgba(15,23,42,.16)',
+          padding: '12px 14px',
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Navegacion
+          </div>
+          <div style={{ fontSize: '0.86rem', color: DK, fontWeight: 700, marginTop: 2 }}>
+            Pregunta {index + 1} de {total}
+          </div>
+          <div style={{ fontSize: '0.76rem', color: G, marginTop: 2 }}>
+            {answered}/{total} respondidas
+          </div>
+        </div>
+        <div style={{ flexShrink: 0, color: BL, fontSize: '0.78rem', fontWeight: 700 }}>
+          Ver panel
+        </div>
+      </button>
+
+      {open && (
+        <div className="test-mobile-nav-layer" style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'none' }}>
+          <button
+            type="button"
+            aria-label="Cerrar panel de navegacion"
+            onClick={onClose}
+            style={{ position: 'absolute', inset: 0, border: 'none', background: 'rgba(15,23,42,.36)' }}
+          />
+
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: '#fff',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              boxShadow: '0 -12px 30px rgba(15,23,42,.18)',
+              padding: '14px 14px 18px',
+              maxHeight: '62vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ width: 44, height: 5, borderRadius: 999, background: '#e5e7eb', margin: '0 auto 12px' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: '0.74rem', fontWeight: 700, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Navegacion
+                </div>
+                <div style={{ fontSize: '0.8rem', color: G, marginTop: 2 }}>
+                  <strong style={{ color: DK }}>{answered}</strong> / {total} respondidas
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ border: `1px solid ${BD}`, borderRadius: 10, background: '#fff', color: G, padding: '8px 12px', fontSize: '0.8rem', fontWeight: 600 }}
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <TestNavGrid
+              preguntas={preguntas}
+              answers={answers}
+              index={index}
+              setIndex={(nextIndex) => {
+                setIndex(nextIndex);
+                onClose();
+              }}
+              marcadas={marcadas}
+            />
+
+            <div style={{ paddingTop: 12, marginTop: 2, borderTop: `1px solid ${BD}` }}>
+              <NavLegend />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Controls({ index, total, onPrev, onNext, onSubmit, submitting, answered, error, feedbackMode }) {
   const [hovPrev, setHovPrev] = useState(false);
   const [hovNext, setHovNext] = useState(false);
-  const [hovSub,  setHovSub ] = useState(false);
+  const [hovSub, setHovSub] = useState(false);
   const isFirst = index === 0;
-  const isLast  = index === total - 1;
+  const isLast = index === total - 1;
+
   return (
     <>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BD}` }}>
@@ -133,12 +254,18 @@ function Controls({ index, total, onPrev, onNext, onSubmit, submitting, answered
             onMouseEnter={() => setHovPrev(true)}
             onMouseLeave={() => setHovPrev(false)}
             style={{
-              padding: '10px 20px', borderRadius: 10,
-              border: `1.5px solid ${BD}`, background: (hovPrev && !isFirst) ? '#f3f4f6' : '#fff',
-              color: isFirst ? GL : G, fontWeight: 600, fontSize: '0.88rem',
-              cursor: isFirst ? 'not-allowed' : 'pointer', opacity: isFirst ? 0.5 : 1, transition: 'all .15s',
+              padding: '10px 20px',
+              borderRadius: 10,
+              border: `1.5px solid ${BD}`,
+              background: (hovPrev && !isFirst) ? '#f3f4f6' : '#fff',
+              color: isFirst ? GL : G,
+              fontWeight: 600,
+              fontSize: '0.88rem',
+              cursor: isFirst ? 'not-allowed' : 'pointer',
+              opacity: isFirst ? 0.5 : 1,
+              transition: 'all .15s',
             }}
-          >← Anterior</button>
+          >{'<- Anterior'}</button>
         )}
         <div style={{ flex: 1 }} />
         {(!feedbackMode || !isLast) && (
@@ -148,13 +275,18 @@ function Controls({ index, total, onPrev, onNext, onSubmit, submitting, answered
             onMouseEnter={() => setHovNext(true)}
             onMouseLeave={() => setHovNext(false)}
             style={{
-              padding: '10px 20px', borderRadius: 10,
-              border: `1.5px solid ${BD}`, background: (hovNext && !(isLast && !feedbackMode)) ? '#f3f4f6' : '#fff',
-              color: (isLast && !feedbackMode) ? GL : G, fontWeight: 600, fontSize: '0.88rem',
+              padding: '10px 20px',
+              borderRadius: 10,
+              border: `1.5px solid ${BD}`,
+              background: (hovNext && !(isLast && !feedbackMode)) ? '#f3f4f6' : '#fff',
+              color: (isLast && !feedbackMode) ? GL : G,
+              fontWeight: 600,
+              fontSize: '0.88rem',
               cursor: (isLast && !feedbackMode) ? 'not-allowed' : 'pointer',
-              opacity: (isLast && !feedbackMode) ? 0.5 : 1, transition: 'all .15s',
+              opacity: (isLast && !feedbackMode) ? 0.5 : 1,
+              transition: 'all .15s',
             }}
-          >Siguiente →</button>
+          >{'Siguiente ->'}</button>
         )}
         {(!feedbackMode || isLast) && (
           <button
@@ -163,20 +295,26 @@ function Controls({ index, total, onPrev, onNext, onSubmit, submitting, answered
             onMouseEnter={() => setHovSub(true)}
             onMouseLeave={() => setHovSub(false)}
             style={{
-              padding: '10px 22px', borderRadius: 10, border: 'none',
+              padding: '10px 22px',
+              borderRadius: 10,
+              border: 'none',
               background: (hovSub && !submitting) ? '#c2410c' : O,
-              color: '#fff', fontWeight: 700, fontSize: '0.88rem',
-              cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1,
-              boxShadow: `0 3px 12px ${O}40`, transition: 'all .15s',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '0.88rem',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              opacity: submitting ? 0.7 : 1,
+              boxShadow: `0 3px 12px ${O}40`,
+              transition: 'all .15s',
             }}
           >
-            {submitting ? 'Enviando…' : feedbackMode ? 'Ver resultado' : `Enviar (${answered}/${total})`}
+            {submitting ? 'Enviando...' : feedbackMode ? 'Ver resultado' : `Enviar (${answered}/${total})`}
           </button>
         )}
       </div>
       {error && (
         <div style={{ display: 'flex', gap: 8, background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: '10px 14px', marginTop: 12, fontSize: '0.875rem', alignItems: 'flex-start' }}>
-          <span style={{ flexShrink: 0 }}>⚠️</span> {error}
+          <span style={{ flexShrink: 0 }}>!</span> {error}
         </div>
       )}
     </>
@@ -190,9 +328,10 @@ export default function TestPage() {
   const feedbackMode = test?.feedbackInmediato === true;
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [confirmed, setConfirmed] = useState({}); // preguntaId → true cuando comprobada
+  const [confirmed, setConfirmed] = useState({});
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const startTimeRef = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
 
@@ -227,8 +366,7 @@ export default function TestPage() {
       setError(getErrorMessage(e));
       setSubmitting(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, test]);
+  }, [navigate, test, token]);
 
   useEffect(() => {
     marcadasApi.getMarcadas(token)
@@ -240,12 +378,18 @@ export default function TestPage() {
     try {
       if (marcadas.has(preguntaId)) {
         await marcadasApi.desmarcar(token, preguntaId);
-        setMarcadas((prev) => { const next = new Set(prev); next.delete(preguntaId); return next; });
+        setMarcadas((prev) => {
+          const next = new Set(prev);
+          next.delete(preguntaId);
+          return next;
+        });
       } else {
         await marcadasApi.marcar(token, preguntaId);
         setMarcadas((prev) => new Set([...prev, preguntaId]));
       }
-    } catch { /* silent */ }
+    } catch {
+      // silent
+    }
   };
 
   const openReport = (preguntaId) => {
@@ -269,13 +413,14 @@ export default function TestPage() {
       await reportarApi.reportar(token, reportPreguntaId, reportMotivo.trim());
       closeReport();
     } catch {
-      setReportError('Error al enviar el reporte. Inténtalo de nuevo.');
+      setReportError('Error al enviar el reporte. Intentalo de nuevo.');
     }
   };
 
-  // Referencia estable a answers para el auto-submit
   const answersRef = useRef(answers);
-  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -284,13 +429,20 @@ export default function TestPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-submit cuando el countdown llega a 0
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNavOpen]);
+
   useEffect(() => {
     if (isExpired && !submitting) {
       onSubmit(answersRef.current, { timeout: true });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isExpired]);
+  }, [isExpired, onSubmit, submitting]);
 
   if (!test) {
     return <p>No hay test activo.</p>;
@@ -327,6 +479,8 @@ export default function TestPage() {
           .test-header-row { padding: 9px 14px; gap: 8px; }
           .test-header-row .test-badge { display: none; }
           .test-header-row .test-resp-count { display: none; }
+          .test-mobile-nav-trigger { display: flex !important; }
+          .test-mobile-nav-layer { display: block !important; }
         }
       `}</style>
 
@@ -354,9 +508,25 @@ export default function TestPage() {
           </div>
         )}
 
+        {!feedbackMode && (
+          <MobileNavSheet
+            open={mobileNavOpen}
+            onOpen={() => setMobileNavOpen(true)}
+            onClose={() => setMobileNavOpen(false)}
+            preguntas={test.preguntas}
+            answers={answers}
+            index={index}
+            setIndex={setIndex}
+            marcadas={marcadas}
+            answered={answered}
+          />
+        )}
+
         <div style={{
-          flex: 1, minWidth: 0,
-          background: '#fff', borderRadius: 16,
+          flex: 1,
+          minWidth: 0,
+          background: '#fff',
+          borderRadius: 16,
           border: `1px solid ${BD}`,
           boxShadow: '0 1px 4px rgba(0,0,0,.06)',
           padding: 'clamp(20px, 3vw, 36px)',
