@@ -119,8 +119,10 @@ function KpiBar() {
   const total = (stats?.aciertos || 0) + (stats?.errores || 0) + (stats?.blancos || 0);
   const pctAciertos = total > 0 ? Math.round((stats.aciertos / total) * 100) : null;
 
-  const rankingValue = ranking?.miPosicion != null ? `Top ${Math.round(100 - ranking.percentilSuperado)}%` : '—';
-  const rankingDelta = ranking?.totalParticipantes > 0 ? `Entre ${ranking.totalParticipantes} opositores` : null;
+  const rankingValue = ranking?.miPosicion != null && ranking?.totalParticipantes > 0
+    ? `#${ranking.miPosicion}/${ranking.totalParticipantes}`
+    : '—';
+  const rankingDelta = ranking?.totalParticipantes > 0 ? 'Ranking de esta oposición' : null;
 
   return (
     <div className="kpi-grid">
@@ -130,7 +132,7 @@ function KpiBar() {
         label="Tests realizados" />
       <KpiCard icon={<IconTarget />} iconBg="#f0fdf4" iconColor="#16a34a"
         value={pctAciertos != null ? `${pctAciertos}%` : '—'}
-        delta={pctAciertos != null ? '+6% vs semana pasada' : null}
+        delta={null}
         label="Aciertos medios" />
       <KpiCard icon={<IconClipboard />} iconBg="#eff6ff" iconColor="#2563eb"
         value={stats?.simulacros ?? '—'} label="Simulacros" />
@@ -139,7 +141,7 @@ function KpiBar() {
         delta={racha?.estudioHoy ? '🔥 Racha activa' : null}
         label="Racha actual" />
       <KpiCard icon={<IconTrophy />} iconBg="#fdf4ff" iconColor="#9333ea"
-        value={rankingValue} delta={rankingDelta} label="Posición global" />
+        value={rankingValue} delta={rankingDelta} label="Ranking oposición" />
     </div>
   );
 }
