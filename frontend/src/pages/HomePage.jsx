@@ -107,9 +107,9 @@ function KpiBar() {
   const [ranking, setRanking] = useState(null);
 
   useEffect(() => {
-    testApi.userStats(token).then(setStats).catch(() => {});
-    testApi.getRacha(token).then(setRacha).catch(() => {});
-  }, [token]);
+    testApi.userStats(token, oposicionActiva?.id).then(setStats).catch(() => {});
+    testApi.getRacha(token, oposicionActiva?.id).then(setRacha).catch(() => {});
+  }, [token, oposicionActiva?.id]);
 
   useEffect(() => {
     if (!oposicionActiva?.id) { setRanking(null); return; }
@@ -156,13 +156,15 @@ const TIPO_META = {
 function ContinuarCard() {
   const navigate  = useNavigate();
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const { isLoading, runAction } = useAsyncAction();
   const [sugerencia, setSugerencia] = useState(undefined); // undefined=cargando
   const [hov, setHov] = useState(false);
 
   useEffect(() => {
-    testApi.getContinuar(token).then(setSugerencia).catch(() => setSugerencia(null));
-  }, [token]);
+    setSugerencia(undefined);
+    testApi.getContinuar(token, oposicionActiva?.id).then(setSugerencia).catch(() => setSugerencia(null));
+  }, [token, oposicionActiva?.id]);
 
   const onAccion = async () => {
     const s = sugerencia;
@@ -312,8 +314,8 @@ function PlanSemanal() {
   const [planError, setPlanError] = useState('');
 
   useEffect(() => {
-    testApi.getProgresoSemanal(token).then(setPlan).catch(() => setPlan(null));
-  }, [token]);
+    testApi.getProgresoSemanal(token, oposicionActiva?.id).then(setPlan).catch(() => setPlan(null));
+  }, [token, oposicionActiva?.id]);
 
   useEffect(() => {
     if (!token || !oposicionActiva?.id) {
@@ -598,11 +600,15 @@ function RecomendadoParaTi() {
 /* ── Historial reciente ───────────────────────────────────── */
 function HistorialReciente() {
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    testApi.history(token, { limit: 4 }).then((h) => setHistory(Array.isArray(h) ? h : [])).catch(() => {});
-  }, [token]);
+    testApi.history(token, {
+      limit: 4,
+      ...(oposicionActiva?.id ? { oposicion_id: oposicionActiva.id } : {}),
+    }).then((h) => setHistory(Array.isArray(h) ? h : [])).catch(() => {});
+  }, [token, oposicionActiva?.id]);
 
   if (!history.length) return null;
 
