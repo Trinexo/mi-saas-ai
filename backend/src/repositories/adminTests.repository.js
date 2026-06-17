@@ -86,35 +86,29 @@ export const adminTestsRepository = {
     const row = await pool.query(
       `SELECT
          t.*,
-         COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) AS resolved_oposicion_id,
          o.nombre AS oposicion_nombre,
          te.nombre AS tema_nombre
        FROM admin_tests t
-       LEFT JOIN LATERAL (
-         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS temas_oposicion_id
-         FROM admin_tests_temas att
-         JOIN temas tm ON tm.id = att.tema_id
-         WHERE att.test_id = t.id
-       ) tt ON TRUE
-       LEFT JOIN LATERAL (
-         SELECT CASE WHEN COUNT(DISTINCT tm.oposicion_id) = 1 THEN MIN(tm.oposicion_id) END AS preguntas_oposicion_id
-         FROM admin_tests_preguntas atp
-         JOIN preguntas p ON p.id = atp.pregunta_id
-         JOIN temas tm ON tm.id = p.tema_id
-         WHERE atp.test_id = t.id
-        ) tp ON TRUE
-        LEFT JOIN oposiciones o ON o.id = COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id)
-        LEFT JOIN temas te ON te.id = t.tema_id
-        WHERE t.id = $1`,
+       LEFT JOIN oposiciones o ON o.id = t.oposicion_id
+       LEFT JOIN temas te ON te.id = t.tema_id
+       WHERE t.id = $1`,
       [id],
     );
     if (row.rows.length === 0) return null;
     const test = row.rows[0];
-    if (test.oposicion_id == null && test.resolved_oposicion_id != null) {
-      test.oposicion_id = Number(test.resolved_oposicion_id);
-    }
     test.temas = await this.getTestTemas(id);
     test.tema_ids = test.temas.map((tema) => tema.id);
+    test.resolved_oposicion_id = await this.resolveTestOposicionId(id, test);
+    if (test.oposicion_id == null && test.resolved_oposicion_id != null) {
+      test.oposicion_id = Number(test.resolved_oposicion_id);
+      if (!test.oposicion_nombre) {
+        const oposicionRow = await pool.query(
+          'SELECT nombre FROM oposiciones WHERE id = $1',
+          [test.oposicion_id],
+        );
+        test.oposicion_nombre = oposicionRow.rows[0]?.nombre ?? null;
+      }
+    }
 
     const pregsRow = await pool.query(
       `SELECT
@@ -130,6 +124,36 @@ export const adminTestsRepository = {
     );
     test.preguntas = pregsRow.rows;
     return test;
+  },
+
+  async resolveTestOposicionId(testId, test = null) {
+    if (test?.oposicion_id) return Number(test.oposicion_id);
+    if (test?.tema_id) {
+      const temaResult = await pool.query(
+        'SELECT oposicion_id FROM temas WHERE id = $1',
+        [test.tema_id],
+      );
+      if (temaResult.rows[0]?.oposicion_id) return Number(temaResult.rows[0].oposicion_id);
+    }
+
+    const temasResult = await pool.query(
+      `SELECT CASE WHEN COUNT(DISTINCT t.oposicion_id) = 1 THEN MIN(t.oposicion_id) END AS oposicion_id
+       FROM admin_tests_temas att
+       JOIN temas t ON t.id = att.tema_id
+       WHERE att.test_id = $1`,
+      [testId],
+    );
+    if (temasResult.rows[0]?.oposicion_id) return Number(temasResult.rows[0].oposicion_id);
+
+    const preguntasResult = await pool.query(
+      `SELECT CASE WHEN COUNT(DISTINCT t.oposicion_id) = 1 THEN MIN(t.oposicion_id) END AS oposicion_id
+       FROM admin_tests_preguntas atp
+       JOIN preguntas p ON p.id = atp.pregunta_id
+       JOIN temas t ON t.id = p.tema_id
+       WHERE atp.test_id = $1`,
+      [testId],
+    );
+    return preguntasResult.rows[0]?.oposicion_id ? Number(preguntasResult.rows[0].oposicion_id) : null;
   },
 
   async getTestTemas(testId) {
