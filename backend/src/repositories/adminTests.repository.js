@@ -9,6 +9,29 @@ const isMissingAdminTestsTemasTable = (error) => (
   error?.code === '42P01' && String(error?.message ?? '').includes('admin_tests_temas')
 );
 
+const ensureAdminTestsTemasTable = async () => {
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS admin_tests_temas (
+       test_id BIGINT NOT NULL REFERENCES admin_tests(id) ON DELETE CASCADE,
+       tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+       PRIMARY KEY (test_id, tema_id)
+     )`,
+  );
+  await pool.query(
+    'CREATE INDEX IF NOT EXISTS idx_admin_tests_temas_test_id ON admin_tests_temas (test_id)',
+  );
+  await pool.query(
+    'CREATE INDEX IF NOT EXISTS idx_admin_tests_temas_tema_id ON admin_tests_temas (tema_id)',
+  );
+  await pool.query(
+    `INSERT INTO admin_tests_temas (test_id, tema_id)
+     SELECT id, tema_id
+     FROM admin_tests
+     WHERE tema_id IS NOT NULL
+     ON CONFLICT (test_id, tema_id) DO NOTHING`,
+  );
+};
+
 export const adminTestsRepository = {
   async listTests({ q, estado, oposicionId, allowedOposicionIds, limit, offset }) {
     const params = [
@@ -220,7 +243,7 @@ export const adminTestsRepository = {
   },
 
   async replaceTemas(testId, temaIds) {
-    try {
+    const writeTemas = async () => {
       await pool.query('DELETE FROM admin_tests_temas WHERE test_id = $1', [testId]);
       if (!temaIds?.length) return;
       for (const temaId of temaIds) {
@@ -231,8 +254,14 @@ export const adminTestsRepository = {
           [testId, temaId],
         );
       }
+    };
+
+    try {
+      await writeTemas();
     } catch (error) {
       if (!isMissingAdminTestsTemasTable(error)) throw error;
+      await ensureAdminTestsTemasTable();
+      await writeTemas();
     }
   },
 

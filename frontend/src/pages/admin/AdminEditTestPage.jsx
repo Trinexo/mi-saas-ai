@@ -81,6 +81,15 @@ function normalizeTemaIds(items) {
   )];
 }
 
+function normalizeTemaOption(tema) {
+  const temaId = tema?.tema_id ?? tema?.id ?? '';
+  const temaNombre = tema?.tema_nombre ?? tema?.nombre ?? '';
+  return {
+    tema_id: String(temaId),
+    tema_nombre: temaNombre,
+  };
+}
+
 function formatTemaSummary(temas = []) {
   if (!temas.length) return '-';
   if (temas.length <= 2) return temas.map((tema) => tema.nombre).join(' | ');
@@ -125,13 +134,25 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
 
   const normalizedAllowedTemaIds = useMemo(() => normalizeTemaIds(allowedTemaIds), [allowedTemaIds]);
   const existingQuestionIdSet = useMemo(() => new Set(existingQuestionIds.map((id) => Number(id))), [existingQuestionIds]);
+  const normalizedTemas = useMemo(
+    () => (Array.isArray(temas) ? temas : [])
+      .map(normalizeTemaOption)
+      .filter((tema) => tema.tema_id && tema.tema_nombre),
+    [temas],
+  );
   const visibleTemas = useMemo(
     () => (normalizedAllowedTemaIds.length
-      ? temas.filter((tema) => normalizedAllowedTemaIds.includes(String(tema.tema_id)))
-      : temas),
-    [normalizedAllowedTemaIds, temas],
+      ? normalizedTemas.filter((tema) => normalizedAllowedTemaIds.includes(tema.tema_id))
+      : normalizedTemas),
+    [normalizedAllowedTemaIds, normalizedTemas],
   );
-  const effectiveTemaIds = temaId ? [temaId] : normalizedAllowedTemaIds;
+  const effectiveTemaIds = useMemo(
+    () => (temaId ? [temaId] : normalizedAllowedTemaIds),
+    [temaId, normalizedAllowedTemaIds],
+  );
+  const temaScopeLabel = normalizedAllowedTemaIds.length > 0
+    ? (normalizedAllowedTemaIds.length === 1 ? 'Tema seleccionado del test' : 'Temas seleccionados del test')
+    : 'Todos los temas';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -250,7 +271,7 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
         <div style={{ padding: '14px 24px', borderBottom: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: 'minmax(180px, 1.2fr) minmax(170px, .9fr) 150px auto', gap: 10, alignItems: 'center' }}>
           <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Buscar pregunta..." style={{ ...INPUT, marginBottom: 0 }} />
           <select value={temaId} onChange={(e) => { setTemaId(e.target.value); setPage(1); }} style={{ ...INPUT, marginBottom: 0 }}>
-            <option value="">Todos los temas</option>
+            <option value="">{temaScopeLabel}</option>
             {visibleTemas.map((tema) => <option key={tema.tema_id} value={tema.tema_id}>{tema.tema_nombre}</option>)}
           </select>
           <select value={dificultadFiltro} onChange={(e) => { setDificultadFiltro(e.target.value); setPage(1); }} style={{ ...INPUT, marginBottom: 0 }}>
@@ -265,7 +286,7 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
         {(isProfesor || visibleTemas.length > 0) && (
           <div style={{ padding: '14px 24px', borderBottom: '1px solid #f1f5f9', display: 'grid', gridTemplateColumns: 'minmax(170px, 1fr) 110px 140px auto', gap: 10, alignItems: 'center' }}>
             <select value={autoTemaId} onChange={(e) => setAutoTemaId(e.target.value)} style={{ ...INPUT, marginBottom: 0 }}>
-              <option value="">Todos los temas</option>
+              <option value="">{temaScopeLabel}</option>
               {visibleTemas.map((tema) => <option key={tema.tema_id} value={tema.tema_id}>{tema.tema_nombre}</option>)}
             </select>
             <input type="number" min="1" value={autoCantidad} onChange={(e) => setAutoCantidad(e.target.value)} style={{ ...INPUT, marginBottom: 0 }} />
