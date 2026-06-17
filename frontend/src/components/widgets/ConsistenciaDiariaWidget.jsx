@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function ConsistenciaDiariaWidget() {
+export default function ConsistenciaDiariaWidget({ oposicionId }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getConsistenciaDiaria(token)
+    testApi.getConsistenciaDiaria(token, oposicionId)
       .then(setData)
       .catch(() => setData({ diasActivos30: 0, diasInactivos30: 30, porcentajeConstancia: 0, tendenciaConstancia: 'estable' }));
-  }, [token]);
+  }, [token, oposicionId]);
 
   return (
     <div style={SECTION}>

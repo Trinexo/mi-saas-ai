@@ -43,7 +43,7 @@ function TendenciaBadge({ tendencia }) {
   );
 }
 
-export default function AnaliticasAvanzadasSection() {
+export default function AnaliticasAvanzadasSection({ oposicionId }) {
   const { token } = useAuth();
 
   // --- Rendimiento profundo ---
@@ -62,10 +62,10 @@ export default function AnaliticasAvanzadasSection() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      testApi.getEficienciaTiempo(token).catch(() => null),
-      testApi.getBalancePrecision(token).catch(() => null),
-      testApi.getInsightMensual(token).catch(() => null),
-      testApi.getRitmoPregunta(token).catch(() => null),
+      testApi.getEficienciaTiempo(token, oposicionId).catch(() => null),
+      testApi.getBalancePrecision(token, oposicionId).catch(() => null),
+      testApi.getInsightMensual(token, oposicionId).catch(() => null),
+      testApi.getRitmoPregunta(token, oposicionId).catch(() => null),
     ]).then(([ef, bal, ins, rit]) => {
       if (cancelled) return;
       setEficiencia(ef);
@@ -75,7 +75,11 @@ export default function AnaliticasAvanzadasSection() {
     });
     catalogApi.getOposiciones(token).then(setOposiciones).catch(() => {});
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, oposicionId]);
+
+  useEffect(() => {
+    setSelOposicion(oposicionId ? String(oposicionId) : '');
+  }, [oposicionId]);
 
   // Progreso por tema cuando cambia oposición
   useEffect(() => {

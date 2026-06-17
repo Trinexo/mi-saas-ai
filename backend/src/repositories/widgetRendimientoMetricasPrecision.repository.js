@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const widgetRendimientoMetricasPrecisionRepository = {
-  async getBalancePrecision(userId) {
+  async getBalancePrecision(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT
          COALESCE(SUM(rt.aciertos), 0)::int AS aciertos_totales,
@@ -10,9 +10,10 @@ export const widgetRendimientoMetricasPrecisionRepository = {
        FROM tests t
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
+         AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          AND t.estado = 'finalizado'
          AND rt.fecha >= NOW() - INTERVAL '30 days'`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const row = result.rows[0] ?? {};
@@ -35,7 +36,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
     };
   },
 
-  async getRendimientoModos(userId) {
+  async getRendimientoModos(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT
          t.tipo_test AS modo,
@@ -46,11 +47,12 @@ export const widgetRendimientoMetricasPrecisionRepository = {
        FROM tests t
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
+         AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          AND t.estado = 'finalizado'
          AND rt.fecha >= NOW() - INTERVAL '30 days'
        GROUP BY t.tipo_test
        ORDER BY nota_media DESC, tests DESC`,
-      [userId],
+      [userId, oposicionId],
     );
 
     return result.rows.map((row) => ({
@@ -62,13 +64,14 @@ export const widgetRendimientoMetricasPrecisionRepository = {
     }));
   },
 
-  async getInsightMensual(userId) {
+  async getInsightMensual(userId, oposicionId = null) {
     const result = await pool.query(
       `WITH ultimos30 AS (
          SELECT rt.nota, rt.aciertos
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha >= NOW() - INTERVAL '30 days'
        ),
@@ -77,6 +80,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha >= NOW() - INTERVAL '7 days'
        ),
@@ -85,6 +89,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
            AND t.estado = 'finalizado'
            AND rt.fecha < NOW() - INTERVAL '7 days'
            AND rt.fecha >= NOW() - INTERVAL '14 days'
@@ -94,7 +99,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          (SELECT COALESCE(SUM(aciertos), 0)::int FROM ultimos30) AS aciertos_ultimos_30_dias,
          (SELECT COALESCE(ROUND(AVG(nota), 2), 0) FROM ultimos30) AS nota_media_ultimos_30_dias,
          ROUND(((SELECT avg_nota FROM ultimos7) - (SELECT avg_nota FROM previos7)), 2) AS delta_nota_7_dias`,
-      [userId],
+      [userId, oposicionId],
     );
 
     const row = result.rows[0] ?? {};

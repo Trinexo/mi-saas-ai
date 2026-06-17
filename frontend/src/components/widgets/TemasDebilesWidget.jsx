@@ -22,7 +22,7 @@ const IconLock = () => (
   </svg>
 );
 
-export default function TemasDebilesWidget() {
+export default function TemasDebilesWidget({ oposicionId }) {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { hasAccess } = useUserPlan();
@@ -30,10 +30,10 @@ export default function TemasDebilesWidget() {
   const [hov, setHov] = useState(false);
 
   useEffect(() => {
-    testApi.getTemasDebiles(token)
+    testApi.getTemasDebiles(token, oposicionId)
       .then((d) => setData(Array.isArray(d) ? d : []))
       .catch(() => setData([]));
-  }, [token]);
+  }, [token, oposicionId]);
 
   const onRefuerzo = () => {
     const top = data[0];

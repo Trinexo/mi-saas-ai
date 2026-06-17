@@ -5,7 +5,8 @@ import { rankingService } from '../services/ranking.service.js';
 
 export const getTemasDebiles = async (req, res, next) => {
   try {
-    const data = await statsService.getTemasDebiles(req.user.userId);
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const data = await statsService.getTemasDebiles(req.user.userId, oposicionId);
     return ok(res, data);
   } catch (error) {
     return next(error);
