@@ -102,15 +102,17 @@ export const adminTestsRepository = {
          JOIN preguntas p ON p.id = atp.pregunta_id
          JOIN temas tm ON tm.id = p.tema_id
          WHERE atp.test_id = t.id
-       ) tp ON TRUE
-       LEFT JOIN oposiciones o ON o.id = COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id)
-       LEFT JOIN temas te ON te.id = t.tema_id
-       WHERE t.id = $1
-       GROUP BY t.id, o.nombre, te.nombre`,
+        ) tp ON TRUE
+        LEFT JOIN oposiciones o ON o.id = COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id)
+        LEFT JOIN temas te ON te.id = t.tema_id
+        WHERE t.id = $1`,
       [id],
     );
     if (row.rows.length === 0) return null;
     const test = row.rows[0];
+    if (test.oposicion_id == null && test.resolved_oposicion_id != null) {
+      test.oposicion_id = Number(test.resolved_oposicion_id);
+    }
     test.temas = await this.getTestTemas(id);
     test.tema_ids = test.temas.map((tema) => tema.id);
 
