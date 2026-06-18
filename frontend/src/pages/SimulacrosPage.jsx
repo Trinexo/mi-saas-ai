@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { useUserAccesos } from '../hooks/useUserAccesos';
 import { testApi } from '../services/testApi';
 import { simulacrosApi } from '../services/simulacrosApi';
@@ -237,6 +238,7 @@ function HistorialRow({ item }) {
 export default function SimulacrosPage() {
   const navigate  = useNavigate();
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const { accesos, loading: loadingAccesos } = useUserAccesos();
 
   const [simulacrosProfesor, setSimulacrosProfesor] = useState([]);
@@ -252,10 +254,11 @@ export default function SimulacrosPage() {
   const [cerrandoId,     setCerrandoId    ] = useState(null);
 
   useEffect(() => {
+    const oposicionId = oposicionActiva?.id;
     Promise.all([
-      simulacrosApi.getPublicados(token).catch(() => []),
-      testApi.history(token, { limit: 50 }).catch(() => ({ items: [] })),
-      testApi.getPendientes(token).catch(() => []),
+      simulacrosApi.getPublicados(token, oposicionId).catch(() => []),
+      testApi.history(token, { limit: 50, ...(oposicionId ? { oposicion_id: oposicionId } : {}) }).catch(() => ({ items: [] })),
+      testApi.getPendientes(token, oposicionId).catch(() => []),
     ]).then(([sims, histResp, pendRes]) => {
       const lista = Array.isArray(sims) ? sims : (sims?.data ?? []);
       setSimulacrosProfesor(lista);
@@ -264,7 +267,7 @@ export default function SimulacrosPage() {
       const pend = Array.isArray(pendRes) ? pendRes : (pendRes?.data ?? []);
       setPendientesSim(pend.filter((t) => t.tipoTest === 'simulacro'));
     }).finally(() => { setLoadingData(false); setLoadingPend(false); });
-  }, [token, accesos]);
+  }, [token, accesos, oposicionActiva?.id]);
 
   const onContinuar = async (test) => {
     if (continuandoId) return;
