@@ -61,7 +61,7 @@ export default function BloquePage() {
   // Vista sin bloques: mostrar estadísticas directas del tema
   if (bloques.length === 0) {
     const pct = temaInfo?.porcentajeAcierto ?? 0;
-    const intentos = temaInfo?.intentos ?? 0;
+    const respondidas = temaInfo?.preguntasRespondidas ?? temaInfo?.totalRespondidas ?? temaInfo?.intentos ?? 0;
     const aciertos = temaInfo?.aciertos ?? 0;
     const errores = temaInfo?.errores ?? 0;
     const total = temaInfo?.totalPreguntas ?? 0;
@@ -78,7 +78,7 @@ export default function BloquePage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16 }}>
             {[
               { label: 'Preguntas', value: total, color: '#1d4ed8' },
-              { label: 'Intentos', value: intentos, color: '#6b7280' },
+              { label: 'Respondidas', value: `${respondidas}/${total}`, color: '#6b7280' },
               { label: 'Aciertos', value: aciertos, color: '#16a34a' },
               { label: 'Errores', value: errores, color: '#dc2626' },
               { label: '% Acierto', value: `${pct}%`, color: pct >= 70 ? '#16a34a' : pct >= 40 ? '#f59e0b' : '#dc2626' },
@@ -89,7 +89,7 @@ export default function BloquePage() {
               </div>
             ))}
           </div>
-          {intentos === 0 && (
+          {respondidas === 0 && (
             <p style={{ margin: '16px 0 0', fontSize: '0.82rem', color: '#9ca3af', textAlign: 'center' }}>
               Aún no has practicado este tema. ¡Empieza ahora!
             </p>
