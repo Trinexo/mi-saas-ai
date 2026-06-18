@@ -486,10 +486,10 @@ function RecomendadoParaTi() {
     testApi.getProgresoTemasReal(token, oposicionActiva.id)
       .then((data) => {
         const conActividad = (data || [])
-          .filter((t) => t.intentos > 0)
+          .filter((t) => (t.preguntasRespondidas ?? t.totalRespondidas ?? t.intentos ?? 0) > 0)
           .sort((a, b) => a.porcentajeAcierto - b.porcentajeAcierto);
         const sinActividad = (data || [])
-          .filter((t) => t.intentos === 0 && t.totalPreguntas > 0);
+          .filter((t) => (t.preguntasRespondidas ?? t.totalRespondidas ?? t.intentos ?? 0) === 0 && t.totalPreguntas > 0);
         setTemas([...conActividad, ...sinActividad].slice(0, 4));
       })
       .catch(() => setTemas([]))
@@ -559,13 +559,12 @@ function RecomendadoParaTi() {
       </div>
       <div className="temas-carousel">
         {temas.map((tema) => {
-          const pct          = tema.intentos > 0 ? tema.porcentajeAcierto : null;
-          const sinPracticar = tema.intentos === 0;
+          const respondidas  = tema.preguntasRespondidas ?? tema.totalRespondidas ?? tema.intentos ?? 0;
+          const totalTema    = tema.totalPreguntas ?? 0;
+          const pct          = respondidas > 0 ? tema.porcentajeAcierto : null;
+          const sinPracticar = respondidas === 0;
           const color        = sinPracticar ? '#2563eb' : pct < 50 ? '#dc2626' : pct < 70 ? O : '#16a34a';
           const bg           = sinPracticar ? '#eff6ff' : pct < 50 ? '#fef2f2' : pct < 70 ? OBG : '#f0fdf4';
-          const meta         = sinPracticar
-            ? 'Sin practicar aún'
-            : `${pct}% aciertos · ${tema.intentos} intentos`;
           const isGen        = generandoId === tema.temaId;
           return (
             <div key={tema.temaId} className="tema-card" style={{ ...CARD, padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -577,7 +576,14 @@ function RecomendadoParaTi() {
                 <div style={{ fontSize: '0.72rem', color: GL }}>{tema.totalPreguntas} preguntas disponibles</div>
               </div>
               {pct != null && <ProgressBar pct={pct} color={color} />}
-              <div style={{ fontSize: '0.7rem', fontWeight: 600, color }}>{meta}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color }}>
+                  {sinPracticar ? 'Sin practicar aún' : `Acierto: ${pct}%`}
+                </div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 600, color: GL }}>
+                  Progreso: {respondidas} / {totalTema} preguntas
+                </div>
+              </div>
               <button
                 disabled={!!generandoId}
                 onClick={() => onPracticar(tema)}
