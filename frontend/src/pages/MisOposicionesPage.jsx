@@ -36,7 +36,7 @@ function AccesoSinActividadCard({ nombre, fechaFin, onPracticar, onVerCatalogo }
         onClick={onPracticar}
         style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', flexShrink: 0 }}
       >
-        ▷ Empezar a practicar
+        Entrar al curso
       </button>
     </div>
   );
@@ -107,11 +107,6 @@ export default function MisOposicionesPage() {
     navigate(`/oposicion/${oposicionId}`);
   };
 
-  const irAConfigurarTest = (oposicionId, nombre) => {
-    activarOposicion(oposicionId, nombre);
-    navigate('/configurar-test', { state: { oposicionId } });
-  };
-
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
@@ -162,7 +157,7 @@ export default function MisOposicionesPage() {
                 <OposicionCard
                   op={c.stats}
                   onNavigate={(id) => irAOposicion(id, c.nombre)}
-                  onPracticar={(id) => irAConfigurarTest(id, c.nombre)}
+                  onPracticar={(id) => irAOposicion(id, c.nombre)}
                 />
               </div>
             ) : (
@@ -170,7 +165,7 @@ export default function MisOposicionesPage() {
                 key={c.oposicionId}
                 nombre={c.nombre}
                 fechaFin={c.fechaFin}
-                onPracticar={() => irAConfigurarTest(c.oposicionId, c.nombre)}
+                onPracticar={() => irAOposicion(c.oposicionId, c.nombre)}
               />
             )
           )}
@@ -203,7 +198,7 @@ export default function MisOposicionesPage() {
                   <OposicionCard
                     op={op}
                     onNavigate={(id) => irAOposicion(id, op.nombre)}
-                    onPracticar={(id) => irAConfigurarTest(id, op.nombre)}
+                    onPracticar={(id) => irAOposicion(id, op.nombre)}
                   />
                 </div>
               ))}
