@@ -7,9 +7,12 @@ export const simulacrosPublicosService = {
   /**
    * Devuelve los simulacros publicados para las oposiciones a las que el usuario tiene acceso.
    */
-  async getPublicados(userId) {
+  async getPublicados(userId, requestedOposicionId = null) {
     const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const oposicionIds = accesos.map((a) => a.oposicion_id);
+    const activeIds = accesos.map((a) => Number(a.oposicion_id));
+    const oposicionIds = requestedOposicionId
+      ? activeIds.filter((id) => id === Number(requestedOposicionId))
+      : activeIds;
     return simulacrosPublicosRepository.getPublicados(oposicionIds);
   },
 
