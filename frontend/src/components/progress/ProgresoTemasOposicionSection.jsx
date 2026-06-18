@@ -14,6 +14,8 @@ function PctBar({ pct }) {
   );
 }
 
+const getRespondidas = (tema) => tema.preguntasRespondidas ?? tema.totalRespondidas ?? tema.intentos ?? 0;
+
 export default function ProgresoTemasOposicionSection({ oposicionId }) {
   const { token } = useAuth();
   const [temas, setTemas] = useState(null);
@@ -52,10 +54,10 @@ export default function ProgresoTemasOposicionSection({ oposicionId }) {
   const temasSorted = [...temas].sort((a, b) => {
     if (orden === 'pct_asc') return a.porcentajeAcierto - b.porcentajeAcierto;
     if (orden === 'pct_desc') return b.porcentajeAcierto - a.porcentajeAcierto;
-    return b.intentos - a.intentos;
+    return getRespondidas(b) - getRespondidas(a);
   });
 
-  const practicados = temas.filter((t) => t.intentos > 0).length;
+  const practicados = temas.filter((t) => getRespondidas(t) > 0).length;
 
   return (
     <div>
@@ -64,7 +66,7 @@ export default function ProgresoTemasOposicionSection({ oposicionId }) {
         <span style={{ fontSize: 12, color: '#94a3b8' }}>{practicados}/{temas.length} temas practicados</span>
       </div>
       <p style={{ color: '#64748b', margin: '4px 0 12px', fontSize: 13 }}>
-        Porcentaje de acierto real por tema, calculado desde tus tests finalizados.
+        Porcentaje de acierto real y avance sobre las preguntas disponibles de cada tema.
       </p>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -75,36 +77,41 @@ export default function ProgresoTemasOposicionSection({ oposicionId }) {
         >
           <option value="pct_asc">Peor primero (a reforzar)</option>
           <option value="pct_desc">Mejor primero</option>
-          <option value="actividad">Más practicado</option>
+          <option value="actividad">Más avanzado</option>
         </select>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {temasSorted.map((t) => (
-          <div
-            key={t.temaId}
-            style={{
-              background: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: 10,
-              padding: '12px 16px',
-              opacity: t.intentos === 0 ? 0.5 : 1,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6, flexWrap: 'wrap', gap: 4 }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>{t.temaNombre}</span>
-              <div style={{ display: 'flex', gap: 10, fontSize: 12, color: '#64748b' }}>
-                <span>{t.intentos} intentos</span>
-                <span>{t.aciertos} ✓</span>
-                <span>{t.errores} ✗</span>
-                <span style={{ color: '#9ca3af' }}>{t.totalPreguntas} preguntas</span>
+        {temasSorted.map((t) => {
+          const respondidas = getRespondidas(t);
+          const total = t.totalPreguntas ?? 0;
+          const hasProgress = respondidas > 0;
+          return (
+            <div
+              key={t.temaId}
+              style={{
+                background: '#fff',
+                border: '1px solid #e5e7eb',
+                borderRadius: 10,
+                padding: '12px 16px',
+                opacity: hasProgress ? 1 : 0.5,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6, flexWrap: 'wrap', gap: 4 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>{t.temaNombre}</span>
+                <div style={{ display: 'flex', gap: 10, fontSize: 12, color: '#64748b', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <span>Acierto: {hasProgress ? `${t.porcentajeAcierto}%` : 'sin datos'}</span>
+                  <span>Progreso: {respondidas} / {total} preguntas</span>
+                  <span>{t.aciertos} correctas</span>
+                  <span>{t.errores} falladas</span>
+                </div>
               </div>
+              {hasProgress
+                ? <PctBar pct={t.porcentajeAcierto} />
+                : <div style={{ height: 7, borderRadius: 999, background: '#f1f5f9' }} />}
             </div>
-            {t.intentos > 0
-              ? <PctBar pct={t.porcentajeAcierto} />
-              : <div style={{ height: 7, borderRadius: 999, background: '#f1f5f9' }} />}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
