@@ -107,6 +107,11 @@ export default function MisOposicionesPage() {
     navigate(`/oposicion/${oposicionId}`);
   };
 
+  const irAHomeOposicion = (oposicionId, nombre) => {
+    activarOposicion(oposicionId, nombre);
+    navigate('/');
+  };
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
@@ -157,7 +162,7 @@ export default function MisOposicionesPage() {
                 <OposicionCard
                   op={c.stats}
                   onNavigate={(id) => irAOposicion(id, c.nombre)}
-                  onPracticar={(id) => irAOposicion(id, c.nombre)}
+                  onPracticar={(id) => irAHomeOposicion(id, c.nombre)}
                 />
               </div>
             ) : (
@@ -165,7 +170,7 @@ export default function MisOposicionesPage() {
                 key={c.oposicionId}
                 nombre={c.nombre}
                 fechaFin={c.fechaFin}
-                onPracticar={() => irAOposicion(c.oposicionId, c.nombre)}
+                onPracticar={() => irAHomeOposicion(c.oposicionId, c.nombre)}
               />
             )
           )}
@@ -198,7 +203,7 @@ export default function MisOposicionesPage() {
                   <OposicionCard
                     op={op}
                     onNavigate={(id) => irAOposicion(id, op.nombre)}
-                    onPracticar={(id) => irAOposicion(id, op.nombre)}
+                    onPracticar={(id) => irAHomeOposicion(id, op.nombre)}
                   />
                 </div>
               ))}
