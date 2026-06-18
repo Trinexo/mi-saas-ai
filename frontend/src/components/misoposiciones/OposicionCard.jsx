@@ -28,7 +28,7 @@ export default function OposicionCard({ op, onNavigate, onPracticar }) {
           onClick={(e) => { e.stopPropagation(); onPracticar(op.oposicionId); }}
           style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}
         >
-          Practicar
+          Entrar al curso
         </button>
       </div>
       <div style={{ marginBottom: 14 }}>
