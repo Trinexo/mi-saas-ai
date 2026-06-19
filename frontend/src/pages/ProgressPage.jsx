@@ -2,16 +2,11 @@
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import ResumenGlobalSection from '../components/progress/ResumenGlobalSection';
-import RachaObjetivoSection from '../components/progress/RachaObjetivoSection';
 import EvolucionSection from '../components/progress/EvolucionSection';
 import ProgresoTemasOposicionSection from '../components/progress/ProgresoTemasOposicionSection';
 import AnaliticasAvanzadasSection from '../components/progress/AnaliticasAvanzadasSection';
 import ResumenSemanaWidget from '../components/widgets/ResumenSemanaWidget';
-import TemasDebilesWidget from '../components/widgets/TemasDebilesWidget';
-import ConsistenciaDiariaWidget from '../components/widgets/ConsistenciaDiariaWidget';
 import TuNivelWidget from '../components/widgets/TuNivelWidget';
-
-const GRID2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 };
 
 function SectionLabel({ children }) {
   return (
@@ -55,13 +50,6 @@ export default function ProgressPage() {
 
       <SectionLabel>Temas</SectionLabel>
       <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} />
-      <TemasDebilesWidget oposicionId={oposicionActiva?.id} />
-
-      <SectionLabel>Hábitos</SectionLabel>
-      <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
-      <div style={GRID2}>
-        <ConsistenciaDiariaWidget oposicionId={oposicionActiva?.id} />
-      </div>
 
       <SectionLabel>Tu nivel</SectionLabel>
       <TuNivelWidget oposicionId={oposicionActiva?.id} />
