@@ -8,7 +8,6 @@ export const testApi = {
   getContinuar: (token, oposicionId) => apiRequest('/tests/continuar', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getPendientes: (token, oposicionId) => apiRequest('/tests/pendientes', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   cerrar: (token, testId) => apiRequest(`/tests/${testId}/cerrar`, { method: 'POST', token }),
-  getConsistenciaDiaria: (token, oposicionId) => apiRequest('/stats/consistencia-diaria', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getFocoHoy: (token) => apiRequest('/stats/foco-hoy', { token }),
   getResumenSemana: (token, oposicionId) => apiRequest('/stats/resumen-semana', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getActividad14Dias: (token, oposicionId) => apiRequest('/stats/actividad-14dias', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),

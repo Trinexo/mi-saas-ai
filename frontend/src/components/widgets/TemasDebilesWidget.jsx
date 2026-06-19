@@ -26,7 +26,7 @@ export default function TemasDebilesWidget({ oposicionId }) {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { hasAccess } = useUserPlan();
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
   const [hov, setHov] = useState(false);
 
   useEffect(() => {
@@ -41,8 +41,10 @@ export default function TemasDebilesWidget({ oposicionId }) {
     navigate('/configurar-test', { state: { oposicionId: top.oposicionId, temaId: top.temaId, bloqueId: top.bloqueId } });
   };
 
-  const top = data[0];
+  const top = data?.[0];
   const pct = top ? Number(top.porcentajeAcierto) : null;
+
+  if (!top) return null;
 
   return (
     <div style={{
@@ -61,52 +63,44 @@ export default function TemasDebilesWidget({ oposicionId }) {
         Tema a reforzar
       </div>
 
-      {top ? (
-        <>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', lineHeight: 1.3, marginBottom: 8, maxWidth: 500 }}>
-            {top.bloqueNombre}
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.temaNombre}</span>
-            <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.oposicionNombre}</span>
-            <span style={{
-              background: pct < 50 ? 'rgba(220,38,38,.2)' : 'rgba(234,88,12,.18)',
-              color:      pct < 50 ? '#fca5a5' : OL,
-              padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700,
-            }}>
-              {pct}% acierto - {top.aciertos}A / {top.errores}E
-            </span>
-          </div>
-          <button
-            disabled={!top?.bloqueId}
-            onClick={onRefuerzo}
-            onMouseEnter={() => setHov(true)}
-            onMouseLeave={() => setHov(false)}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background:   hov ? '#c2410c' : O,
-              color:        '#fff',
-              border:       'none',
-              borderRadius: 10,
-              padding:      '10px 22px',
-              fontWeight:   800,
-              fontSize:     '0.88rem',
-              cursor:       top?.bloqueId ? 'pointer' : 'not-allowed',
-              boxShadow:    `0 4px 14px ${O}40`,
-              transition:   'all .15s',
-            }}
-          >
-            <IconPlay /> Practicar este tema
-          </button>
-          {!hasAccess('pro') && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.72rem', color: '#6b7280', marginTop: 10 }}>
-              <IconLock /> Modo refuerzo automatico requiere Pro
-            </div>
-          )}
-        </>
-      ) : (
-        <div style={{ fontSize: '0.95rem', color: '#6b7280', marginTop: 4 }}>
-          Aun no hay datos suficientes para identificar un tema debil.
+      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', lineHeight: 1.3, marginBottom: 8, maxWidth: 500 }}>
+        {top.bloqueNombre}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.temaNombre}</span>
+        <span style={{ background: 'rgba(255,255,255,.08)', color: '#d1d5db', padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600 }}>{top.oposicionNombre}</span>
+        <span style={{
+          background: pct < 50 ? 'rgba(220,38,38,.2)' : 'rgba(234,88,12,.18)',
+          color:      pct < 50 ? '#fca5a5' : OL,
+          padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700,
+        }}>
+          {pct}% acierto - {top.aciertos}A / {top.errores}E
+        </span>
+      </div>
+      <button
+        disabled={!top?.bloqueId}
+        onClick={onRefuerzo}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background:   hov ? '#c2410c' : O,
+          color:        '#fff',
+          border:       'none',
+          borderRadius: 10,
+          padding:      '10px 22px',
+          fontWeight:   800,
+          fontSize:     '0.88rem',
+          cursor:       top?.bloqueId ? 'pointer' : 'not-allowed',
+          boxShadow:    `0 4px 14px ${O}40`,
+          transition:   'all .15s',
+        }}
+      >
+        <IconPlay /> Practicar este tema
+      </button>
+      {!hasAccess('pro') && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.72rem', color: '#6b7280', marginTop: 10 }}>
+          <IconLock /> Modo refuerzo automatico requiere Pro
         </div>
       )}
     </div>

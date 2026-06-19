@@ -147,29 +147,56 @@ export const widgetEngagementFocoSesionRepository = {
          SELECT COALESCE(objetivo_diario_preguntas, 10)::int AS valor
          FROM usuarios WHERE id = $1
        ),
-       respondidas AS (
-         SELECT COUNT(*)::int AS valor
-         FROM respuestas_usuario ru
-         JOIN tests t ON t.id = ru.test_id
-         WHERE t.usuario_id = $1
+       actividad AS (
+         SELECT
+           gs::date AS dia,
+           COUNT(t.id)::int AS respondidas
+         FROM generate_series(CURRENT_DATE - INTERVAL '59 days', CURRENT_DATE, INTERVAL '1 day') gs
+         LEFT JOIN respuestas_usuario ru ON ru.fecha_respuesta::date = gs::date
+         LEFT JOIN tests t ON t.id = ru.test_id
+           AND t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
-           AND ru.fecha_respuesta::date = CURRENT_DATE
+         GROUP BY gs::date
+         ORDER BY gs::date DESC
        )
        SELECT
          (SELECT valor FROM objetivo) AS objetivo_preguntas_dia,
-         (SELECT valor FROM respondidas) AS preguntas_respondidas_hoy`,
+         a.dia::text,
+         a.respondidas
+       FROM actividad a`,
       [userId, oposicionId],
     );
 
-    const objetivoPreguntasDia = Number(result.rows[0]?.objetivo_preguntas_dia ?? 30);
-    const preguntasRespondidasHoy = Number(result.rows[0]?.preguntas_respondidas_hoy ?? 0);
+    const objetivoPreguntasDia = Math.max(1, Number(result.rows[0]?.objetivo_preguntas_dia ?? 30));
+    const actividad = result.rows.map((row) => ({
+      dia: row.dia,
+      respondidas: Number(row.respondidas ?? 0),
+      cumplido: Number(row.respondidas ?? 0) >= objetivoPreguntasDia,
+    }));
+    const preguntasRespondidasHoy = actividad[0]?.respondidas ?? 0;
     const porcentajeCumplido = Math.min(100, Math.round((preguntasRespondidasHoy / objetivoPreguntasDia) * 100));
+    const inicioSemana = new Date();
+    inicioSemana.setHours(0, 0, 0, 0);
+    inicioSemana.setDate(inicioSemana.getDate() - ((inicioSemana.getDay() + 6) % 7));
+
+    const diasCumplidosSemana = actividad.filter((dia) => {
+      const fecha = new Date(`${dia.dia}T00:00:00`);
+      return fecha >= inicioSemana && dia.cumplido;
+    }).length;
+
+    let rachaObjetivos = 0;
+    for (const dia of actividad) {
+      if (!dia.cumplido) break;
+      rachaObjetivos += 1;
+    }
 
     return {
       objetivoPreguntasDia,
       preguntasRespondidasHoy,
       porcentajeCumplido,
       cumplido: preguntasRespondidasHoy >= objetivoPreguntasDia,
+      diasCumplidosSemana,
+      rachaObjetivos,
     };
   },
 };
