@@ -56,8 +56,11 @@ export default function RachaObjetivoSection({ oposicionId }) {
         <div style={{ ...CARD, padding: '14px 14px 12px' }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Racha de estudio</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ background: OBG, borderRadius: 12, padding: '10px 12px', textAlign: 'center', minWidth: 58 }}>
-              <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#f59e0b', lineHeight: 1 }}>{rachaData.rachaActual}</div>
+            <div style={{ background: OBG, borderRadius: 12, padding: '10px 12px', textAlign: 'center', minWidth: 74 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: '1.75rem', fontWeight: 900, color: '#f59e0b', lineHeight: 1 }}>
+                <span aria-hidden="true" style={{ fontSize: '1.25rem' }}>🔥</span>
+                <span>{rachaData.rachaActual}</span>
+              </div>
               <div style={{ fontSize: '0.62rem', color: GL, marginTop: 2 }}>días</div>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
