@@ -7,12 +7,8 @@ import EvolucionSection from '../components/progress/EvolucionSection';
 import ProgresoTemasOposicionSection from '../components/progress/ProgresoTemasOposicionSection';
 import AnaliticasAvanzadasSection from '../components/progress/AnaliticasAvanzadasSection';
 import ResumenSemanaWidget from '../components/widgets/ResumenSemanaWidget';
-import ProgresoSemanalWidget from '../components/widgets/ProgresoSemanalWidget';
-import Actividad14Widget from '../components/widgets/Actividad14Widget';
 import TemasDebilesWidget from '../components/widgets/TemasDebilesWidget';
 import RendimientoModosWidget from '../components/widgets/RendimientoModosWidget';
-import InsightMensualWidget from '../components/widgets/InsightMensualWidget';
-import EficienciaWidget from '../components/widgets/EficienciaWidget';
 import ConsistenciaDiariaWidget from '../components/widgets/ConsistenciaDiariaWidget';
 import TuNivelWidget from '../components/widgets/TuNivelWidget';
 
@@ -51,31 +47,23 @@ export default function ProgressPage() {
 
       <SectionLabel>Resumen global</SectionLabel>
       <ResumenGlobalSection oposicionId={oposicionActiva?.id} />
-      <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Esta semana</SectionLabel>
-      <div style={GRID2}>
-        <ResumenSemanaWidget oposicionId={oposicionActiva?.id} />
-        <ProgresoSemanalWidget oposicionId={oposicionActiva?.id} />
-      </div>
-      <Actividad14Widget oposicionId={oposicionActiva?.id} />
+      <ResumenSemanaWidget oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Evolución</SectionLabel>
       <EvolucionSection oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Temas</SectionLabel>
       <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} />
+      <TemasDebilesWidget oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Análisis de rendimiento</SectionLabel>
-      <TemasDebilesWidget oposicionId={oposicionActiva?.id} />
-      <div style={GRID2}>
-        <RendimientoModosWidget oposicionId={oposicionActiva?.id} />
-        <InsightMensualWidget oposicionId={oposicionActiva?.id} />
-      </div>
+      <RendimientoModosWidget oposicionId={oposicionActiva?.id} />
 
-      <SectionLabel>Estadísticas detalladas</SectionLabel>
+      <SectionLabel>Hábitos</SectionLabel>
+      <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
       <div style={GRID2}>
-        <EficienciaWidget oposicionId={oposicionActiva?.id} />
         <ConsistenciaDiariaWidget oposicionId={oposicionActiva?.id} />
       </div>
 
