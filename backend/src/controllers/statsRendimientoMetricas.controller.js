@@ -48,15 +48,6 @@ export const getProgresoSemanal = async (req, res, next) => {
   }
 };
 
-export const getRendimientoModos = async (req, res, next) => {
-  try {
-    const data = await statsService.getRendimientoModos(req.user.userId, getOposicionId(req));
-    return ok(res, data);
-  } catch (error) {
-    return next(error);
-  }
-};
-
 export const getInsightMensual = async (req, res, next) => {
   try {
     const data = await statsService.getInsightMensual(req.user.userId, getOposicionId(req));

@@ -36,34 +36,6 @@ export const widgetRendimientoMetricasPrecisionRepository = {
     };
   },
 
-  async getRendimientoModos(userId, oposicionId = null) {
-    const result = await pool.query(
-      `SELECT
-         t.tipo_test AS modo,
-         COUNT(*)::int AS tests,
-         COALESCE(ROUND(AVG(rt.nota), 2), 0) AS nota_media,
-         COALESCE(SUM(rt.aciertos), 0)::int AS aciertos_totales,
-         COALESCE(SUM(rt.errores), 0)::int AS errores_totales
-       FROM tests t
-       JOIN resultados_test rt ON rt.test_id = t.id
-       WHERE t.usuario_id = $1
-         AND ($2::bigint IS NULL OR t.oposicion_id = $2)
-         AND t.estado = 'finalizado'
-         AND rt.fecha >= NOW() - INTERVAL '30 days'
-       GROUP BY t.tipo_test
-       ORDER BY nota_media DESC, tests DESC`,
-      [userId, oposicionId],
-    );
-
-    return result.rows.map((row) => ({
-      modo: row.modo,
-      tests: Number(row.tests ?? 0),
-      notaMedia: Number(row.nota_media ?? 0),
-      aciertosTotales: Number(row.aciertos_totales ?? 0),
-      erroresTotales: Number(row.errores_totales ?? 0),
-    }));
-  },
-
   async getInsightMensual(userId, oposicionId = null) {
     const result = await pool.query(
       `WITH ultimos30 AS (

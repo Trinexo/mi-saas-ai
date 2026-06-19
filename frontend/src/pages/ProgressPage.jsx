@@ -8,7 +8,6 @@ import ProgresoTemasOposicionSection from '../components/progress/ProgresoTemasO
 import AnaliticasAvanzadasSection from '../components/progress/AnaliticasAvanzadasSection';
 import ResumenSemanaWidget from '../components/widgets/ResumenSemanaWidget';
 import TemasDebilesWidget from '../components/widgets/TemasDebilesWidget';
-import RendimientoModosWidget from '../components/widgets/RendimientoModosWidget';
 import ConsistenciaDiariaWidget from '../components/widgets/ConsistenciaDiariaWidget';
 import TuNivelWidget from '../components/widgets/TuNivelWidget';
 
@@ -57,9 +56,6 @@ export default function ProgressPage() {
       <SectionLabel>Temas</SectionLabel>
       <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} />
       <TemasDebilesWidget oposicionId={oposicionActiva?.id} />
-
-      <SectionLabel>Análisis de rendimiento</SectionLabel>
-      <RendimientoModosWidget oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Hábitos</SectionLabel>
       <RachaObjetivoSection oposicionId={oposicionActiva?.id} />

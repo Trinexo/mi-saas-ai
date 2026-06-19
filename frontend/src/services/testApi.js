@@ -16,7 +16,6 @@ export const testApi = {
   getProgresoTemas: (token, oposicionId) => apiRequest('/stats/progreso-temas', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getProgresoTemasReal: (token, oposicionId) => apiRequest('/stats/progreso-temas-real', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getInsightMensual: (token, oposicionId) => apiRequest('/stats/insight-mensual', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
-  getRendimientoModos: (token, oposicionId) => apiRequest('/stats/rendimiento-modos', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getProgresoSemanal: (token, oposicionId) => apiRequest('/stats/progreso-semanal', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getEficienciaTiempo: (token, oposicionId) => apiRequest('/stats/eficiencia-tiempo', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getRitmoPregunta: (token, oposicionId) => apiRequest('/stats/ritmo-pregunta', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),

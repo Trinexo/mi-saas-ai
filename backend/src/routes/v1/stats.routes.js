@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { getDashboard, getUserStats, getBloqueStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaBloques, getResumenOposicion, getProgresoBloques, getProgresoBloquesByTema, getDetalleBloque, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getProgresoTemasReal, getInsightMensual, getRendimientoModos, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
+import { getDashboard, getUserStats, getBloqueStats, getRepasoStats, getSimulacrosStats, getEvolucion, getRacha, getRachaBloques, getResumenOposicion, getProgresoBloques, getProgresoBloquesByTema, getDetalleBloque, getMisOposiciones, getObjetivoDiario, getGamificacion, getFocoHoy, getResumenSemana, getActividad14Dias, getTemasDebiles, getProgresoTemas, getProgresoTemasReal, getInsightMensual, getProgresoSemanal, getEficienciaTiempo, getBalancePrecision, getRitmoPregunta, getConsistenciaDiaria } from '../../controllers/stats.controller.js';
 import { getRanking, getProgresoTemaReal } from '../../controllers/statsProgresoTema.controller.js';
 import { bloqueStatsQuerySchema, repasoStatsQuerySchema, simulacrosStatsQuerySchema, evolucionQuerySchema } from '../../schemas/stats.schema.js';
 
@@ -13,7 +13,6 @@ router.get('/ritmo-pregunta', requireAuth, getRitmoPregunta);
 router.get('/balance-precision', requireAuth, getBalancePrecision);
 router.get('/eficiencia-tiempo', requireAuth, getEficienciaTiempo);
 router.get('/progreso-semanal', requireAuth, getProgresoSemanal);
-router.get('/rendimiento-modos', requireAuth, getRendimientoModos);
 router.get('/insight-mensual', requireAuth, getInsightMensual);
 router.get('/temas-debiles', requireAuth, getTemasDebiles);
 router.get('/progreso-temas', requireAuth, getProgresoTemas);
