@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../state/auth.jsx';
 import { testApi } from '../../services/testApi';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 const BD = '#e5e7eb';
 const DK = '#111827';
@@ -27,6 +28,7 @@ function MiniMetric({ value, label, color = DK }) {
 
 export default function RachaObjetivoSection({ oposicionId }) {
   const { token } = useAuth();
+  const { isTablet } = useBreakpoint();
   const [rachaData, setRachaData] = useState(null);
   const [objetivoData, setObjetivoData] = useState(null);
 
@@ -46,9 +48,10 @@ export default function RachaObjetivoSection({ oposicionId }) {
   const objetivo = Number(objetivoData?.objetivoPreguntasDia ?? 0);
   const respondidas = Number(objetivoData?.preguntasRespondidasHoy ?? 0);
   const porcentaje = Number(objetivoData?.porcentajeCumplido ?? 0);
+  const showTwoColumns = !isTablet && rachaData && objetivoData;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: showTwoColumns ? 'minmax(240px, 0.72fr) minmax(420px, 1.28fr)' : '1fr', gap: 16, alignItems: 'start' }}>
       {rachaData && (
         <div style={{ ...CARD, padding: '14px 14px 12px' }}>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: GL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Racha de estudio</div>
