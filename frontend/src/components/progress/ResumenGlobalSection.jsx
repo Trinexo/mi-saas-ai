@@ -4,7 +4,6 @@ import { testApi } from '../../services/testApi';
 import { getErrorMessage } from '../../services/api';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
-import RachaObjetivoSection from './RachaObjetivoSection';
 
 /* ── Paleta ────────────────────────────────────────── */
 const O   = '#ea580c';
@@ -151,9 +150,6 @@ export default function ResumenGlobalSection({ oposicionId }) {
         </div>
       )}
 
-      <div style={{ flex: isMobile ? '1 1 100%' : '0 1 340px', minWidth: isMobile ? 280 : 300 }}>
-        <RachaObjetivoSection oposicionId={oposicionId} />
-      </div>
     </div>
   );
 }
