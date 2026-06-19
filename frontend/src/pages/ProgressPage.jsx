@@ -2,6 +2,7 @@
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import ResumenGlobalSection from '../components/progress/ResumenGlobalSection';
+import RachaObjetivoSection from '../components/progress/RachaObjetivoSection';
 import EvolucionSection from '../components/progress/EvolucionSection';
 import ProgresoTemasOposicionSection from '../components/progress/ProgresoTemasOposicionSection';
 import AnaliticasAvanzadasSection from '../components/progress/AnaliticasAvanzadasSection';
@@ -41,6 +42,9 @@ export default function ProgressPage() {
 
       <SectionLabel>Resumen global</SectionLabel>
       <ResumenGlobalSection oposicionId={oposicionActiva?.id} />
+      <div style={{ marginTop: 16 }}>
+        <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
+      </div>
 
       <SectionLabel>Esta semana</SectionLabel>
       <ResumenSemanaWidget oposicionId={oposicionActiva?.id} />
