@@ -17,15 +17,6 @@ const CARD = {
   boxShadow: '0 1px 4px rgba(0,0,0,.06)',
 };
 
-function MiniMetric({ value, label, color = DK }) {
-  return (
-    <div style={{ background: OBG, borderRadius: 10, padding: '8px 6px', textAlign: 'center' }}>
-      <div style={{ fontSize: '1rem', fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: '0.62rem', color: GL, marginTop: 1 }}>{label}</div>
-    </div>
-  );
-}
-
 export default function RachaObjetivoSection({ oposicionId }) {
   const { token } = useAuth();
   const { isTablet } = useBreakpoint();
@@ -93,10 +84,7 @@ export default function RachaObjetivoSection({ oposicionId }) {
           <div style={{ marginBottom: 8, fontSize: '0.76rem', color: objetivoData.cumplido ? '#16a34a' : G }}>
             {objetivoData.cumplido ? 'Objetivo completado hoy' : `${porcentaje}% completado`}
           </div>
-          <p style={{ margin: '0 0 10px', fontSize: '0.68rem', lineHeight: 1.35, color: GL }}>
-            Días en los que ya has alcanzado tu objetivo diario.
-          </p>
-          <div style={{ height: 8, borderRadius: 999, background: BD, overflow: 'hidden', marginBottom: 10 }}>
+          <div style={{ height: 8, borderRadius: 999, background: BD, overflow: 'hidden' }}>
             <div style={{
               width: `${Math.min(porcentaje, 100)}%`,
               height: '100%',
@@ -104,11 +92,6 @@ export default function RachaObjetivoSection({ oposicionId }) {
               borderRadius: 999,
               transition: 'width .4s',
             }} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
-            <MiniMetric value={respondidas} label="Hoy" />
-            <MiniMetric value={objetivoData.diasCumplidosSemana ?? 0} label="Días cumplidos" />
-            <MiniMetric value={objetivoData.rachaObjetivos ?? 0} label="Racha cumplida" color={objetivoData.rachaObjetivos > 0 ? '#16a34a' : DK} />
           </div>
         </div>
       )}
