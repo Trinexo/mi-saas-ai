@@ -8,8 +8,4 @@ export const statsWidgetRendimientoEficienciaService = {
   async getEficienciaTiempo(userId, oposicionId = null) {
     return widgetStatsRepository.getEficienciaTiempo(userId, oposicionId);
   },
-
-  async getRendimientoModos(userId, oposicionId = null) {
-    return widgetStatsRepository.getRendimientoModos(userId, oposicionId);
-  },
 };
