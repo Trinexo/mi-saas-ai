@@ -2,7 +2,7 @@
 
 **Fecha de apertura:** 23 de junio de 2026  
 **Tipo:** Producto / Backend / Frontend / Arquitectura de aprendizaje  
-**Estado:** Planificado
+**Estado:** En desarrollo
 
 ---
 
@@ -414,9 +414,8 @@ Debe mostrar:
 
 ## Backlog por PR
 
-### PR A - Documento y migraciones base
+### PR A - Migraciones base
 
-- Crear este documento de sprint.
 - Crear migracion base Albacer:
   - columnas en `accesos_oposicion`;
   - columnas en `tests`;
@@ -425,6 +424,7 @@ Debe mostrar:
   - tablas `albacer_modulos`, `albacer_modulo_temas`, `albacer_modulo_items`, `albacer_modulo_progreso`.
 - Crear indices por oposicion, modulo, modo y scope.
 - Actualizar `database/schema.sql`.
+- Estado: implementado en `database/migrations/037_albacer_mode_base.sql`.
 
 ### PR B - Acceso, modo activo y tipo de alumno
 

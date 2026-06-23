@@ -77,6 +77,11 @@ CREATE TABLE IF NOT EXISTS tests (
   tema_id BIGINT REFERENCES temas(id),
   bloque_id BIGINT REFERENCES bloques(id),
   oposicion_id BIGINT REFERENCES oposiciones(id),
+  modo_preparacion TEXT NOT NULL DEFAULT 'experto'
+    CHECK (modo_preparacion IN ('experto', 'albacer')),
+  albacer_modulo_id BIGINT,
+  albacer_item_id BIGINT,
+  scoring_snapshot JSONB,
   tipo_test TEXT NOT NULL,
   numero_preguntas INTEGER NOT NULL,
   duracion_segundos INTEGER,
@@ -122,6 +127,10 @@ CREATE TABLE IF NOT EXISTS accesos_oposicion (
   fecha_fin TIMESTAMP,
   precio_pagado NUMERIC(8,2),
   notas TEXT,
+  tipo_alumno TEXT NOT NULL DEFAULT 'libre'
+    CHECK (tipo_alumno IN ('libre', 'albacer')),
+  modo_preparacion TEXT NOT NULL DEFAULT 'albacer'
+    CHECK (modo_preparacion IN ('experto', 'albacer')),
   creada_en TIMESTAMP NOT NULL DEFAULT NOW(),
   actualizada_en TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE(usuario_id, oposicion_id)
@@ -275,6 +284,12 @@ CREATE TABLE IF NOT EXISTS simulacros (
   tiempo_limite_segundos      INTEGER,
   puntuacion_maxima           NUMERIC(6,2) NOT NULL DEFAULT 100,
   penalizacion                NUMERIC(4,2) NOT NULL DEFAULT 0,
+  scope                       TEXT NOT NULL DEFAULT 'experto'
+                                CHECK (scope IN ('experto', 'albacer_modulo_final', 'sugerido_profesor')),
+  albacer_modulo_id           BIGINT,
+  criterio_superacion         TEXT NOT NULL DEFAULT 'nota'
+                                CHECK (criterio_superacion IN ('nota', 'porcentaje')),
+  valor_superacion            NUMERIC(6,2),
   mostrar_resultados_al_final BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_publicacion           TIMESTAMPTZ,
   creado_por                  BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
@@ -324,6 +339,9 @@ CREATE TABLE IF NOT EXISTS admin_tests (
   pts_acierto           NUMERIC(5,2) NOT NULL DEFAULT 1.00,
   pts_fallo             NUMERIC(5,2) NOT NULL DEFAULT -0.25,
   pts_blanco            NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  scope                 TEXT NOT NULL DEFAULT 'experto'
+                          CHECK (scope IN ('experto', 'albacer_modulo', 'sugerido_profesor')),
+  albacer_modulo_id     BIGINT,
   creado_por            BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
   es_demo               BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -340,12 +358,142 @@ CREATE TABLE IF NOT EXISTS admin_tests_preguntas (
   PRIMARY KEY (test_id, pregunta_id)
 );
 
+CREATE TABLE IF NOT EXISTS admin_tests_temas (
+  test_id BIGINT NOT NULL REFERENCES admin_tests(id) ON DELETE CASCADE,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  PRIMARY KEY (test_id, tema_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_admin_tests_oposicion ON admin_tests(oposicion_id);
 CREATE INDEX IF NOT EXISTS idx_admin_tests_tema ON admin_tests(tema_id);
 CREATE INDEX IF NOT EXISTS idx_admin_tests_estado ON admin_tests(estado);
 CREATE INDEX IF NOT EXISTS idx_admin_tests_creado_por ON admin_tests(creado_por);
 CREATE INDEX IF NOT EXISTS idx_admin_tests_preg_test ON admin_tests_preguntas(test_id);
 CREATE INDEX IF NOT EXISTS idx_admin_tests_preg_preg ON admin_tests_preguntas(pregunta_id);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_temas_test_id ON admin_tests_temas(test_id);
+CREATE INDEX IF NOT EXISTS idx_admin_tests_temas_tema_id ON admin_tests_temas(tema_id);
+
+-- Modo Albacer (migracion 037)
+CREATE TABLE IF NOT EXISTS albacer_modulos (
+  id BIGSERIAL PRIMARY KEY,
+  oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  orden INT NOT NULL DEFAULT 0,
+  estado TEXT NOT NULL DEFAULT 'borrador'
+    CHECK (estado IN ('borrador', 'publicado', 'archivado')),
+  creado_por BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  creado_por_rol TEXT NOT NULL DEFAULT 'profesor',
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS albacer_modulo_temas (
+  modulo_id BIGINT NOT NULL REFERENCES albacer_modulos(id) ON DELETE CASCADE,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  PRIMARY KEY (modulo_id, tema_id)
+);
+
+CREATE TABLE IF NOT EXISTS albacer_modulo_items (
+  id BIGSERIAL PRIMARY KEY,
+  modulo_id BIGINT NOT NULL REFERENCES albacer_modulos(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL CHECK (tipo IN ('test', 'simulacro_final')),
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  plantilla_test_id BIGINT REFERENCES admin_tests(id) ON DELETE SET NULL,
+  simulacro_id BIGINT REFERENCES simulacros(id) ON DELETE SET NULL,
+  orden INT NOT NULL DEFAULT 0,
+  obligatorio BOOLEAN NOT NULL DEFAULT FALSE,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS albacer_modulo_progreso (
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  modulo_id BIGINT NOT NULL REFERENCES albacer_modulos(id) ON DELETE CASCADE,
+  estado TEXT NOT NULL DEFAULT 'disponible'
+    CHECK (estado IN ('bloqueado', 'disponible', 'superado')),
+  mejor_nota NUMERIC(5,2),
+  mejor_porcentaje NUMERIC(5,2),
+  test_id_mejor_intento BIGINT REFERENCES tests(id) ON DELETE SET NULL,
+  superado_en TIMESTAMPTZ,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (usuario_id, modulo_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_tipo_modo
+  ON accesos_oposicion(oposicion_id, tipo_alumno, modo_preparacion);
+CREATE INDEX IF NOT EXISTS idx_albacer_modulos_oposicion_orden
+  ON albacer_modulos(oposicion_id, orden, id);
+CREATE INDEX IF NOT EXISTS idx_albacer_modulos_estado ON albacer_modulos(estado);
+CREATE INDEX IF NOT EXISTS idx_albacer_modulo_temas_tema ON albacer_modulo_temas(tema_id);
+CREATE INDEX IF NOT EXISTS idx_albacer_modulo_items_modulo_orden
+  ON albacer_modulo_items(modulo_id, orden, id);
+CREATE INDEX IF NOT EXISTS idx_albacer_modulo_items_test
+  ON albacer_modulo_items(plantilla_test_id)
+  WHERE plantilla_test_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_albacer_modulo_items_simulacro
+  ON albacer_modulo_items(simulacro_id)
+  WHERE simulacro_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_albacer_modulo_progreso_modulo_estado
+  ON albacer_modulo_progreso(modulo_id, estado);
+CREATE INDEX IF NOT EXISTS idx_tests_modo_oposicion_fecha
+  ON tests(modo_preparacion, oposicion_id, fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS idx_tests_albacer_modulo_usuario
+  ON tests(albacer_modulo_id, usuario_id, fecha_creacion DESC)
+  WHERE albacer_modulo_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tests_albacer_item_usuario
+  ON tests(albacer_item_id, usuario_id, fecha_creacion DESC)
+  WHERE albacer_item_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_admin_tests_scope_modulo
+  ON admin_tests(scope, albacer_modulo_id)
+  WHERE albacer_modulo_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_simulacros_scope_modulo
+  ON simulacros(scope, albacer_modulo_id)
+  WHERE albacer_modulo_id IS NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_tests_albacer_modulo'
+  ) THEN
+    ALTER TABLE tests
+      ADD CONSTRAINT fk_tests_albacer_modulo
+      FOREIGN KEY (albacer_modulo_id)
+      REFERENCES albacer_modulos(id)
+      ON DELETE SET NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_tests_albacer_item'
+  ) THEN
+    ALTER TABLE tests
+      ADD CONSTRAINT fk_tests_albacer_item
+      FOREIGN KEY (albacer_item_id)
+      REFERENCES albacer_modulo_items(id)
+      ON DELETE SET NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_admin_tests_albacer_modulo'
+  ) THEN
+    ALTER TABLE admin_tests
+      ADD CONSTRAINT fk_admin_tests_albacer_modulo
+      FOREIGN KEY (albacer_modulo_id)
+      REFERENCES albacer_modulos(id)
+      ON DELETE SET NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_simulacros_albacer_modulo'
+  ) THEN
+    ALTER TABLE simulacros
+      ADD CONSTRAINT fk_simulacros_albacer_modulo
+      FOREIGN KEY (albacer_modulo_id)
+      REFERENCES albacer_modulos(id)
+      ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ─── Planificaciones academicas (migracion 026) ─────────────────────────────
 CREATE TABLE IF NOT EXISTS planificaciones_academicas (
