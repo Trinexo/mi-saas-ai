@@ -442,6 +442,7 @@ Debe mostrar:
 - Mantener `Ranking` solo en Modo Experto.
 - Crear guardas frontend para rutas no disponibles por modo.
 - Preparar home con switch `HomeExperto` / `HomeAlbacer`.
+- Estado: implementado parcialmente. Navegacion y rutas quedan protegidas por modo; la home oculta accesos libres en Albacer hasta crear la Home Albacer completa del PR G.
 
 ### PR D - CRUD modulos Albacer profesor/admin
 
