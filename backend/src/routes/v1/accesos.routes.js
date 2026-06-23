@@ -3,6 +3,8 @@ import { requireAuth, requireRole } from '../../middleware/auth.middleware.js';
 import {
   getMisAccesos,
   checkAcceso,
+  getPreparacionAcceso,
+  updatePreparacionAcceso,
   listAccesos,
   asignarAcceso,
   cancelarAcceso,
@@ -15,6 +17,8 @@ const router = Router();
 // --- Rutas de usuario autenticado ---
 router.get('/mis-oposiciones', requireAuth, getMisAccesos);
 router.get('/check/:oposicionId', requireAuth, checkAcceso);
+router.get('/oposicion/:oposicionId/preparacion', requireAuth, getPreparacionAcceso);
+router.patch('/oposicion/:oposicionId/preparacion', requireAuth, updatePreparacionAcceso);
 
 // --- Rutas admin ---
 router.get('/', requireAuth, requireRole('admin'), listAccesos);

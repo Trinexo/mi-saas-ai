@@ -3,6 +3,14 @@ import { apiRequest } from './api';
 export const accesosApi = {
   getMisOposiciones: (token) => apiRequest('/accesos/mis-oposiciones', { token }),
   checkAcceso: (token, oposicionId) => apiRequest(`/accesos/check/${oposicionId}`, { token }),
+  getPreparacion: (token, oposicionId) =>
+    apiRequest(`/accesos/oposicion/${oposicionId}/preparacion`, { token }),
+  updatePreparacion: (token, oposicionId, payload) =>
+    apiRequest(`/accesos/oposicion/${oposicionId}/preparacion`, {
+      method: 'PATCH',
+      body: payload,
+      token,
+    }),
   // Admin
   listAccesos: (token, query = {}) => apiRequest('/accesos', { token, query }),
   getStats: (token) => apiRequest('/accesos/stats', { token }),

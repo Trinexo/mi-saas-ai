@@ -6,7 +6,8 @@ export const accesoOposicionRepository = {
    */
   async getAccesosActivos(userId) {
     const result = await pool.query(
-      `SELECT a.oposicion_id, o.nombre, a.fecha_fin
+      `SELECT a.oposicion_id, o.nombre, a.fecha_fin,
+              a.tipo_alumno, a.modo_preparacion
        FROM accesos_oposicion a
        JOIN oposiciones o ON o.id = a.oposicion_id
        WHERE a.usuario_id = $1
@@ -16,6 +17,37 @@ export const accesoOposicionRepository = {
       [userId],
     );
     return result.rows;
+  },
+
+  async getPreparacion(userId, oposicionId) {
+    const result = await pool.query(
+      `SELECT ao.usuario_id, ao.oposicion_id, o.nombre,
+              ao.tipo_alumno, ao.modo_preparacion
+       FROM accesos_oposicion ao
+       JOIN oposiciones o ON o.id = ao.oposicion_id
+       WHERE ao.usuario_id = $1
+         AND ao.oposicion_id = $2
+         AND ao.estado = 'activo'
+         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
+       LIMIT 1`,
+      [userId, oposicionId],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async updateModoPreparacion(userId, oposicionId, modoPreparacion) {
+    const result = await pool.query(
+      `UPDATE accesos_oposicion
+       SET modo_preparacion = $3,
+           actualizada_en = NOW()
+       WHERE usuario_id = $1
+         AND oposicion_id = $2
+         AND estado = 'activo'
+         AND (fecha_fin IS NULL OR fecha_fin > NOW())
+       RETURNING usuario_id, oposicion_id, tipo_alumno, modo_preparacion`,
+      [userId, oposicionId, modoPreparacion],
+    );
+    return result.rows[0] ?? null;
   },
 
   /**
@@ -37,20 +69,30 @@ export const accesoOposicionRepository = {
   /**
    * Crea o reactiva un acceso a una oposición para un usuario.
    */
-  async crearAcceso({ userId, oposicionId, fechaFin = null, precioPagado = null, notas = null }) {
+  async crearAcceso({
+    userId,
+    oposicionId,
+    fechaFin = null,
+    precioPagado = null,
+    notas = null,
+    tipoAlumno = 'libre',
+    modoPreparacion = 'albacer',
+  }) {
     const result = await pool.query(
       `INSERT INTO accesos_oposicion
-         (usuario_id, oposicion_id, estado, fecha_fin, precio_pagado, notas)
-       VALUES ($1, $2, 'activo', $3, $4, $5)
+         (usuario_id, oposicion_id, estado, fecha_fin, precio_pagado, notas, tipo_alumno, modo_preparacion)
+       VALUES ($1, $2, 'activo', $3, $4, $5, $6, $7)
        ON CONFLICT (usuario_id, oposicion_id)
        DO UPDATE SET
          estado         = 'activo',
          fecha_fin      = EXCLUDED.fecha_fin,
          precio_pagado  = COALESCE(EXCLUDED.precio_pagado, accesos_oposicion.precio_pagado),
          notas          = COALESCE(EXCLUDED.notas, accesos_oposicion.notas),
+         tipo_alumno    = EXCLUDED.tipo_alumno,
+         modo_preparacion = EXCLUDED.modo_preparacion,
          actualizada_en = NOW()
        RETURNING *`,
-      [userId, oposicionId, fechaFin, precioPagado, notas],
+      [userId, oposicionId, fechaFin, precioPagado, notas, tipoAlumno, modoPreparacion],
     );
     return result.rows[0];
   },
@@ -58,17 +100,28 @@ export const accesoOposicionRepository = {
   /**
    * Actualiza los campos editables de un acceso (admin).
    */
-  async updateAcceso(userId, oposicionId, { fechaFin, precioPagado, notas, estado }) {
+  async updateAcceso(userId, oposicionId, { fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion }) {
     const result = await pool.query(
       `UPDATE accesos_oposicion
        SET   fecha_fin      = $3,
              precio_pagado  = $4,
              notas          = $5,
              estado         = $6,
+             tipo_alumno    = COALESCE($7, tipo_alumno),
+             modo_preparacion = COALESCE($8, modo_preparacion),
              actualizada_en = NOW()
        WHERE usuario_id = $1 AND oposicion_id = $2
        RETURNING *`,
-      [userId, oposicionId, fechaFin ?? null, precioPagado ?? null, notas ?? null, estado],
+      [
+        userId,
+        oposicionId,
+        fechaFin ?? null,
+        precioPagado ?? null,
+        notas ?? null,
+        estado,
+        tipoAlumno,
+        modoPreparacion,
+      ],
     );
     return result.rows[0] ?? null;
   },
@@ -106,6 +159,7 @@ export const accesoOposicionRepository = {
       pool.query(
         `SELECT ao.id, ao.estado, ao.fecha_inicio, ao.fecha_fin, ao.precio_pagado, ao.notas,
                 ao.usuario_id, u.nombre AS usuario_nombre, u.email AS usuario_email,
+                ao.tipo_alumno, ao.modo_preparacion,
                 ao.oposicion_id, o.nombre AS oposicion_nombre
          FROM accesos_oposicion ao
          JOIN usuarios   u ON u.id = ao.usuario_id
