@@ -1,0 +1,552 @@
+# Sprint 134 - Modo Experto y Modo Albacer MVP
+
+**Fecha de apertura:** 23 de junio de 2026  
+**Tipo:** Producto / Backend / Frontend / Arquitectura de aprendizaje  
+**Estado:** Planificado
+
+---
+
+## Objetivo
+
+Crear la base funcional para que cada alumno use una oposicion en uno de dos modelos de preparacion:
+
+- **Modo Experto:** entrenamiento libre con tests, simulacros, historial, estadisticas, ranking y recomendaciones por rendimiento.
+- **Modo Albacer:** ruta guiada por modulos/niveles creados por profesor o admin, con avance condicionado por el simulacro final de cada modulo.
+
+El cambio debe convivir con el modelo actual sin mezclar historicos, estadisticas ni ranking entre modos.
+
+---
+
+## Decisiones de producto cerradas
+
+### Modos
+
+- Los nombres finales son `Modo Experto` y `Modo Albacer`.
+- El modo se guarda por `usuario + oposicion`.
+- El alumno puede cambiar de modo desde la interfaz.
+- Al cambiar de modo se conserva el historico separado de cada modo.
+- Si un acceso no tiene modo configurado, entra por defecto en `Modo Albacer`.
+
+### Tipo de alumno por oposicion
+
+- `alumno_albacer` no es un rol global.
+- Debe guardarse por `usuario + oposicion`.
+- Un alumno libre y un alumno Albacer pueden usar ambos modos.
+- La diferencia es que solo el alumno marcado como `alumno_albacer` en esa oposicion ve tests y simulacros sugeridos por el profesor.
+
+### Ranking
+
+- El ranking solo usa resultados del `Modo Experto`.
+- El ranking es independiente por oposicion.
+- `Modo Albacer` no participa en ranking.
+
+### Estadisticas
+
+- Las estadisticas de `Modo Experto` y `Modo Albacer` nunca se mezclan.
+- Las estadisticas se filtran siempre por oposicion.
+- En `Modo Albacer`, las estadisticas se separan tambien por modulo.
+- En `Modo Albacer`, historial y estadisticas solo se alimentan de tests y simulacros creados dentro del plan Albacer.
+
+### Plan legacy
+
+- El `Plan de estudio` y la planificacion/calendario actual quedan como `legacy/deprecated`.
+- No se eliminan fisicamente de base de datos en este MVP.
+- Deben ocultarse por completo del frontend de alumno.
+- Se crea una programacion nueva basada en modulos Albacer.
+
+---
+
+## Modo Experto
+
+### Alcance funcional
+
+El Modo Experto mantiene una experiencia parecida a la actual:
+
+- crear tests libres;
+- crear simulacros libres;
+- consultar historial;
+- consultar estadisticas;
+- participar en ranking por oposicion;
+- recibir recomendaciones de temas por preguntas no realizadas o malos resultados;
+- ver tests/simulacros sugeridos por profesor si el acceso del alumno en esa oposicion es `alumno_albacer`.
+
+### No incluido
+
+- Plan de estudio guiado.
+- Niveles.
+- Bloqueo de contenido por modulos.
+
+---
+
+## Modo Albacer
+
+### Concepto
+
+El Modo Albacer funciona como una ruta guiada por modulos/niveles.
+
+Cada modulo:
+
+- pertenece a una oposicion;
+- tiene un orden;
+- puede estar en `borrador`, `publicado` o `archivado`;
+- contiene uno o varios temas;
+- contiene tests propios del modulo;
+- contiene un simulacro final propio;
+- puede repetirse tantas veces como quiera el alumno;
+- desbloquea el siguiente modulo cuando el alumno supera el simulacro final.
+
+### Avance
+
+- El modulo actual es el primer modulo publicado no superado.
+- Si todos los modulos estan superados, se muestra `Plan completado`.
+- Cuando el plan esta completado debe aparecer un boton para activar `Modo Experto`.
+- Los modulos posteriores publicados se muestran bloqueados hasta superar el modulo anterior.
+- El alumno puede ir directamente al simulacro final desde el inicio del modulo.
+- Los tests del modulo no son obligatorios, pero estan disponibles mientras el modulo este desbloqueado.
+
+### Superacion
+
+- La superacion depende del simulacro final del modulo.
+- Cuenta la mejor nota conseguida.
+- El profesor/admin configura el criterio del simulacro final:
+  - aprobado por nota;
+  - aprobado por porcentaje de acierto.
+- La penalizacion y scoring se configuran por test/simulacro, como hasta ahora.
+- La configuracion de scoring usada debe guardarse como snapshot en cada intento para no recalcular historicos si la configuracion cambia despues.
+
+### Revision de respuestas
+
+- Antes de aprobar el modulo:
+  - no se muestra respuesta correcta;
+  - no se muestra explicacion;
+  - solo se indica correcta, fallada o en blanco.
+- Despues de aprobar el modulo:
+  - se puede mostrar la revision completa de los intentos de ese modulo.
+
+### Preguntas reutilizadas
+
+- La restriccion de preguntas reutilizadas se aplica solo dentro del mismo modulo.
+- Al crear un test del modulo, las preguntas ya usadas en tests anteriores del mismo modulo aparecen desactivadas.
+- Al crear el simulacro final, las preguntas ya usadas dentro del modulo aparecen desactivadas.
+- Profesor/admin puede forzar reutilizacion manualmente.
+
+### Modulos automaticos
+
+Los modulos automaticos quedan para una fase posterior del MVP, pero el modelo debe quedar preparado.
+
+Reglas decididas:
+
+- profesor/admin selecciona temas;
+- selecciona cantidad de preguntas por test;
+- selecciona cantidad de preguntas para simulacro final;
+- puede seleccionar dificultad o reparto de dificultad;
+- si no hay preguntas suficientes para crear al menos un test y un simulacro final sin repetir, se bloquea y avisa;
+- por defecto no se repiten preguntas.
+
+---
+
+## Modelo de datos propuesto
+
+### Extender `accesos_oposicion`
+
+Guardar el tipo de alumno y modo activo por oposicion:
+
+```sql
+ALTER TABLE accesos_oposicion
+  ADD COLUMN tipo_alumno TEXT NOT NULL DEFAULT 'libre'
+    CHECK (tipo_alumno IN ('libre', 'albacer')),
+  ADD COLUMN modo_preparacion TEXT NOT NULL DEFAULT 'albacer'
+    CHECK (modo_preparacion IN ('experto', 'albacer'));
+```
+
+Notas:
+
+- `tipo_alumno = 'albacer'` permite ver sugeridos del profesor.
+- `modo_preparacion` indica la experiencia activa del alumno en esa oposicion.
+
+### Extender `tests`
+
+Guardar el contexto del intento:
+
+```sql
+ALTER TABLE tests
+  ADD COLUMN modo_preparacion TEXT NOT NULL DEFAULT 'experto'
+    CHECK (modo_preparacion IN ('experto', 'albacer')),
+  ADD COLUMN albacer_modulo_id BIGINT,
+  ADD COLUMN albacer_item_id BIGINT,
+  ADD COLUMN scoring_snapshot JSONB;
+```
+
+Uso:
+
+- `modo_preparacion` separa estadisticas, historial y ranking.
+- `albacer_modulo_id` permite filtrar estadisticas por modulo.
+- `albacer_item_id` vincula el intento a un test/simulacro del modulo.
+- `scoring_snapshot` guarda penalizaciones, criterio y configuracion aplicada en ese intento.
+
+### Extender `admin_tests`
+
+Reutilizar plantillas actuales para tests de modulo:
+
+```sql
+ALTER TABLE admin_tests
+  ADD COLUMN scope TEXT NOT NULL DEFAULT 'experto'
+    CHECK (scope IN ('experto', 'albacer_modulo', 'sugerido_profesor')),
+  ADD COLUMN albacer_modulo_id BIGINT;
+```
+
+### Extender `simulacros`
+
+Reutilizar simulacros actuales para simulacro final de modulo:
+
+```sql
+ALTER TABLE simulacros
+  ADD COLUMN scope TEXT NOT NULL DEFAULT 'experto'
+    CHECK (scope IN ('experto', 'albacer_modulo_final', 'sugerido_profesor')),
+  ADD COLUMN albacer_modulo_id BIGINT,
+  ADD COLUMN criterio_superacion TEXT NOT NULL DEFAULT 'nota'
+    CHECK (criterio_superacion IN ('nota', 'porcentaje')),
+  ADD COLUMN valor_superacion NUMERIC(6,2);
+```
+
+### Nuevas tablas Albacer
+
+```sql
+CREATE TABLE albacer_modulos (
+  id BIGSERIAL PRIMARY KEY,
+  oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  orden INT NOT NULL DEFAULT 0,
+  estado TEXT NOT NULL DEFAULT 'borrador'
+    CHECK (estado IN ('borrador', 'publicado', 'archivado')),
+  creado_por BIGINT REFERENCES usuarios(id) ON DELETE SET NULL,
+  creado_por_rol TEXT NOT NULL DEFAULT 'profesor',
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE albacer_modulo_temas (
+  modulo_id BIGINT NOT NULL REFERENCES albacer_modulos(id) ON DELETE CASCADE,
+  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
+  PRIMARY KEY (modulo_id, tema_id)
+);
+
+CREATE TABLE albacer_modulo_items (
+  id BIGSERIAL PRIMARY KEY,
+  modulo_id BIGINT NOT NULL REFERENCES albacer_modulos(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL CHECK (tipo IN ('test', 'simulacro_final')),
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  plantilla_test_id BIGINT REFERENCES admin_tests(id) ON DELETE SET NULL,
+  simulacro_id BIGINT REFERENCES simulacros(id) ON DELETE SET NULL,
+  orden INT NOT NULL DEFAULT 0,
+  obligatorio BOOLEAN NOT NULL DEFAULT FALSE,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE albacer_modulo_progreso (
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  modulo_id BIGINT NOT NULL REFERENCES albacer_modulos(id) ON DELETE CASCADE,
+  estado TEXT NOT NULL DEFAULT 'disponible'
+    CHECK (estado IN ('bloqueado', 'disponible', 'superado')),
+  mejor_nota NUMERIC(5,2),
+  mejor_porcentaje NUMERIC(5,2),
+  test_id_mejor_intento BIGINT REFERENCES tests(id) ON DELETE SET NULL,
+  superado_en TIMESTAMPTZ,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (usuario_id, modulo_id)
+);
+```
+
+---
+
+## Backend MVP propuesto
+
+### Alumno - modo y estado
+
+Endpoints nuevos o extendidos:
+
+- `GET /api/accesos/oposicion/:oposicionId/preparacion`
+- `PATCH /api/accesos/oposicion/:oposicionId/preparacion`
+- `GET /api/albacer/estado?oposicion_id=`
+- `GET /api/albacer/modulos?oposicion_id=`
+- `POST /api/albacer/items/:id/empezar`
+- `POST /api/albacer/modulos/:id/simulacro-final/empezar`
+
+Validaciones:
+
+- usuario autenticado;
+- acceso activo a la oposicion;
+- modo guardado por `accesos_oposicion`;
+- historial separado por `tests.modo_preparacion`;
+- solo alumnos con `tipo_alumno = 'albacer'` ven sugeridos del profesor.
+
+### Profesor/admin - modulos
+
+Endpoints profesor:
+
+- `GET /api/profesor/albacer/modulos?oposicion_id=`
+- `POST /api/profesor/albacer/modulos`
+- `GET /api/profesor/albacer/modulos/:id`
+- `PUT /api/profesor/albacer/modulos/:id`
+- `DELETE /api/profesor/albacer/modulos/:id`
+- `POST /api/profesor/albacer/modulos/:id/tests`
+- `POST /api/profesor/albacer/modulos/:id/simulacro-final`
+- `GET /api/profesor/albacer/modulos/:id/preguntas-disponibles`
+
+Endpoints admin equivalentes:
+
+- `GET /api/admin/albacer/modulos`
+- `POST /api/admin/albacer/modulos`
+- `GET /api/admin/albacer/modulos/:id`
+- `PUT /api/admin/albacer/modulos/:id`
+- `DELETE /api/admin/albacer/modulos/:id`
+
+Permisos:
+
+- admin puede gestionar cualquier oposicion;
+- profesor solo puede gestionar oposiciones asignadas;
+- profesor solo ve alumnos y progreso de sus oposiciones asignadas.
+
+### Scoring
+
+Cambios necesarios:
+
+- Al iniciar un test/simulacro Albacer se guarda `scoring_snapshot`.
+- Al enviar un intento se conserva el scoring usado en el intento.
+- La superacion del modulo se evalua con:
+  - mejor nota del simulacro final;
+  - o mejor porcentaje de acierto del simulacro final.
+- Si el profesor cambia scoring o criterio despues, solo afecta a nuevos intentos.
+
+### Ranking
+
+Actualizar consultas de ranking:
+
+- incluir solo `tests.modo_preparacion = 'experto'`;
+- seguir filtrando por `oposicion_id`;
+- excluir tests de `scope` Albacer.
+
+### Estadisticas
+
+Actualizar repositorios de progreso, historial y widgets:
+
+- `Modo Experto`: filtrar `tests.modo_preparacion = 'experto'`.
+- `Modo Albacer`: filtrar `tests.modo_preparacion = 'albacer'`.
+- En Albacer permitir filtro por `albacer_modulo_id`.
+
+---
+
+## Frontend MVP propuesto
+
+### Mis oposiciones
+
+Cada card debe mostrar:
+
+- modo activo;
+- tipo de alumno en esa oposicion (`Libre` o `Albacer`);
+- boton para cambiar entre `Modo Experto` y `Modo Albacer`;
+- aviso de que el historico no se mezcla.
+
+### Navegacion alumno
+
+Si la oposicion activa esta en `Modo Albacer`:
+
+- ocultar `Crear test`;
+- ocultar `Ranking`;
+- ocultar `Plan de estudio`;
+- mantener `Historial` filtrado a Albacer;
+- mantener `Estadisticas` con version Albacer;
+- mantener `Simulacros` solo para simulacros de modulo y sugeridos permitidos;
+- mostrar acceso a la home Albacer.
+
+Si la oposicion activa esta en `Modo Experto`:
+
+- mantener flujo actual de entrenamiento libre;
+- ocultar el plan legacy;
+- ranking visible;
+- crear test visible;
+- simulacros libres visibles.
+
+### Home Albacer
+
+La home Albacer debe mostrar:
+
+- modulo actual;
+- progreso de modulos superados / totales;
+- tests del modulo;
+- simulacro final disponible desde el inicio;
+- modulos siguientes bloqueados;
+- mejor nota del simulacro final;
+- intentos realizados;
+- temas incluidos en el modulo;
+- sugeridos del profesor si el acceso es `tipo_alumno = 'albacer'`.
+
+Si todos los modulos estan superados:
+
+- mostrar `Plan completado`;
+- boton `Activar Modo Experto`.
+
+### Historial Albacer
+
+Debe mostrar:
+
+- todos los intentos Albacer de la oposicion activa;
+- filtro por modulo;
+- tipo de item: test de modulo o simulacro final;
+- mejor intento resaltado.
+
+### Progreso Albacer
+
+Debe mostrar:
+
+- modulos superados / totales;
+- modulo actual;
+- mejor nota por modulo;
+- tests realizados del modulo;
+- intentos del simulacro final;
+- temas del modulo;
+- estado: bloqueado, disponible, superado.
+
+---
+
+## Backlog por PR
+
+### PR A - Documento y migraciones base
+
+- Crear este documento de sprint.
+- Crear migracion base Albacer:
+  - columnas en `accesos_oposicion`;
+  - columnas en `tests`;
+  - columnas en `admin_tests`;
+  - columnas en `simulacros`;
+  - tablas `albacer_modulos`, `albacer_modulo_temas`, `albacer_modulo_items`, `albacer_modulo_progreso`.
+- Crear indices por oposicion, modulo, modo y scope.
+- Actualizar `database/schema.sql`.
+
+### PR B - Acceso, modo activo y tipo de alumno
+
+- Extender repositorio de accesos.
+- Exponer endpoint para leer/cambiar modo por oposicion.
+- Permitir a admin/profesor marcar un acceso como `tipo_alumno = albacer`.
+- Actualizar `useUserAccesos` para recibir `modo_preparacion` y `tipo_alumno`.
+- Actualizar `MisOposicionesPage` con selector/cambio de modo.
+
+### PR C - Navegacion por modo y ocultar legacy
+
+- Ocultar `Plan de estudio` legacy del menu de alumno.
+- Ocultar `Crear test` y `Ranking` cuando la oposicion activa esta en Modo Albacer.
+- Mantener `Ranking` solo en Modo Experto.
+- Crear guardas frontend para rutas no disponibles por modo.
+- Preparar home con switch `HomeExperto` / `HomeAlbacer`.
+
+### PR D - CRUD modulos Albacer profesor/admin
+
+- Crear repositorio, servicio, controller, schemas y rutas Albacer.
+- CRUD de modulos con temas.
+- Estados `borrador`, `publicado`, `archivado`.
+- Validar oposicion asignada al profesor.
+- Crear primeras pantallas admin/profesor para listar y editar modulos.
+
+### PR E - Tests y simulacro final de modulo
+
+- Crear tests propios de modulo usando `admin_tests` con `scope = albacer_modulo`.
+- Crear simulacro final usando `simulacros` con `scope = albacer_modulo_final`.
+- Bloquear preguntas ya usadas dentro del mismo modulo.
+- Permitir forzar reutilizacion.
+- Guardar items en `albacer_modulo_items`.
+
+### PR F - Ejecucion alumno Albacer
+
+- `GET /api/albacer/estado`.
+- `GET /api/albacer/modulos`.
+- `POST /api/albacer/items/:id/empezar`.
+- `POST /api/albacer/modulos/:id/simulacro-final/empezar`.
+- Crear sesiones en `tests` con `modo_preparacion = albacer`.
+- Guardar `albacer_modulo_id`, `albacer_item_id` y `scoring_snapshot`.
+- Evaluar superacion por mejor nota o porcentaje.
+
+### PR G - Home Albacer MVP
+
+- Crear home Albacer.
+- Mostrar modulo actual, tests, simulacro final, progreso y bloqueos.
+- Mostrar `Plan completado` con boton para activar Modo Experto.
+- Mostrar sugeridos del profesor solo si `tipo_alumno = albacer`.
+
+### PR H - Historial, progreso y ranking separados
+
+- Actualizar historial para filtrar por modo.
+- Actualizar progreso para filtrar por modo y modulo.
+- Actualizar ranking para contar solo Modo Experto.
+- Actualizar widgets de home para no mezclar datos.
+
+### PR I - Retirada frontend del plan legacy
+
+- Quitar enlaces visibles al plan legacy.
+- Mantener rutas legacy solo si hacen falta temporalmente para compatibilidad interna.
+- Marcar servicios y endpoints como deprecated.
+- Documentar retirada futura de tablas legacy.
+
+### PR J - Modulos automaticos
+
+- Selector de temas.
+- Numero de tests.
+- Numero de preguntas por test.
+- Numero de preguntas de simulacro final.
+- Reparto por dificultad.
+- Validacion de preguntas suficientes sin repetir.
+- Generacion automatica bloqueante si no hay banco suficiente.
+
+---
+
+## Criterios de aceptacion MVP
+
+- Un alumno puede tener Modo Experto en una oposicion y Modo Albacer en otra.
+- El cambio de modo no mezcla historicos.
+- `Modo Albacer` no aparece en ranking.
+- Ranking sigue separado por oposicion.
+- `Plan de estudio` legacy no aparece en el frontend de alumno.
+- Profesor y admin pueden crear modulos Albacer.
+- Un modulo publicado aparece al alumno si tiene acceso activo a la oposicion.
+- El alumno ve modulos futuros bloqueados.
+- El alumno puede iniciar el simulacro final desde el inicio del modulo.
+- Superar el simulacro final desbloquea el siguiente modulo.
+- Cuenta la mejor nota/porcentaje del simulacro final.
+- Antes de superar modulo, no se muestran respuestas ni explicaciones de preguntas falladas.
+- Despues de superar modulo, se puede mostrar revision completa del modulo.
+- Tests sugeridos por profesor solo aparecen a alumnos con `tipo_alumno = albacer` en esa oposicion.
+- Estadisticas e historial se filtran por modo y oposicion.
+
+---
+
+## Riesgos
+
+- El plan legacy ya tiene integraciones con home, notificaciones, calendario y tests; hay que ocultarlo sin romper rutas existentes.
+- El scoring actual calcula nota al enviar, pero el snapshot de scoring por intento debe incorporarse para que Albacer sea consistente.
+- Muchas consultas de estadisticas usan `tests` sin filtrar por modo; deben auditarse antes de exponer Albacer.
+- La reutilizacion de `admin_tests` y `simulacros` reduce duplicacion, pero exige campos `scope` bien aplicados para no cruzar contenido.
+- Si un profesor cambia temas o preguntas de un modulo ya iniciado, hay que definir reglas de versionado en un sprint posterior.
+
+---
+
+## Fuera del MVP inicial
+
+- Eliminacion fisica de tablas legacy de planificacion.
+- Versionado completo de modulos.
+- Modulos automaticos avanzados con IA.
+- Heatmaps especificos por modulo.
+- Recomendaciones inteligentes complejas en Modo Albacer.
+- Ranking por niveles Albacer.
+
+---
+
+## Definition of Done del Sprint 134
+
+- Documento de decisiones creado.
+- Migraciones base definidas.
+- Backlog por PR acordado.
+- No se eliminan tablas legacy.
+- Local actualizado desde GitHub antes de implementar.
+- Cada PR posterior debe incluir build frontend y tests backend cuando toque backend.
