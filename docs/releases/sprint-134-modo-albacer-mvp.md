@@ -433,6 +433,7 @@ Debe mostrar:
 - Permitir a admin/profesor marcar un acceso como `tipo_alumno = albacer`.
 - Actualizar `useUserAccesos` para recibir `modo_preparacion` y `tipo_alumno`.
 - Actualizar `MisOposicionesPage` con selector/cambio de modo.
+- Estado: implementado en el PR B del sprint. El cambio de modo queda disponible para el alumno y el tipo de alumno se gestiona desde accesos admin.
 
 ### PR C - Navegacion por modo y ocultar legacy
 

@@ -27,11 +27,26 @@ export default function AdminAccesosPage() {
   const [loading, setLoading] = useState(true);
   // Modal asignar
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '' });
+  const [form, setForm] = useState({
+    email: '',
+    oposicionId: '',
+    fechaFin: '',
+    precioPagado: '',
+    notas: '',
+    tipoAlumno: 'libre',
+    modoPreparacion: 'albacer',
+  });
   const [saving, setSaving] = useState(false);
   // Modal editar
   const [editAcceso, setEditAcceso] = useState(null);
-  const [editForm, setEditForm] = useState({ fechaFin: '', precioPagado: '', notas: '', estado: 'activo' });
+  const [editForm, setEditForm] = useState({
+    fechaFin: '',
+    precioPagado: '',
+    notas: '',
+    estado: 'activo',
+    tipoAlumno: 'libre',
+    modoPreparacion: 'albacer',
+  });
   const [editSaving, setEditSaving] = useState(false);
 
   const loadOposiciones = async () => {
@@ -106,6 +121,8 @@ export default function AdminAccesosPage() {
       precioPagado: a.precio_pagado != null ? String(a.precio_pagado) : '',
       notas:        a.notas ?? '',
       estado:       a.estado ?? 'activo',
+      tipoAlumno:   a.tipo_alumno ?? 'libre',
+      modoPreparacion: a.modo_preparacion ?? 'albacer',
     });
     setError('');
   };
@@ -120,6 +137,8 @@ export default function AdminAccesosPage() {
         fechaFin:     editForm.fechaFin     || null,
         precioPagado: editForm.precioPagado ? Number(editForm.precioPagado) : null,
         notas:        editForm.notas        || null,
+        tipoAlumno:   editForm.tipoAlumno,
+        modoPreparacion: editForm.modoPreparacion,
       };
       await accesosApi.updateAcceso(token, editAcceso.usuario_id, editAcceso.oposicion_id, payload);
       setMsg('Acceso actualizado correctamente');
@@ -143,10 +162,12 @@ export default function AdminAccesosPage() {
       if (form.fechaFin)     payload.fechaFin      = form.fechaFin;
       if (form.precioPagado) payload.precioPagado  = Number(form.precioPagado);
       if (form.notas)        payload.notas         = form.notas;
+      payload.tipoAlumno = form.tipoAlumno;
+      payload.modoPreparacion = form.modoPreparacion;
       await accesosApi.asignarAcceso(token, payload);
       setMsg('Acceso asignado correctamente');
       setShowModal(false);
-      setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '' });
+      setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '', tipoAlumno: 'libre', modoPreparacion: 'albacer' });
       loadAccesos();
       loadStats();
     } catch (e) {
@@ -250,6 +271,8 @@ export default function AdminAccesosPage() {
                   <th style={TH}>ID usuario</th>
                   <th style={TH}>Nombre</th>
                   <th style={TH}>Oposición</th>
+                  <th style={TH}>Alumno</th>
+                  <th style={TH}>Modo</th>
                   <th style={TH}>Estado</th>
                   <th style={TH}>Inicio</th>
                   <th style={TH}>Fin</th>
@@ -259,7 +282,7 @@ export default function AdminAccesosPage() {
               </thead>
               <tbody>
                 {accesos.length === 0 && (
-                  <tr><td colSpan={8} style={{ ...TD, color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>Sin resultados</td></tr>
+                  <tr><td colSpan={10} style={{ ...TD, color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>Sin resultados</td></tr>
                 )}
                 {accesos.map((a, i) => {
                   const badge = ESTADO_BADGE[a.estado] ?? ESTADO_BADGE.expirado;
@@ -268,6 +291,16 @@ export default function AdminAccesosPage() {
                       <td style={TD}>{a.usuario_id}</td>
                       <td style={TD}>{a.usuario_nombre ?? '—'} <span style={{ color: '#9ca3af', fontSize: 12 }}>{a.usuario_email ?? ''}</span></td>
                       <td style={TD}>{a.oposicion_nombre ?? a.oposicion_id}</td>
+                      <td style={TD}>
+                        <span style={{ background: a.tipo_alumno === 'albacer' ? '#dcfce7' : '#f3f4f6', color: a.tipo_alumno === 'albacer' ? '#166534' : '#4b5563', padding: '2px 9px', borderRadius: 12, fontSize: '0.76rem', fontWeight: 700 }}>
+                          {a.tipo_alumno === 'albacer' ? 'Albacer' : 'Libre'}
+                        </span>
+                      </td>
+                      <td style={TD}>
+                        <span style={{ background: a.modo_preparacion === 'albacer' ? '#ede9fe' : '#e0f2fe', color: a.modo_preparacion === 'albacer' ? '#5b21b6' : '#075985', padding: '2px 9px', borderRadius: 12, fontSize: '0.76rem', fontWeight: 700 }}>
+                          {a.modo_preparacion === 'experto' ? 'Experto' : 'Albacer'}
+                        </span>
+                      </td>
                       <td style={TD}>
                         <span style={{ ...badge, padding: '2px 9px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 600 }}>{a.estado}</span>
                       </td>
@@ -341,6 +374,30 @@ export default function AdminAccesosPage() {
                   <option value="cancelado">Cancelado</option>
                   <option value="expirado">Expirado</option>
                 </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Tipo de alumno</label>
+                  <select
+                    value={editForm.tipoAlumno}
+                    onChange={(e) => setEditForm((p) => ({ ...p, tipoAlumno: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
+                  >
+                    <option value="libre">Libre</option>
+                    <option value="albacer">Albacer</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Modo inicial</label>
+                  <select
+                    value={editForm.modoPreparacion}
+                    onChange={(e) => setEditForm((p) => ({ ...p, modoPreparacion: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
+                  >
+                    <option value="albacer">Albacer</option>
+                    <option value="experto">Experto</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Fecha de fin</label>
@@ -424,6 +481,30 @@ export default function AdminAccesosPage() {
                   {oposiciones.map((op) => <option key={op.id} value={op.id}>{op.nombre}</option>)}
                 </select>
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Tipo de alumno</label>
+                  <select
+                    value={form.tipoAlumno}
+                    onChange={(e) => setForm((p) => ({ ...p, tipoAlumno: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
+                  >
+                    <option value="libre">Libre</option>
+                    <option value="albacer">Albacer</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Modo inicial</label>
+                  <select
+                    value={form.modoPreparacion}
+                    onChange={(e) => setForm((p) => ({ ...p, modoPreparacion: e.target.value }))}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
+                  >
+                    <option value="albacer">Albacer</option>
+                    <option value="experto">Experto</option>
+                  </select>
+                </div>
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Fecha de fin (opcional)</label>
                 <input
@@ -458,7 +539,7 @@ export default function AdminAccesosPage() {
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '' }); setError(''); }}
+                  onClick={() => { setShowModal(false); setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '', tipoAlumno: 'libre', modoPreparacion: 'albacer' }); setError(''); }}
                   style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
                 >
                   Cancelar

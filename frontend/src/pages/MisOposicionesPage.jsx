@@ -18,7 +18,8 @@ function Spinner() {
 }
 
 // Tarjeta para un curso comprado sin actividad aún
-function AccesoSinActividadCard({ nombre, fechaFin, onPracticar, onVerCatalogo }) {
+function AccesoSinActividadCard({ curso, onPracticar, onModoChange, savingMode }) {
+  const { nombre, fechaFin, modoPreparacion, tipoAlumno } = curso;
   return (
     <div style={{ background: '#fff', borderRadius: 14, padding: '22px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
       <div>
@@ -31,6 +32,14 @@ function AccesoSinActividadCard({ nombre, fechaFin, onPracticar, onVerCatalogo }
           {fechaFin ? `Acceso hasta ${new Date(fechaFin).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}` : 'Acceso sin fecha de expiración'}
           {' · '}Todavía no has practicado esta oposición.
         </p>
+        <div style={{ marginTop: 10 }}>
+          <ModoPreparacionControls
+            modo={modoPreparacion}
+            tipoAlumno={tipoAlumno}
+            saving={savingMode}
+            onChange={onModoChange}
+          />
+        </div>
       </div>
       <button
         onClick={onPracticar}
@@ -42,15 +51,54 @@ function AccesoSinActividadCard({ nombre, fechaFin, onPracticar, onVerCatalogo }
   );
 }
 
+const MODO_LABELS = {
+  albacer: 'Modo Albacer',
+  experto: 'Modo Experto',
+};
+
+const TIPO_ALUMNO_LABELS = {
+  albacer: 'Alumno Albacer',
+  libre: 'Alumno libre',
+};
+
+function ModoPreparacionControls({ modo, tipoAlumno, saving, onChange }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <span style={{ background: modo === 'albacer' ? '#ede9fe' : '#e0f2fe', color: modo === 'albacer' ? '#5b21b6' : '#075985', fontSize: '0.7rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>
+        {MODO_LABELS[modo] ?? 'Modo Albacer'}
+      </span>
+      <span style={{ background: tipoAlumno === 'albacer' ? '#dcfce7' : '#f3f4f6', color: tipoAlumno === 'albacer' ? '#166534' : '#4b5563', fontSize: '0.7rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>
+        {TIPO_ALUMNO_LABELS[tipoAlumno] ?? 'Alumno libre'}
+      </span>
+      <select
+        value={modo ?? 'albacer'}
+        disabled={saving}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          e.stopPropagation();
+          onChange(e.target.value);
+        }}
+        style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid #ddd6fe', background: '#fff', color: '#4c1d95', fontWeight: 700, fontSize: '0.76rem', cursor: saving ? 'not-allowed' : 'pointer' }}
+        title="Cambia la experiencia activa sin mezclar historiales"
+      >
+        <option value="albacer">Modo Albacer</option>
+        <option value="experto">Modo Experto</option>
+      </select>
+    </div>
+  );
+}
+
 export default function MisOposicionesPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const { setOposicionActiva } = useOposicionActiva();
-  const { accesos, loading: loadingAccesos } = useUserAccesos();
+  const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
+  const { accesos, loading: loadingAccesos, actualizarPreparacion } = useUserAccesos();
   const [statsOps, setStatsOps] = useState(null);
   const [catalogo, setCatalogo] = useState([]);
   const [error, setError] = useState('');
+  const [msg, setMsg] = useState('');
   const [showDemos, setShowDemos] = useState(false);
+  const [savingModeFor, setSavingModeFor] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -85,6 +133,8 @@ export default function MisOposicionesPage() {
     oposicionId: Number(a.oposicion_id),
     nombre: nombreMap[a.oposicion_id] ?? `Oposición ${a.oposicion_id}`,
     fechaFin: a.fecha_fin,
+    modoPreparacion: a.modo_preparacion ?? 'albacer',
+    tipoAlumno: a.tipo_alumno ?? 'libre',
     stats: statsMap[Number(a.oposicion_id)] ?? null,
   }));
 
@@ -94,11 +144,17 @@ export default function MisOposicionesPage() {
   // Demos: oposiciones con actividad pero sin acceso comprado
   const demos = statsOps.filter((op) => !idsConAcceso.has(op.oposicionId));
 
+  const getCursoById = (oposicionId) =>
+    cursosComprados.find((curso) => Number(curso.oposicionId) === Number(oposicionId));
+
   const activarOposicion = (oposicionId, nombre) => {
     if (!oposicionId) return;
+    const curso = getCursoById(oposicionId);
     setOposicionActiva({
       id: Number(oposicionId),
       nombre: nombre ?? nombreMap[oposicionId] ?? `Oposicion ${oposicionId}`,
+      modoPreparacion: curso?.modoPreparacion ?? 'albacer',
+      tipoAlumno: curso?.tipoAlumno ?? 'libre',
     });
   };
 
@@ -110,6 +166,28 @@ export default function MisOposicionesPage() {
   const irAHomeOposicion = (oposicionId, nombre) => {
     activarOposicion(oposicionId, nombre);
     navigate('/');
+  };
+
+  const cambiarModoPreparacion = async (curso, nuevoModo) => {
+    if (!curso || nuevoModo === curso.modoPreparacion) return;
+    setSavingModeFor(curso.oposicionId);
+    setError('');
+    setMsg('');
+    try {
+      await actualizarPreparacion(curso.oposicionId, nuevoModo);
+      setMsg(`Modo actualizado a ${MODO_LABELS[nuevoModo] ?? nuevoModo}`);
+      if (Number(oposicionActiva?.id) === Number(curso.oposicionId)) {
+        setOposicionActiva({
+          ...oposicionActiva,
+          modoPreparacion: nuevoModo,
+          tipoAlumno: curso.tipoAlumno,
+        });
+      }
+    } catch (e) {
+      setError(e.message || 'No se pudo actualizar el modo');
+    } finally {
+      setSavingModeFor(null);
+    }
   };
 
   return (
@@ -132,6 +210,12 @@ export default function MisOposicionesPage() {
           Ver catálogo →
         </button>
       </div>
+
+      {msg && (
+        <div style={{ padding: '8px 14px', background: '#ecfdf5', border: '1px solid #bbf7d0', borderRadius: 8, color: '#047857', fontSize: '0.875rem', fontWeight: 700, marginBottom: 12 }}>
+          {msg}
+        </div>
+      )}
 
       {/* Sin cursos comprados */}
       {cursosComprados.length === 0 && (
@@ -159,6 +243,14 @@ export default function MisOposicionesPage() {
                 <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 1 }}>
                   <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.7rem', fontWeight: 700, padding: '2px 9px', borderRadius: 999 }}>✓ Acceso activo</span>
                 </div>
+                <div style={{ position: 'absolute', top: 46, right: 14, zIndex: 1, display: 'flex', justifyContent: 'flex-end', maxWidth: 'min(520px, calc(100% - 28px))' }}>
+                  <ModoPreparacionControls
+                    modo={c.modoPreparacion}
+                    tipoAlumno={c.tipoAlumno}
+                    saving={savingModeFor === c.oposicionId}
+                    onChange={(modo) => cambiarModoPreparacion(c, modo)}
+                  />
+                </div>
                 <OposicionCard
                   op={c.stats}
                   onNavigate={(id) => irAOposicion(id, c.nombre)}
@@ -168,9 +260,10 @@ export default function MisOposicionesPage() {
             ) : (
               <AccesoSinActividadCard
                 key={c.oposicionId}
-                nombre={c.nombre}
-                fechaFin={c.fechaFin}
+                curso={c}
                 onPracticar={() => irAHomeOposicion(c.oposicionId, c.nombre)}
+                onModoChange={(modo) => cambiarModoPreparacion(c, modo)}
+                savingMode={savingModeFor === c.oposicionId}
               />
             )
           )}

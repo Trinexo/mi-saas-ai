@@ -86,7 +86,12 @@ function OposicionGuard({ children }) {
         navigate('/catalogo', { replace: true });
       }
     } else if (accesos.length === 1) {
-      setOposicionActiva({ id: accesos[0].oposicion_id, nombre: accesos[0].nombre });
+      setOposicionActiva({
+        id: accesos[0].oposicion_id,
+        nombre: accesos[0].nombre,
+        modoPreparacion: accesos[0].modo_preparacion,
+        tipoAlumno: accesos[0].tipo_alumno,
+      });
     } else {
       navigate('/seleccionar-oposicion', { replace: true });
     }

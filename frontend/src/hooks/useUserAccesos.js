@@ -26,7 +26,28 @@ export function useUserAccesos() {
   const tieneAcceso = (oposicionId) =>
     accesos.some((a) => Number(a.oposicion_id) === Number(oposicionId));
 
+  const actualizarPreparacion = async (oposicionId, modoPreparacion) => {
+    if (!token) throw new Error('Sesion no iniciada');
+    const updated = await accesosApi.updatePreparacion(token, oposicionId, {
+      modoPreparacion,
+    });
+    setAccesos((prev) =>
+      prev.map((acceso) =>
+        Number(acceso.oposicion_id) === Number(oposicionId)
+          ? {
+              ...acceso,
+              ...updated,
+              oposicion_id: updated?.oposicion_id ?? acceso.oposicion_id,
+              modo_preparacion: updated?.modo_preparacion ?? modoPreparacion,
+              tipo_alumno: updated?.tipo_alumno ?? acceso.tipo_alumno,
+            }
+          : acceso,
+      ),
+    );
+    return updated;
+  };
+
   const tieneAlgunAcceso = accesos.length > 0;
 
-  return { accesos, loading, tieneAcceso, tieneAlgunAcceso };
+  return { accesos, loading, tieneAcceso, tieneAlgunAcceso, actualizarPreparacion };
 }

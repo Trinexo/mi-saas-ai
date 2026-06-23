@@ -77,13 +77,23 @@ export default function SeleccionarOposicionPage() {
   // Auto-selección si solo queda una (salvaguarda)
   useEffect(() => {
     if (!loading && accesos.length === 1) {
-      setOposicionActiva({ id: accesos[0].oposicion_id, nombre: accesos[0].nombre });
+      setOposicionActiva({
+        id: accesos[0].oposicion_id,
+        nombre: accesos[0].nombre,
+        modoPreparacion: accesos[0].modo_preparacion,
+        tipoAlumno: accesos[0].tipo_alumno,
+      });
       navigate('/', { replace: true });
     }
   }, [loading, accesos, setOposicionActiva, navigate]);
 
   const handleSeleccionar = (acceso) => {
-    setOposicionActiva({ id: acceso.oposicion_id, nombre: acceso.nombre });
+    setOposicionActiva({
+      id: acceso.oposicion_id,
+      nombre: acceso.nombre,
+      modoPreparacion: acceso.modo_preparacion,
+      tipoAlumno: acceso.tipo_alumno,
+    });
     navigate('/', { replace: true });
   };
 
