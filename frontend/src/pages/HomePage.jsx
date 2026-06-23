@@ -5,7 +5,6 @@ import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
 import { planEstudioApi } from '../services/planEstudioApi';
 import { useAsyncAction } from '../hooks/useAsyncAction';
-import { useBreakpoint } from '../hooks/useBreakpoint';
 
 /* ── Paleta ───────────────────────────────────────────────── */
 const O   = '#ea580c';
@@ -105,6 +104,7 @@ function KpiBar() {
   const [stats, setStats] = useState(null);
   const [racha, setRacha] = useState(null);
   const [ranking, setRanking] = useState(null);
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
     testApi.userStats(token, oposicionActiva?.id).then(setStats).catch(() => {});
@@ -112,9 +112,9 @@ function KpiBar() {
   }, [token, oposicionActiva?.id]);
 
   useEffect(() => {
-    if (!oposicionActiva?.id) { setRanking(null); return; }
+    if (!oposicionActiva?.id || isAlbacer) { setRanking(null); return; }
     testApi.getRanking(token, oposicionActiva.id).then(setRanking).catch(() => setRanking(null));
-  }, [token, oposicionActiva?.id]);
+  }, [token, oposicionActiva?.id, isAlbacer]);
 
   const total = (stats?.aciertos || 0) + (stats?.errores || 0) + (stats?.blancos || 0);
   const pctAciertos = total > 0 ? Math.round((stats.aciertos / total) * 100) : null;
@@ -140,8 +140,10 @@ function KpiBar() {
         value={racha?.rachaActual != null ? `${racha.rachaActual} días` : '—'}
         delta={racha?.estudioHoy ? '🔥 Racha activa' : null}
         label="Racha actual" />
-      <KpiCard icon={<IconTrophy />} iconBg="#fdf4ff" iconColor="#9333ea"
-        value={rankingValue} delta={rankingDelta} label="Ranking oposición" />
+      {!isAlbacer && (
+        <KpiCard icon={<IconTrophy />} iconBg="#fdf4ff" iconColor="#9333ea"
+          value={rankingValue} delta={rankingDelta} label="Ranking oposición" />
+      )}
     </div>
   );
 }
@@ -159,6 +161,7 @@ function ContinuarCard() {
   const navigate  = useNavigate();
   const { token } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
   const { isLoading, runAction } = useAsyncAction();
   const [sugerencia, setSugerencia] = useState(undefined); // undefined=cargando
   const [hov, setHov] = useState(false);
@@ -190,7 +193,10 @@ function ContinuarCard() {
       navigate('/test');
       return;
     }
-    if (s.tipo === 'empezar') { navigate('/configurar-test'); return; }
+    if (s.tipo === 'empezar') {
+      navigate(isAlbacer ? '/simulacros' : '/configurar-test');
+      return;
+    }
 
     const params = { modo: 'normal', numeroPreguntas: 10, dificultad: 'mixto' };
     if (s.temaId) params.temaId = s.temaId;
@@ -217,13 +223,13 @@ function ContinuarCard() {
   if (!sugerencia) {
     return (
       <div style={{ ...CARD, padding: '24px 26px' }}>
-        <Link to="/configurar-test" style={{
+        <Link to={isAlbacer ? '/simulacros' : '/configurar-test'} style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           background: O, color: '#fff', borderRadius: 10,
           padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
           textDecoration: 'none', boxShadow: `0 3px 12px ${O}40`,
         }}>
-          <IconPlay /> Empezar a estudiar
+          <IconPlay /> {isAlbacer ? 'Ver simulacros' : 'Empezar a estudiar'}
         </Link>
       </div>
     );
@@ -271,13 +277,13 @@ function ContinuarCard() {
       {/* Botones */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         {tipo === 'empezar' ? (
-          <Link to="/configurar-test" style={{
+          <Link to={isAlbacer ? '/simulacros' : '/configurar-test'} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             background: O, color: '#fff', borderRadius: 10,
             padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
             textDecoration: 'none', boxShadow: `0 3px 12px ${O}40`,
           }}>
-            <IconPlay /> Hacer mi primer test
+            <IconPlay /> {isAlbacer ? 'Ver simulacros' : 'Hacer mi primer test'}
           </Link>
         ) : (
           <>
@@ -476,13 +482,13 @@ function RecomendadoParaTi() {
   const { token } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
   const navigate = useNavigate();
-  const { isMobile, isTablet } = useBreakpoint();
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
   const [temas, setTemas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [generandoId, setGenerandoId] = useState(null);
 
   useEffect(() => {
-    if (!oposicionActiva?.id) { setCargando(false); return; }
+    if (!oposicionActiva?.id || isAlbacer) { setCargando(false); return; }
     testApi.getProgresoTemasReal(token, oposicionActiva.id)
       .then((data) => {
         const conActividad = (data || [])
@@ -494,7 +500,7 @@ function RecomendadoParaTi() {
       })
       .catch(() => setTemas([]))
       .finally(() => setCargando(false));
-  }, [token, oposicionActiva?.id]);
+  }, [token, oposicionActiva?.id, isAlbacer]);
 
   const onPracticar = async (tema) => {
     if (generandoId) return;
@@ -513,7 +519,7 @@ function RecomendadoParaTi() {
     }
   };
 
-  if (!oposicionActiva?.id) return null;
+  if (!oposicionActiva?.id || isAlbacer) return null;
 
   if (cargando) {
     return (
@@ -668,11 +674,11 @@ function HistorialReciente() {
 export default function HomePage() {
   const { user } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
-  const { isMobile, isTablet } = useBreakpoint();
   const nombre = user?.nombre?.split(' ')[0] || 'alumno';
   const hour   = new Date().getHours();
   const saludo = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fecha  = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -697,18 +703,19 @@ export default function HomePage() {
             {fecha.charAt(0).toUpperCase() + fecha.slice(1)} — Prepara. Practica. Consigue.
           </p>
         </div>
-        <Link to="/configurar-test" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: O, color: '#fff', padding: '11px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: `0 3px 12px ${O}45`, whiteSpace: 'nowrap' }}>
-          <IconPlay /> Nuevo test
-        </Link>
+        {!isAlbacer && (
+          <Link to="/configurar-test" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: O, color: '#fff', padding: '11px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: `0 3px 12px ${O}45`, whiteSpace: 'nowrap' }}>
+            <IconPlay /> Nuevo test
+          </Link>
+        )}
       </div>
 
       {/* ── KPIs ─────────────────────────────────────────── */}
       <KpiBar />
 
-      {/* ── Continuar + Plan ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 310px', gap: 16, alignItems: 'start' }}>
+      {/* ── Continuar ────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, alignItems: 'start' }}>
         <ContinuarCard />
-        {!isMobile && !isTablet && <PlanSemanal />}
       </div>
 
       {/* ── Recomendados ─────────────────────────────────── */}

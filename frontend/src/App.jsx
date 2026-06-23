@@ -123,6 +123,19 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AlumnoModeRoute({ children, hideLegacy = false, blockInAlbacer = false }) {
+  const { user } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
+  const esAlumno = user && user.role !== 'admin' && user.role !== 'profesor';
+
+  if (!esAlumno) return children;
+  if (hideLegacy) return <Navigate to="/" replace />;
+  if (blockInAlbacer && oposicionActiva?.modoPreparacion === 'albacer') {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
 function AdminRoute({ children }) {
   const { user } = useAuth();
   return user?.role === 'admin' ? children : <Navigate to="/" replace />;
@@ -172,7 +185,7 @@ export default function App() {
         }
       >
         <Route index element={<HomePage />} />
-        <Route path="plan-estudio" element={<PlanEstudioPage />} />
+        <Route path="plan-estudio" element={<AlumnoModeRoute hideLegacy><PlanEstudioPage /></AlumnoModeRoute>} />
         <Route path="test" element={<TestPage />} />
         <Route path="resultado" element={<ResultPage />} />
         <Route path="progreso" element={<ProgressPage />} />
@@ -184,13 +197,13 @@ export default function App() {
         <Route path="tema/:id" element={<MateriaPage />} />
         <Route path="bloque/:id" element={<TemaPage />} />
         <Route path="mis-oposiciones" element={<MisOposicionesPage />} />
-        <Route path="configurar-test" element={<ConfigurarTestPage />} />
+        <Route path="configurar-test" element={<AlumnoModeRoute blockInAlbacer><ConfigurarTestPage /></AlumnoModeRoute>} />
         <Route path="planes" element={<PlanesPage />} />
         <Route path="catalogo" element={<CatalogoPage />} />
         <Route path="notificaciones" element={<NotificacionesPage />} />
         <Route path="simulacros" element={<SimulacrosPage />} />
         <Route path="mis-tests" element={<MisTestsPage />} />
-        <Route path="ranking" element={<RankingPage />} />
+        <Route path="ranking" element={<AlumnoModeRoute blockInAlbacer><RankingPage /></AlumnoModeRoute>} />
         <Route
           path="admin"
           element={

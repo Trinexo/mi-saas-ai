@@ -1,5 +1,6 @@
 ﻿import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useUserAccesos } from '../hooks/useUserAccesos';
 import { useEffect, useState, useCallback } from 'react';
@@ -46,6 +47,18 @@ const MORE_ITEMS = [
   { to: '/ranking',      label: 'Ranking',          icon: 'trophy'    },
   { to: '/marcadas',     label: 'Favoritos',        icon: 'star'      },
 ];
+
+const ALUMNO_LEGACY_LINKS = new Set(['/plan-estudio']);
+const ALBACER_ONLY_HIDDEN_LINKS = new Set(['/configurar-test', '/ranking']);
+
+function filterAlumnoLinksByMode(links, modoPreparacion) {
+  const isAlbacer = modoPreparacion === 'albacer';
+  return links.filter(({ to }) => {
+    if (ALUMNO_LEGACY_LINKS.has(to)) return false;
+    if (isAlbacer && ALBACER_ONLY_HIDDEN_LINKS.has(to)) return false;
+    return true;
+  });
+}
 
 const ADMIN_NAV = [
   { to: '/admin',            exact: true,  icon: '▦', label: 'Dashboard' },
@@ -170,6 +183,7 @@ function Shell() {
   const { user, logout, token } = useAuth();
   const { plan } = useUserPlan();
   const { tieneAlgunAcceso } = useUserAccesos();
+  const { oposicionActiva } = useOposicionActiva();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const inicial = (user?.nombre || user?.email || '?')[0].toUpperCase();
@@ -204,9 +218,15 @@ function Shell() {
   const nombre = user?.nombre || user?.email || 'Usuario';
   const homePath = user?.role === 'admin' ? '/admin' : user?.role === 'profesor' ? '/profesor' : '/';
   const profilePath = user?.role === 'profesor' ? '/profesor/perfil' : '/perfil';
+  const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'albacer';
+  const alumnoNavLinks = tieneAlgunAcceso
+    ? filterAlumnoLinksByMode(NAV_LINKS, modoPreparacion)
+    : NAV_LINKS_FREE;
+  const bottomNavLinks = filterAlumnoLinksByMode(BOTTOM_NAV, modoPreparacion);
+  const moreItems = filterAlumnoLinksByMode(MORE_ITEMS, modoPreparacion);
 
   const navLinks = !isStaff
-    ? (tieneAlgunAcceso ? NAV_LINKS : NAV_LINKS_FREE)
+    ? alumnoNavLinks
     : user?.role === 'admin'
     ? ADMIN_NAV
     : PROFESOR_NAV;
@@ -463,7 +483,7 @@ function Shell() {
 
       {/* ── Bottom nav (solo móvil, solo alumnos) ────────── */}
       {!isStaff && (() => {
-        const moreActive = MORE_ITEMS.some(({ to }) => pathname.startsWith(to));
+        const moreActive = moreItems.some(({ to }) => pathname.startsWith(to));
         return (
           <>
             {/* Backdrop del sheet de Más */}
@@ -493,7 +513,7 @@ function Shell() {
               }}>
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e5e7eb', margin: '0 auto 14px' }} />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                  {MORE_ITEMS.map(({ to, label, icon }) => {
+                  {moreItems.map(({ to, label, icon }) => {
                     const active = pathname.startsWith(to);
                     return (
                       <Link
@@ -524,7 +544,7 @@ function Shell() {
             )}
 
             <nav className="bottom-nav">
-              {BOTTOM_NAV.map(({ to, label, exact, icon }) => {
+              {bottomNavLinks.map(({ to, label, exact, icon }) => {
                 const active = exact ? pathname === to : pathname.startsWith(to);
                 return (
                   <Link key={to} to={to} className={active ? 'active' : ''}>
