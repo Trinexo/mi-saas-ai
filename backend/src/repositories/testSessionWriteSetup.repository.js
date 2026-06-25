@@ -1,7 +1,20 @@
 import pool from '../config/db.js';
 
 export const testSessionWriteSetupRepository = {
-  async createTest({ userId, planificacionId, temaId, bloqueId, oposicionId, tipoTest, numeroPreguntas, duracionSegundos }) {
+  async createTest({
+    userId,
+    planificacionId,
+    temaId,
+    bloqueId,
+    oposicionId,
+    tipoTest,
+    numeroPreguntas,
+    duracionSegundos,
+    modoPreparacion = 'experto',
+    albacerModuloId = null,
+    albacerItemId = null,
+    scoringSnapshot = null,
+  }) {
     // Derivar oposicion_id desde tema si no se pasa explícitamente
     let resolvedOposicionId = oposicionId || null;
     if (!resolvedOposicionId && temaId) {
@@ -10,10 +23,27 @@ export const testSessionWriteSetupRepository = {
     }
 
     const result = await pool.query(
-      `INSERT INTO tests (usuario_id, planificacion_id, tema_id, bloque_id, oposicion_id, tipo_test, numero_preguntas, duracion_segundos, estado)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'generado')
+      `INSERT INTO tests (
+         usuario_id, planificacion_id, tema_id, bloque_id, oposicion_id,
+         modo_preparacion, albacer_modulo_id, albacer_item_id, scoring_snapshot,
+         tipo_test, numero_preguntas, duracion_segundos, estado
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, 'generado')
        RETURNING id`,
-      [userId, planificacionId || null, temaId || null, bloqueId || null, resolvedOposicionId, tipoTest, numeroPreguntas, duracionSegundos || null],
+      [
+        userId,
+        planificacionId || null,
+        temaId || null,
+        bloqueId || null,
+        resolvedOposicionId,
+        modoPreparacion,
+        albacerModuloId || null,
+        albacerItemId || null,
+        scoringSnapshot ? JSON.stringify(scoringSnapshot) : null,
+        tipoTest,
+        numeroPreguntas,
+        duracionSegundos || null,
+      ],
     );
     return result.rows[0];
   },
