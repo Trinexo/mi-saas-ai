@@ -49,6 +49,7 @@ const AdminSimulacroWizardPage = lazy(() => import('./pages/admin/AdminSimulacro
 const AdminEtiquetasPage = lazy(() => import('./pages/admin/AdminEtiquetasPage.jsx'));
 const AdminTestsPage = lazy(() => import('./pages/admin/AdminTestsPage.jsx'));
 const AdminEditTestPage = lazy(() => import('./pages/admin/AdminEditTestPage.jsx'));
+const AlbacerModulosPage = lazy(() => import('./pages/albacer/AlbacerModulosPage.jsx'));
 
 const ProfesorDashboardPage = lazy(() => import('./pages/profesor/ProfesorDashboardPage.jsx'));
 const ProfesorPreguntasPage = lazy(() => import('./pages/profesor/ProfesorPreguntasPage.jsx'));
@@ -223,6 +224,7 @@ export default function App() {
           <Route path="tests/nuevo" element={<AdminEditTestPage />} />
           <Route path="tests/:id/editar" element={<AdminEditTestPage />} />
           <Route path="tests" element={<AdminTestsPage />} />
+          <Route path="albacer/modulos" element={<AlbacerModulosPage scope="admin" />} />
           <Route path="usuarios" element={<AdminUsersPage />} />
           <Route path="accesos" element={<AdminAccesosPage />} />
           <Route path="precios" element={<AdminPreciosPage />} />
@@ -245,6 +247,7 @@ export default function App() {
           <Route path="oposiciones/:id" element={<Navigate to="/profesor/oposiciones" replace />} />
           <Route path="oposiciones" element={<ProfesorOposicionesPage />} />
           <Route path="temario" element={<ProfesorTemarioPage />} />
+          <Route path="albacer/modulos" element={<AlbacerModulosPage scope="profesor" />} />
           <Route path="alumnos" element={<ProfesorAlumnosPage />} />
           <Route path="estadisticas/:slug/:temaId" element={<ProfesorTemaDetallePage />} />
           <Route path="estadisticas/:slug" element={<ProfesorOposicionDetallePage />} />
