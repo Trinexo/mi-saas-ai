@@ -26,7 +26,7 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-export default function EvolucionSection({ oposicionId, modoPreparacion = 'experto' }) {
+export default function EvolucionSection({ oposicionId, modoPreparacion = 'experto', options = null }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +34,13 @@ export default function EvolucionSection({ oposicionId, modoPreparacion = 'exper
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    testApi.evolucionStats(token, 30, oposicionId, { modo_preparacion: modoPreparacion })
+    const queryOptions = options ?? { modo_preparacion: modoPreparacion };
+    testApi.evolucionStats(token, 30, oposicionId, queryOptions)
       .then((d) => { if (!cancelled) setData(Array.isArray(d) ? d : []); })
       .catch(() => { if (!cancelled) setData([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [token, oposicionId, modoPreparacion]);
+  }, [token, oposicionId, modoPreparacion, options]);
 
   if (loading || !data || data.length < 2) return null;
 

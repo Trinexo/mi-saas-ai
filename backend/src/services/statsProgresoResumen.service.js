@@ -9,8 +9,8 @@ export const statsProgresoResumenService = {
     return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null);
   },
 
-  async getProgresoTemasReal(userId, oposicionId) {
-    return progressStatsRepository.getProgresoTemasReal(userId, oposicionId ?? null);
+  async getProgresoTemasReal(userId, oposicionId, options = {}) {
+    return progressStatsRepository.getProgresoTemasReal(userId, oposicionId ?? null, options);
   },
 
   async getProgresoTemaReal(userId, temaId) {

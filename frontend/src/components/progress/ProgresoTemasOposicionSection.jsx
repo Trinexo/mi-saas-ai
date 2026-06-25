@@ -25,7 +25,7 @@ function PctBar({ pct }) {
 
 const getRespondidas = (tema) => tema.preguntasRespondidas ?? tema.totalRespondidas ?? tema.intentos ?? 0;
 
-export default function ProgresoTemasOposicionSection({ oposicionId }) {
+export default function ProgresoTemasOposicionSection({ oposicionId, options = null }) {
   const { token } = useAuth();
   const [abierto, setAbierto] = useState(false);
   const [temas, setTemas] = useState(null);
@@ -35,16 +35,16 @@ export default function ProgresoTemasOposicionSection({ oposicionId }) {
     if (!oposicionId || !abierto) return undefined;
     let cancelled = false;
     setTemas(null);
-    testApi.getProgresoTemasReal(token, oposicionId)
+    testApi.getProgresoTemasReal(token, oposicionId, options ?? {})
       .then((data) => { if (!cancelled) setTemas(Array.isArray(data) ? data : []); })
       .catch(() => { if (!cancelled) setTemas([]); });
     return () => { cancelled = true; };
-  }, [token, oposicionId, abierto]);
+  }, [token, oposicionId, abierto, options]);
 
   useEffect(() => {
     setAbierto(false);
     setTemas(null);
-  }, [oposicionId]);
+  }, [oposicionId, options]);
 
   const temasSorted = [...(temas ?? [])].sort((a, b) => {
     if (orden === 'pct_asc') return a.porcentajeAcierto - b.porcentajeAcierto;
@@ -104,7 +104,7 @@ export default function ProgresoTemasOposicionSection({ oposicionId }) {
 
           {oposicionId && temas?.length > 0 && (
             <>
-              <TemasDebilesWidget oposicionId={oposicionId} />
+              {options?.modo_preparacion !== 'albacer' && <TemasDebilesWidget oposicionId={oposicionId} />}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>{practicados}/{temas.length} temas practicados</span>

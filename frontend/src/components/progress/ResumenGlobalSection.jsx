@@ -33,7 +33,7 @@ function DonutTooltip({ active, payload }) {
   );
 }
 
-export default function ResumenGlobalSection({ oposicionId, modoPreparacion = 'experto' }) {
+export default function ResumenGlobalSection({ oposicionId, modoPreparacion = 'experto', options = null }) {
   const { token } = useAuth();
   const { isMobile } = useBreakpoint();
   const [stats, setStats] = useState(null);
@@ -44,13 +44,14 @@ export default function ResumenGlobalSection({ oposicionId, modoPreparacion = 'e
     let cancelled = false;
     setLoading(true);
     setError('');
+    const queryOptions = options ?? { modo_preparacion: modoPreparacion };
     testApi
-      .userStats(token, oposicionId, { modo_preparacion: modoPreparacion })
+      .userStats(token, oposicionId, queryOptions)
       .then((data) => { if (!cancelled) setStats(data); })
       .catch((e) => { if (!cancelled) setError(getErrorMessage(e, 'No se pudo cargar el progreso')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [token, oposicionId, modoPreparacion]);
+  }, [token, oposicionId, modoPreparacion, options]);
 
   if (error) return (
     <div style={{ display: 'flex', gap: 8, background: '#fef2f2', color: '#dc2626', borderRadius: 10, padding: '10px 16px', marginBottom: 16 }}>

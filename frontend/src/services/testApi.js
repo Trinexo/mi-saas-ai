@@ -13,7 +13,7 @@ export const testApi = {
   getActividad14Dias: (token, oposicionId) => apiRequest('/stats/actividad-14dias', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getTemasDebiles: (token, oposicionId) => apiRequest('/stats/temas-debiles', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getProgresoTemas: (token, oposicionId) => apiRequest('/stats/progreso-temas', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
-  getProgresoTemasReal: (token, oposicionId) => apiRequest('/stats/progreso-temas-real', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
+  getProgresoTemasReal: (token, oposicionId, options = {}) => apiRequest('/stats/progreso-temas-real', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getInsightMensual: (token, oposicionId) => apiRequest('/stats/insight-mensual', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getProgresoSemanal: (token, oposicionId) => apiRequest('/stats/progreso-semanal', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getEficienciaTiempo: (token, oposicionId) => apiRequest('/stats/eficiencia-tiempo', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
