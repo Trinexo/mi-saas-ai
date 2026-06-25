@@ -108,6 +108,21 @@ export default function ReviewPage() {
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
       <ReviewHeader onVolver={() => navigate('/resultado')} />
       <ReviewTestInfo testInfo={testInfo} />
+      {testInfo?.revisionLimitada && (
+        <div style={{
+          margin: '0 0 14px',
+          padding: '12px 14px',
+          borderRadius: 10,
+          background: '#fff7ed',
+          border: '1px solid #fed7aa',
+          color: '#9a3412',
+          fontSize: 13,
+          fontWeight: 700,
+          lineHeight: 1.45,
+        }}>
+          Revision limitada del modulo Albacer: hasta superar el simulacro final solo veras si cada pregunta esta correcta, fallada o en blanco.
+        </div>
+      )}
       <ReviewResumen correctas={correctas} errores={errores} blancos={blancos} />
       <ReviewFiltros
         filtro={filtro}

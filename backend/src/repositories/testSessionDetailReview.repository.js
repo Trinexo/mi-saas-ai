@@ -6,10 +6,15 @@ export const testSessionDetailReviewRepository = {
       `SELECT t.id, t.tema_id, te.nombre AS tema_nombre,
               t.oposicion_id, op.nombre AS oposicion_nombre,
               t.numero_preguntas, t.tipo_test, t.fecha_creacion,
+              t.modo_preparacion, t.albacer_modulo_id,
+              amp.estado AS albacer_modulo_estado,
               rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
        FROM tests t
        LEFT JOIN temas te ON te.id = t.tema_id
        LEFT JOIN oposiciones op ON op.id = t.oposicion_id
+       LEFT JOIN albacer_modulo_progreso amp
+              ON amp.usuario_id = t.usuario_id
+             AND amp.modulo_id = t.albacer_modulo_id
        LEFT JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.id = $1 AND t.usuario_id = $2`,
       [testId, userId],
@@ -31,6 +36,10 @@ export const testSessionDetailReviewRepository = {
       [testId],
     );
     const t = testResult.rows[0];
+    const revisionLimitada = t.modo_preparacion === 'albacer'
+      && t.albacer_modulo_id
+      && t.albacer_modulo_estado !== 'superado';
+
     return {
       test: {
         id: Number(t.id),
@@ -41,6 +50,10 @@ export const testSessionDetailReviewRepository = {
         numeroPreguntas: Number(t.numero_preguntas),
         tipoTest: t.tipo_test,
         fechaCreacion: t.fecha_creacion,
+        modoPreparacion: t.modo_preparacion ?? 'experto',
+        albacerModuloId: t.albacer_modulo_id ? Number(t.albacer_modulo_id) : null,
+        albacerModuloEstado: t.albacer_modulo_estado ?? null,
+        revisionLimitada,
         aciertos: t.aciertos ?? 0,
         errores: t.errores ?? 0,
         blancos: t.blancos ?? 0,
@@ -50,13 +63,15 @@ export const testSessionDetailReviewRepository = {
       preguntas: preguntasResult.rows.map(p => ({
         preguntaId: Number(p.pregunta_id),
         enunciado: p.enunciado,
-        explicacion: p.explicacion || null,
+        explicacion: revisionLimitada ? null : (p.explicacion || null),
         imagen_url: p.imagen_url || null,
         audio_url: p.audio_url || null,
         respuestaUsuarioId: p.elegida_id ? Number(p.elegida_id) : null,
         esCorrecta: Boolean(p.correcta),
-        correctaId: Number(p.correcta_id),
-        opciones: p.opciones,
+        correctaId: revisionLimitada ? null : Number(p.correcta_id),
+        opciones: revisionLimitada
+          ? p.opciones.map((opcion) => ({ ...opcion, correcta: false }))
+          : p.opciones,
       })),
     };
   },
