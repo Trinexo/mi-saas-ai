@@ -14,7 +14,6 @@ const PLAN_BADGE = {
 
 const NAV_LINKS = [
   { to: '/',                label: 'Inicio',          exact: true,  icon: 'home'      },
-  { to: '/plan-estudio',    label: 'Plan de estudio', exact: false, icon: 'clock'     },
   { to: '/mis-tests',       label: 'Mis tests',        exact: false, icon: 'clipboard' },
   { to: '/simulacros',      label: 'Simulacros',      exact: false, icon: 'simulacro' },
   { to: '/configurar-test', label: 'Crear test',       exact: false, icon: 'play'      },
@@ -40,7 +39,6 @@ const BOTTOM_NAV = [
 ];
 
 const MORE_ITEMS = [
-  { to: '/plan-estudio', label: 'Plan de estudio', icon: 'clock'     },
   { to: '/mis-tests',    label: 'Mis tests',        icon: 'clipboard' },
   { to: '/simulacros',   label: 'Simulacros',       icon: 'simulacro' },
   { to: '/historial',    label: 'Historial',        icon: 'clock'     },
@@ -48,13 +46,11 @@ const MORE_ITEMS = [
   { to: '/marcadas',     label: 'Favoritos',        icon: 'star'      },
 ];
 
-const ALUMNO_LEGACY_LINKS = new Set(['/plan-estudio']);
 const ALBACER_ONLY_HIDDEN_LINKS = new Set(['/configurar-test', '/ranking']);
 
 function filterAlumnoLinksByMode(links, modoPreparacion) {
   const isAlbacer = modoPreparacion === 'albacer';
   return links.filter(({ to }) => {
-    if (ALUMNO_LEGACY_LINKS.has(to)) return false;
     if (isAlbacer && ALBACER_ONLY_HIDDEN_LINKS.has(to)) return false;
     return true;
   });

@@ -498,6 +498,7 @@ Debe mostrar:
 - Mantener rutas legacy solo si hacen falta temporalmente para compatibilidad interna.
 - Marcar servicios y endpoints como deprecated.
 - Documentar retirada futura de tablas legacy.
+- Estado: frontend de alumno limpio. Se elimina la pantalla `PlanEstudioPage`, el cliente `planEstudioApi`, los enlaces de menu/home/notificaciones y `/plan-estudio` queda como redireccion a Inicio. El backend y tablas legacy se conservan para compatibilidad interna.
 
 ### PR J - Modulos automaticos
 

@@ -13,7 +13,6 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
-const PlanEstudioPage = lazy(() => import('./pages/PlanEstudioPage.jsx'));
 const TestPage = lazy(() => import('./pages/TestPage.jsx'));
 const ResultPage = lazy(() => import('./pages/ResultPage.jsx'));
 const ProgressPage = lazy(() => import('./pages/ProgressPage.jsx'));
@@ -186,7 +185,7 @@ export default function App() {
         }
       >
         <Route index element={<HomePage />} />
-        <Route path="plan-estudio" element={<AlumnoModeRoute hideLegacy><PlanEstudioPage /></AlumnoModeRoute>} />
+        <Route path="plan-estudio" element={<Navigate to="/" replace />} />
         <Route path="test" element={<TestPage />} />
         <Route path="resultado" element={<ResultPage />} />
         <Route path="progreso" element={<ProgressPage />} />
