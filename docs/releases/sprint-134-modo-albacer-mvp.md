@@ -461,6 +461,7 @@ Debe mostrar:
 - Bloquear preguntas ya usadas dentro del mismo modulo.
 - Permitir forzar reutilizacion.
 - Guardar items en `albacer_modulo_items`.
+- Estado: backend y UI inicial preparados para asociar tests existentes y un unico simulacro final existente a cada modulo. La creacion automatica/manual de tests desde el propio modulo queda para el siguiente bloque.
 
 ### PR F - Ejecucion alumno Albacer
 

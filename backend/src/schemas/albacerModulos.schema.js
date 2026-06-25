@@ -34,3 +34,41 @@ export const updateAlbacerModuloSchema = z.object({
   (payload) => Object.keys(payload).length > 0,
   { message: 'Proporciona al menos un campo a actualizar' },
 );
+
+export const albacerModuloItemIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  itemId: z.coerce.number().int().positive(),
+});
+
+export const createAlbacerModuloItemSchema = z.object({
+  tipo: z.enum(['test', 'simulacro_final']),
+  titulo: z.string().trim().min(3).max(200),
+  descripcion: z.string().trim().max(2000).nullable().optional(),
+  plantilla_test_id: z.number().int().positive().optional(),
+  simulacro_id: z.number().int().positive().optional(),
+  orden: z.number().int().min(0).optional(),
+  obligatorio: z.boolean().optional().default(false),
+}).superRefine((payload, ctx) => {
+  if (payload.tipo === 'test' && !payload.plantilla_test_id) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['plantilla_test_id'], message: 'Selecciona un test' });
+  }
+  if (payload.tipo === 'simulacro_final' && !payload.simulacro_id) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['simulacro_id'], message: 'Selecciona un simulacro final' });
+  }
+  if (payload.tipo === 'test' && payload.simulacro_id) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['simulacro_id'], message: 'Un item de test no puede tener simulacro' });
+  }
+  if (payload.tipo === 'simulacro_final' && payload.plantilla_test_id) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['plantilla_test_id'], message: 'Un simulacro final no puede tener test' });
+  }
+});
+
+export const updateAlbacerModuloItemSchema = z.object({
+  titulo: z.string().trim().min(3).max(200).optional(),
+  descripcion: z.string().trim().max(2000).nullable().optional(),
+  orden: z.number().int().min(0).optional(),
+  obligatorio: z.boolean().optional(),
+}).refine(
+  (payload) => Object.keys(payload).length > 0,
+  { message: 'Proporciona al menos un campo a actualizar' },
+);

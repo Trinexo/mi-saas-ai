@@ -52,3 +52,39 @@ export const deleteAlbacerModulo = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const listAlbacerModuloItems = async (req, res, next) => {
+  try {
+    const data = await albacerModulosService.listItems(req.params.id, req.user);
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const createAlbacerModuloItem = async (req, res, next) => {
+  try {
+    const data = await albacerModulosService.createItem(req.params.id, req.body, req.user);
+    return created(res, data, 'Contenido anadido al modulo');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const updateAlbacerModuloItem = async (req, res, next) => {
+  try {
+    const data = await albacerModulosService.updateItem(req.params.id, req.params.itemId, req.body, req.user);
+    return ok(res, data, 'Contenido del modulo actualizado');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deleteAlbacerModuloItem = async (req, res, next) => {
+  try {
+    await albacerModulosService.deleteItem(req.params.id, req.params.itemId, req.user);
+    return ok(res, null, 'Contenido eliminado del modulo');
+  } catch (error) {
+    return next(error);
+  }
+};
