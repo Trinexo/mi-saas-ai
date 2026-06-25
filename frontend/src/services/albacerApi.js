@@ -30,6 +30,8 @@ export const albacerApi = {
     apiRequest(`/admin/albacer/modulos/${moduloId}/items/${itemId}`, { method: 'DELETE', token }),
   createAdminModuloTest: (token, moduloId, payload = {}) =>
     apiRequest(`/admin/albacer/modulos/${moduloId}/tests`, { method: 'POST', token, body: payload }),
+  generateAdminModuloAuto: (token, moduloId, payload = {}) =>
+    apiRequest(`/admin/albacer/modulos/${moduloId}/generar-auto`, { method: 'POST', token, body: payload }),
   getAdminModuloUsedQuestions: (token, moduloId, query = {}) =>
     apiRequest(`/admin/albacer/modulos/${moduloId}/preguntas-usadas`, { token, query }),
 
@@ -53,6 +55,8 @@ export const albacerApi = {
     apiRequest(`/profesor/albacer/modulos/${moduloId}/items/${itemId}`, { method: 'DELETE', token }),
   createProfesorModuloTest: (token, moduloId, payload = {}) =>
     apiRequest(`/profesor/albacer/modulos/${moduloId}/tests`, { method: 'POST', token, body: payload }),
+  generateProfesorModuloAuto: (token, moduloId, payload = {}) =>
+    apiRequest(`/profesor/albacer/modulos/${moduloId}/generar-auto`, { method: 'POST', token, body: payload }),
   getProfesorModuloUsedQuestions: (token, moduloId, query = {}) =>
     apiRequest(`/profesor/albacer/modulos/${moduloId}/preguntas-usadas`, { token, query }),
 };

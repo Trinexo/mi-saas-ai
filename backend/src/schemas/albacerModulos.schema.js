@@ -89,6 +89,20 @@ export const createAlbacerModuloTestSchema = z.object({
   pts_blanco: z.number().optional().default(0),
 });
 
+export const generateAlbacerModuloAutoSchema = z.object({
+  numero_tests: z.number().int().min(1).max(20).default(2),
+  preguntas_por_test: z.number().int().min(1).max(200).default(20),
+  preguntas_simulacro_final: z.number().int().min(1).max(300).default(50),
+  nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional().nullable(),
+  estado: z.enum(['borrador', 'publicado', 'archivado']).optional().default('borrador'),
+  permitir_repetidas: z.boolean().optional().default(false),
+  duracion_minutos_test: z.number().int().positive().optional().nullable(),
+  duracion_minutos_simulacro: z.number().int().positive().optional().nullable(),
+  pts_acierto: z.number().optional().default(1),
+  pts_fallo: z.number().optional().default(-0.25),
+  pts_blanco: z.number().optional().default(0),
+});
+
 export const albacerModuloUsedQuestionsQuerySchema = z.object({
   except_test_id: z.coerce.number().int().positive().optional(),
 });

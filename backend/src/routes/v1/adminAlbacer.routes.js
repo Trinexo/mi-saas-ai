@@ -7,6 +7,7 @@ import {
   createAlbacerModulo,
   deleteAlbacerModuloItem,
   deleteAlbacerModulo,
+  generateAlbacerModuloAuto,
   getAlbacerModuloUsedQuestions,
   getAlbacerModulo,
   listAlbacerModuloItems,
@@ -20,6 +21,7 @@ import {
   createAlbacerModuloItemSchema,
   createAlbacerModuloTestSchema,
   createAlbacerModuloSchema,
+  generateAlbacerModuloAutoSchema,
   albacerModuloUsedQuestionsQuerySchema,
   listAlbacerModulosQuerySchema,
   updateAlbacerModuloItemSchema,
@@ -43,6 +45,12 @@ router.post(
   validate(albacerModuloIdParamSchema, 'params'),
   validate(createAlbacerModuloTestSchema, 'body'),
   createAlbacerModuloTest,
+);
+router.post(
+  '/modulos/:id/generar-auto',
+  validate(albacerModuloIdParamSchema, 'params'),
+  validate(generateAlbacerModuloAutoSchema, 'body'),
+  generateAlbacerModuloAuto,
 );
 router.get('/modulos/:id/items', validate(albacerModuloIdParamSchema, 'params'), listAlbacerModuloItems);
 router.post(

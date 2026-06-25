@@ -230,6 +230,13 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
   const [loadingItems, setLoadingItems] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
   const [itemError, setItemError] = useState('');
+  const [autoForm, setAutoForm] = useState({
+    numero_tests: 2,
+    preguntas_por_test: 20,
+    preguntas_simulacro_final: 50,
+    nivel_dificultad: '',
+    permitir_repetidas: false,
+  });
 
   const api = useMemo(() => ({
     list: isAdmin ? albacerApi.listAdminModulos : albacerApi.listProfesorModulos,
@@ -241,6 +248,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     updateItem: isAdmin ? albacerApi.updateAdminModuloItem : albacerApi.updateProfesorModuloItem,
     deleteItem: isAdmin ? albacerApi.deleteAdminModuloItem : albacerApi.deleteProfesorModuloItem,
     createModuloTest: isAdmin ? albacerApi.createAdminModuloTest : albacerApi.createProfesorModuloTest,
+    generateModuloAuto: isAdmin ? albacerApi.generateAdminModuloAuto : albacerApi.generateProfesorModuloAuto,
   }), [isAdmin]);
 
   const loadOposiciones = useCallback(async () => {
@@ -471,6 +479,27 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     }
   };
 
+  const generateAutoContent = async () => {
+    if (!contentModulo?.id) return;
+    setSavingItem(true);
+    setItemError('');
+    try {
+      await api.generateModuloAuto(token, contentModulo.id, {
+        numero_tests: Number(autoForm.numero_tests || 1),
+        preguntas_por_test: Number(autoForm.preguntas_por_test || 1),
+        preguntas_simulacro_final: Number(autoForm.preguntas_simulacro_final || 1),
+        nivel_dificultad: autoForm.nivel_dificultad || null,
+        permitir_repetidas: Boolean(autoForm.permitir_repetidas),
+      });
+      await loadItems(contentModulo);
+      await loadModulos();
+    } catch (err) {
+      setItemError(err.message || 'No se pudo generar el contenido automatico.');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
   return (
     <PageShell>
       <Header
@@ -593,6 +622,45 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
             </div>
           )}
         >
+          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 12 }}>
+              <div>
+                <div style={{ color: '#0f172a', fontSize: '.88rem', fontWeight: 950 }}>Generacion automatica</div>
+                <div style={{ color: '#64748b', fontSize: '.76rem', marginTop: 3 }}>Crea tests y simulacro final con preguntas de los temas del modulo.</div>
+              </div>
+              <Button onClick={generateAutoContent} disabled={savingItem}>
+                {savingItem ? 'Generando...' : 'Generar contenido'}
+              </Button>
+            </div>
+            <div className="albacer-modulo-auto-tools" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr)) minmax(130px, .7fr)', gap: 10, alignItems: 'end' }}>
+              <label style={{ display: 'grid', gap: 5 }}>
+                <span style={{ color: '#64748b', fontSize: '.7rem', fontWeight: 900 }}>Tests</span>
+                <input type="number" min="1" max="20" value={autoForm.numero_tests} onChange={(event) => setAutoForm((current) => ({ ...current, numero_tests: event.target.value }))} style={FIELD} />
+              </label>
+              <label style={{ display: 'grid', gap: 5 }}>
+                <span style={{ color: '#64748b', fontSize: '.7rem', fontWeight: 900 }}>Preguntas/test</span>
+                <input type="number" min="1" max="200" value={autoForm.preguntas_por_test} onChange={(event) => setAutoForm((current) => ({ ...current, preguntas_por_test: event.target.value }))} style={FIELD} />
+              </label>
+              <label style={{ display: 'grid', gap: 5 }}>
+                <span style={{ color: '#64748b', fontSize: '.7rem', fontWeight: 900 }}>Simulacro final</span>
+                <input type="number" min="1" max="300" value={autoForm.preguntas_simulacro_final} onChange={(event) => setAutoForm((current) => ({ ...current, preguntas_simulacro_final: event.target.value }))} style={FIELD} />
+              </label>
+              <label style={{ display: 'grid', gap: 5 }}>
+                <span style={{ color: '#64748b', fontSize: '.7rem', fontWeight: 900 }}>Dificultad</span>
+                <select value={autoForm.nivel_dificultad} onChange={(event) => setAutoForm((current) => ({ ...current, nivel_dificultad: event.target.value }))} style={FIELD}>
+                  <option value="">Mixta</option>
+                  <option value="facil">Facil</option>
+                  <option value="media">Media</option>
+                  <option value="dificil">Dificil</option>
+                </select>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#334155', fontSize: '.78rem', fontWeight: 900, minHeight: 40 }}>
+                <input type="checkbox" checked={autoForm.permitir_repetidas} onChange={(event) => setAutoForm((current) => ({ ...current, permitir_repetidas: event.target.checked }))} style={{ accentColor: P }} />
+                Permitir repetidas
+              </label>
+            </div>
+          </div>
+
           <div className="albacer-modulo-content-tools" style={{ display: 'grid', gridTemplateColumns: '180px minmax(220px, 1fr) auto', gap: 10, marginBottom: 14 }}>
             <select value={itemTipo} onChange={(event) => { setItemTipo(event.target.value); setSelectedCandidateId(''); }} style={FIELD}>
               <option value="test">Test del módulo</option>
@@ -669,10 +737,12 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           .albacer-modulo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
           .albacer-modulo-filters { grid-template-columns: 1fr !important; }
           .albacer-modulo-content-tools { grid-template-columns: 1fr !important; }
+          .albacer-modulo-auto-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
         }
         @media (max-width: 720px) {
           .albacer-modulo-metrics { grid-template-columns: 1fr !important; }
           .albacer-modulo-modal-grid { grid-template-columns: 1fr !important; }
+          .albacer-modulo-auto-tools { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </PageShell>
