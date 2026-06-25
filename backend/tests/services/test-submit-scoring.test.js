@@ -17,6 +17,34 @@ describe('testSubmitScoringNotaService', () => {
       total: 10,
     }), 6.01);
   });
+
+  it('calcula nota con snapshot de plantilla Albacer', () => {
+    assert.equal(testSubmitScoringNotaService.calcNotaSnapshot({
+      aciertos: 7,
+      errores: 2,
+      blancos: 1,
+      total: 10,
+      scoringSnapshot: {
+        source: 'admin_test',
+        pts_acierto: 1,
+        pts_fallo: -0.5,
+        pts_blanco: 0,
+      },
+    }), 6);
+  });
+
+  it('calcula nota con snapshot de simulacro Albacer', () => {
+    assert.equal(testSubmitScoringNotaService.calcNotaSnapshot({
+      aciertos: 7,
+      errores: 2,
+      blancos: 1,
+      total: 10,
+      scoringSnapshot: {
+        source: 'simulacro',
+        penalizacion: 0.5,
+      },
+    }), 6);
+  });
 });
 
 describe('testSubmitScoringEvaluacionService', () => {
@@ -65,5 +93,26 @@ describe('testSubmitScoringEvaluacionService', () => {
     });
 
     assert.equal(resultado.nota, 3.35);
+  });
+
+  it('prioriza scoring_snapshot sobre la penalizacion por numero de opciones', () => {
+    const resultado = testSubmitScoringEvaluacionService.evaluateRespuestas({
+      mapaRespuestasCorrectas: new Map([
+        [1, { opcionId: 10, totalOpciones: 3 }],
+        [2, { opcionId: 20, totalOpciones: 3 }],
+      ]),
+      scoringSnapshot: {
+        source: 'admin_test',
+        pts_acierto: 1,
+        pts_fallo: -0.25,
+        pts_blanco: 0,
+      },
+      respuestas: [
+        { preguntaId: 1, respuestaId: 10 },
+        { preguntaId: 2, respuestaId: 21 },
+      ],
+    });
+
+    assert.equal(resultado.nota, 3.75);
   });
 });
