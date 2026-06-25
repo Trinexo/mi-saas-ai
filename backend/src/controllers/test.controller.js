@@ -134,7 +134,8 @@ export const getTestContinuar = async (req, res, next) => {
 export const getTestPendientes = async (req, res, next) => {
   try {
     const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
-    const data = await testPendientesService.getPendientes(req.user.userId, oposicionId);
+    const modoPreparacion = req.query.modo_preparacion || null;
+    const data = await testPendientesService.getPendientes(req.user.userId, oposicionId, modoPreparacion);
     return ok(res, data);
   } catch (error) {
     return next(error);

@@ -4,7 +4,8 @@ import { misTestsService } from '../services/misTests.service.js';
 export const getMisTestsPublicados = async (req, res, next) => {
   try {
     const plan = req.user.plan ?? 'free';
-    const items = await misTestsService.getPublicados(req.user.userId, plan);
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const items = await misTestsService.getPublicados(req.user.userId, plan, oposicionId);
     return ok(res, items);
   } catch (err) {
     return next(err);

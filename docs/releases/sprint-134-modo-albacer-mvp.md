@@ -530,6 +530,7 @@ Debe mostrar:
 - Antes de superar modulo, no se muestran respuestas ni explicaciones de preguntas falladas.
 - Despues de superar modulo, se puede mostrar revision completa del modulo.
 - Tests sugeridos por profesor solo aparecen a alumnos con `tipo_alumno = albacer` en esa oposicion.
+- Estado sugeridos: `/mis-tests` y `/simulacros` filtran por `tipo_alumno = albacer`; los accesos libres solo conservan visibilidad de `TEST DEMO` en tests.
 - Estadisticas e historial se filtran por modo y oposicion.
 
 ---

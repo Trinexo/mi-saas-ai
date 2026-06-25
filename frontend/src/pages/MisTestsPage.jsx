@@ -234,6 +234,8 @@ export default function MisTestsPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const { oposicionActiva } = useOposicionActiva();
+  const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
+  const isAlbacer = modoPreparacion === 'albacer';
 
   const [tests,     setTests    ] = useState([]);
   const [loading,   setLoading  ] = useState(true);
@@ -246,7 +248,7 @@ export default function MisTestsPage() {
   const [cerrandoId,    setCerrandoId   ] = useState(null);
 
   useEffect(() => {
-    misTestsApi.getPublicados(token)
+    misTestsApi.getPublicados(token, oposicionActiva?.id)
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.data ?? []);
         setTests(lista);
@@ -254,14 +256,14 @@ export default function MisTestsPage() {
       .catch(() => setTests([]))
       .finally(() => setLoading(false));
 
-    testApi.getPendientes(token)
+    testApi.getPendientes(token, oposicionActiva?.id, { modo_preparacion: modoPreparacion })
       .then((res) => {
         const lista = Array.isArray(res) ? res : (res?.data ?? []);
         setPendientes(lista);
       })
       .catch(() => setPendientes([]))
       .finally(() => setLoadingPend(false));
-  }, [token]);
+  }, [token, oposicionActiva?.id, modoPreparacion]);
 
   const getOposicionId = (item) => (
     Number(item?.oposicionId ?? item?.oposicion_id ?? item?.oposicion?.id ?? 0) || null
@@ -365,18 +367,20 @@ export default function MisTestsPage() {
             Tests pendientes y tests del profesor, ordenados por tema.
           </p>
         </div>
-        <Link
-          to="/configurar-test"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: OR, color: '#fff', borderRadius: 10,
-            padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
-            textDecoration: 'none', boxShadow: `0 3px 12px ${OR}40`,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          + Crear test propio
-        </Link>
+        {!isAlbacer && (
+          <Link
+            to="/configurar-test"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: OR, color: '#fff', borderRadius: 10,
+              padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
+              textDecoration: 'none', boxShadow: `0 3px 12px ${OR}40`,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            + Crear test propio
+          </Link>
+        )}
       </div>
 
       {/* ── Tests sin finalizar ──────────────────────────── */}
@@ -440,17 +444,19 @@ export default function MisTestsPage() {
           <p style={{ margin: '0 0 20px', fontSize: '0.82rem', color: GL }}>
             Cuando el profesor publique un test aparecerá aquí, ordenado por tema.
           </p>
-          <Link
-            to="/configurar-test"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: OR, color: '#fff', borderRadius: 9,
-              padding: '10px 22px', fontWeight: 700, fontSize: '0.85rem',
-              textDecoration: 'none',
-            }}
-          >
-            + Crear mi propio test
-          </Link>
+          {!isAlbacer && (
+            <Link
+              to="/configurar-test"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: OR, color: '#fff', borderRadius: 9,
+                padding: '10px 22px', fontWeight: 700, fontSize: '0.85rem',
+                textDecoration: 'none',
+              }}
+            >
+              + Crear mi propio test
+            </Link>
+          )}
         </div>
       ) : (
         Array.from(porTema.entries()).map(([temaNombre, items]) => (
