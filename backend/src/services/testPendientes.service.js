@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 
 export const testPendientesService = {
-  async getPendientes(userId, oposicionId = null) {
+  async getPendientes(userId, oposicionId = null, modoPreparacion = null) {
     const res = await pool.query(
       `SELECT t.id,
               t.numero_preguntas,
@@ -18,9 +18,10 @@ export const testPendientesService = {
        WHERE t.usuario_id = $1
          AND t.estado = 'generado'
          AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+         AND ($3::text IS NULL OR t.modo_preparacion = $3)
        GROUP BY t.id, t.oposicion_id, op.nombre, te.nombre
        ORDER BY t.fecha_creacion DESC`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion],
     );
 
     return res.rows.map((r) => ({

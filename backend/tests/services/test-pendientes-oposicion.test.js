@@ -19,6 +19,18 @@ describe('testPendientesService.getPendientes', () => {
 
     await testPendientesService.getPendientes(7, 12);
 
-    assert.deepEqual(receivedParams, [7, 12]);
+    assert.deepEqual(receivedParams, [7, 12, null]);
+  });
+
+  it('pasa modo_preparacion opcional a la consulta de pendientes', async () => {
+    let receivedParams = null;
+    pool.query = async (_sql, params) => {
+      receivedParams = params;
+      return { rows: [] };
+    };
+
+    await testPendientesService.getPendientes(7, 12, 'albacer');
+
+    assert.deepEqual(receivedParams, [7, 12, 'albacer']);
   });
 });

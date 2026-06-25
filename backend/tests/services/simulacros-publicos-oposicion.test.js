@@ -16,8 +16,8 @@ describe('simulacrosPublicosService.getPublicados', () => {
   it('filtra por oposicion activa cuando se recibe oposicion_id', async () => {
     let receivedIds = null;
     accesoOposicionRepository.getAccesosActivos = async () => [
-      { oposicion_id: 10 },
-      { oposicion_id: 20 },
+      { oposicion_id: 10, tipo_alumno: 'albacer' },
+      { oposicion_id: 20, tipo_alumno: 'albacer' },
     ];
     simulacrosPublicosRepository.getPublicados = async (oposicionIds) => {
       receivedIds = oposicionIds;
@@ -31,7 +31,7 @@ describe('simulacrosPublicosService.getPublicados', () => {
 
   it('devuelve lista vacia si la oposicion solicitada no esta activa para el usuario', async () => {
     let receivedIds = null;
-    accesoOposicionRepository.getAccesosActivos = async () => [{ oposicion_id: 10 }];
+    accesoOposicionRepository.getAccesosActivos = async () => [{ oposicion_id: 10, tipo_alumno: 'albacer' }];
     simulacrosPublicosRepository.getPublicados = async (oposicionIds) => {
       receivedIds = oposicionIds;
       return [];
@@ -40,5 +40,21 @@ describe('simulacrosPublicosService.getPublicados', () => {
     await simulacrosPublicosService.getPublicados(1, 99);
 
     assert.deepEqual(receivedIds, []);
+  });
+
+  it('excluye simulacros sugeridos para accesos de alumno libre', async () => {
+    let receivedIds = null;
+    accesoOposicionRepository.getAccesosActivos = async () => [
+      { oposicion_id: 10, tipo_alumno: 'libre' },
+      { oposicion_id: 20, tipo_alumno: 'albacer' },
+    ];
+    simulacrosPublicosRepository.getPublicados = async (oposicionIds) => {
+      receivedIds = oposicionIds;
+      return [];
+    };
+
+    await simulacrosPublicosService.getPublicados(1);
+
+    assert.deepEqual(receivedIds, [20]);
   });
 });

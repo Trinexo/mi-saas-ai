@@ -5,7 +5,7 @@ export const misTestsRepository = {
    * Devuelve plantillas de test publicadas para una lista de oposicionIds.
    * Agrupa por tema para que el frontend pueda ordenarlas.
    */
-  async getPublicados(oposicionIds, plan = 'free') {
+  async getPublicados(oposicionIds, plan = 'free', includeOnlyDemo = false) {
     if (!oposicionIds.length) return [];
     const result = await pool.query(
       `SELECT at.id,
@@ -15,6 +15,8 @@ export const misTestsRepository = {
               at.duracion_minutos,
               at.oposicion_id,
               at.tema_id,
+              at.es_demo,
+              at.scope,
               o.nombre  AS oposicion_nombre,
               te.nombre AS tema_nombre,
               COALESCE(tt.temas_resumen, te.nombre) AS temas_resumen,
@@ -35,9 +37,11 @@ export const misTestsRepository = {
        WHERE at.oposicion_id = ANY($1)
          AND at.estado = 'publicado'
          AND (at.es_demo = FALSE OR $2 = 'free')
+         AND ($3::boolean = FALSE OR at.es_demo = TRUE)
+         AND COALESCE(at.scope, 'experto') <> 'albacer_modulo'
        GROUP BY at.id, o.nombre, te.nombre, tt.temas_resumen, tt.tema_ids
        ORDER BY COALESCE(tt.temas_resumen, te.nombre) ASC NULLS LAST, at.nombre ASC`,
-      [oposicionIds, plan],
+      [oposicionIds, plan, includeOnlyDemo],
     );
     return result.rows;
   },
@@ -48,7 +52,8 @@ export const misTestsRepository = {
   async getTestConPreguntas(testId) {
     const testRes = await pool.query(
       `SELECT at.id, at.nombre, at.descripcion, at.nivel_dificultad,
-              at.duracion_minutos, at.oposicion_id, at.tema_id
+              at.duracion_minutos, at.oposicion_id, at.tema_id,
+              at.es_demo, at.scope
        FROM admin_tests at
        WHERE at.id = $1 AND at.estado = 'publicado'`,
       [testId],
