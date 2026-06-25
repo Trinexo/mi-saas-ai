@@ -229,6 +229,10 @@ td {
   gap: 14px;
 }
 
+.albacer-home-main-grid {
+  min-width: 0;
+}
+
 /* ── Tabla responsive ─────────────────────────────────────── */
 .table-responsive {
   overflow-x: auto;
@@ -376,6 +380,10 @@ td {
   .card-grid-4,
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .albacer-home-main-grid {
+    grid-template-columns: 1fr !important;
   }
 
   /* Auth pages fullscreen en móvil: ocupa exactamente la pantalla visible */

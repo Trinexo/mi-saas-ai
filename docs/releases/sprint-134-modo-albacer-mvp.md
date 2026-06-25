@@ -482,6 +482,7 @@ Debe mostrar:
 - Mostrar modulo actual, tests, simulacro final, progreso y bloqueos.
 - Mostrar `Plan completado` con boton para activar Modo Experto.
 - Mostrar sugeridos del profesor solo si `tipo_alumno = albacer`.
+- Estado: Home Albacer MVP implementada sobre endpoints reales. Muestra progreso de modulos, modulo actual, tests, simulacro final, ruta bloqueada/superada y cambio a Modo Experto al completar el plan.
 
 ### PR H - Historial, progreso y ranking separados
 
