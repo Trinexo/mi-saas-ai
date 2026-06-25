@@ -473,6 +473,7 @@ Debe mostrar:
 - Crear sesiones en `tests` con `modo_preparacion = albacer`.
 - Guardar `albacer_modulo_id`, `albacer_item_id` y `scoring_snapshot`.
 - Evaluar superacion por mejor nota o porcentaje.
+- Estado backend inicial: endpoints de alumno preparados para listar modulos publicados, calcular modulo actual/bloqueado, iniciar tests de modulo y simulacro final creando sesiones Albacer con snapshot de puntuacion. La evaluacion de superacion al enviar el simulacro final queda como siguiente bloque de este PR F.
 
 ### PR G - Home Albacer MVP
 

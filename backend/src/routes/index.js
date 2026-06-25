@@ -15,6 +15,7 @@ import profesorRoutes from './v1/profesor.routes.js';
 import planEstudioRoutes from './v1/planEstudio.routes.js';
 import simulacrosRoutes from './v1/simulacros.routes.js';
 import misTestsRoutes from './v1/misTests.routes.js';
+import albacerRoutes from './v1/albacer.routes.js';
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use('/profesor', profesorRoutes);
 router.use('/plan-estudio', planEstudioRoutes);
 router.use('/simulacros', simulacrosRoutes);
 router.use('/mis-tests', misTestsRoutes);
+router.use('/albacer', albacerRoutes);
 
 export default router;

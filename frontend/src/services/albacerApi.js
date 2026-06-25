@@ -1,6 +1,15 @@
 import { apiRequest } from './api';
 
 export const albacerApi = {
+  getAlumnoEstado: (token, query = {}) =>
+    apiRequest('/albacer/estado', { token, query }),
+  listAlumnoModulos: (token, query = {}) =>
+    apiRequest('/albacer/modulos', { token, query }),
+  empezarAlumnoItem: (token, itemId) =>
+    apiRequest(`/albacer/items/${itemId}/empezar`, { method: 'POST', token }),
+  empezarAlumnoSimulacroFinal: (token, moduloId) =>
+    apiRequest(`/albacer/modulos/${moduloId}/simulacro-final/empezar`, { method: 'POST', token }),
+
   listAdminModulos: (token, query = {}) =>
     apiRequest('/admin/albacer/modulos', { token, query }),
   getAdminModulo: (token, id) =>
