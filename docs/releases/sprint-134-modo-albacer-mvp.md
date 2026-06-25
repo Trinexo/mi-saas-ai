@@ -537,7 +537,7 @@ Debe mostrar:
 ## Riesgos
 
 - El plan legacy ya tiene integraciones con home, notificaciones, calendario y tests; hay que ocultarlo sin romper rutas existentes.
-- El scoring actual calcula nota al enviar, pero el snapshot de scoring por intento debe incorporarse para que Albacer sea consistente.
+- El scoring Albacer usa `scoring_snapshot` al enviar: los intentos antiguos sin snapshot conservan el calculo historico.
 - Muchas consultas de estadisticas usan `tests` sin filtrar por modo; deben auditarse antes de exponer Albacer.
 - La reutilizacion de `admin_tests` y `simulacros` reduce duplicacion, pero exige campos `scope` bien aplicados para no cruzar contenido.
 - Si un profesor cambia temas o preguntas de un modulo ya iniciado, hay que definir reglas de versionado en un sprint posterior.

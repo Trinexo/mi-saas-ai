@@ -1,7 +1,7 @@
 export const testSessionWriteEvaluateRepository = {
   async getTestById(client, testId) {
     const result = await client.query(
-      `SELECT id, usuario_id, estado, modo_preparacion, albacer_modulo_id, albacer_item_id
+      `SELECT id, usuario_id, estado, modo_preparacion, albacer_modulo_id, albacer_item_id, scoring_snapshot
        FROM tests
        WHERE id = $1`,
       [testId],

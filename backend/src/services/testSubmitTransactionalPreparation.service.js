@@ -15,6 +15,7 @@ export const testSubmitTransactionalPreparationService = {
     const scoring = testSubmitScoringService.evaluateRespuestas({
       respuestas,
       mapaRespuestasCorrectas,
+      scoringSnapshot: test.scoring_snapshot ?? null,
     });
 
     return {
@@ -23,6 +24,7 @@ export const testSubmitTransactionalPreparationService = {
         modo_preparacion: test.modo_preparacion ?? 'experto',
         albacer_modulo_id: test.albacer_modulo_id ?? null,
         albacer_item_id: test.albacer_item_id ?? null,
+        scoring_snapshot: test.scoring_snapshot ?? null,
       },
     };
   },

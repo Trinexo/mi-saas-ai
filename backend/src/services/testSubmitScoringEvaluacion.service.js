@@ -1,7 +1,7 @@
 import { testSubmitScoringNotaService } from './testSubmitScoringNota.service.js';
 
 export const testSubmitScoringEvaluacionService = {
-  evaluateRespuestas({ respuestas, mapaRespuestasCorrectas }) {
+  evaluateRespuestas({ respuestas, mapaRespuestasCorrectas, scoringSnapshot = null }) {
     let aciertos = 0;
     let errores = 0;
     let blancos = 0;
@@ -35,7 +35,14 @@ export const testSubmitScoringEvaluacionService = {
 
     const total = mapaRespuestasCorrectas.size;
     blancos = Math.max(blancos, total - (aciertos + errores));
-    const nota = testSubmitScoringNotaService.calcNota({ aciertos, errores, total, penalizacionErrores });
+    const notaSnapshot = testSubmitScoringNotaService.calcNotaSnapshot({
+      aciertos,
+      errores,
+      blancos,
+      total,
+      scoringSnapshot,
+    });
+    const nota = notaSnapshot ?? testSubmitScoringNotaService.calcNota({ aciertos, errores, total, penalizacionErrores });
 
     return {
       aciertos,
