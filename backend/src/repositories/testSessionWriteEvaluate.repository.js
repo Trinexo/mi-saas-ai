@@ -1,6 +1,11 @@
 export const testSessionWriteEvaluateRepository = {
   async getTestById(client, testId) {
-    const result = await client.query('SELECT id, usuario_id, estado FROM tests WHERE id = $1', [testId]);
+    const result = await client.query(
+      `SELECT id, usuario_id, estado, modo_preparacion, albacer_modulo_id, albacer_item_id
+       FROM tests
+       WHERE id = $1`,
+      [testId],
+    );
     return result.rows[0] ?? null;
   },
 

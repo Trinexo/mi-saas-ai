@@ -12,9 +12,18 @@ export const testSubmitTransactionalPreparationService = {
     const uniquePreguntaIds = testSubmitValidationService.assertNoDuplicateRespuestas(respuestas);
     testSubmitValidationService.assertPreguntasBelongToTest(uniquePreguntaIds, mapaRespuestasCorrectas);
 
-    return testSubmitScoringService.evaluateRespuestas({
+    const scoring = testSubmitScoringService.evaluateRespuestas({
       respuestas,
       mapaRespuestasCorrectas,
     });
+
+    return {
+      ...scoring,
+      testContext: {
+        modo_preparacion: test.modo_preparacion ?? 'experto',
+        albacer_modulo_id: test.albacer_modulo_id ?? null,
+        albacer_item_id: test.albacer_item_id ?? null,
+      },
+    };
   },
 };

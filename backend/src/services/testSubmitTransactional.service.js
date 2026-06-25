@@ -9,7 +9,7 @@ export const testSubmitTransactionalService = {
     try {
       await client.query('BEGIN');
 
-      const { aciertos, errores, blancos, nota, respuestasEvaluadas } =
+      const { aciertos, errores, blancos, nota, respuestasEvaluadas, testContext } =
         await testSubmitTransactionalPreparationService.prepareSubmission({
           client,
           userId,
@@ -39,6 +39,7 @@ export const testSubmitTransactionalService = {
         nota,
         tiempoSegundos,
         respuestasEvaluadas,
+        testContext,
       };
     } catch (error) {
       await client.query('ROLLBACK');
