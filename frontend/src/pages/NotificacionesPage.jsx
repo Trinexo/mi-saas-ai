@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
-import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { notificacionesApi } from '../services/notificacionesApi';
 
 const TIPO_ICON = {
@@ -18,8 +16,6 @@ const TIPO_COLOR = {
   sistema: { bg: '#f9fafb', border: '#e5e7eb', color: '#374151' },
 };
 
-const isPlanEstudioNotification = (tipo) => tipo === 'plan_estudio' || tipo === 'plan_estudio_recordatorio';
-
 const getNotificationOposicionNombre = (notificacion) => (
   notificacion?.datos_extra?.oposicionNombre
   || notificacion?.datos_extra?.oposicion_nombre
@@ -27,9 +23,7 @@ const getNotificationOposicionNombre = (notificacion) => (
 );
 
 export default function NotificacionesPage() {
-  const navigate = useNavigate();
   const { token } = useAuth();
-  const { setOposicionActiva } = useOposicionActiva();
   const [items, setItems] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [loading, setLoading] = useState(true);
@@ -70,20 +64,6 @@ export default function NotificacionesPage() {
     await notificacionesApi.marcarTodasLeidas(token).catch(() => {});
     setItems((prev) => prev.map((n) => ({ ...n, leida: true })));
     setMarkingAll(false);
-  };
-
-  const handleVerPlan = async (notificacion) => {
-    if (!notificacion.leida) {
-      await handleMarcarLeida(notificacion.id);
-    }
-    const oposicionId = Number(notificacion.datos_extra?.oposicionId);
-    if (oposicionId) {
-      setOposicionActiva({
-        id: oposicionId,
-        nombre: notificacion.datos_extra?.oposicionNombre || 'Oposición seleccionada',
-      });
-    }
-    navigate('/plan-estudio');
   };
 
   const totalPages = Math.ceil((pagination.total ?? 0) / (pagination.pageSize ?? 20));
@@ -224,25 +204,6 @@ export default function NotificacionesPage() {
                     }}>
                       <strong>Mensaje del equipo:</strong> {n.datos_extra.mensajeAdmin}
                     </blockquote>
-                  )}
-                  {isPlanEstudioNotification(n.tipo) && (
-                    <button
-                      type="button"
-                      onClick={() => handleVerPlan(n)}
-                      style={{
-                        marginTop: 10,
-                        border: 'none',
-                        borderRadius: 8,
-                        background: estilo.color,
-                        color: '#fff',
-                        padding: '7px 12px',
-                        cursor: 'pointer',
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                      }}
-                    >
-                      Ver plan
-                    </button>
                   )}
                 </div>
                 {!n.leida && (

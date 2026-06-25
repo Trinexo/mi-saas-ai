@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
-import { planEstudioApi } from '../services/planEstudioApi';
 import { albacerApi } from '../services/albacerApi';
 import { accesosApi } from '../services/accesosApi';
 import { useAsyncAction } from '../hooks/useAsyncAction';
@@ -68,12 +67,6 @@ const IconArrow = () => (
     <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
   </svg>
 );
-const IconCheck = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-
 /* ── Barra de progreso ───────────────────────────────────── */
 function ProgressBar({ pct, color = O }) {
   return (
@@ -309,174 +302,6 @@ function ContinuarCard() {
             </button>
           </>
         )}
-      </div>
-    </div>
-  );
-}
-
-/* ── Plan de estudio semanal ──────────────────────────────── */
-const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
-function PlanSemanal() {
-  const { token } = useAuth();
-  const navigate = useNavigate();
-  const { oposicionActiva } = useOposicionActiva();
-  const [plan, setPlan] = useState(null);
-  const [actividades, setActividades] = useState([]);
-  const [startingId, setStartingId] = useState(null);
-  const [planError, setPlanError] = useState('');
-
-  useEffect(() => {
-    testApi.getProgresoSemanal(token, oposicionActiva?.id).then(setPlan).catch(() => setPlan(null));
-  }, [token, oposicionActiva?.id]);
-
-  useEffect(() => {
-    if (!token || !oposicionActiva?.id) {
-      setActividades([]);
-      return;
-    }
-    planEstudioApi.list(token, oposicionActiva.id)
-      .then((res) => setActividades(Array.isArray(res?.items) ? res.items.slice(0, 4) : []))
-      .catch(() => setActividades([]));
-  }, [token, oposicionActiva?.id]);
-
-  const handleEmpezarPlan = async (item) => {
-    if (!item?.id || startingId) return;
-    setStartingId(item.id);
-    setPlanError('');
-    try {
-      const test = await planEstudioApi.empezar(token, item.id);
-      sessionStorage.setItem('active_test', JSON.stringify(test));
-      navigate('/test');
-    } catch (error) {
-      setPlanError(error.message || 'No se pudo iniciar esta actividad.');
-    } finally {
-      setStartingId(null);
-    }
-  };
-
-  if (actividades.length > 0) {
-    return (
-      <div style={{ ...CARD, padding: '20px 22px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Plan de estudio</div>
-            <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Recomendado por tu profesor</div>
-          </div>
-          <Link to="/plan-estudio" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver todo</Link>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {actividades.map((item) => {
-            const date = item.fecha_inicio
-              ? new Date(item.fecha_inicio).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
-              : 'Próximo';
-            const estado = item.estado_alumno || 'proximo';
-            const enabled = estado === 'disponible';
-            const completado = estado === 'completado';
-            const loading = startingId === item.id;
-            const nota = item.mi_mejor_nota != null ? Number(item.mi_mejor_nota) : null;
-            const estadoLabel = enabled
-              ? 'Disponible'
-              : completado
-                ? (nota != null ? `${nota.toFixed(1)} pts` : 'Completado')
-                : estado === 'cerrado'
-                  ? 'Cerrado'
-                  : 'Próximo';
-            return (
-              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'center', padding: '9px 10px', borderRadius: 10, border: `1px solid ${BD}`, background: enabled ? OBG : '#fff' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: DK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.titulo}</div>
-                  <div style={{ fontSize: '0.68rem', color: GL, marginTop: 2 }}>
-                    {date} · {completado ? 'Completado' : estadoLabel}
-                  </div>
-                </div>
-                {enabled ? (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleEmpezarPlan(item)}
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 800,
-                      color: '#fff',
-                      background: O,
-                      borderRadius: 8,
-                      padding: '6px 9px',
-                      border: 'none',
-                      cursor: loading ? 'wait' : 'pointer',
-                      opacity: loading ? 0.75 : 1,
-                    }}
-                  >
-                    {loading ? 'Abriendo...' : 'Empezar'}
-                  </button>
-                ) : (
-                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: completado ? '#15803d' : O, background: completado ? '#dcfce7' : OBG, padding: '4px 8px', borderRadius: 20 }}>
-                    {estadoLabel}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {planError && <div style={{ color: '#dc2626', fontSize: '0.72rem', marginTop: 10 }}>{planError}</div>}
-      </div>
-    );
-  }
-
-  if (!plan?.dias || !Array.isArray(plan.dias) || plan.dias.length === 0) {
-    return (
-      <div style={{ ...CARD, padding: '20px 22px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Plan de estudio</div>
-            <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Aún no hay actividades programadas</div>
-          </div>
-          <Link to="/plan-estudio" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver plan</Link>
-        </div>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-          {DIAS.map((dia) => (
-            <div key={dia} style={{ flex: 1, height: 4, borderRadius: 999, background: '#e5e7eb' }} />
-          ))}
-        </div>
-        <div style={{ padding: '14px 10px', borderRadius: 10, border: `1px dashed ${BD}`, background: '#fff', color: GL, fontSize: '0.78rem', lineHeight: 1.45 }}>
-          Tu profesor podrá publicar aquí simulacros, tests recomendados o temas para repasar.
-        </div>
-      </div>
-    );
-  }
-
-  const sesiones = plan.dias;
-
-  const completadas = sesiones.filter((s) => s.completado).length;
-
-  return (
-    <div style={{ ...CARD, padding: '20px 22px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div>
-          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: DK }}>Plan de estudio</div>
-          <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>{completadas}/7 sesiones esta semana</div>
-        </div>
-        <Link to="/plan-estudio" style={{ fontSize: '0.75rem', color: O, fontWeight: 700, textDecoration: 'none' }}>Ver plan</Link>
-      </div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-        {sesiones.map((s, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: s.completado ? '#16a34a' : s.esHoy ? O : '#e5e7eb' }} />
-        ))}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {sesiones.slice(0, 5).map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', borderRadius: 8, background: s.esHoy ? OBG : 'transparent', border: s.esHoy ? `1px solid ${OL}40` : '1px solid transparent' }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: s.completado ? '#f0fdf4' : s.esHoy ? OBG : '#f3f4f6', color: s.completado ? '#16a34a' : s.esHoy ? O : GL, border: `1.5px solid ${s.completado ? '#86efac' : s.esHoy ? OL : BD}` }}>
-              {s.completado ? <IconCheck /> : s.esHoy ? <IconPlay /> : null}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: s.esHoy ? 700 : 500, color: s.esHoy ? DK : G, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.dia}</div>
-              {s.materia && <div style={{ fontSize: '0.68rem', color: s.completado ? '#16a34a' : GL, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.materia}</div>}
-            </div>
-            {s.completado && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#16a34a', background: '#f0fdf4', padding: '2px 7px', borderRadius: 20 }}>✓</span>}
-            {s.esHoy && !s.completado && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: O, background: OBG, padding: '2px 7px', borderRadius: 20 }}>Hoy</span>}
-          </div>
-        ))}
       </div>
     </div>
   );
