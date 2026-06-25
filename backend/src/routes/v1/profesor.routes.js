@@ -59,6 +59,7 @@ import {
 } from '../../schemas/profesorSimulacros.schema.js';
 import { z } from 'zod';
 import profesorWorkspaceRoutes from './profesorWorkspace.routes.js';
+import profesorAlbacerRoutes from './profesorAlbacer.routes.js';
 
 const misPreguntasQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
@@ -80,6 +81,7 @@ const router = Router();
 router.use(requireAuth, requireRole('profesor'));
 
 router.use('/workspace', profesorWorkspaceRoutes);
+router.use('/albacer', profesorAlbacerRoutes);
 
 router.get('/dashboard', getProfesorDashboard);
 router.get('/mis-oposiciones', getMisOposiciones);

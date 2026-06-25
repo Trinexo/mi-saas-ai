@@ -6,6 +6,7 @@ import settingsRouter from './adminSettings.routes.js';
 import simulacrosRouter from './adminSimulacros.routes.js';
 import etiquetasRouter from './adminEtiquetas.routes.js';
 import testsRouter from './adminTests.routes.js';
+import albacerRouter from './adminAlbacer.routes.js';
 
 const router = Router();
 router.use(gestionRouter);
@@ -13,6 +14,7 @@ router.use('/settings', settingsRouter);
 router.use('/simulacros', simulacrosRouter);
 router.use('/etiquetas', etiquetasRouter);
 router.use('/tests', testsRouter);
+router.use('/albacer', albacerRouter);
 router.use(catalogoRouter);
 
 export default router;

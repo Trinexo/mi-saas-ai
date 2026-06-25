@@ -451,6 +451,7 @@ Debe mostrar:
 - Estados `borrador`, `publicado`, `archivado`.
 - Validar oposicion asignada al profesor.
 - Crear primeras pantallas admin/profesor para listar y editar modulos.
+- Estado: backend MVP implementado con endpoints admin/profesor, permisos por oposicion asignada y API frontend preparada. La pantalla visual queda para el siguiente bloque de UI.
 
 ### PR E - Tests y simulacro final de modulo
 
