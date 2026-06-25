@@ -235,6 +235,28 @@ export const albacerModulosRepository = {
     return result.rows.map((row) => Number(row.pregunta_id));
   },
 
+  async listPreguntaIdsForAutoModulo({ oposicionId, temaIds, excludeIds = [], nivelDificultad = null, limit }) {
+    const result = await pool.query(
+      `SELECT p.id
+       FROM preguntas p
+       JOIN temas t ON t.id = p.tema_id
+       WHERE t.oposicion_id = $1
+         AND ($2::bigint[] IS NULL OR p.tema_id = ANY($2::bigint[]))
+         AND ($3::text IS NULL OR p.nivel_dificultad = $3)
+         AND (COALESCE(array_length($4::bigint[], 1), 0) = 0 OR p.id <> ALL($4::bigint[]))
+       ORDER BY random()
+       LIMIT $5`,
+      [
+        oposicionId,
+        temaIds?.length ? temaIds : null,
+        nivelDificultad ?? null,
+        excludeIds ?? [],
+        limit,
+      ],
+    );
+    return result.rows.map((row) => Number(row.id));
+  },
+
   async listItems(moduloId) {
     const result = await pool.query(
       `SELECT

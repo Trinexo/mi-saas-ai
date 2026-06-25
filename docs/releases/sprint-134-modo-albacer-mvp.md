@@ -509,6 +509,7 @@ Debe mostrar:
 - Reparto por dificultad.
 - Validacion de preguntas suficientes sin repetir.
 - Generacion automatica bloqueante si no hay banco suficiente.
+- Estado: MVP implementado con generacion automatica desde el panel de contenido del modulo. Permite configurar numero de tests, preguntas por test, preguntas del simulacro final, dificultad y repeticion. Backend valida banco suficiente y crea tests + simulacro final asociados al modulo.
 
 ---
 

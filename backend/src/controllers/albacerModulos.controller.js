@@ -98,6 +98,15 @@ export const createAlbacerModuloTest = async (req, res, next) => {
   }
 };
 
+export const generateAlbacerModuloAuto = async (req, res, next) => {
+  try {
+    const data = await albacerModulosService.generateAutoContent(req.params.id, req.body, req.user);
+    return created(res, data, 'Contenido automatico del modulo creado');
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getAlbacerModuloUsedQuestions = async (req, res, next) => {
   try {
     const data = await albacerModulosService.getUsedQuestionIds(
