@@ -4,6 +4,8 @@ import { useAuth } from '../state/auth.jsx';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import { testApi } from '../services/testApi';
 import { planEstudioApi } from '../services/planEstudioApi';
+import { albacerApi } from '../services/albacerApi';
+import { accesosApi } from '../services/accesosApi';
 import { useAsyncAction } from '../hooks/useAsyncAction';
 
 /* ── Paleta ───────────────────────────────────────────────── */
@@ -670,6 +672,280 @@ function HistorialReciente() {
   );
 }
 
+function AlbacerMetric({ label, value, hint }) {
+  return (
+    <div style={{ ...CARD, padding: '16px 18px' }}>
+      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: DK, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: '0.76rem', color: G, fontWeight: 800, marginTop: 5 }}>{label}</div>
+      {hint && <div style={{ fontSize: '0.68rem', color: GL, marginTop: 3 }}>{hint}</div>}
+    </div>
+  );
+}
+
+function AlbacerItemCard({ item, disabled, startingId, onStart }) {
+  const isFinal = item.tipo === 'simulacro_final';
+  const title = item.titulo || (isFinal ? 'Simulacro final' : 'Test del módulo');
+  const total = Number(item.total_preguntas ?? 0);
+  const duration = item.duracion_segundos ? Math.round(Number(item.duracion_segundos) / 60) : null;
+  const starting = startingId === item.id;
+
+  return (
+    <div style={{
+      border: `1px solid ${isFinal ? '#fed7aa' : BD}`,
+      borderRadius: 12,
+      background: isFinal ? OBG : '#fff',
+      padding: 14,
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) auto',
+      gap: 12,
+      alignItems: 'center',
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 900, color: DK }}>{title}</span>
+          <span style={{
+            fontSize: '0.66rem',
+            fontWeight: 900,
+            color: isFinal ? O : '#2563eb',
+            background: isFinal ? '#ffedd5' : '#eff6ff',
+            padding: '3px 8px',
+            borderRadius: 999,
+          }}>
+            {isFinal ? 'Final de módulo' : 'Test'}
+          </span>
+        </div>
+        <div style={{ fontSize: '0.72rem', color: GL, marginTop: 5 }}>
+          {total} preguntas{duration ? ` · ${duration} min` : ''}
+        </div>
+      </div>
+      <button
+        type="button"
+        disabled={disabled || starting || total === 0}
+        onClick={() => onStart(item)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          border: 'none',
+          borderRadius: 10,
+          padding: '9px 13px',
+          background: disabled || total === 0 ? '#e5e7eb' : O,
+          color: disabled || total === 0 ? G : '#fff',
+          fontSize: '0.78rem',
+          fontWeight: 900,
+          cursor: disabled || starting || total === 0 ? 'not-allowed' : 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <IconPlay /> {starting ? 'Abriendo...' : isFinal ? 'Intentar nivel' : 'Empezar'}
+      </button>
+    </div>
+  );
+}
+
+function HomeAlbacer({ nombre, saludo, fecha }) {
+  const { token } = useAuth();
+  const navigate = useNavigate();
+  const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
+  const [estado, setEstado] = useState(null);
+  const [modulos, setModulos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [startingId, setStartingId] = useState(null);
+  const [activandoExperto, setActivandoExperto] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    if (!token || !oposicionActiva?.id) return undefined;
+    setLoading(true);
+    setError('');
+    Promise.all([
+      albacerApi.getAlumnoEstado(token, { oposicion_id: oposicionActiva.id }),
+      albacerApi.listAlumnoModulos(token, { oposicion_id: oposicionActiva.id }),
+    ])
+      .then(([nextEstado, modulosResponse]) => {
+        if (!alive) return;
+        setEstado(nextEstado);
+        setModulos(Array.isArray(modulosResponse?.items) ? modulosResponse.items : []);
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setError(err.message || 'No se pudo cargar tu ruta Albacer.');
+        setEstado(null);
+        setModulos([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => { alive = false; };
+  }, [token, oposicionActiva?.id]);
+
+  const moduloActual = estado?.modulo_actual ?? modulos.find((m) => m.actual) ?? null;
+  const modulosSuperados = estado?.modulos_superados ?? modulos.filter((m) => m.estado_calculado === 'superado').length;
+  const totalModulos = estado?.total_modulos ?? modulos.length;
+  const planCompletado = Boolean(estado?.plan_completado);
+  const progresoPct = totalModulos > 0 ? Math.round((modulosSuperados / totalModulos) * 100) : 0;
+  const itemsActuales = moduloActual?.items ?? [];
+  const testsActuales = itemsActuales.filter((item) => item.tipo === 'test');
+  const finalActual = itemsActuales.find((item) => item.tipo === 'simulacro_final') ?? null;
+
+  const startItem = async (item) => {
+    if (!item?.id || startingId) return;
+    setStartingId(item.id);
+    setError('');
+    try {
+      const test = await albacerApi.empezarAlumnoItem(token, item.id);
+      sessionStorage.setItem('active_test', JSON.stringify(test));
+      navigate('/test');
+    } catch (err) {
+      setError(err.message || 'No se pudo iniciar esta actividad.');
+    } finally {
+      setStartingId(null);
+    }
+  };
+
+  const activarExperto = async () => {
+    if (!oposicionActiva?.id || activandoExperto) return;
+    setActivandoExperto(true);
+    setError('');
+    try {
+      await accesosApi.updatePreparacion(token, oposicionActiva.id, { modoPreparacion: 'experto' });
+      setOposicionActiva({ ...oposicionActiva, modoPreparacion: 'experto' });
+    } catch (err) {
+      setError(err.message || 'No se pudo activar el Modo Experto.');
+    } finally {
+      setActivandoExperto(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+            <h1 style={{ margin: 0, fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 900, color: DK }}>
+              ¡{saludo}, {nombre}!
+            </h1>
+            {oposicionActiva && (
+              <Link to="/mis-oposiciones" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: OBG, color: O, fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: 999, textDecoration: 'none', border: `1px solid ${OL}40` }}>
+                {oposicionActiva.nombre}
+              </Link>
+            )}
+            <span style={{ background: '#ede9fe', color: '#5b21b6', fontSize: '0.72rem', fontWeight: 900, padding: '4px 10px', borderRadius: 999 }}>
+              Modo Albacer
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: GL }}>
+            {fecha.charAt(0).toUpperCase() + fecha.slice(1)} · Avanza por módulos y supera el simulacro final de cada nivel.
+          </p>
+        </div>
+        <Link to="/mis-oposiciones" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: O, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', fontWeight: 800, fontSize: '0.84rem', border: `1px solid ${OL}55` }}>
+          Cambiar curso
+        </Link>
+      </div>
+
+      {error && (
+        <div style={{ ...CARD, padding: '12px 16px', color: '#b91c1c', background: '#fef2f2', borderColor: '#fecaca', fontSize: '0.82rem', fontWeight: 700 }}>
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ ...CARD, padding: 24, color: GL, fontWeight: 800 }}>Cargando tu ruta Albacer...</div>
+      ) : totalModulos === 0 ? (
+        <div style={{ ...CARD, padding: 26 }}>
+          <h2 style={{ margin: '0 0 8px', color: DK, fontSize: '1.05rem' }}>Aún no hay módulos publicados</h2>
+          <p style={{ margin: 0, color: G, fontSize: '0.86rem', lineHeight: 1.6 }}>
+            Tu profesor todavía no ha publicado el itinerario Albacer para esta oposición. Mientras tanto puedes consultar tu historial o cambiar a otro curso.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="kpi-grid">
+            <AlbacerMetric label="Módulos superados" value={`${modulosSuperados}/${totalModulos}`} hint={`${progresoPct}% del itinerario`} />
+            <AlbacerMetric label="Nivel actual" value={planCompletado ? 'Completado' : (moduloActual?.nombre ?? 'Sin módulo')} hint={planCompletado ? 'Ruta Albacer finalizada' : 'Módulo desbloqueado'} />
+            <AlbacerMetric label="Tests del módulo" value={testsActuales.length} hint="Puedes repetirlos cuando quieras" />
+            <AlbacerMetric label="Simulacro final" value={finalActual ? 'Disponible' : 'Pendiente'} hint="Superarlo desbloquea el siguiente nivel" />
+          </div>
+
+          <div style={{ ...CARD, padding: '22px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 16 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.72rem', color: GL, textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.06em' }}>
+                  {planCompletado ? 'Plan completado' : 'Módulo actual'}
+                </div>
+                <h2 style={{ margin: '4px 0 5px', color: DK, fontSize: '1.18rem', fontWeight: 950 }}>
+                  {planCompletado ? 'Has completado la ruta Albacer' : moduloActual?.nombre}
+                </h2>
+                {moduloActual?.descripcion && <p style={{ margin: 0, color: G, fontSize: '0.84rem', lineHeight: 1.55 }}>{moduloActual.descripcion}</p>}
+              </div>
+              {planCompletado && (
+                <button
+                  type="button"
+                  onClick={activarExperto}
+                  disabled={activandoExperto}
+                  style={{ border: 'none', borderRadius: 10, background: O, color: '#fff', padding: '10px 16px', fontWeight: 900, cursor: activandoExperto ? 'wait' : 'pointer' }}
+                >
+                  {activandoExperto ? 'Activando...' : 'Activar Modo Experto'}
+                </button>
+              )}
+            </div>
+            <ProgressBar pct={progresoPct} />
+          </div>
+
+          {!planCompletado && (
+            <div className="albacer-home-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(260px, .8fr)', gap: 16, alignItems: 'start' }}>
+              <div style={{ ...CARD, padding: '20px 22px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 900, color: DK }}>Actividades del módulo</div>
+                    <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Los tests entrenan; el simulacro final decide el nivel.</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {testsActuales.map((item) => (
+                    <AlbacerItemCard key={item.id} item={item} startingId={startingId} onStart={startItem} />
+                  ))}
+                  {finalActual && <AlbacerItemCard item={finalActual} startingId={startingId} onStart={startItem} />}
+                  {!itemsActuales.length && (
+                    <div style={{ border: `1px dashed ${BD}`, borderRadius: 12, padding: 18, color: GL, fontSize: '0.82rem' }}>
+                      Este módulo todavía no tiene tests publicados.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ ...CARD, padding: '20px 22px' }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: DK, marginBottom: 12 }}>Ruta de módulos</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  {modulos.slice(0, 8).map((modulo) => {
+                    const superado = modulo.estado_calculado === 'superado';
+                    const actual = modulo.estado_calculado === 'disponible';
+                    const bloqueado = modulo.estado_calculado === 'bloqueado';
+                    return (
+                      <div key={modulo.id} style={{ display: 'grid', gridTemplateColumns: '24px minmax(0, 1fr)', gap: 10, alignItems: 'center', opacity: bloqueado ? 0.65 : 1 }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'grid', placeItems: 'center', background: superado ? '#dcfce7' : actual ? OBG : '#f3f4f6', color: superado ? '#15803d' : actual ? O : GL, fontWeight: 950, fontSize: '0.72rem' }}>
+                          {superado ? '✓' : bloqueado ? '•' : '▶'}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 900, color: DK, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modulo.nombre}</div>
+                          <div style={{ fontSize: '0.66rem', color: GL }}>{superado ? 'Superado' : actual ? 'Actual' : 'Bloqueado'}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <HistorialReciente />
+    </div>
+  );
+}
+
 /* ── página principal ────────────────────────────────────── */
 export default function HomePage() {
   const { user } = useAuth();
@@ -679,6 +955,10 @@ export default function HomePage() {
   const saludo = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fecha  = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
+
+  if (isAlbacer) {
+    return <HomeAlbacer nombre={nombre} saludo={saludo} fecha={fecha} />;
+  }
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
