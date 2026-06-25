@@ -175,4 +175,40 @@ export const albacerModulosService = {
       await albacerModulosRepository.unmarkSimulacroAsModuloFinal(deleted.simulacro_id, moduloId);
     }
   },
+
+  async createTestForModulo(moduloId, payload, caller = {}) {
+    const modulo = await this.get(moduloId, caller);
+    const nombre = payload.nombre?.trim() || `${modulo.nombre} - Test`;
+    const test = await adminTestsService.createTest({
+      nombre,
+      descripcion: payload.descripcion ?? null,
+      oposicion_id: modulo.oposicion_id,
+      tema_ids: modulo.tema_ids ?? [],
+      estado: payload.estado ?? 'borrador',
+      nivel_dificultad: payload.nivel_dificultad ?? null,
+      duracion_minutos: payload.duracion_minutos ?? null,
+      mezclar_preguntas: payload.mezclar_preguntas ?? true,
+      mostrar_resultados: payload.mostrar_resultados ?? true,
+      mostrar_explicaciones: payload.mostrar_explicaciones ?? false,
+      tipo_puntuacion: payload.tipo_puntuacion ?? 'estandar',
+      pts_acierto: payload.pts_acierto ?? 1,
+      pts_fallo: payload.pts_fallo ?? -0.25,
+      pts_blanco: payload.pts_blanco ?? 0,
+    }, caller);
+    const item = await this.createItem(moduloId, {
+      tipo: 'test',
+      titulo: test.nombre,
+      descripcion: test.descripcion ?? null,
+      plantilla_test_id: test.id,
+      orden: payload.orden,
+      obligatorio: false,
+    }, caller);
+    return { test, item };
+  },
+
+  async getUsedQuestionIds(moduloId, { exceptTestId } = {}, caller = {}) {
+    await this.get(moduloId, caller);
+    const preguntaIds = await albacerModulosRepository.getUsedPreguntaIds(moduloId, exceptTestId ?? null);
+    return { pregunta_ids: preguntaIds };
+  },
 };

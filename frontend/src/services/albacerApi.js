@@ -19,6 +19,10 @@ export const albacerApi = {
     apiRequest(`/admin/albacer/modulos/${moduloId}/items/${itemId}`, { method: 'PUT', token, body: payload }),
   deleteAdminModuloItem: (token, moduloId, itemId) =>
     apiRequest(`/admin/albacer/modulos/${moduloId}/items/${itemId}`, { method: 'DELETE', token }),
+  createAdminModuloTest: (token, moduloId, payload = {}) =>
+    apiRequest(`/admin/albacer/modulos/${moduloId}/tests`, { method: 'POST', token, body: payload }),
+  getAdminModuloUsedQuestions: (token, moduloId, query = {}) =>
+    apiRequest(`/admin/albacer/modulos/${moduloId}/preguntas-usadas`, { token, query }),
 
   listProfesorModulos: (token, query = {}) =>
     apiRequest('/profesor/albacer/modulos', { token, query }),
@@ -38,4 +42,8 @@ export const albacerApi = {
     apiRequest(`/profesor/albacer/modulos/${moduloId}/items/${itemId}`, { method: 'PUT', token, body: payload }),
   deleteProfesorModuloItem: (token, moduloId, itemId) =>
     apiRequest(`/profesor/albacer/modulos/${moduloId}/items/${itemId}`, { method: 'DELETE', token }),
+  createProfesorModuloTest: (token, moduloId, payload = {}) =>
+    apiRequest(`/profesor/albacer/modulos/${moduloId}/tests`, { method: 'POST', token, body: payload }),
+  getProfesorModuloUsedQuestions: (token, moduloId, query = {}) =>
+    apiRequest(`/profesor/albacer/modulos/${moduloId}/preguntas-usadas`, { token, query }),
 };

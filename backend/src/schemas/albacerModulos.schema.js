@@ -72,3 +72,23 @@ export const updateAlbacerModuloItemSchema = z.object({
   (payload) => Object.keys(payload).length > 0,
   { message: 'Proporciona al menos un campo a actualizar' },
 );
+
+export const createAlbacerModuloTestSchema = z.object({
+  nombre: z.string().trim().min(3).max(200).optional(),
+  descripcion: z.string().trim().max(2000).nullable().optional(),
+  orden: z.number().int().min(0).optional(),
+  estado: z.enum(['borrador', 'publicado', 'archivado']).optional().default('borrador'),
+  nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional().nullable(),
+  duracion_minutos: z.number().int().positive().optional().nullable(),
+  mezclar_preguntas: z.boolean().optional().default(true),
+  mostrar_resultados: z.boolean().optional().default(true),
+  mostrar_explicaciones: z.boolean().optional().default(false),
+  tipo_puntuacion: z.enum(['estandar', 'personalizada']).optional().default('estandar'),
+  pts_acierto: z.number().optional().default(1),
+  pts_fallo: z.number().optional().default(-0.25),
+  pts_blanco: z.number().optional().default(0),
+});
+
+export const albacerModuloUsedQuestionsQuerySchema = z.object({
+  except_test_id: z.coerce.number().int().positive().optional(),
+});

@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../../services/adminApi';
 import { catalogApi } from '../../services/catalogApi';
 import { profesorApi } from '../../services/profesorApi';
+import { albacerApi } from '../../services/albacerApi';
 import TemaMultiSelect from '../../components/forms/TemaMultiSelect.jsx';
 import { useAuth } from '../../state/auth.jsx';
 
@@ -114,7 +115,7 @@ function Toggle({ value, onChange, label, desc }) {
   );
 }
 
-function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existingQuestionIds = [], onClose, onAdded, token, isProfesor }) {
+function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existingQuestionIds = [], moduleUsedQuestionIds = [], onClose, onAdded, token, isProfesor }) {
   const [preguntas, setPreguntas] = useState([]);
   const [temas, setTemas] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -134,6 +135,7 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
 
   const normalizedAllowedTemaIds = useMemo(() => normalizeTemaIds(allowedTemaIds), [allowedTemaIds]);
   const existingQuestionIdSet = useMemo(() => new Set(existingQuestionIds.map((id) => Number(id))), [existingQuestionIds]);
+  const moduleUsedQuestionIdSet = useMemo(() => new Set(moduleUsedQuestionIds.map((id) => Number(id))), [moduleUsedQuestionIds]);
   const normalizedTemas = useMemo(
     () => (Array.isArray(temas) ? temas : [])
       .map(normalizeTemaOption)
@@ -207,6 +209,7 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
 
   const toggle = (id) => {
     if (existingQuestionIdSet.has(Number(id))) return;
+    if (moduleUsedQuestionIdSet.has(Number(id))) return;
     setSelected((current) => (
       current.includes(id)
         ? current.filter((item) => item !== id)
@@ -243,7 +246,7 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
         cantidad: Number(autoCantidad || 10),
         dificultad: autoDificultad || null,
         plantilla_test_id: testId ? Number(testId) : undefined,
-        exclude_ids: [...new Set([...selected, ...existingQuestionIds])],
+        exclude_ids: [...new Set([...selected, ...existingQuestionIds, ...moduleUsedQuestionIds])],
         permitir_completar_con_otros_temas: true,
       };
       const res = isProfesor
@@ -323,14 +326,16 @@ function ModalAnadirPreguntas({ testId, oposicionId, allowedTemaIds = [], existi
                   const dif = DIFICULTAD[pregunta.nivel_dificultad];
                   const checked = selected.includes(pregunta.id);
                   const alreadyLinked = existingQuestionIdSet.has(Number(pregunta.id));
+                  const alreadyUsedInModule = !alreadyLinked && moduleUsedQuestionIdSet.has(Number(pregunta.id));
                   return (
-                    <tr key={pregunta.id} onClick={() => toggle(pregunta.id)} style={{ cursor: alreadyLinked ? 'default' : 'pointer', background: checked ? 'rgba(124,58,237,.04)' : (alreadyLinked ? '#f8fafc' : '') }}>
+                    <tr key={pregunta.id} onClick={() => toggle(pregunta.id)} style={{ cursor: (alreadyLinked || alreadyUsedInModule) ? 'default' : 'pointer', background: checked ? 'rgba(124,58,237,.04)' : ((alreadyLinked || alreadyUsedInModule) ? '#f8fafc' : '') }}>
                       <td style={TD}>
-                        <input type="checkbox" checked={checked || alreadyLinked} disabled={alreadyLinked} onChange={() => toggle(pregunta.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: P, cursor: alreadyLinked ? 'not-allowed' : 'pointer' }} />
+                        <input type="checkbox" checked={checked || alreadyLinked || alreadyUsedInModule} disabled={alreadyLinked || alreadyUsedInModule} onChange={() => toggle(pregunta.id)} onClick={(e) => e.stopPropagation()} style={{ accentColor: P, cursor: (alreadyLinked || alreadyUsedInModule) ? 'not-allowed' : 'pointer' }} />
                       </td>
                       <td style={{ ...TD, maxWidth: 420 }}>
                         <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{pregunta.enunciado}</span>
                         {alreadyLinked && <div style={{ marginTop: 6, fontSize: '.72rem', fontWeight: 700, color: '#64748b' }}>Ya anadida al test</div>}
+                        {alreadyUsedInModule && <div style={{ marginTop: 6, fontSize: '.72rem', fontWeight: 700, color: '#b45309' }}>Ya usada en otro test/simulacro del módulo</div>}
                       </td>
                       <td style={TD}>{pregunta.tema_nombre ?? '-'}</td>
                       <td style={TD}>
@@ -396,6 +401,8 @@ export default function AdminEditTestPage() {
   const [savingDemo, setSavingDemo] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [preguntas, setPreguntas] = useState([]);
+  const [albacerModuloId, setAlbacerModuloId] = useState(null);
+  const [moduleUsedQuestionIds, setModuleUsedQuestionIds] = useState([]);
 
   useEffect(() => {
     if (!isNew) return;
@@ -471,6 +478,7 @@ export default function AdminEditTestPage() {
         });
         setEsDemoTest(test.es_demo ?? false);
         setPreguntas(test.preguntas ?? []);
+        setAlbacerModuloId(test.albacer_modulo_id ?? null);
       })
       .catch(() => setError('No se pudo cargar el test.'))
       .finally(() => setLoading(false));
@@ -543,6 +551,17 @@ export default function AdminEditTestPage() {
   const handlePreguntasAdded = () => {
     testApi.get(token, id).then((test) => setPreguntas(test.preguntas ?? [])).catch(() => {});
   };
+
+  useEffect(() => {
+    if (isNew || !albacerModuloId || !id) {
+      setModuleUsedQuestionIds([]);
+      return;
+    }
+    const api = isProfesor ? albacerApi.getProfesorModuloUsedQuestions : albacerApi.getAdminModuloUsedQuestions;
+    api(token, albacerModuloId, { except_test_id: id })
+      .then((res) => setModuleUsedQuestionIds(res?.pregunta_ids ?? []))
+      .catch(() => setModuleUsedQuestionIds([]));
+  }, [albacerModuloId, id, isNew, isProfesor, token]);
 
   const selectedOposicion = oposiciones.find((item) => String(item.id) === String(form.oposicion_id));
   const selectedTemas = temas.filter((tema) => form.tema_ids.includes(String(tema.id)));
@@ -784,6 +803,7 @@ export default function AdminEditTestPage() {
           oposicionId={form.oposicion_id || null}
           allowedTemaIds={form.tema_ids}
           existingQuestionIds={preguntas.map((pregunta) => pregunta.id)}
+          moduleUsedQuestionIds={moduleUsedQuestionIds}
           token={token}
           isProfesor={isProfesor}
           onClose={() => setShowModal(false)}

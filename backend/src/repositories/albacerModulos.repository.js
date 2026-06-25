@@ -211,6 +211,30 @@ export const albacerModulosRepository = {
     return Number(result.rows[0]?.total ?? 0);
   },
 
+  async getUsedPreguntaIds(moduloId, exceptPlantillaTestId = null) {
+    const result = await pool.query(
+      `SELECT DISTINCT pregunta_id
+       FROM (
+         SELECT atp.pregunta_id
+         FROM albacer_modulo_items mi
+         JOIN admin_tests_preguntas atp ON atp.test_id = mi.plantilla_test_id
+         WHERE mi.modulo_id = $1
+           AND mi.plantilla_test_id IS NOT NULL
+           AND ($2::bigint IS NULL OR mi.plantilla_test_id <> $2)
+         UNION
+         SELECT sp.pregunta_id
+         FROM albacer_modulo_items mi
+         JOIN simulacros_bloques sb ON sb.simulacro_id = mi.simulacro_id
+         JOIN simulacros_preguntas sp ON sp.bloque_id = sb.id
+         WHERE mi.modulo_id = $1
+           AND mi.simulacro_id IS NOT NULL
+       ) used
+       ORDER BY pregunta_id`,
+      [moduloId, exceptPlantillaTestId],
+    );
+    return result.rows.map((row) => Number(row.pregunta_id));
+  },
+
   async listItems(moduloId) {
     const result = await pool.query(
       `SELECT

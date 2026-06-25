@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { adminApi } from '../../services/adminApi';
 import { profesorApi } from '../../services/profesorApi';
@@ -205,6 +206,7 @@ function ModuloModal({ open, form, temas, oposiciones, saving, error, isAdmin, o
 
 export default function AlbacerModulosPage({ scope = 'profesor' }) {
   const { token, user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = scope === 'admin' || user?.role === 'admin';
   const [oposiciones, setOposiciones] = useState([]);
   const [selectedOposicion, setSelectedOposicion] = useState('');
@@ -238,6 +240,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     createItem: isAdmin ? albacerApi.createAdminModuloItem : albacerApi.createProfesorModuloItem,
     updateItem: isAdmin ? albacerApi.updateAdminModuloItem : albacerApi.updateProfesorModuloItem,
     deleteItem: isAdmin ? albacerApi.deleteAdminModuloItem : albacerApi.deleteProfesorModuloItem,
+    createModuloTest: isAdmin ? albacerApi.createAdminModuloTest : albacerApi.createProfesorModuloTest,
   }), [isAdmin]);
 
   const loadOposiciones = useCallback(async () => {
@@ -445,6 +448,29 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     }
   };
 
+  const createModuleTest = async () => {
+    if (!contentModulo?.id) return;
+    setSavingItem(true);
+    setItemError('');
+    try {
+      const result = await api.createModuloTest(token, contentModulo.id, {
+        nombre: `${contentModulo.nombre} - Test ${items.filter((item) => item.tipo === 'test').length + 1}`,
+        descripcion: `Test del modulo ${contentModulo.nombre}`,
+      });
+      const testId = result?.test?.id;
+      if (testId) {
+        navigate(`${isAdmin ? '/admin' : '/profesor'}/tests/${testId}/editar`);
+      } else {
+        await loadItems(contentModulo);
+        await loadModulos();
+      }
+    } catch (err) {
+      setItemError(err.message || 'No se pudo crear el test del módulo.');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
   return (
     <PageShell>
       <Header
@@ -560,7 +586,12 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           title={`Contenido de ${contentModulo.nombre}`}
           subtitle="Añade tests de práctica y un único simulacro final al módulo."
           style={{ marginTop: 16 }}
-          action={<Button variant="secondary" onClick={() => setContentModulo(null)}>Cerrar</Button>}
+          action={(
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Button onClick={createModuleTest} disabled={savingItem}>+ Crear test del módulo</Button>
+              <Button variant="secondary" onClick={() => setContentModulo(null)}>Cerrar</Button>
+            </div>
+          )}
         >
           <div className="albacer-modulo-content-tools" style={{ display: 'grid', gridTemplateColumns: '180px minmax(220px, 1fr) auto', gap: 10, marginBottom: 14 }}>
             <select value={itemTipo} onChange={(event) => { setItemTipo(event.target.value); setSelectedCandidateId(''); }} style={FIELD}>
