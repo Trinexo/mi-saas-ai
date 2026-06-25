@@ -1,12 +1,21 @@
 import { testSubmitPostProcessService } from './testSubmitPostProcess.service.js';
+import { albacerProgressService } from './albacerProgress.service.js';
 
 export const testSubmitOrchestratorFinalizeService = {
-  finalizeSubmit({ userId, result }) {
+  async finalizeSubmit({ userId, result }) {
     testSubmitPostProcessService.runSpacedRepetition({
       userId,
       respuestasEvaluadas: result.respuestasEvaluadas,
     });
 
-    return testSubmitPostProcessService.buildSubmitResponse(result);
+    const albacer = await albacerProgressService.processFinalAttempt({
+      userId,
+      testId: result.testId,
+      aciertos: result.aciertos,
+      nota: result.nota,
+    });
+
+    const response = testSubmitPostProcessService.buildSubmitResponse(result);
+    return albacer ? { ...response, albacer } : response;
   },
 };
