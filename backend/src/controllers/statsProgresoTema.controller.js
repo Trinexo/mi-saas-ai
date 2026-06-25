@@ -3,6 +3,11 @@ import { statsService } from '../services/stats.service.js';
 import { ApiError } from '../utils/api-error.js';
 import { rankingService } from '../services/ranking.service.js';
 
+const getModoOptions = (req) => ({
+  modoPreparacion: req.query.modo_preparacion || 'experto',
+  albacerModuloId: req.query.albacer_modulo_id ? Number(req.query.albacer_modulo_id) : null,
+});
+
 export const getTemasDebiles = async (req, res, next) => {
   try {
     const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
@@ -36,7 +41,7 @@ export const getProgresoTemas = async (req, res, next) => {
 export const getProgresoTemasReal = async (req, res, next) => {
   try {
     const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
-    const data = await statsService.getProgresoTemasReal(req.user.userId, oposicionId);
+    const data = await statsService.getProgresoTemasReal(req.user.userId, oposicionId, getModoOptions(req));
     return ok(res, data);
   } catch (error) {
     return next(error);

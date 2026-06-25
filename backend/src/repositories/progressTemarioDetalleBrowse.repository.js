@@ -81,7 +81,8 @@ export const progressTemarioDetalleBrowseRepository = {
     });
   },
 
-  async getProgresoTemasReal(userId, oposicionId) {
+  async getProgresoTemasReal(userId, oposicionId, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const result = await pool.query(
       `SELECT
          te.id AS tema_id,
@@ -103,11 +104,13 @@ export const progressTemarioDetalleBrowseRepository = {
            WHERE ts.id = ru.test_id
              AND ts.usuario_id = $1
              AND ts.estado = 'finalizado'
+             AND ts.modo_preparacion = $3
+             AND ($4::bigint IS NULL OR ts.albacer_modulo_id = $4)
          )
        WHERE te.oposicion_id = $2
        GROUP BY te.id, te.nombre
        ORDER BY te.nombre ASC`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
     return result.rows.map((row) => ({
       temaId: Number(row.tema_id),
