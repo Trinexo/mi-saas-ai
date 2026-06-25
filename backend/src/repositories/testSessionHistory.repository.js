@@ -1,12 +1,14 @@
 import pool from '../config/db.js';
 
 export const testSessionHistoryRepository = {
-  async getUserHistory({ userId, limit, page, oposicionId, desde, hasta }) {
+  async getUserHistory({ userId, limit, page, oposicionId, modoPreparacion = 'experto', albacerModuloId, desde, hasta }) {
     const conditions = ['t.usuario_id = $1', "t.estado = 'finalizado'"];
     const params = [userId];
     let idx = 2;
 
     if (oposicionId) { conditions.push(`t.oposicion_id = $${idx++}`); params.push(oposicionId); }
+    if (modoPreparacion) { conditions.push(`t.modo_preparacion = $${idx++}`); params.push(modoPreparacion); }
+    if (albacerModuloId) { conditions.push(`t.albacer_modulo_id = $${idx++}`); params.push(albacerModuloId); }
     if (desde) { conditions.push(`t.fecha_creacion >= $${idx++}`); params.push(desde); }
     if (hasta) { conditions.push(`t.fecha_creacion < ($${idx++}::date + interval '1 day')`); params.push(hasta); }
 
@@ -17,6 +19,7 @@ export const testSessionHistoryRepository = {
       pool.query(
         `SELECT t.id, t.fecha_creacion, t.tipo_test, t.duracion_segundos, t.numero_preguntas, t.estado,
                 t.bloque_id, NULL AS bloque_nombre,
+                t.modo_preparacion, t.albacer_modulo_id, t.albacer_item_id,
                 te.nombre AS tema_nombre,
                 t.oposicion_id, op.nombre AS oposicion_nombre,
                 rt.aciertos, rt.errores, rt.blancos, rt.nota, rt.tiempo_segundos
@@ -43,6 +46,9 @@ export const testSessionHistoryRepository = {
         duracionSegundos: row.duracion_segundos,
         numeroPreguntas: row.numero_preguntas,
         estado: row.estado,
+        modoPreparacion: row.modo_preparacion ?? 'experto',
+        albacerModuloId: row.albacer_modulo_id ? Number(row.albacer_modulo_id) : null,
+        albacerItemId: row.albacer_item_id ? Number(row.albacer_item_id) : null,
         bloqueId: row.bloque_id ? Number(row.bloque_id) : null,
         bloqueNombre: row.bloque_nombre || null,
         temaNombre: row.tema_nombre || null,

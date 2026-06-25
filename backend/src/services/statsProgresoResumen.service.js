@@ -21,12 +21,12 @@ export const statsProgresoResumenService = {
     return progressStatsRepository.getDashboard(userId, oposicionId);
   },
 
-  async getUserStats(userId, oposicionId = null) {
-    return progressStatsRepository.getUserStats(userId, oposicionId);
+  async getUserStats(userId, oposicionId = null, options = {}) {
+    return progressStatsRepository.getUserStats(userId, oposicionId, options);
   },
 
-  async getEvolucion(userId, limit = 30, oposicionId = null) {
-    return progressStatsRepository.getEvolucion(userId, limit, oposicionId);
+  async getEvolucion(userId, limit = 30, oposicionId = null, options = {}) {
+    return progressStatsRepository.getEvolucion(userId, limit, oposicionId, options);
   },
 
   async getMisOposiciones(userId) {

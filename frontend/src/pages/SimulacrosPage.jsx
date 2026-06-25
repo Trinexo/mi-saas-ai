@@ -255,9 +255,10 @@ export default function SimulacrosPage() {
 
   useEffect(() => {
     const oposicionId = oposicionActiva?.id;
+    const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
     Promise.all([
       simulacrosApi.getPublicados(token, oposicionId).catch(() => []),
-      testApi.history(token, { limit: 50, ...(oposicionId ? { oposicion_id: oposicionId } : {}) }).catch(() => ({ items: [] })),
+      testApi.history(token, { limit: 50, modo_preparacion: modoPreparacion, ...(oposicionId ? { oposicion_id: oposicionId } : {}) }).catch(() => ({ items: [] })),
       testApi.getPendientes(token, oposicionId).catch(() => []),
     ]).then(([sims, histResp, pendRes]) => {
       const lista = Array.isArray(sims) ? sims : (sims?.data ?? []);
@@ -267,7 +268,7 @@ export default function SimulacrosPage() {
       const pend = Array.isArray(pendRes) ? pendRes : (pendRes?.data ?? []);
       setPendientesSim(pend.filter((t) => t.tipoTest === 'simulacro'));
     }).finally(() => { setLoadingData(false); setLoadingPend(false); });
-  }, [token, accesos, oposicionActiva?.id]);
+  }, [token, accesos, oposicionActiva?.id, oposicionActiva?.modoPreparacion]);
 
   const onContinuar = async (test) => {
     if (continuandoId) return;

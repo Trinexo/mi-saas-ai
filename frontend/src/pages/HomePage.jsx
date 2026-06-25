@@ -109,9 +109,12 @@ function KpiBar() {
   const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
-    testApi.userStats(token, oposicionActiva?.id).then(setStats).catch(() => {});
+    testApi
+      .userStats(token, oposicionActiva?.id, { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' })
+      .then(setStats)
+      .catch(() => {});
     testApi.getRacha(token, oposicionActiva?.id).then(setRacha).catch(() => {});
-  }, [token, oposicionActiva?.id]);
+  }, [token, oposicionActiva?.id, oposicionActiva?.modoPreparacion]);
 
   useEffect(() => {
     if (!oposicionActiva?.id || isAlbacer) { setRanking(null); return; }

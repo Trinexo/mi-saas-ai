@@ -4,7 +4,10 @@ import { ApiError } from '../utils/api-error.js';
 
 export const getSimulacrosStats = async (req, res, next) => {
   try {
-    const data = await statsService.getSimulacrosStats(req.user.userId, req.query.oposicion_id);
+    const data = await statsService.getSimulacrosStats(req.user.userId, req.query.oposicion_id, {
+      modoPreparacion: req.query.modo_preparacion || 'experto',
+      albacerModuloId: req.query.albacer_modulo_id ? Number(req.query.albacer_modulo_id) : null,
+    });
     return ok(res, data);
   } catch (error) {
     return next(error);
