@@ -210,4 +210,176 @@ export const albacerModulosRepository = {
     );
     return Number(result.rows[0]?.total ?? 0);
   },
+
+  async listItems(moduloId) {
+    const result = await pool.query(
+      `SELECT
+         mi.*,
+         at.nombre AS test_nombre,
+         at.estado AS test_estado,
+         COALESCE(test_q.total_preguntas, 0)::int AS test_total_preguntas,
+         s.nombre AS simulacro_nombre,
+         s.estado AS simulacro_estado,
+         COALESCE(sim_q.total_preguntas, 0)::int AS simulacro_total_preguntas
+       FROM albacer_modulo_items mi
+       LEFT JOIN admin_tests at ON at.id = mi.plantilla_test_id
+       LEFT JOIN LATERAL (
+         SELECT COUNT(*)::int AS total_preguntas
+         FROM admin_tests_preguntas atp
+         WHERE atp.test_id = at.id
+       ) test_q ON TRUE
+       LEFT JOIN simulacros s ON s.id = mi.simulacro_id
+       LEFT JOIN LATERAL (
+         SELECT COALESCE(SUM(sb.numero_preguntas), 0)::int AS total_preguntas
+         FROM simulacros_bloques sb
+         WHERE sb.simulacro_id = s.id
+       ) sim_q ON TRUE
+       WHERE mi.modulo_id = $1
+       ORDER BY mi.orden, mi.id`,
+      [moduloId],
+    );
+    return result.rows.map((row) => ({
+      ...row,
+      id: Number(row.id),
+      modulo_id: Number(row.modulo_id),
+      plantilla_test_id: row.plantilla_test_id == null ? null : Number(row.plantilla_test_id),
+      simulacro_id: row.simulacro_id == null ? null : Number(row.simulacro_id),
+      orden: Number(row.orden ?? 0),
+      test_total_preguntas: Number(row.test_total_preguntas ?? 0),
+      simulacro_total_preguntas: Number(row.simulacro_total_preguntas ?? 0),
+    }));
+  },
+
+  async getItem(itemId) {
+    const result = await pool.query(
+      'SELECT * FROM albacer_modulo_items WHERE id = $1 LIMIT 1',
+      [itemId],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      ...row,
+      id: Number(row.id),
+      modulo_id: Number(row.modulo_id),
+      plantilla_test_id: row.plantilla_test_id == null ? null : Number(row.plantilla_test_id),
+      simulacro_id: row.simulacro_id == null ? null : Number(row.simulacro_id),
+      orden: Number(row.orden ?? 0),
+    };
+  },
+
+  async hasSimulacroFinal(moduloId, exceptItemId = null) {
+    const result = await pool.query(
+      `SELECT 1
+       FROM albacer_modulo_items
+       WHERE modulo_id = $1
+         AND tipo = 'simulacro_final'
+         AND ($2::bigint IS NULL OR id <> $2)
+       LIMIT 1`,
+      [moduloId, exceptItemId],
+    );
+    return result.rows.length > 0;
+  },
+
+  async getNextItemOrden(moduloId) {
+    const result = await pool.query(
+      'SELECT COALESCE(MAX(orden), 0)::int AS max_orden FROM albacer_modulo_items WHERE modulo_id = $1',
+      [moduloId],
+    );
+    return Number(result.rows[0]?.max_orden ?? 0) + 1;
+  },
+
+  async createItem(moduloId, payload) {
+    const result = await pool.query(
+      `INSERT INTO albacer_modulo_items
+         (modulo_id, tipo, titulo, descripcion, plantilla_test_id, simulacro_id, orden, obligatorio)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        moduloId,
+        payload.tipo,
+        payload.titulo,
+        payload.descripcion ?? null,
+        payload.plantilla_test_id ?? null,
+        payload.simulacro_id ?? null,
+        payload.orden,
+        payload.obligatorio ?? false,
+      ],
+    );
+    return result.rows[0];
+  },
+
+  async updateItem(itemId, payload) {
+    const current = await this.getItem(itemId);
+    if (!current) return null;
+    const result = await pool.query(
+      `UPDATE albacer_modulo_items
+       SET titulo = $2,
+           descripcion = $3,
+           orden = $4,
+           obligatorio = $5,
+           actualizado_en = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [
+        itemId,
+        payload.titulo ?? current.titulo,
+        Object.prototype.hasOwnProperty.call(payload, 'descripcion') ? payload.descripcion : current.descripcion,
+        payload.orden ?? current.orden,
+        payload.obligatorio ?? current.obligatorio,
+      ],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async deleteItem(itemId) {
+    const result = await pool.query(
+      'DELETE FROM albacer_modulo_items WHERE id = $1 RETURNING *',
+      [itemId],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async markTestAsModulo(testId, moduloId) {
+    await pool.query(
+      `UPDATE admin_tests
+       SET scope = 'albacer_modulo',
+           albacer_modulo_id = $2,
+           fecha_actualizacion = NOW()
+       WHERE id = $1`,
+      [testId, moduloId],
+    );
+  },
+
+  async unmarkTestAsModulo(testId, moduloId) {
+    await pool.query(
+      `UPDATE admin_tests
+       SET scope = 'experto',
+           albacer_modulo_id = NULL,
+           fecha_actualizacion = NOW()
+       WHERE id = $1 AND albacer_modulo_id = $2`,
+      [testId, moduloId],
+    );
+  },
+
+  async markSimulacroAsModuloFinal(simulacroId, moduloId) {
+    await pool.query(
+      `UPDATE simulacros
+       SET scope = 'albacer_modulo_final',
+           albacer_modulo_id = $2,
+           fecha_actualizacion = NOW()
+       WHERE id = $1`,
+      [simulacroId, moduloId],
+    );
+  },
+
+  async unmarkSimulacroAsModuloFinal(simulacroId, moduloId) {
+    await pool.query(
+      `UPDATE simulacros
+       SET scope = 'experto',
+           albacer_modulo_id = NULL,
+           fecha_actualizacion = NOW()
+       WHERE id = $1 AND albacer_modulo_id = $2`,
+      [simulacroId, moduloId],
+    );
+  },
 };

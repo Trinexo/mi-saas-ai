@@ -220,12 +220,24 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [contentModulo, setContentModulo] = useState(null);
+  const [items, setItems] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [itemTipo, setItemTipo] = useState('test');
+  const [selectedCandidateId, setSelectedCandidateId] = useState('');
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [savingItem, setSavingItem] = useState(false);
+  const [itemError, setItemError] = useState('');
 
   const api = useMemo(() => ({
     list: isAdmin ? albacerApi.listAdminModulos : albacerApi.listProfesorModulos,
     create: isAdmin ? albacerApi.createAdminModulo : albacerApi.createProfesorModulo,
     update: isAdmin ? albacerApi.updateAdminModulo : albacerApi.updateProfesorModulo,
     delete: isAdmin ? albacerApi.deleteAdminModulo : albacerApi.deleteProfesorModulo,
+    listItems: isAdmin ? albacerApi.listAdminModuloItems : albacerApi.listProfesorModuloItems,
+    createItem: isAdmin ? albacerApi.createAdminModuloItem : albacerApi.createProfesorModuloItem,
+    updateItem: isAdmin ? albacerApi.updateAdminModuloItem : albacerApi.updateProfesorModuloItem,
+    deleteItem: isAdmin ? albacerApi.deleteAdminModuloItem : albacerApi.deleteProfesorModuloItem,
   }), [isAdmin]);
 
   const loadOposiciones = useCallback(async () => {
@@ -273,6 +285,39 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
   useEffect(() => { loadOposiciones().catch(() => setOposiciones([])); }, [loadOposiciones]);
   useEffect(() => { loadTemas(selectedOposicion).catch(() => setTemas([])); }, [loadTemas, selectedOposicion]);
   useEffect(() => { loadModulos(); }, [loadModulos]);
+
+  const loadItems = useCallback(async (modulo = contentModulo) => {
+    if (!modulo?.id) return;
+    setLoadingItems(true);
+    setItemError('');
+    try {
+      const payload = await api.listItems(token, modulo.id);
+      setItems(Array.isArray(payload) ? payload : []);
+    } catch (err) {
+      setItemError(err.message || 'No se pudo cargar el contenido del módulo.');
+      setItems([]);
+    } finally {
+      setLoadingItems(false);
+    }
+  }, [api, contentModulo, token]);
+
+  const loadCandidates = useCallback(async (modulo = contentModulo, tipo = itemTipo) => {
+    if (!modulo?.oposicion_id) {
+      setCandidates([]);
+      return;
+    }
+    try {
+      const payload = tipo === 'test'
+        ? await (isAdmin ? adminApi.listTests : profesorApi.getMisTests)(token, { oposicion_id: modulo.oposicion_id, page: 1, page_size: 100 })
+        : await (isAdmin ? adminApi.listSimulacros : profesorApi.getMisSimulacros)(token, { oposicion_id: modulo.oposicion_id, page: 1, page_size: 100 });
+      setCandidates(payload?.items ?? []);
+    } catch {
+      setCandidates([]);
+    }
+  }, [contentModulo, isAdmin, itemTipo, token]);
+
+  useEffect(() => { if (contentModulo) loadItems(contentModulo); }, [contentModulo, loadItems]);
+  useEffect(() => { if (contentModulo) loadCandidates(contentModulo, itemTipo); }, [contentModulo, itemTipo, loadCandidates]);
 
   const metrics = useMemo(() => {
     const publicados = modulos.filter((modulo) => modulo.estado === 'publicado').length;
@@ -352,6 +397,51 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
       await loadModulos();
     } catch (err) {
       setError(err.message || 'No se pudo eliminar el módulo.');
+    }
+  };
+
+  const openContent = (modulo) => {
+    setContentModulo(modulo);
+    setItemTipo('test');
+    setSelectedCandidateId('');
+    setItemError('');
+  };
+
+  const addItem = async () => {
+    if (!contentModulo?.id || !selectedCandidateId) return;
+    const selected = candidates.find((candidate) => Number(candidate.id) === Number(selectedCandidateId));
+    setSavingItem(true);
+    setItemError('');
+    try {
+      await api.createItem(token, contentModulo.id, {
+        tipo: itemTipo,
+        titulo: selected?.nombre ?? (itemTipo === 'test' ? 'Test del módulo' : 'Simulacro final'),
+        plantilla_test_id: itemTipo === 'test' ? Number(selectedCandidateId) : undefined,
+        simulacro_id: itemTipo === 'simulacro_final' ? Number(selectedCandidateId) : undefined,
+        obligatorio: itemTipo === 'simulacro_final',
+      });
+      setSelectedCandidateId('');
+      await loadItems(contentModulo);
+      await loadModulos();
+    } catch (err) {
+      setItemError(err.message || 'No se pudo añadir el contenido.');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+
+  const deleteItem = async (itemId) => {
+    if (!contentModulo?.id) return;
+    setSavingItem(true);
+    setItemError('');
+    try {
+      await api.deleteItem(token, contentModulo.id, itemId);
+      await loadItems(contentModulo);
+      await loadModulos();
+    } catch (err) {
+      setItemError(err.message || 'No se pudo eliminar el contenido.');
+    } finally {
+      setSavingItem(false);
     }
   };
 
@@ -450,6 +540,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
                           </>
                         ) : (
                           <>
+                            <button onClick={() => openContent(modulo)} style={{ border: '1px solid #ddd6fe', background: '#f5f3ff', color: P, borderRadius: 8, padding: '7px 10px', fontWeight: 900, cursor: 'pointer' }}>Contenido</button>
                             <button onClick={() => openEdit(modulo)} style={{ border: '1px solid #e5e7eb', background: '#fff', color: '#334155', borderRadius: 8, padding: '7px 10px', fontWeight: 900, cursor: 'pointer' }}>Editar</button>
                             <button onClick={() => setConfirmDeleteId(modulo.id)} style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: 'pointer' }}>Eliminar</button>
                           </>
@@ -463,6 +554,71 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           </div>
         )}
       </Panel>
+
+      {contentModulo && (
+        <Panel
+          title={`Contenido de ${contentModulo.nombre}`}
+          subtitle="Añade tests de práctica y un único simulacro final al módulo."
+          style={{ marginTop: 16 }}
+          action={<Button variant="secondary" onClick={() => setContentModulo(null)}>Cerrar</Button>}
+        >
+          <div className="albacer-modulo-content-tools" style={{ display: 'grid', gridTemplateColumns: '180px minmax(220px, 1fr) auto', gap: 10, marginBottom: 14 }}>
+            <select value={itemTipo} onChange={(event) => { setItemTipo(event.target.value); setSelectedCandidateId(''); }} style={FIELD}>
+              <option value="test">Test del módulo</option>
+              <option value="simulacro_final">Simulacro final</option>
+            </select>
+            <select value={selectedCandidateId} onChange={(event) => setSelectedCandidateId(event.target.value)} style={FIELD}>
+              <option value="">Selecciona contenido existente</option>
+              {candidates.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.nombre} · {candidate.estado ?? 'sin estado'} · {candidate.total_preguntas ?? 0} preguntas
+                </option>
+              ))}
+            </select>
+            <Button onClick={addItem} disabled={savingItem || !selectedCandidateId}>
+              {savingItem ? 'Añadiendo...' : 'Añadir'}
+            </Button>
+          </div>
+
+          {itemError && <div style={{ background: '#fef2f2', color: '#b91c1c', borderRadius: 10, padding: '10px 12px', fontSize: '.84rem', fontWeight: 800, marginBottom: 14 }}>{itemError}</div>}
+
+          {loadingItems ? (
+            <div style={{ color: '#64748b', padding: 22, textAlign: 'center' }}>Cargando contenido...</div>
+          ) : items.length === 0 ? (
+            <EmptyState title="Sin contenido en el módulo" text="Añade tests de práctica y un simulacro final para completar este nivel." />
+          ) : (
+            <div style={{ display: 'grid', gap: 10 }}>
+              {items.map((item) => {
+                const isFinal = item.tipo === 'simulacro_final';
+                const preguntaTotal = isFinal ? item.simulacro_total_preguntas : item.test_total_preguntas;
+                const estadoItem = isFinal ? item.simulacro_estado : item.test_estado;
+                return (
+                  <div key={item.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 13, display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center' }}>
+                    <div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ background: isFinal ? '#fee2e2' : '#ede9fe', color: isFinal ? '#991b1b' : '#5b21b6', borderRadius: 999, padding: '3px 9px', fontSize: '.72rem', fontWeight: 900 }}>
+                          {isFinal ? 'Simulacro final' : 'Test'}
+                        </span>
+                        <strong style={{ color: '#0f172a' }}>{item.titulo}</strong>
+                      </div>
+                      <div style={{ color: '#64748b', fontSize: '.78rem', marginTop: 5 }}>
+                        Orden {item.orden} · {preguntaTotal ?? 0} preguntas · {estadoItem ?? 'sin estado'}{item.obligatorio ? ' · obligatorio' : ''}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      disabled={savingItem}
+                      style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: savingItem ? 'not-allowed' : 'pointer' }}
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      )}
 
       <ModuloModal
         open={modalOpen}
@@ -481,6 +637,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
         @media (max-width: 980px) {
           .albacer-modulo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
           .albacer-modulo-filters { grid-template-columns: 1fr !important; }
+          .albacer-modulo-content-tools { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 720px) {
           .albacer-modulo-metrics { grid-template-columns: 1fr !important; }

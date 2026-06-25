@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { albacerModulosService } from '../../src/services/albacerModulos.service.js';
 import { albacerModulosRepository } from '../../src/repositories/albacerModulos.repository.js';
 import { profesorAccessRepository } from '../../src/repositories/profesorAccess.repository.js';
+import { adminTestsService } from '../../src/services/adminTests.service.js';
+import { adminSimulacrosService } from '../../src/services/adminSimulacros.service.js';
 import { ApiError } from '../../src/utils/api-error.js';
 
 function snapshot(...repos) {
@@ -105,5 +107,64 @@ test('albacerModulosService.update no borra temas si tema_ids no viene en payloa
   await albacerModulosService.update(1, { nombre: 'Modulo actualizado' }, { role: 'profesor', userId: 5 });
 
   assert.equal(replaceCalled, false);
+  restore(snaps);
+});
+
+test('albacerModulosService.createItem rechaza test de otra oposicion', async () => {
+  const snaps = snapshot(albacerModulosRepository, profesorAccessRepository, adminTestsService);
+  profesorAccessRepository.listAssignedOposicionIds = async () => [10];
+  albacerModulosRepository.get = async () => BASE_MODULO;
+  adminTestsService.getTest = async () => ({ id: 50, oposicion_id: 20, nombre: 'Test externo' });
+
+  await assert.rejects(
+    () => albacerModulosService.createItem(
+      1,
+      { tipo: 'test', titulo: 'Test 1', plantilla_test_id: 50 },
+      { role: 'profesor', userId: 5 },
+    ),
+    (error) => error instanceof ApiError && error.status === 400,
+  );
+
+  restore(snaps);
+});
+
+test('albacerModulosService.createItem asocia test valido al modulo', async () => {
+  const snaps = snapshot(albacerModulosRepository, profesorAccessRepository, adminTestsService);
+  profesorAccessRepository.listAssignedOposicionIds = async () => [10];
+  albacerModulosRepository.get = async () => BASE_MODULO;
+  adminTestsService.getTest = async () => ({ id: 50, oposicion_id: 10, nombre: 'Test modulo' });
+  albacerModulosRepository.getNextItemOrden = async () => 2;
+  albacerModulosRepository.createItem = async () => ({ id: 7 });
+  let marked;
+  albacerModulosRepository.markTestAsModulo = async (testId, moduloId) => { marked = { testId, moduloId }; };
+  albacerModulosRepository.getItem = async () => ({ id: 7, modulo_id: 1 });
+  albacerModulosRepository.listItems = async () => [{ id: 7, modulo_id: 1, tipo: 'test' }];
+
+  const result = await albacerModulosService.createItem(
+    1,
+    { tipo: 'test', titulo: 'Test 1', plantilla_test_id: 50 },
+    { role: 'profesor', userId: 5 },
+  );
+
+  assert.equal(result.id, 7);
+  assert.deepEqual(marked, { testId: 50, moduloId: 1 });
+  restore(snaps);
+});
+
+test('albacerModulosService.createItem solo permite un simulacro final por modulo', async () => {
+  const snaps = snapshot(albacerModulosRepository, profesorAccessRepository, adminSimulacrosService);
+  profesorAccessRepository.listAssignedOposicionIds = async () => [10];
+  albacerModulosRepository.get = async () => BASE_MODULO;
+  albacerModulosRepository.hasSimulacroFinal = async () => true;
+
+  await assert.rejects(
+    () => albacerModulosService.createItem(
+      1,
+      { tipo: 'simulacro_final', titulo: 'Final', simulacro_id: 33 },
+      { role: 'profesor', userId: 5 },
+    ),
+    (error) => error instanceof ApiError && error.status === 400,
+  );
+
   restore(snaps);
 });

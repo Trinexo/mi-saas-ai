@@ -1,5 +1,7 @@
 import { albacerModulosRepository } from '../repositories/albacerModulos.repository.js';
 import { profesorAccessRepository } from '../repositories/profesorAccess.repository.js';
+import { adminTestsService } from './adminTests.service.js';
+import { adminSimulacrosService } from './adminSimulacros.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 const isProfesor = (caller = {}) => caller.role === 'profesor';
@@ -94,5 +96,83 @@ export const albacerModulosService = {
     await this.get(id, caller);
     const deleted = await albacerModulosRepository.delete(id);
     if (!deleted) throw new ApiError(404, 'Modulo Albacer no encontrado');
+  },
+
+  assertSameOposicion(contentOposicionId, moduloOposicionId) {
+    if (Number(contentOposicionId) !== Number(moduloOposicionId)) {
+      throw new ApiError(400, 'El contenido debe pertenecer a la misma oposicion que el modulo');
+    }
+  },
+
+  async listItems(moduloId, caller = {}) {
+    await this.get(moduloId, caller);
+    return albacerModulosRepository.listItems(moduloId);
+  },
+
+  async createItem(moduloId, payload, caller = {}) {
+    const modulo = await this.get(moduloId, caller);
+
+    if (payload.tipo === 'test') {
+      const test = await adminTestsService.getTest(payload.plantilla_test_id, caller);
+      this.assertSameOposicion(test.oposicion_id ?? test.resolved_oposicion_id, modulo.oposicion_id);
+      const orden = payload.orden ?? await albacerModulosRepository.getNextItemOrden(moduloId);
+      const item = await albacerModulosRepository.createItem(moduloId, {
+        ...payload,
+        simulacro_id: null,
+        orden,
+        obligatorio: payload.obligatorio ?? false,
+      });
+      await albacerModulosRepository.markTestAsModulo(payload.plantilla_test_id, moduloId);
+      return this.getItem(item.id, caller);
+    }
+
+    const hasFinal = await albacerModulosRepository.hasSimulacroFinal(moduloId);
+    if (hasFinal) throw new ApiError(400, 'El modulo ya tiene un simulacro final');
+    const simulacro = await adminSimulacrosService.getSimulacro(payload.simulacro_id, caller);
+    this.assertSameOposicion(simulacro.oposicion_id, modulo.oposicion_id);
+    const orden = payload.orden ?? await albacerModulosRepository.getNextItemOrden(moduloId);
+    const item = await albacerModulosRepository.createItem(moduloId, {
+      ...payload,
+      plantilla_test_id: null,
+      orden,
+      obligatorio: true,
+    });
+    await albacerModulosRepository.markSimulacroAsModuloFinal(payload.simulacro_id, moduloId);
+    return this.getItem(item.id, caller);
+  },
+
+  async getItem(itemId, caller = {}) {
+    const item = await albacerModulosRepository.getItem(itemId);
+    if (!item) throw new ApiError(404, 'Item del modulo no encontrado');
+    await this.get(item.modulo_id, caller);
+    const items = await albacerModulosRepository.listItems(item.modulo_id);
+    return items.find((candidate) => candidate.id === Number(itemId)) ?? item;
+  },
+
+  async updateItem(moduloId, itemId, payload, caller = {}) {
+    await this.get(moduloId, caller);
+    const item = await albacerModulosRepository.getItem(itemId);
+    if (!item || Number(item.modulo_id) !== Number(moduloId)) {
+      throw new ApiError(404, 'Item del modulo no encontrado');
+    }
+    const updated = await albacerModulosRepository.updateItem(itemId, payload);
+    if (!updated) throw new ApiError(500, 'No se pudo actualizar el item del modulo');
+    return this.getItem(itemId, caller);
+  },
+
+  async deleteItem(moduloId, itemId, caller = {}) {
+    await this.get(moduloId, caller);
+    const item = await albacerModulosRepository.getItem(itemId);
+    if (!item || Number(item.modulo_id) !== Number(moduloId)) {
+      throw new ApiError(404, 'Item del modulo no encontrado');
+    }
+    const deleted = await albacerModulosRepository.deleteItem(itemId);
+    if (!deleted) throw new ApiError(404, 'Item del modulo no encontrado');
+    if (deleted.plantilla_test_id) {
+      await albacerModulosRepository.unmarkTestAsModulo(deleted.plantilla_test_id, moduloId);
+    }
+    if (deleted.simulacro_id) {
+      await albacerModulosRepository.unmarkSimulacroAsModuloFinal(deleted.simulacro_id, moduloId);
+    }
   },
 };
