@@ -2,9 +2,11 @@ import { Router } from 'express';
 import { validate } from '../../middleware/validate.middleware.js';
 import {
   createAlbacerModuloItem,
+  createAlbacerModuloTest,
   createAlbacerModulo,
   deleteAlbacerModuloItem,
   deleteAlbacerModulo,
+  getAlbacerModuloUsedQuestions,
   getAlbacerModulo,
   listAlbacerModuloItems,
   listAlbacerModulos,
@@ -15,7 +17,9 @@ import {
   albacerModuloItemIdParamSchema,
   albacerModuloIdParamSchema,
   createAlbacerModuloItemSchema,
+  createAlbacerModuloTestSchema,
   createAlbacerModuloSchema,
+  albacerModuloUsedQuestionsQuerySchema,
   listAlbacerModulosQuerySchema,
   updateAlbacerModuloItemSchema,
   updateAlbacerModuloSchema,
@@ -25,6 +29,18 @@ const router = Router();
 
 router.get('/modulos', validate(listAlbacerModulosQuerySchema, 'query'), listAlbacerModulos);
 router.get('/modulos/:id', validate(albacerModuloIdParamSchema, 'params'), getAlbacerModulo);
+router.get(
+  '/modulos/:id/preguntas-usadas',
+  validate(albacerModuloIdParamSchema, 'params'),
+  validate(albacerModuloUsedQuestionsQuerySchema, 'query'),
+  getAlbacerModuloUsedQuestions,
+);
+router.post(
+  '/modulos/:id/tests',
+  validate(albacerModuloIdParamSchema, 'params'),
+  validate(createAlbacerModuloTestSchema, 'body'),
+  createAlbacerModuloTest,
+);
 router.get('/modulos/:id/items', validate(albacerModuloIdParamSchema, 'params'), listAlbacerModuloItems);
 router.post(
   '/modulos/:id/items',

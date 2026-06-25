@@ -88,3 +88,25 @@ export const deleteAlbacerModuloItem = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const createAlbacerModuloTest = async (req, res, next) => {
+  try {
+    const data = await albacerModulosService.createTestForModulo(req.params.id, req.body, req.user);
+    return created(res, data, 'Test del modulo creado');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getAlbacerModuloUsedQuestions = async (req, res, next) => {
+  try {
+    const data = await albacerModulosService.getUsedQuestionIds(
+      req.params.id,
+      { exceptTestId: req.query.except_test_id ? Number(req.query.except_test_id) : null },
+      req.user,
+    );
+    return ok(res, data);
+  } catch (error) {
+    return next(error);
+  }
+};

@@ -462,6 +462,7 @@ Debe mostrar:
 - Permitir forzar reutilizacion.
 - Guardar items en `albacer_modulo_items`.
 - Estado: backend y UI inicial preparados para asociar tests existentes y un unico simulacro final existente a cada modulo. La creacion automatica/manual de tests desde el propio modulo queda para el siguiente bloque.
+- Estado creacion tests: preparado endpoint para crear un test desde el modulo y abrirlo en el editor; el selector de preguntas bloquea las ya usadas en otros tests/simulacros del mismo modulo.
 
 ### PR F - Ejecucion alumno Albacer
 
