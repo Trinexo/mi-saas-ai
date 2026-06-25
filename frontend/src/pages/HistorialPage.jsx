@@ -49,6 +49,7 @@ export default function HistorialPage() {
     setItems(null);
     const params = { limit: PAGE_SIZE, page };
     if (oposicionId) params.oposicion_id = Number(oposicionId);
+    params.modo_preparacion = oposicionActiva?.modoPreparacion ?? 'experto';
     if (periodoFiltro === '7d') {
       const d = new Date(); d.setDate(d.getDate() - 7);
       params.desde = d.toISOString().slice(0, 10);
@@ -68,7 +69,7 @@ export default function HistorialPage() {
         }
       })
       .catch((e) => setError(e.message || 'No se pudo cargar el historial'));
-  }, [token, page, oposicionId, periodoFiltro]);
+  }, [token, page, oposicionId, periodoFiltro, oposicionActiva?.modoPreparacion]);
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

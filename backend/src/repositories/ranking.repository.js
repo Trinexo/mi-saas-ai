@@ -31,6 +31,7 @@ export const rankingRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id   = $1
          AND t.oposicion_id = $2
+         AND t.modo_preparacion = 'experto'
          AND t.estado       = 'finalizado'`,
       [userId, oposicionId],
     );
@@ -67,6 +68,7 @@ export const rankingRepository = {
          FROM tests t
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.oposicion_id = $1
+           AND t.modo_preparacion = 'experto'
            AND t.estado       = 'finalizado'
          GROUP BY t.usuario_id
          HAVING COUNT(DISTINCT t.id) >= 1
@@ -122,7 +124,9 @@ export const rankingRepository = {
     const result = await pool.query(
       `SELECT COUNT(DISTINCT t.usuario_id)::int AS total
        FROM tests t
-       WHERE t.oposicion_id = $1 AND t.estado = 'finalizado'`,
+       WHERE t.oposicion_id = $1
+         AND t.modo_preparacion = 'experto'
+         AND t.estado = 'finalizado'`,
       [oposicionId],
     );
     return Number(result.rows[0]?.total ?? 0);

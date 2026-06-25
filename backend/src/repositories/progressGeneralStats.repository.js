@@ -1,7 +1,8 @@
 import pool from '../config/db.js';
 
 export const progressGeneralStatsRepository = {
-  async getUserStats(userId, oposicionId = null) {
+  async getUserStats(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const result = await pool.query(
       `SELECT COUNT(rt.test_id)::int AS total_tests,
               COUNT(CASE WHEN t.tipo_test = 'simulacro' THEN 1 END)::int AS simulacros,
@@ -14,8 +15,10 @@ export const progressGeneralStatsRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
          AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+         AND t.modo_preparacion = $3
+         AND ($4::bigint IS NULL OR t.albacer_modulo_id = $4)
          AND t.estado = 'finalizado'`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
     const row = result.rows[0];
     return {
@@ -83,7 +86,8 @@ export const progressGeneralStatsRepository = {
     };
   },
 
-  async getSimulacrosStats(userId, oposicionId) {
+  async getSimulacrosStats(userId, oposicionId, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const result = await pool.query(
       `SELECT t.id AS test_id,
               t.fecha_creacion AS fecha,
@@ -97,10 +101,12 @@ export const progressGeneralStatsRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
          AND t.oposicion_id = $2
+         AND t.modo_preparacion = $3
+         AND ($4::bigint IS NULL OR t.albacer_modulo_id = $4)
          AND t.tipo_test = 'simulacro'
          AND t.estado = 'finalizado'
        ORDER BY t.fecha_creacion DESC`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
     return result.rows.map((r) => ({
       testId: Number(r.test_id),

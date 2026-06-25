@@ -24,6 +24,7 @@ export default function ProgressPage() {
   const { oposicionActiva } = useOposicionActiva();
   const esElite = hasAccess('elite');
   const esPro   = hasAccess('pro');
+  const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -41,7 +42,7 @@ export default function ProgressPage() {
       </div>
 
       <SectionLabel>Resumen global</SectionLabel>
-      <ResumenGlobalSection oposicionId={oposicionActiva?.id} />
+      <ResumenGlobalSection oposicionId={oposicionActiva?.id} modoPreparacion={modoPreparacion} />
       <div style={{ marginTop: 16 }}>
         <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
       </div>
@@ -50,7 +51,7 @@ export default function ProgressPage() {
       <ResumenSemanaWidget oposicionId={oposicionActiva?.id} />
 
       <SectionLabel>Evolución</SectionLabel>
-      <EvolucionSection oposicionId={oposicionActiva?.id} />
+      <EvolucionSection oposicionId={oposicionActiva?.id} modoPreparacion={modoPreparacion} />
 
       <SectionLabel>Temas</SectionLabel>
       <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} />

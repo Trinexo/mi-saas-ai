@@ -490,6 +490,7 @@ Debe mostrar:
 - Actualizar progreso para filtrar por modo y modulo.
 - Actualizar ranking para contar solo Modo Experto.
 - Actualizar widgets de home para no mezclar datos.
+- Estado: historial, resumen global, evolucion, simulacros de progreso y ranking filtran por `modo_preparacion`. El backend queda preparado para filtro por `albacer_modulo_id`; la UI de selector por modulo queda para el siguiente bloque especifico de Progreso Albacer.
 
 ### PR I - Retirada frontend del plan legacy
 

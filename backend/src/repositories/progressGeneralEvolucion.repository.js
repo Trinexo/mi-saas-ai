@@ -1,7 +1,8 @@
 import pool from '../config/db.js';
 
 export const progressGeneralEvolucionRepository = {
-  async getEvolucion(userId, limit, oposicionId = null) {
+  async getEvolucion(userId, limit, oposicionId = null, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const result = await pool.query(
       `SELECT fecha_fin::date AS fecha, nota, tipo_test
        FROM (
@@ -10,12 +11,14 @@ export const progressGeneralEvolucionRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($3::bigint IS NULL OR t.oposicion_id = $3)
+           AND t.modo_preparacion = $4
+           AND ($5::bigint IS NULL OR t.albacer_modulo_id = $5)
            AND t.estado = 'finalizado'
          ORDER BY t.fecha_fin DESC
          LIMIT $2
        ) sub
        ORDER BY fecha_fin ASC`,
-      [userId, limit, oposicionId],
+      [userId, limit, oposicionId, modoPreparacion, albacerModuloId],
     );
     return result.rows.map((r) => ({
       fecha: r.fecha,

@@ -69,7 +69,7 @@ export const getTestHistory = async (req, res, next) => {
   try {
     const plan = req.user.plan ?? 'free';
     const limits = PLAN_LIMITS[plan];
-    const { limit, page, oposicion_id, desde, hasta } = historyQuerySchema.parse(req.query);
+    const { limit, page, oposicion_id, modo_preparacion, albacer_modulo_id, desde, hasta } = historyQuerySchema.parse(req.query);
 
     // Plan free: máximo 5 tests en historial, siempre página 1
     const effectiveLimit = limits.maxHistorial === Infinity ? limit : Math.min(limit, limits.maxHistorial);
@@ -80,6 +80,8 @@ export const getTestHistory = async (req, res, next) => {
       limit: effectiveLimit,
       page: effectivePage,
       oposicionId: oposicion_id,
+      modoPreparacion: modo_preparacion,
+      albacerModuloId: albacer_modulo_id,
       desde,
       hasta,
     });
