@@ -20,24 +20,24 @@ export const statsService = {
 		return statsProgresoService.getBloqueStats(userId, temaId);
 	},
 
-	getProgresoMaterias(userId, oposicionId) {
-		return statsProgresoService.getProgresoTemas(userId, ensurePositiveInteger(oposicionId, 'oposicion_id'));
+	getProgresoMaterias(userId, oposicionId, options = {}) {
+		return statsProgresoService.getProgresoTemas(userId, ensurePositiveInteger(oposicionId, 'oposicion_id'), options);
 	},
 
-	getProgresoTemasReal(userId, oposicionId) {
-		return statsProgresoService.getProgresoTemasReal(userId, oposicionId ? ensurePositiveInteger(oposicionId, 'oposicion_id') : null);
+	getProgresoTemasReal(userId, oposicionId, options = {}) {
+		return statsProgresoService.getProgresoTemasReal(userId, oposicionId ? ensurePositiveInteger(oposicionId, 'oposicion_id') : null, options);
 	},
 
-	getProgresoTemaReal(userId, temaId) {
-		return statsProgresoService.getProgresoTemaReal(userId, ensurePositiveInteger(temaId, 'tema_id'));
+	getProgresoTemaReal(userId, temaId, options = {}) {
+		return statsProgresoService.getProgresoTemaReal(userId, ensurePositiveInteger(temaId, 'tema_id'), options);
 	},
 
-	getProgresoTemasByMateria(userId, materiaId) {
-		return statsProgresoService.getProgresoBloquesByTema(userId, ensurePositiveInteger(materiaId, 'materia_id'));
+	getProgresoTemasByMateria(userId, materiaId, options = {}) {
+		return statsProgresoService.getProgresoBloquesByTema(userId, ensurePositiveInteger(materiaId, 'materia_id'), options);
 	},
 
-	getDetalleTema(userId, temaId) {
-		return statsProgresoService.getDetalleBloque(userId, ensurePositiveInteger(temaId, 'tema_id'));
+	getDetalleTema(userId, temaId, options = {}) {
+		return statsProgresoService.getDetalleBloque(userId, ensurePositiveInteger(temaId, 'tema_id'), options);
 	},
 };
 export { statsWidgetService, statsProgresoService };

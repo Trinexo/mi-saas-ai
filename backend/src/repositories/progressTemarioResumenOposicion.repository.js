@@ -1,7 +1,8 @@
 import pool from '../config/db.js';
 
 export const progressTemarioResumenOposicionRepository = {
-  async getResumenOposicion(userId, oposicionId) {
+  async getResumenOposicion(userId, oposicionId, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const [metaResult, progresoResult, testResult, dominioResult] = await Promise.all([
       pool.query(
         `SELECT o.nombre AS oposicion_nombre,
@@ -29,8 +30,10 @@ export const progressTemarioResumenOposicionRepository = {
          JOIN temas t ON t.id = p.tema_id
          WHERE ts.usuario_id = $1
            AND t.oposicion_id = $2
-           AND ts.estado = 'finalizado'`,
-        [userId, oposicionId],
+           AND ts.estado = 'finalizado'
+           AND ts.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR ts.albacer_modulo_id = $4)`,
+        [userId, oposicionId, modoPreparacion, albacerModuloId],
       ),
       pool.query(
         `SELECT
@@ -40,8 +43,10 @@ export const progressTemarioResumenOposicionRepository = {
          JOIN resultados_test rt ON rt.test_id = ts.id
          WHERE ts.usuario_id = $1
            AND ts.oposicion_id = $2
-           AND ts.estado = 'finalizado'`,
-        [userId, oposicionId],
+           AND ts.estado = 'finalizado'
+           AND ts.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR ts.albacer_modulo_id = $4)`,
+        [userId, oposicionId, modoPreparacion, albacerModuloId],
       ),
       pool.query(
         `SELECT COUNT(DISTINCT ru.pregunta_id)::int AS dominadas
@@ -52,8 +57,10 @@ export const progressTemarioResumenOposicionRepository = {
          WHERE ts.usuario_id = $1
            AND ts.estado = 'finalizado'
            AND ru.correcta = true
-           AND t.oposicion_id = $2`,
-        [userId, oposicionId],
+           AND t.oposicion_id = $2
+           AND ts.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR ts.albacer_modulo_id = $4)`,
+        [userId, oposicionId, modoPreparacion, albacerModuloId],
       ),
     ]);
 

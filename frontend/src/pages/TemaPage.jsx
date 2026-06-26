@@ -12,6 +12,7 @@ export default function TemaPage() {
   const { id } = useParams();
   const { token } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
+  const modoOptions = { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' };
   const [bloque, setBloque] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,11 +22,11 @@ export default function TemaPage() {
     setLoading(true);
     setError('');
     testApi
-      .getDetalleBloque(token, Number(id))
+      .getDetalleBloque(token, Number(id), modoOptions)
       .then((data) => setBloque(data))
       .catch((e) => setError(e.message || 'No se pudo cargar el bloque'))
       .finally(() => setLoading(false));
-  }, [token, id]);
+  }, [token, id, oposicionActiva?.modoPreparacion]);
 
   if (loading) return (
     <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>

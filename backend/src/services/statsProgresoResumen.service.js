@@ -1,20 +1,20 @@
 import { progressStatsRepository } from '../repositories/progressStats.repository.js';
 
 export const statsProgresoResumenService = {
-  async getProgresoBloques(userId, oposicionId) {
-    return progressStatsRepository.getProgresoBloques(userId, oposicionId ?? null);
+  async getProgresoBloques(userId, oposicionId, options = {}) {
+    return progressStatsRepository.getProgresoBloques(userId, oposicionId ?? null, options);
   },
 
-  async getProgresoTemas(userId, oposicionId) {
-    return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null);
+  async getProgresoTemas(userId, oposicionId, options = {}) {
+    return progressStatsRepository.getProgresoTemas(userId, oposicionId ?? null, options);
   },
 
   async getProgresoTemasReal(userId, oposicionId, options = {}) {
     return progressStatsRepository.getProgresoTemasReal(userId, oposicionId ?? null, options);
   },
 
-  async getProgresoTemaReal(userId, temaId) {
-    return progressStatsRepository.getProgresoTemaReal(userId, temaId);
+  async getProgresoTemaReal(userId, temaId, options = {}) {
+    return progressStatsRepository.getProgresoTemaReal(userId, temaId, options);
   },
 
   async getDashboard(userId, oposicionId = null) {
