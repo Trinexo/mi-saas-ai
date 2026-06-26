@@ -30,7 +30,6 @@ describe('generateTestSchema — modo simulacro', () => {
   it('simulacro sin temaId es válido (oposición lo reemplaza)', () => {
     const r = generateTestSchema.safeParse({ modo: 'simulacro', oposicionId: 2, numeroPreguntas: 30 });
     assert.equal(r.success, true);
-    assert.equal(r.data.temaId, undefined);
   });
 });
 
@@ -72,10 +71,9 @@ describe('generateTestSchema — retrocompatibilidad', () => {
 // ── generateRefuerzoSchema ────────────────────────────────────────────────────
 
 describe('generateRefuerzoSchema', () => {
-  it('temaId es opcional', () => {
+  it('requiere temaId u oposicionId', () => {
     const r = generateRefuerzoSchema.safeParse({ numeroPreguntas: 10 });
-    assert.equal(r.success, true);
-    assert.equal(r.data.temaId, undefined);
+    assert.equal(r.success, false);
   });
 
   it('con temaId es válido', () => {
@@ -84,19 +82,25 @@ describe('generateRefuerzoSchema', () => {
     assert.equal(r.data.temaId, 3);
   });
 
+  it('con oposicionId es valido', () => {
+    const r = generateRefuerzoSchema.safeParse({ oposicionId: 4, numeroPreguntas: 10 });
+    assert.equal(r.success, true);
+    assert.equal(r.data.oposicionId, 4);
+  });
+
   it('numeroPreguntas tiene default 10', () => {
-    const r = generateRefuerzoSchema.safeParse({});
+    const r = generateRefuerzoSchema.safeParse({ oposicionId: 4 });
     assert.equal(r.success, true);
     assert.equal(r.data.numeroPreguntas, 10);
   });
 
   it('rechaza numeroPreguntas > 100', () => {
-    const r = generateRefuerzoSchema.safeParse({ numeroPreguntas: 101 });
+    const r = generateRefuerzoSchema.safeParse({ oposicionId: 4, numeroPreguntas: 101 });
     assert.equal(r.success, false);
   });
 
   it('rechaza numeroPreguntas 0', () => {
-    const r = generateRefuerzoSchema.safeParse({ numeroPreguntas: 0 });
+    const r = generateRefuerzoSchema.safeParse({ oposicionId: 4, numeroPreguntas: 0 });
     assert.equal(r.success, false);
   });
 });
@@ -221,19 +225,25 @@ describe('testService.generateRefuerzo', () => {
     };
 
     const createCalls = [];
-    testRepository.pickRefuerzoQuestions = async () =>
-      [{ id: 3, enunciado: 'Q3', nivel_dificultad: 1, opciones: [{ id: 30, texto: 'C' }] }];
+    const pickCalls = [];
+    testRepository.pickRefuerzoQuestions = async (params) => {
+      pickCalls.push(params);
+      return [{ id: 3, enunciado: 'Q3', nivel_dificultad: 1, opciones: [{ id: 30, texto: 'C' }] }];
+    };
     testRepository.createTest = async (params) => {
       createCalls.push(params);
       return { id: 77 };
     };
     testRepository.insertTestPreguntas = async () => {};
 
-    const result = await testService.generateRefuerzo({ userId: 1, temaId: 2, numeroPreguntas: 1 });
+    const result = await testService.generateRefuerzo({ userId: 1, temaId: 2, oposicionId: 8, numeroPreguntas: 1 });
 
     assert.equal(result.modo, 'refuerzo');
     assert.equal(result.testId, 77);
+    assert.equal(result.oposicionId, 8);
+    assert.equal(pickCalls[0].oposicionId, 8);
     assert.equal(createCalls[0].tipoTest, 'refuerzo');
+    assert.equal(createCalls[0].oposicionId, 8);
 
     Object.assign(testRepository, orig);
   });

@@ -5,10 +5,15 @@ import { testRepository } from '../../src/repositories/test.repository.js';
 import { testService } from '../../src/services/test.service.js';
 
 describe('generateRefuerzoSchema', () => {
-  it('valida payload mínimo', () => {
+  it('rechaza payload sin temaId ni oposicionId', () => {
     const r = generateRefuerzoSchema.safeParse({ numeroPreguntas: 10 });
+    assert.equal(r.success, false);
+  });
+
+  it('valida payload con oposicionId', () => {
+    const r = generateRefuerzoSchema.safeParse({ numeroPreguntas: 10, oposicionId: 3 });
     assert.equal(r.success, true);
-    assert.equal(r.data.numeroPreguntas, 10);
+    assert.equal(r.data.oposicionId, 3);
   });
 
   it('coacciona temaId string a number', () => {

@@ -20,7 +20,11 @@ export default function ResultAcciones({ activeTest, result }) {
 
   const onRefuerzo = async () => {
     const test = await runAction(() =>
-      testApi.generateRefuerzo(token, { temaId: Number(activeTest.temaId), numeroPreguntas: Math.min(result.errores, 20) })
+      testApi.generateRefuerzo(token, {
+        temaId: Number(activeTest.temaId),
+        oposicionId: activeTest.oposicionId ? Number(activeTest.oposicionId) : undefined,
+        numeroPreguntas: Math.min(result.errores, 20),
+      })
     );
     if (test) {
       sessionStorage.setItem('active_test', JSON.stringify(test));

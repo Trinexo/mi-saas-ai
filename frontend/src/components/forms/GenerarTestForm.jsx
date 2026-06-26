@@ -271,6 +271,8 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       return;
     }
     const payload = { numeroPreguntas: n };
+    const realOposicionId = Number(efectivoOposicionId) || undefined;
+    if (realOposicionId) payload.oposicionId = realOposicionId;
     if (temasSeleccionados.length === 1) payload.temaId = Number(temasSeleccionados[0]);
     const test = await runAction(() => testApi.generateRefuerzo(token, payload));
     if (test) {

@@ -45,6 +45,7 @@ export default function TestRecomendadoWidget() {
     if (modoEfectivo === 'refuerzo') {
       const payload = { numeroPreguntas: Number(suggestion.numeroPreguntas || 10) };
       if (suggestion.temaId) payload.temaId = Number(suggestion.temaId);
+      if (suggestion.oposicionId) payload.oposicionId = Number(suggestion.oposicionId);
       test = await runAction(() => testApi.generateRefuerzo(token, payload));
     } else {
       const payload = {
