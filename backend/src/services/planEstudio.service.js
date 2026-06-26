@@ -9,6 +9,19 @@ import { ApiError } from '../utils/api-error.js';
 const toNumber = (value) => (value == null ? null : Number(value));
 const secondsFromMinutes = (value) => (value ? Number(value) * 60 : null);
 
+const assertLegacyPlanAllowed = async (userId, oposicionId) => {
+  const acceso = await accesoOposicionRepository.getPreparacion(userId, oposicionId);
+  if (!acceso) throw new ApiError(403, 'No tienes acceso a esa oposicion');
+  if (acceso.modo_preparacion === 'albacer') {
+    throw new ApiError(
+      410,
+      'El Plan de estudio legacy esta desactivado en Modo Albacer. Usa los modulos Albacer.',
+      { code: 'LEGACY_PLAN_DISABLED_IN_ALBACER', oposicionId: Number(oposicionId) },
+    );
+  }
+  return acceso;
+};
+
 function buildEqualTemasMix(temaIds) {
   if (temaIds.length < 2) return null;
   const base = Math.floor(100 / temaIds.length);
@@ -28,8 +41,7 @@ function getPlanTemaIds(item) {
 
 export const planEstudioService = {
   async list(userId, { oposicion_id: oposicionId }) {
-    const tieneAcceso = await accesoOposicionRepository.tieneAcceso(userId, oposicionId);
-    if (!tieneAcceso) throw new ApiError(403, 'No tienes acceso a esa oposicion');
+    await assertLegacyPlanAllowed(userId, oposicionId);
 
     const items = await profesorWorkspacePlanificacionRepository.listForAlumno({
       userId,
@@ -42,6 +54,7 @@ export const planEstudioService = {
   async empezar(userId, planificacionId) {
     const item = await profesorWorkspacePlanificacionRepository.getForAlumno(planificacionId, userId);
     if (!item) throw new ApiError(404, 'Actividad no encontrada en tu Plan de estudio');
+    await assertLegacyPlanAllowed(userId, Number(item.oposicion_id));
     if (item.estado_alumno !== 'disponible') {
       throw new ApiError(400, 'Esta actividad no esta disponible ahora mismo');
     }

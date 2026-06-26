@@ -502,6 +502,7 @@ Debe mostrar:
 - Marcar servicios y endpoints como deprecated.
 - Documentar retirada futura de tablas legacy.
 - Estado: frontend de alumno limpio. Se elimina la pantalla `PlanEstudioPage`, el cliente `planEstudioApi`, los enlaces de menu/home/notificaciones y `/plan-estudio` queda como redireccion a Inicio. El backend y tablas legacy se conservan para compatibilidad interna.
+- Estado backend legacy: `/plan-estudio` devuelve `410` en oposiciones con `Modo Albacer`, evitando que el plan antiguo cree tests fuera de los modulos Albacer.
 
 ### PR J - Modulos automaticos
 
