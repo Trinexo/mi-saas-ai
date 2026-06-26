@@ -46,7 +46,7 @@ const MORE_ITEMS = [
   { to: '/marcadas',     label: 'Favoritos',        icon: 'star'      },
 ];
 
-const ALBACER_ONLY_HIDDEN_LINKS = new Set(['/configurar-test', '/ranking']);
+const ALBACER_ONLY_HIDDEN_LINKS = new Set(['/configurar-test', '/ranking', '/marcadas']);
 
 function filterAlumnoLinksByMode(links, modoPreparacion) {
   const isAlbacer = modoPreparacion === 'albacer';

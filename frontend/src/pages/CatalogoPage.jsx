@@ -6,6 +6,7 @@ import { billingApi } from '../services/billingApi';
 import { testApi } from '../services/testApi';
 import { useUserAccesos } from '../hooks/useUserAccesos';
 import { useUserPlan } from '../hooks/useUserPlan';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 
 const CARD = {
   background: '#fff',
@@ -21,8 +22,9 @@ const CARD = {
 export default function CatalogoPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
-  const { tieneAcceso, loading: loadingAccesos } = useUserAccesos();
+  const { accesos, tieneAcceso, loading: loadingAccesos } = useUserAccesos();
   const { plan } = useUserPlan();
+  const { setOposicionActiva } = useOposicionActiva();
   const [oposiciones, setOposiciones] = useState([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);
   const [comprando, setComprando] = useState(null); // oposicionId en proceso de pago
@@ -120,6 +122,18 @@ export default function CatalogoPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 16 }}>
           {oposiciones.map((op) => {
             const comprado = tieneAcceso(op.id);
+            const acceso = accesos.find((a) => Number(a.oposicion_id) === Number(op.id));
+            const isAlbacer = acceso?.modo_preparacion === 'albacer';
+            const onAccesoActivo = () => {
+              setOposicionActiva({
+                id: Number(op.id),
+                nombre: op.nombre,
+                modoPreparacion: acceso?.modo_preparacion ?? 'experto',
+                tipoAlumno: acceso?.tipo_alumno ?? null,
+                rankingPublico: acceso?.ranking_publico ?? false,
+              });
+              navigate(isAlbacer ? '/' : '/configurar-test', isAlbacer ? undefined : { state: { oposicionId: op.id } });
+            };
             return (
               <div key={op.id} style={CARD}>
                 {/* Badge estado */}
@@ -167,10 +181,10 @@ export default function CatalogoPage() {
                 {/* CTA */}
                 {comprado ? (
                   <button
-                    onClick={() => navigate('/configurar-test', { state: { oposicionId: op.id } })}
+                    onClick={onAccesoActivo}
                     style={{ marginTop: 4, padding: '9px 0', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', width: '100%' }}
                   >
-                    ▷ Practicar ahora
+                    {isAlbacer ? 'Ver módulos Albacer' : 'Practicar ahora'}
                   </button>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>

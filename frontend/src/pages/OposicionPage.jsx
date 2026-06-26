@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
+import { useUserAccesos } from '../hooks/useUserAccesos';
 import OposicionAcciones from '../components/oposicion/OposicionAcciones';
 import OposicionMaestriaBar from '../components/oposicion/OposicionMaestriaBar';
 import OposicionMateriasTable from '../components/oposicion/OposicionMateriasTable';
@@ -12,7 +13,8 @@ export default function OposicionPage() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
-  const { setOposicionActiva } = useOposicionActiva();
+  const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
+  const { accesos } = useUserAccesos();
   const [resumen, setResumen] = useState(null);
   const [temas, setTemas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,13 +36,22 @@ export default function OposicionPage() {
       .finally(() => setLoading(false));
   }, [token, id]);
 
+  const accesoActivo = accesos.find((a) => Number(a.oposicion_id) === Number(id));
+  const modoPreparacion = accesoActivo?.modo_preparacion
+    ?? (Number(oposicionActiva?.id) === Number(id) ? oposicionActiva?.modoPreparacion : null)
+    ?? 'experto';
+  const isAlbacer = modoPreparacion === 'albacer';
+
   useEffect(() => {
     if (!id || !resumen?.oposicionNombre) return;
     setOposicionActiva({
       id: Number(id),
       nombre: resumen.oposicionNombre,
+      modoPreparacion,
+      tipoAlumno: accesoActivo?.tipo_alumno ?? null,
+      rankingPublico: accesoActivo?.ranking_publico ?? false,
     });
-  }, [id, resumen?.oposicionNombre, setOposicionActiva]);
+  }, [id, resumen?.oposicionNombre, modoPreparacion, accesoActivo?.tipo_alumno, accesoActivo?.ranking_publico, setOposicionActiva]);
 
   if (loading) return (
     <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
@@ -66,10 +77,11 @@ export default function OposicionPage() {
 
       <OposicionMaestriaBar resumen={resumen} />
       <OposicionStatsGrid resumen={resumen} />
-      <OposicionAcciones id={id} />
+      <OposicionAcciones id={id} isAlbacer={isAlbacer} />
       <OposicionMateriasTable
         temas={temas}
         oposicionId={Number(id)}
+        isAlbacer={isAlbacer}
         onPracticar={(temaId) => navigate('/', { state: { temaId, oposicionId: Number(id) } })}
       />
     </div>

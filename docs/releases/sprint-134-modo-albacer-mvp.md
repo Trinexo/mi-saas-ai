@@ -536,6 +536,7 @@ Debe mostrar:
 - Estado sugeridos: `/mis-tests` y `/simulacros` filtran por `tipo_alumno = albacer`; los accesos libres solo conservan visibilidad de `TEST DEMO` en tests.
 - Estado simulacros Albacer: la pantalla generica de simulacros oculta la creacion libre en Modo Albacer y excluye simulacros finales de modulo del listado publico.
 - Estado navegacion Albacer: Home, historial, resultado y revision no ofrecen acciones que creen tests libres fuera del plan; el historial reciente filtra por `modo_preparacion`.
+- Estado CTAs Albacer: catalogo, oposicion, tema y bloque evitan botones de practica libre en Modo Albacer; `Favoritos` queda oculto/bloqueado porque genera tests libres.
 - Estadisticas e historial se filtran por modo y oposicion.
 
 ---

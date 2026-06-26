@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import TemaAcciones from '../components/tema/TemaAcciones';
 import TemaMaestriaBar from '../components/tema/TemaMaestriaBar';
 import TemaStatsGrid from '../components/tema/TemaStatsGrid';
@@ -10,6 +11,7 @@ import TemaTestsTable from '../components/tema/TemaTestsTable';
 export default function TemaPage() {
   const { id } = useParams();
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const [bloque, setBloque] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,6 +41,8 @@ export default function TemaPage() {
     </div>
   );
   if (!bloque) return null;
+  const isAlbacer = Number(oposicionActiva?.id) === Number(bloque.oposicionId)
+    && oposicionActiva?.modoPreparacion === 'albacer';
 
   return (
     <div style={{ maxWidth: 820, margin: '0 auto' }}>
@@ -56,6 +60,7 @@ export default function TemaPage() {
         bloqueId={Number(id)}
         temaId={bloque.temaId}
         oposicionId={bloque.oposicionId}
+        isAlbacer={isAlbacer}
       />
     </div>
   );
