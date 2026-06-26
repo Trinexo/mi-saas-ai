@@ -1,7 +1,8 @@
 import pool from '../config/db.js';
 
 export const progressTemarioDetalleDetailRepository = {
-  async getProgresoBloquesByTema(userId, temaId) {
+  async getProgresoBloquesByTema(userId, temaId, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const result = await pool.query(
       `SELECT
          bl.id AS bloque_id,
@@ -11,23 +12,27 @@ export const progressTemarioDetalleDetailRepository = {
          o.id AS oposicion_id,
          o.nombre AS oposicion_nombre,
          COUNT(DISTINCT p.id)::int AS total_preguntas,
-         COALESCE(pu.aciertos, 0)::int AS aciertos,
-         COALESCE(
-           ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
-           0
-         ) AS porcentaje_acierto,
+         COUNT(ru.id) FILTER (WHERE ru.correcta = true)::int AS aciertos,
+         COUNT(ru.id) FILTER (WHERE ru.correcta = false)::int AS errores,
+         COALESCE(ROUND(
+           100.0 * COUNT(ru.id) FILTER (WHERE ru.correcta = true)::numeric
+           / NULLIF(COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL), 0)
+         , 1), 0) AS porcentaje_acierto,
          COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas
        FROM colecciones bl
        JOIN temas t ON t.id = bl.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        LEFT JOIN preguntas p ON p.bloque_id = bl.id
-       LEFT JOIN progreso_usuario pu ON pu.bloque_id = bl.id AND pu.usuario_id = $1
-       LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.bloque_id = bl.id AND ts.estado = 'finalizado'
+       LEFT JOIN tests ts ON ts.usuario_id = $1
+         AND ts.bloque_id = bl.id
+         AND ts.estado = 'finalizado'
+         AND ts.modo_preparacion = $3
+         AND ($4::bigint IS NULL OR ts.albacer_modulo_id = $4)
        LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
        WHERE bl.tema_id = $2
-       GROUP BY bl.id, bl.nombre, t.id, t.nombre, o.id, o.nombre, pu.aciertos, pu.errores
+       GROUP BY bl.id, bl.nombre, t.id, t.nombre, o.id, o.nombre
        ORDER BY bl.nombre ASC`,
-      [userId, temaId],
+      [userId, temaId, modoPreparacion, albacerModuloId],
     );
 
     return result.rows.map((row) => {
@@ -47,12 +52,14 @@ export const progressTemarioDetalleDetailRepository = {
         dominadas,
         dominio,
         aciertos: Number(row.aciertos ?? 0),
+        errores: Number(row.errores ?? 0),
         porcentajeAcierto: Number(row.porcentaje_acierto ?? 0),
       };
     });
   },
 
-  async getDetalleBloque(userId, bloqueId) {
+  async getDetalleBloque(userId, bloqueId, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const [progresoResult, historialResult] = await Promise.all([
       pool.query(
         `SELECT
@@ -63,24 +70,27 @@ export const progressTemarioDetalleDetailRepository = {
            o.id AS oposicion_id,
            o.nombre AS oposicion_nombre,
            COUNT(DISTINCT p.id)::int AS total_preguntas,
-           COALESCE(pu.aciertos, 0)::int AS aciertos,
-           COALESCE(pu.errores, 0)::int AS errores,
-           COUNT(DISTINCT ru.pregunta_id)::int AS respondidas_unicas,
+           COUNT(ru.id) FILTER (WHERE ru.correcta = true)::int AS aciertos,
+           COUNT(ru.id) FILTER (WHERE ru.correcta = false)::int AS errores,
+           COUNT(DISTINCT ru.pregunta_id) FILTER (WHERE ru.respuesta_id IS NOT NULL)::int AS respondidas_unicas,
            COUNT(DISTINCT CASE WHEN ru.correcta = true THEN ru.pregunta_id END)::int AS dominadas,
-           COALESCE(
-             ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 1),
-             0
-           ) AS porcentaje_acierto
+           COALESCE(ROUND(
+             100.0 * COUNT(ru.id) FILTER (WHERE ru.correcta = true)::numeric
+             / NULLIF(COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NOT NULL), 0)
+           , 1), 0) AS porcentaje_acierto
          FROM colecciones bl
          JOIN temas t ON t.id = bl.tema_id
          JOIN oposiciones o ON o.id = t.oposicion_id
          LEFT JOIN preguntas p ON p.bloque_id = bl.id
-         LEFT JOIN progreso_usuario pu ON pu.bloque_id = bl.id AND pu.usuario_id = $1
-         LEFT JOIN tests ts ON ts.usuario_id = $1 AND ts.bloque_id = bl.id AND ts.estado = 'finalizado'
+         LEFT JOIN tests ts ON ts.usuario_id = $1
+           AND ts.bloque_id = bl.id
+           AND ts.estado = 'finalizado'
+           AND ts.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR ts.albacer_modulo_id = $4)
          LEFT JOIN respuestas_usuario ru ON ru.test_id = ts.id AND ru.pregunta_id = p.id
          WHERE bl.id = $2
-         GROUP BY bl.id, bl.nombre, t.id, t.nombre, o.id, o.nombre, pu.aciertos, pu.errores`,
-        [userId, bloqueId],
+         GROUP BY bl.id, bl.nombre, t.id, t.nombre, o.id, o.nombre`,
+        [userId, bloqueId, modoPreparacion, albacerModuloId],
       ),
       pool.query(
         `SELECT t.id AS test_id, t.fecha_creacion, t.tipo_test,
@@ -90,9 +100,11 @@ export const progressTemarioDetalleDetailRepository = {
          WHERE t.usuario_id = $1
            AND t.bloque_id = $2
            AND t.estado = 'finalizado'
+           AND t.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR t.albacer_modulo_id = $4)
          ORDER BY t.fecha_creacion DESC
          LIMIT 5`,
-        [userId, bloqueId],
+        [userId, bloqueId, modoPreparacion, albacerModuloId],
       ),
     ]);
 

@@ -19,14 +19,20 @@ export default function OposicionPage() {
   const [temas, setTemas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const accesoActivo = accesos.find((a) => Number(a.oposicion_id) === Number(id));
+  const modoPreparacion = accesoActivo?.modo_preparacion
+    ?? (Number(oposicionActiva?.id) === Number(id) ? oposicionActiva?.modoPreparacion : null)
+    ?? 'experto';
+  const isAlbacer = modoPreparacion === 'albacer';
+  const modoOptions = { modo_preparacion: modoPreparacion };
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     setError('');
     Promise.all([
-      testApi.getResumenOposicion(token, Number(id)),
-      testApi.getProgresoTemas(token, Number(id)),
+      testApi.getResumenOposicion(token, Number(id), modoOptions),
+      testApi.getProgresoTemas(token, Number(id), modoOptions),
     ])
       .then(([resumenData, temasData]) => {
         setResumen(resumenData);
@@ -34,13 +40,7 @@ export default function OposicionPage() {
       })
       .catch((e) => setError(e.message || 'No se pudo cargar el resumen'))
       .finally(() => setLoading(false));
-  }, [token, id]);
-
-  const accesoActivo = accesos.find((a) => Number(a.oposicion_id) === Number(id));
-  const modoPreparacion = accesoActivo?.modo_preparacion
-    ?? (Number(oposicionActiva?.id) === Number(id) ? oposicionActiva?.modoPreparacion : null)
-    ?? 'experto';
-  const isAlbacer = modoPreparacion === 'albacer';
+  }, [token, id, modoPreparacion]);
 
   useEffect(() => {
     if (!id || !resumen?.oposicionNombre) return;

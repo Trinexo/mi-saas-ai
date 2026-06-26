@@ -11,6 +11,7 @@ export default function BloquePage() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const { oposicionActiva } = useOposicionActiva();
+  const modoOptions = { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' };
   const [bloques, setBloques] = useState([]);
   const [temaInfo, setTemaInfo] = useState(null); // fallback cuando no hay bloques
   const [loading, setLoading] = useState(true);
@@ -21,19 +22,19 @@ export default function BloquePage() {
     setLoading(true);
     setError('');
     testApi
-      .getProgresoBloquesByTema(token, Number(id))
+      .getProgresoBloquesByTema(token, Number(id), modoOptions)
       .then(async (data) => {
         const lista = Array.isArray(data) ? data : [];
         setBloques(lista);
         if (lista.length === 0) {
           // Sin bloques: cargar estadísticas directas del tema
-          const info = await testApi.getProgresoTemaReal(token, Number(id)).catch(() => null);
+          const info = await testApi.getProgresoTemaReal(token, Number(id), modoOptions).catch(() => null);
           setTemaInfo(info);
         }
       })
       .catch((e) => setError(e.message || 'No se pudo cargar el tema'))
       .finally(() => setLoading(false));
-  }, [token, id]);
+  }, [token, id, oposicionActiva?.modoPreparacion]);
 
   if (loading) return (
     <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3rem 1rem', gap: 12 }}>
