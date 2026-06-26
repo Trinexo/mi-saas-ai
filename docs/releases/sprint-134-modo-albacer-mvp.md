@@ -532,6 +532,7 @@ Debe mostrar:
 - Estado revision Albacer: `GET /tests/:id/review` devuelve revision limitada hasta superar el modulo, ocultando explicaciones y opcion correcta no elegida.
 - Tests sugeridos por profesor solo aparecen a alumnos con `tipo_alumno = albacer` en esa oposicion.
 - Estado sugeridos: `/mis-tests` y `/simulacros` filtran por `tipo_alumno = albacer`; los accesos libres solo conservan visibilidad de `TEST DEMO` en tests.
+- Estado simulacros Albacer: la pantalla generica de simulacros oculta la creacion libre en Modo Albacer y excluye simulacros finales de modulo del listado publico.
 - Estadisticas e historial se filtran por modo y oposicion.
 
 ---
