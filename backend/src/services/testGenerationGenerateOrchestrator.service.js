@@ -3,7 +3,7 @@ import { testGenerationGenerateSelectionMixtoService } from './testGenerationGen
 import { testGenerationGeneratePersistenceService } from './testGenerationGeneratePersistence.service.js';
 
 export const testGenerationGenerateOrchestratorService = {
-  async generate({ userId, temaId, temasMix, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', duracionSegundos, feedbackInmediato = false }) {
+  async generate({ userId, temaId, bloqueId, temasMix, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', duracionSegundos, feedbackInmediato = false }) {
     let preguntas;
 
     if (temasMix && temasMix.length > 0) {
@@ -18,6 +18,7 @@ export const testGenerationGenerateOrchestratorService = {
       preguntas = await testGenerationGenerateSelectionService.selectPreguntas({
         userId,
         temaId,
+        bloqueId,
         oposicionId,
         numeroPreguntas,
         modo,

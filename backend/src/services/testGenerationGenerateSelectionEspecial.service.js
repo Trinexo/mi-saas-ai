@@ -1,7 +1,7 @@
 import { testRepository } from '../repositories/test.repository.js';
 
 export const testGenerationGenerateSelectionEspecialService = {
-  async pickEspecial({ userId, oposicionId, temaId, numeroPreguntas, modo }) {
+  async pickEspecial({ userId, oposicionId, temaId, bloqueId, numeroPreguntas, modo }) {
     if (modo === 'marcadas') {
       return testRepository.pickMarcadasQuestions({ userId, oposicionId, numeroPreguntas });
     }
@@ -11,7 +11,7 @@ export const testGenerationGenerateSelectionEspecialService = {
     }
 
     if (modo === 'repaso') {
-      return testRepository.pickDueQuestions({ userId, temaId, oposicionId, numeroPreguntas });
+      return testRepository.pickDueQuestions({ userId, temaId, bloqueId, oposicionId, numeroPreguntas });
     }
 
     if (!temaId && oposicionId) {

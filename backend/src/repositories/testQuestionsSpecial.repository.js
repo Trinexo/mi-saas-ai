@@ -36,7 +36,8 @@ const SELECT_DUE_QUESTIONS_SQL = `
   WHERE re.usuario_id = $1
     AND re.proxima_revision <= NOW()
     AND ($3::bigint IS NULL OR p.tema_id = $3)
-    AND ($4::bigint IS NULL OR t.oposicion_id = $4)
+    AND ($4::bigint IS NULL OR p.bloque_id = $4)
+    AND ($5::bigint IS NULL OR t.oposicion_id = $5)
   GROUP BY p.id, re.proxima_revision
   ORDER BY re.proxima_revision ASC
   LIMIT $2
@@ -77,8 +78,14 @@ export const testQuestionsSpecialRepository = {
     return result.rows;
   },
 
-  async pickDueQuestions({ userId, temaId = null, oposicionId = null, numeroPreguntas }) {
-    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [userId, numeroPreguntas, temaId ?? null, oposicionId ?? null]);
+  async pickDueQuestions({ userId, temaId = null, bloqueId = null, oposicionId = null, numeroPreguntas }) {
+    const result = await pool.query(SELECT_DUE_QUESTIONS_SQL, [
+      userId,
+      numeroPreguntas,
+      temaId ?? null,
+      bloqueId ?? null,
+      oposicionId ?? null,
+    ]);
     return result.rows;
   },
 

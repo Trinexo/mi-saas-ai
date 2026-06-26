@@ -17,17 +17,31 @@ export const testModeGuardService = {
       payload.temaId,
       ...(Array.isArray(payload.temasMix) ? payload.temasMix.map((item) => item?.temaId) : []),
     ]);
+    const bloqueIds = uniquePositiveIds([payload.bloqueId]);
 
-    if (temaIds.length === 0) return uniquePositiveIds(directIds);
+    if (temaIds.length === 0 && bloqueIds.length === 0) return uniquePositiveIds(directIds);
 
-    const result = await pool.query(
-      'SELECT DISTINCT oposicion_id FROM temas WHERE id = ANY($1::bigint[])',
-      [temaIds],
-    );
+    const result = temaIds.length > 0
+      ? await pool.query(
+        'SELECT DISTINCT oposicion_id FROM temas WHERE id = ANY($1::bigint[])',
+        [temaIds],
+      )
+      : { rows: [] };
+
+    const bloquesResult = bloqueIds.length > 0
+      ? await pool.query(
+        `SELECT DISTINCT t.oposicion_id
+         FROM bloques b
+         JOIN temas t ON t.id = b.tema_id
+         WHERE b.id = ANY($1::bigint[])`,
+        [bloqueIds],
+      )
+      : { rows: [] };
 
     return uniquePositiveIds([
       ...directIds,
       ...result.rows.map((row) => row.oposicion_id),
+      ...bloquesResult.rows.map((row) => row.oposicion_id),
     ]);
   },
 

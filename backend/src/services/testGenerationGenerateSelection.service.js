@@ -4,9 +4,9 @@ import { testGenerationGenerateSelectionEspecialService } from './testGeneration
 import { testGenerationGenerateSelectionAdaptativoService } from './testGenerationGenerateSelectionAdaptativo.service.js';
 
 export const testGenerationGenerateSelectionService = {
-  async selectPreguntas({ userId, temaId, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto' }) {
+  async selectPreguntas({ userId, temaId, bloqueId, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto' }) {
     let preguntas = await testGenerationGenerateSelectionEspecialService.pickEspecial({
-      userId, oposicionId, temaId, numeroPreguntas, modo,
+      userId, oposicionId, temaId, bloqueId, numeroPreguntas, modo,
     });
 
     if (preguntas === null) {
