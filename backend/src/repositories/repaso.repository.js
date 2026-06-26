@@ -2,25 +2,30 @@
 import { spacedRepetitionRepository } from './spacedRepetition.repository.js';
 
 export const repasoRepository = {
-  async getPendientes(userId, limit = 20) {
+  async getPendientes(userId, limit = 20, oposicionId = null) {
     const [totalResult, sugeridoResult, itemsResult] = await Promise.all([
       pool.query(
         `SELECT COUNT(*)::int AS total
-         FROM repeticion_espaciada
-         WHERE usuario_id = $1
-           AND proxima_revision <= NOW()`,
-        [userId],
+         FROM repeticion_espaciada re
+         JOIN preguntas p ON p.id = re.pregunta_id
+         JOIN temas t ON t.id = p.tema_id
+         WHERE re.usuario_id = $1
+           AND re.proxima_revision <= NOW()
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)`,
+        [userId, oposicionId || null],
       ),
       pool.query(
         `SELECT p.bloque_id, COUNT(*)::int AS total
          FROM repeticion_espaciada re
          JOIN preguntas p ON p.id = re.pregunta_id
+         JOIN temas t ON t.id = p.tema_id
          WHERE re.usuario_id = $1
            AND re.proxima_revision <= NOW()
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          GROUP BY p.bloque_id
          ORDER BY total DESC, p.bloque_id ASC
          LIMIT 1`,
-        [userId],
+        [userId, oposicionId || null],
       ),
       pool.query(
         `SELECT re.pregunta_id,
@@ -34,9 +39,10 @@ export const repasoRepository = {
          JOIN temas t ON t.id = bl.tema_id
          WHERE re.usuario_id = $1
            AND re.proxima_revision <= NOW()
+           AND ($3::bigint IS NULL OR t.oposicion_id = $3)
          ORDER BY re.proxima_revision ASC
          LIMIT $2`,
-        [userId, limit],
+        [userId, limit, oposicionId || null],
       ),
     ]);
 

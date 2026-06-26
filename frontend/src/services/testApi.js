@@ -38,7 +38,8 @@ export const testApi = {
   getMisOposiciones: (token) => apiRequest('/stats/mis-oposiciones', { token }),
   getRanking: (token, oposicionId) => apiRequest('/stats/ranking', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   evolucionStats: (token, limit = 30, oposicionId, options = {}) => apiRequest('/stats/evolucion', { token, query: { limit, ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
-  getRepasoPendientes: (token, limit = 20) => apiRequest('/repaso/pendientes', { token, query: { limit } }),
+  getRepasoPendientes: (token, limit = 20, oposicionId = null) =>
+    apiRequest('/repaso/pendientes', { token, query: { limit, ...(oposicionId ? { oposicion_id: oposicionId } : {}) } }),
   getReview: (token, testId) => apiRequest(`/tests/${testId}/review`, { token }),
   getConfig: (token, testId) => apiRequest(`/tests/${testId}/config`, { token }),
 };
