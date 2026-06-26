@@ -5,15 +5,17 @@ const BTN_PRIMARY = { ...BTN, background: '#1d4ed8', color: '#fff', border: 'non
 const BTN_WARN = { ...BTN, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
 
 export default function ReviewAcciones({ testInfo, errores = 0, onNuevoTest, onVerProgreso }) {
+  const isAlbacer = testInfo?.modoPreparacion === 'albacer' || !!testInfo?.albacerModuloId;
+
   return (
     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: '2rem' }}>
       <button style={BTN_PRIMARY} onClick={onNuevoTest}>
-        Nuevo test
+        {isAlbacer ? 'Volver a módulos' : 'Nuevo test'}
       </button>
       <button style={BTN} onClick={onVerProgreso}>
         Ver progreso
       </button>
-      {errores > 0 && (
+      {!isAlbacer && errores > 0 && (
         <Link
           to="/configurar-test"
           state={{ modoSugerido: 'marcadas' }}

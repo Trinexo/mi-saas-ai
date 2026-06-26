@@ -12,7 +12,11 @@ export default function ResultAcciones({ activeTest, result }) {
   const { isLoading, runAction } = useAsyncAction();
   const { hasAccess } = useUserPlan();
 
-  const puedeReforzar = (result?.errores ?? 0) > 0 && !!activeTest?.temaId;
+  const isAlbacer = activeTest?.modoPreparacion === 'albacer'
+    || result?.modoPreparacion === 'albacer'
+    || !!activeTest?.albacerModuloId
+    || !!result?.albacerModuloId;
+  const puedeReforzar = !isAlbacer && (result?.errores ?? 0) > 0 && !!activeTest?.temaId;
 
   const onRefuerzo = async () => {
     const test = await runAction(() =>
@@ -26,8 +30,8 @@ export default function ResultAcciones({ activeTest, result }) {
 
   return (
     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
-      <Link to="/configurar-test" style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-        Nuevo test
+      <Link to={isAlbacer ? '/' : '/configurar-test'} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+        {isAlbacer ? 'Volver a módulos' : 'Nuevo test'}
       </Link>
 
       {puedeReforzar && (

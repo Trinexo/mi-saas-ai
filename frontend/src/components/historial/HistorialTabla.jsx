@@ -109,7 +109,9 @@ export default function HistorialTabla({ itemsOrdenados, onReintentar }) {
             {/* Acciones */}
             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               <Link to={`/revision/${t.id}`} style={BTN_LINK}>Revisar</Link>
-              <button onClick={() => onReintentar(t.id)} style={BTN_SECONDARY}>Repetir</button>
+              {onReintentar && (
+                <button onClick={() => onReintentar(t.id)} style={BTN_SECONDARY}>Repetir</button>
+              )}
             </div>
           </div>
         );
