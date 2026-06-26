@@ -10,6 +10,7 @@ import { testService } from '../../src/services/test.service.js';
 
 const originals = {
   tieneAcceso: accesoOposicionRepository.tieneAcceso,
+  getPreparacion: accesoOposicionRepository.getPreparacion,
   listForAlumno: profesorWorkspacePlanificacionRepository.listForAlumno,
   getForAlumno: profesorWorkspacePlanificacionRepository.getForAlumno,
   getTest: adminTestsRepository.getTest,
@@ -20,6 +21,7 @@ const originals = {
 
 afterEach(() => {
   accesoOposicionRepository.tieneAcceso = originals.tieneAcceso;
+  accesoOposicionRepository.getPreparacion = originals.getPreparacion;
   profesorWorkspacePlanificacionRepository.listForAlumno = originals.listForAlumno;
   profesorWorkspacePlanificacionRepository.getForAlumno = originals.getForAlumno;
   adminTestsRepository.getTest = originals.getTest;
@@ -30,7 +32,7 @@ afterEach(() => {
 
 describe('planEstudioService', () => {
   it('list rechaza oposiciones sin acceso del alumno', async () => {
-    accesoOposicionRepository.tieneAcceso = async () => false;
+    accesoOposicionRepository.getPreparacion = async () => null;
 
     await assert.rejects(
       () => planEstudioService.list(7, { oposicion_id: 22 }),
@@ -39,7 +41,7 @@ describe('planEstudioService', () => {
   });
 
   it('list devuelve actividades solo si el alumno tiene acceso', async () => {
-    accesoOposicionRepository.tieneAcceso = async () => true;
+    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'experto' });
     profesorWorkspacePlanificacionRepository.listForAlumno = async ({ userId, oposicionId }) => {
       assert.equal(userId, 7);
       assert.equal(oposicionId, 22);
@@ -51,9 +53,20 @@ describe('planEstudioService', () => {
     assert.deepEqual(result.items, [{ id: 1, titulo: 'Tema recomendado' }]);
   });
 
+  it('list bloquea el plan legacy en Modo Albacer', async () => {
+    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+
+    await assert.rejects(
+      () => planEstudioService.list(7, { oposicion_id: 22 }),
+      (error) => error.status === 410 && error.details?.code === 'LEGACY_PLAN_DISABLED_IN_ALBACER',
+    );
+  });
+
   it('empezar rechaza actividades no disponibles', async () => {
+    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'experto' });
     profesorWorkspacePlanificacionRepository.getForAlumno = async () => ({
       id: 9,
+      oposicion_id: 22,
       estado_alumno: 'proximo',
       tipo: 'tema_recomendado',
     });
