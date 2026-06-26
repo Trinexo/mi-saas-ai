@@ -57,8 +57,10 @@ const SELECT_REFUERZO_QUESTIONS_SQL = `
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM failed f
   JOIN preguntas p ON p.id = f.pregunta_id
+  JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE ($3::bigint IS NULL OR p.tema_id = $3)
+    AND ($4::bigint IS NULL OR t.oposicion_id = $4)
   GROUP BY p.id, f.cnt
   ORDER BY f.cnt DESC, RANDOM()
   LIMIT $2
@@ -80,8 +82,8 @@ export const testQuestionsSpecialRepository = {
     return result.rows;
   },
 
-  async pickRefuerzoQuestions({ userId, numeroPreguntas, temaId = null }) {
-    const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, temaId]);
+  async pickRefuerzoQuestions({ userId, numeroPreguntas, temaId = null, oposicionId = null }) {
+    const result = await pool.query(SELECT_REFUERZO_QUESTIONS_SQL, [userId, numeroPreguntas, temaId, oposicionId]);
     return result.rows;
   },
 

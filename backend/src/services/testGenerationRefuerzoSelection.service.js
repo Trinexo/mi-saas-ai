@@ -2,8 +2,13 @@ import { ApiError } from '../utils/api-error.js';
 import { testRepository } from '../repositories/test.repository.js';
 
 export const testGenerationRefuerzoSelectionService = {
-  async selectPreguntasRefuerzo({ userId, temaId, numeroPreguntas = 10 }) {
-    let preguntas = await testRepository.pickRefuerzoQuestions({ userId, numeroPreguntas, temaId: temaId || null });
+  async selectPreguntasRefuerzo({ userId, temaId, oposicionId, numeroPreguntas = 10 }) {
+    let preguntas = await testRepository.pickRefuerzoQuestions({
+      userId,
+      numeroPreguntas,
+      temaId: temaId || null,
+      oposicionId: oposicionId || null,
+    });
 
     if (preguntas.length < numeroPreguntas && temaId) {
       const excludeIds = preguntas.map((pregunta) => pregunta.id);

@@ -542,6 +542,7 @@ Debe mostrar:
 - Estado favoritos: `modo marcadas` exige `oposicionId`, filtra preguntas marcadas por oposicion activa y muestra bloqueo si se accede a `/marcadas` en `Modo Albacer`.
 - Estado generador libre: `/configurar-test` muestra bloqueo en `Modo Albacer` aunque se acceda por URL directa, redirigiendo al alumno a los modulos.
 - Estado repaso: `modo repaso` exige `temaId` u `oposicionId`; los widgets envian la oposicion activa y el picker limita preguntas pendientes a esa oposicion.
+- Estado refuerzo: `generate-refuerzo` exige `temaId` u `oposicionId`; el selector limita fallos por oposicion activa cuando se informa.
 - Estado bloqueo backend: `/tests/generate` y `/tests/generate-refuerzo` bloquean tests libres si la oposicion resuelta esta en `Modo Albacer`; `/tests/continuar` devuelve una respuesta neutra de Modulo Albacer en ese modo.
 - Estado progreso de contenido: resumen de oposicion, progreso por tema, detalle de tema y detalle de bloque respetan `modo_preparacion` y `albacer_modulo_id`.
 - Estadisticas e historial se filtran por modo y oposicion.

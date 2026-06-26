@@ -8,6 +8,7 @@ export const testGenerationRefuerzoService = {
     return testGenerationRefuerzoPersistenceService.persistRefuerzoTest({
       userId: params.userId,
       temaId: params.temaId,
+      oposicionId: params.oposicionId,
       preguntas,
     });
   },

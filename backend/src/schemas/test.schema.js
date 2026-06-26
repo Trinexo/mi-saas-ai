@@ -29,9 +29,13 @@ export const generateTestSchema = z.object({
 );
 
 export const generateRefuerzoSchema = z.object({
-  temaId: z.number().int().positive().optional(),
+  temaId: z.coerce.number().int().positive().optional(),
+  oposicionId: z.coerce.number().int().positive().optional(),
   numeroPreguntas: z.number().int().min(1).max(100).default(10),
-});
+}).refine(
+  (d) => d.temaId != null || d.oposicionId != null,
+  { message: 'El refuerzo requiere temaId u oposicionId', path: ['oposicionId'] },
+);
 
 export const submitTestSchema = z.object({
   testId: z.coerce.number().int().positive(),
