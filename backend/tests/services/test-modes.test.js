@@ -6,7 +6,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateTestSchema, generateRefuerzoSchema } from '../../src/schemas/test.schema.js';
 import { testRepository } from '../../src/repositories/test.repository.js';
+import { accesoOposicionRepository } from '../../src/repositories/accesoOposicion.repository.js';
 import { testService } from '../../src/services/test.service.js';
+import { testModeGuardService } from '../../src/services/testModeGuard.service.js';
+import pool from '../../src/config/db.js';
 
 // ── generateTestSchema — nuevos modos ────────────────────────────────────────
 
@@ -246,5 +249,32 @@ describe('testService.generateRefuerzo', () => {
     assert.equal(createCalls[0].oposicionId, 8);
 
     Object.assign(testRepository, orig);
+  });
+});
+
+describe('testModeGuardService — refuerzo Albacer', () => {
+  it('bloquea generate-refuerzo si el tema pertenece a una oposición en Modo Albacer', async () => {
+    const orig = {
+      query: pool.query,
+      getPreparacion: accesoOposicionRepository.getPreparacion,
+    };
+
+    pool.query = async () => ({ rows: [{ oposicion_id: 14 }] });
+    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+
+    try {
+      await assert.rejects(
+        () => testModeGuardService.assertAlumnoCanGenerateFreeTest(
+          { userId: 7, role: 'alumno' },
+          { temaId: 22, numeroPreguntas: 10 },
+        ),
+        (error) => error.status === 403
+          && error.details?.code === 'ALBACER_FREE_TEST_BLOCKED'
+          && error.details?.oposicionId === 14,
+      );
+    } finally {
+      Object.assign(pool, { query: orig.query });
+      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+    }
   });
 });
