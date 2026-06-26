@@ -22,12 +22,14 @@ export default function HistorialStats({ testsLast7Days, bestNoteLast30Days, mej
         {mejorTestSemana ? (
           <>
             <p style={{ margin: '0 0 10px', fontSize: 24, fontWeight: 800, color: '#1d4ed8' }}>{Number(mejorTestSemana.nota).toFixed(2)}</p>
-            <button
-              onClick={() => onReintentar(mejorTestSemana.id)}
-              style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: 7, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
-            >
-              Repetir
-            </button>
+            {onReintentar && (
+              <button
+                onClick={() => onReintentar(mejorTestSemana.id)}
+                style={{ alignSelf: 'flex-start', padding: '5px 12px', borderRadius: 7, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+              >
+                Repetir
+              </button>
+            )}
           </>
         ) : (
           <p style={{ margin: 0, fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>Sin tests esta semana</p>

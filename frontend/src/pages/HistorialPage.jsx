@@ -33,6 +33,8 @@ export default function HistorialPage() {
   const [blancosFiltro, setBlancosFiltro] = useState('todos');
   const [ritmoFiltro, setRitmoFiltro] = useState('todos');
   const [consistenciaFiltro, setConsistenciaFiltro] = useState('todos');
+  const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
+  const isAlbacer = modoPreparacion === 'albacer';
 
   useEffect(() => {
     catalogApi.getOposiciones(token).then(setOposiciones).catch(() => {});
@@ -49,7 +51,7 @@ export default function HistorialPage() {
     setItems(null);
     const params = { limit: PAGE_SIZE, page };
     if (oposicionId) params.oposicion_id = Number(oposicionId);
-    params.modo_preparacion = oposicionActiva?.modoPreparacion ?? 'experto';
+    params.modo_preparacion = modoPreparacion;
     if (periodoFiltro === '7d') {
       const d = new Date(); d.setDate(d.getDate() - 7);
       params.desde = d.toISOString().slice(0, 10);
@@ -69,7 +71,7 @@ export default function HistorialPage() {
         }
       })
       .catch((e) => setError(e.message || 'No se pudo cargar el historial'));
-  }, [token, page, oposicionId, periodoFiltro, oposicionActiva?.modoPreparacion]);
+  }, [token, page, oposicionId, periodoFiltro, modoPreparacion]);
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -132,6 +134,10 @@ export default function HistorialPage() {
   });
 
   const handleReintentar = async (testId) => {
+    if (isAlbacer) {
+      navigate('/');
+      return;
+    }
     try {
       const config = await testApi.getConfig(token, testId);
       const payload = {
@@ -229,10 +235,10 @@ export default function HistorialPage() {
         testsLast7Days={testsLast7Days}
         bestNoteLast30Days={bestNoteLast30Days}
         mejorTestSemana={mejorTestSemana}
-        onReintentar={handleReintentar}
+        onReintentar={isAlbacer ? null : handleReintentar}
       />
 
-      <HistorialTabla itemsOrdenados={itemsOrdenados} onReintentar={handleReintentar} />
+      <HistorialTabla itemsOrdenados={itemsOrdenados} onReintentar={isAlbacer ? null : handleReintentar} />
 
       <HistorialPaginacion
         page={page}

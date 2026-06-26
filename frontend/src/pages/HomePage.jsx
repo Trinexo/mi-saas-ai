@@ -191,8 +191,12 @@ function ContinuarCard() {
       navigate('/test');
       return;
     }
+    if (isAlbacer) {
+      navigate('/');
+      return;
+    }
     if (s.tipo === 'empezar') {
-      navigate(isAlbacer ? '/simulacros' : '/configurar-test');
+      navigate('/configurar-test');
       return;
     }
 
@@ -221,13 +225,13 @@ function ContinuarCard() {
   if (!sugerencia) {
     return (
       <div style={{ ...CARD, padding: '24px 26px' }}>
-        <Link to={isAlbacer ? '/simulacros' : '/configurar-test'} style={{
+        <Link to={isAlbacer ? '/' : '/configurar-test'} style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           background: O, color: '#fff', borderRadius: 10,
           padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
           textDecoration: 'none', boxShadow: `0 3px 12px ${O}40`,
         }}>
-          <IconPlay /> {isAlbacer ? 'Ver simulacros' : 'Empezar a estudiar'}
+          <IconPlay /> {isAlbacer ? 'Ver módulos' : 'Empezar a estudiar'}
         </Link>
       </div>
     );
@@ -275,13 +279,13 @@ function ContinuarCard() {
       {/* Botones */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         {tipo === 'empezar' ? (
-          <Link to={isAlbacer ? '/simulacros' : '/configurar-test'} style={{
+          <Link to={isAlbacer ? '/' : '/configurar-test'} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             background: O, color: '#fff', borderRadius: 10,
             padding: '10px 22px', fontWeight: 700, fontSize: '0.88rem',
             textDecoration: 'none', boxShadow: `0 3px 12px ${O}40`,
           }}>
-            <IconPlay /> {isAlbacer ? 'Ver simulacros' : 'Hacer mi primer test'}
+            <IconPlay /> {isAlbacer ? 'Ver módulos' : 'Hacer mi primer test'}
           </Link>
         ) : (
           <>
@@ -298,7 +302,7 @@ function ContinuarCard() {
                 boxShadow: `0 3px 12px ${O}40`, transition: 'background .15s',
               }}
             >
-              <IconPlay />{isLoading ? 'Generando…' : meta.btnTxt}
+              <IconPlay />{isLoading ? 'Generando…' : (isAlbacer ? 'Ver módulos' : meta.btnTxt)}
             </button>
           </>
         )}
@@ -450,9 +454,10 @@ function HistorialReciente() {
   useEffect(() => {
     testApi.history(token, {
       limit: 4,
+      modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto',
       ...(oposicionActiva?.id ? { oposicion_id: oposicionActiva.id } : {}),
     }).then((h) => setHistory(Array.isArray(h) ? h : [])).catch(() => {});
-  }, [token, oposicionActiva?.id]);
+  }, [token, oposicionActiva?.id, oposicionActiva?.modoPreparacion]);
 
   if (!history.length) return null;
 
