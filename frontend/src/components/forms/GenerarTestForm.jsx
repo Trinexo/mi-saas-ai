@@ -243,7 +243,7 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     }
     const realOposicionId = Number(efectivoOposicionId) || undefined;
     const payload = { numeroPreguntas: n, modo, dificultad: dificultadBackend, feedbackInmediato };
-    if (modo === 'marcadas') {
+    if (modo === 'marcadas' || modo === 'repaso') {
       if (realOposicionId) payload.oposicionId = realOposicionId;
     } else {
       if (oposicionCompleta && realOposicionId) {

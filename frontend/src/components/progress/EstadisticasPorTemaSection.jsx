@@ -5,6 +5,7 @@ import { useUserPlan } from '../../hooks/useUserPlan';
 import { testApi } from '../../services/testApi';
 import { catalogApi } from '../../services/catalogApi';
 import { getErrorMessage } from '../../services/api';
+import { useOposicionActiva } from '../../state/oposicionActiva.jsx';
 
 function formatTime(segundos) {
   if (!segundos) return '0:00';
@@ -20,6 +21,8 @@ export default function EstadisticasPorTemaSection() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const { hasAccess } = useUserPlan();
+  const { oposicionActiva } = useOposicionActiva();
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   const [catalogError, setCatalogError] = useState('');
   const [temaError, setTemaError] = useState('');
@@ -173,7 +176,7 @@ export default function EstadisticasPorTemaSection() {
         {loadingTema && <p>Cargando...</p>}
         {temaError && !loadingTema && <p style={{ color: '#dc2626', fontSize: '0.875rem' }}>{temaError}</p>}
 
-        {!repasoLoading && repasoData && repasoData.pendientes > 0 && (
+        {!isAlbacer && !repasoLoading && repasoData && repasoData.pendientes > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.75rem 0' }}>
             <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600 }}>
               {repasoData.pendientes} pendiente{repasoData.pendientes !== 1 ? 's' : ''} de repaso
@@ -183,6 +186,7 @@ export default function EstadisticasPorTemaSection() {
                 onClick={async () => {
                   const test = await testApi.generate(token, {
                     modo: 'repaso',
+                    oposicionId: Number(selOposicion),
                     bloqueId: Number(selBloque),
                     numeroPreguntas: Math.min(20, Math.max(5, repasoData.pendientes)),
                     dificultad: 'mixto',

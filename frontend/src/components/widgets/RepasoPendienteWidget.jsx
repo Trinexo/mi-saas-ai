@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { useUserPlan } from '../../hooks/useUserPlan';
 import { testApi } from '../../services/testApi';
+import { useOposicionActiva } from '../../state/oposicionActiva.jsx';
 
 const O  = '#ea580c';
 const OL = '#fb923c';
@@ -39,24 +40,27 @@ export default function RepasoPendienteWidget() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { hasAccess, loading: planLoading } = useUserPlan();
+  const { oposicionActiva } = useOposicionActiva();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [hov, setHov]         = useState(false);
 
   const tienePro = hasAccess('pro');
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
-    if (planLoading || !tienePro) return;
+    if (planLoading || !tienePro || isAlbacer || !oposicionActiva?.id) return;
     testApi.getRepasoPendientes(token, 20)
       .then(setData)
       .catch(() => setData({ totalPendientes: 0, temaIdSugerido: null, items: [] }));
-  }, [token, tienePro, planLoading]);
+  }, [token, tienePro, planLoading, isAlbacer, oposicionActiva?.id]);
 
   const onStart = async () => {
     setLoading(true);
     try {
       const payload = {
         modo: 'repaso',
+        oposicionId: oposicionActiva.id,
         numeroPreguntas: Math.min(20, Number(data?.totalPendientes || 0)),
         dificultad: 'mixto',
       };
@@ -74,6 +78,8 @@ export default function RepasoPendienteWidget() {
       setLoading(false);
     }
   };
+
+  if (isAlbacer || !oposicionActiva?.id) return null;
 
   // --- Estado: plan insuficiente ---
   if (!planLoading && !tienePro) {
