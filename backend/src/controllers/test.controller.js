@@ -128,6 +128,16 @@ export const getTestRecomendado = async (req, res, next) => {
 export const getTestContinuar = async (req, res, next) => {
   try {
     const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const modoPreparacion = await testModeGuardService.getModoPreparacion(req.user.userId, oposicionId);
+    if (modoPreparacion === 'albacer') {
+      return ok(res, {
+        tipo: 'albacer',
+        oposicionId,
+        titulo: 'Modo Albacer',
+        motivo: 'Continua tu preparacion desde el modulo Albacer activo.',
+        config: null,
+      });
+    }
     const data = await testContinuarService.getContinuar(req.user.userId, oposicionId);
     return ok(res, data);
   } catch (error) {
