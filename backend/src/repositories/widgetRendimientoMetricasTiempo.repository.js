@@ -1,7 +1,10 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetRendimientoMetricasTiempoRepository = {
-  async getRitmoPregunta(userId, oposicionId = null) {
+  async getRitmoPregunta(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
+    const params = [userId, oposicionId, modoPreparacion, albacerModuloId];
     const summaryResult = await pool.query(
       `SELECT
          COUNT(*)::int AS tests_analizados,
@@ -11,9 +14,10 @@ export const widgetRendimientoMetricasTiempoRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
          AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+         ${widgetModeSql('t')}
          AND t.estado = 'finalizado'
          AND rt.fecha >= NOW() - INTERVAL '30 days'`,
-      [userId, oposicionId],
+      params,
     );
 
     const trendResult = await pool.query(
@@ -25,6 +29,7 @@ export const widgetRendimientoMetricasTiempoRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha >= NOW() - INTERVAL '7 days'
        ),
@@ -36,6 +41,7 @@ export const widgetRendimientoMetricasTiempoRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha < NOW() - INTERVAL '7 days'
            AND rt.fecha >= NOW() - INTERVAL '14 days'
@@ -46,7 +52,7 @@ export const widgetRendimientoMetricasTiempoRepository = {
          (COALESCE((SELECT tiempo_total / NULLIF(preguntas_total, 0) FROM previos7), 0)),
          2
        ) AS delta_segundos_por_pregunta`,
-      [userId, oposicionId],
+      params,
     );
 
     const row = summaryResult.rows[0] ?? {};
@@ -71,7 +77,9 @@ export const widgetRendimientoMetricasTiempoRepository = {
     };
   },
 
-  async getEficienciaTiempo(userId, oposicionId = null) {
+  async getEficienciaTiempo(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
+    const params = [userId, oposicionId, modoPreparacion, albacerModuloId];
     const summaryResult = await pool.query(
       `SELECT
          COUNT(*)::int AS tests_analizados,
@@ -82,9 +90,10 @@ export const widgetRendimientoMetricasTiempoRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
          AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+         ${widgetModeSql('t')}
          AND t.estado = 'finalizado'
          AND rt.fecha >= NOW() - INTERVAL '30 days'`,
-      [userId, oposicionId],
+      params,
     );
 
     const trendResult = await pool.query(
@@ -94,6 +103,7 @@ export const widgetRendimientoMetricasTiempoRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha >= NOW() - INTERVAL '7 days'
        ),
@@ -103,12 +113,13 @@ export const widgetRendimientoMetricasTiempoRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha < NOW() - INTERVAL '7 days'
            AND rt.fecha >= NOW() - INTERVAL '14 days'
        )
        SELECT ROUND((SELECT avg_tiempo FROM ultimos7) - (SELECT avg_tiempo FROM previos7), 2) AS delta_tiempo`,
-      [userId, oposicionId],
+      params,
     );
 
     const row = summaryResult.rows[0] ?? {};

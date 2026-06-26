@@ -1,7 +1,9 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetRendimientoMetricasPrecisionRepository = {
-  async getBalancePrecision(userId, oposicionId = null) {
+  async getBalancePrecision(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const result = await pool.query(
       `SELECT
          COALESCE(SUM(rt.aciertos), 0)::int AS aciertos_totales,
@@ -11,9 +13,10 @@ export const widgetRendimientoMetricasPrecisionRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
          AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+         ${widgetModeSql('t')}
          AND t.estado = 'finalizado'
          AND rt.fecha >= NOW() - INTERVAL '30 days'`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const row = result.rows[0] ?? {};
@@ -36,7 +39,9 @@ export const widgetRendimientoMetricasPrecisionRepository = {
     };
   },
 
-  async getInsightMensual(userId, oposicionId = null) {
+  async getInsightMensual(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
+    const params = [userId, oposicionId, modoPreparacion, albacerModuloId];
     const result = await pool.query(
       `WITH ultimos30 AS (
          SELECT rt.nota, rt.aciertos
@@ -44,6 +49,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha >= NOW() - INTERVAL '30 days'
        ),
@@ -53,6 +59,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha >= NOW() - INTERVAL '7 days'
        ),
@@ -62,6 +69,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha < NOW() - INTERVAL '7 days'
            AND rt.fecha >= NOW() - INTERVAL '14 days'
@@ -71,7 +79,7 @@ export const widgetRendimientoMetricasPrecisionRepository = {
          (SELECT COALESCE(SUM(aciertos), 0)::int FROM ultimos30) AS aciertos_ultimos_30_dias,
          (SELECT COALESCE(ROUND(AVG(nota), 2), 0) FROM ultimos30) AS nota_media_ultimos_30_dias,
          ROUND(((SELECT avg_nota FROM ultimos7) - (SELECT avg_nota FROM previos7)), 2) AS delta_nota_7_dias`,
-      [userId, oposicionId],
+      params,
     );
 
     const row = result.rows[0] ?? {};

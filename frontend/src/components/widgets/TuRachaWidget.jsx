@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function TuRachaWidget() {
+export default function TuRachaWidget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getRacha(token)
+    testApi.getRacha(token, oposicionId, options)
       .then(setData)
       .catch(() => setData({ rachaActual: 0, mejorRacha: 0, estudioHoy: false, actividad7Dias: [] }));
-  }, [token]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   const diasActivos7 = data?.actividad7Dias?.filter((d) => d.activo).length || 0;
 

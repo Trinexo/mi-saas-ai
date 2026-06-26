@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function Actividad14Widget({ oposicionId }) {
+export default function Actividad14Widget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getActividad14Dias(token, oposicionId)
+    testApi.getActividad14Dias(token, oposicionId, options)
       .then(setData)
       .catch(() => setData({ diasActivos14: 0, estudioHoy: false, actividad14Dias: [] }));
-  }, [token, oposicionId]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   return (
     <div style={SECTION}>

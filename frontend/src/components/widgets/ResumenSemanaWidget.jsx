@@ -18,7 +18,7 @@ const MINI_CARD = {
   flex: '1 1 100px',
 };
 
-export default function ResumenSemanaWidget({ oposicionId }) {
+export default function ResumenSemanaWidget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [resumen, setResumen] = useState(null);
   const [semana, setSemana] = useState(null);
@@ -27,13 +27,13 @@ export default function ResumenSemanaWidget({ oposicionId }) {
     let cancelled = false;
 
     Promise.all([
-      testApi.getResumenSemana(token, oposicionId).catch(() => ({
+      testApi.getResumenSemana(token, oposicionId, options).catch(() => ({
         testsUltimos7Dias: 0,
         notaMediaUltimos7Dias: 0,
         tiempoMedioSegundosUltimos7Dias: 0,
         aciertosTotalesUltimos7Dias: 0,
       })),
-      testApi.getProgresoSemanal(token, oposicionId).catch(() => ({
+      testApi.getProgresoSemanal(token, oposicionId, options).catch(() => ({
         dias: [],
         testsSemana: 0,
         notaMediaSemana: 0,
@@ -45,7 +45,7 @@ export default function ResumenSemanaWidget({ oposicionId }) {
     });
 
     return () => { cancelled = true; };
-  }, [token, oposicionId]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   const testsUltimos7Dias = Number(resumen?.testsUltimos7Dias || 0);
   const tiempoMedioMin = Math.round(Number(resumen?.tiempoMedioSegundosUltimos7Dias || 0) / 60);

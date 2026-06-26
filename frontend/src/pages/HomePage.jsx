@@ -106,7 +106,10 @@ function KpiBar() {
       .userStats(token, oposicionActiva?.id, { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' })
       .then(setStats)
       .catch(() => {});
-    testApi.getRacha(token, oposicionActiva?.id).then(setRacha).catch(() => {});
+    testApi
+      .getRacha(token, oposicionActiva?.id, { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' })
+      .then(setRacha)
+      .catch(() => {});
   }, [token, oposicionActiva?.id, oposicionActiva?.modoPreparacion]);
 
   useEffect(() => {

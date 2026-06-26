@@ -121,11 +121,11 @@ export default function ProgressPage() {
       <SectionLabel>Resumen global</SectionLabel>
       <ResumenGlobalSection oposicionId={oposicionActiva?.id} options={progressOptions} />
       <div style={{ marginTop: 16 }}>
-        <RachaObjetivoSection oposicionId={oposicionActiva?.id} />
+        <RachaObjetivoSection oposicionId={oposicionActiva?.id} options={progressOptions} />
       </div>
 
       <SectionLabel>Esta semana</SectionLabel>
-      <ResumenSemanaWidget oposicionId={oposicionActiva?.id} />
+      <ResumenSemanaWidget oposicionId={oposicionActiva?.id} options={progressOptions} />
 
       <SectionLabel>Evolución</SectionLabel>
       <EvolucionSection oposicionId={oposicionActiva?.id} options={progressOptions} />
@@ -134,12 +134,12 @@ export default function ProgressPage() {
       <ProgresoTemasOposicionSection oposicionId={oposicionActiva?.id} options={progressOptions} />
 
       <SectionLabel>Tu nivel</SectionLabel>
-      <TuNivelWidget oposicionId={oposicionActiva?.id} />
+      <TuNivelWidget oposicionId={oposicionActiva?.id} options={progressOptions} />
 
       {!loading && esElite && (
         <>
           <SectionLabel>Analíticas avanzadas</SectionLabel>
-          <AnaliticasAvanzadasSection oposicionId={oposicionActiva?.id} />
+          <AnaliticasAvanzadasSection oposicionId={oposicionActiva?.id} options={progressOptions} />
         </>
       )}
 

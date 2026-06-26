@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function InsightMensualWidget({ oposicionId }) {
+export default function InsightMensualWidget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getInsightMensual(token, oposicionId)
+    testApi.getInsightMensual(token, oposicionId, options)
       .then(setData)
       .catch(() => setData({ testsUltimos30Dias: 0, aciertosUltimos30Dias: 0, notaMediaUltimos30Dias: 0, deltaNota7Dias: 0, tendencia: 'estable' }));
-  }, [token, oposicionId]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   return (
     <div style={SECTION}>

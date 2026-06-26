@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function BalancePrecisionWidget() {
+export default function BalancePrecisionWidget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getBalancePrecision(token)
+    testApi.getBalancePrecision(token, oposicionId, options)
       .then(setData)
       .catch(() => setData({ aciertosTotales: 0, erroresTotales: 0, blancosTotales: 0, porcentajeAcierto: 0, porcentajeError: 0, porcentajeBlanco: 0 }));
-  }, [token]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   const pctBlanco = Number(data?.porcentajeBlanco ?? 0);
   const pctError = Number(data?.porcentajeError ?? 0);

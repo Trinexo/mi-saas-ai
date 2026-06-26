@@ -1,7 +1,10 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetRendimientoActividadConsistenciaRepository = {
-  async getConsistenciaDiaria(userId, oposicionId = null) {
+  async getConsistenciaDiaria(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
+    const params = [userId, oposicionId, modoPreparacion, albacerModuloId];
     const summaryResult = await pool.query(
       `WITH actividad_30 AS (
          SELECT DISTINCT rt.fecha::date AS dia
@@ -9,6 +12,7 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '29 days'
        )
@@ -16,7 +20,7 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          COUNT(*)::int AS dias_activos_30,
          ROUND((COUNT(*)::numeric / 30) * 100, 2) AS porcentaje_constancia
        FROM actividad_30`,
-      [userId, oposicionId],
+      params,
     );
 
     const trendResult = await pool.query(
@@ -26,6 +30,7 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '13 days'
        ),
@@ -35,13 +40,14 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '27 days'
            AND rt.fecha::date < CURRENT_DATE - INTERVAL '13 days'
        )
        SELECT
          (SELECT dias_activos FROM ultimos14) - (SELECT dias_activos FROM previos14) AS delta_dias_activos`,
-      [userId, oposicionId],
+      params,
     );
 
     const row = summaryResult.rows[0] ?? {};
@@ -62,7 +68,8 @@ export const widgetRendimientoActividadConsistenciaRepository = {
     };
   },
 
-  async getActividad14Dias(userId, oposicionId = null) {
+  async getActividad14Dias(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const result = await pool.query(
       `SELECT gs::date::text AS fecha,
               COALESCE(a.tests, 0)::int AS tests
@@ -73,12 +80,13 @@ export const widgetRendimientoActividadConsistenciaRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '13 days'
          GROUP BY rt.fecha::date
        ) a ON a.dia = gs::date
        ORDER BY fecha ASC`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const actividad14Dias = result.rows.map((row) => ({

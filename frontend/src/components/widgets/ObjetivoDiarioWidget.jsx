@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function ObjetivoDiarioWidget() {
+export default function ObjetivoDiarioWidget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getObjetivoDiario(token)
+    testApi.getObjetivoDiario(token, oposicionId, options)
       .then(setData)
       .catch(() => setData({ objetivoPreguntasDia: 10, preguntasRespondidasHoy: 0, porcentajeCumplido: 0, cumplido: false }));
-  }, [token]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   const respondidas = Number(data?.preguntasRespondidasHoy ?? 0);
   const objetivo = Number(data?.objetivoPreguntasDia ?? 10);

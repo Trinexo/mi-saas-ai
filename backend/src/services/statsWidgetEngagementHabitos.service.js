@@ -1,16 +1,16 @@
 import { widgetStatsRepository } from '../repositories/widgetStats.repository.js';
 
 export const statsWidgetEngagementHabitosService = {
-  async getGamificacion(userId, oposicionId = null) {
-    return widgetStatsRepository.getGamificacion(userId, oposicionId);
+  async getGamificacion(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getGamificacion(userId, oposicionId, options);
   },
 
-  async getObjetivoDiario(userId, oposicionId = null) {
-    return widgetStatsRepository.getObjetivoDiario(userId, oposicionId);
+  async getObjetivoDiario(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getObjetivoDiario(userId, oposicionId, options);
   },
 
-  async getRacha(userId, oposicionId = null) {
-    return widgetStatsRepository.getRacha(userId, oposicionId);
+  async getRacha(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getRacha(userId, oposicionId, options);
   },
 
   async getRachaBloques(userId) {
