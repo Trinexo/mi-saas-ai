@@ -19,7 +19,7 @@ export const marcadasRepository = {
     return { marcada: false };
   },
 
-  async getMarcadas(userId) {
+  async getMarcadas(userId, oposicionId = null) {
     const result = await pool.query(
       `SELECT
          pm.pregunta_id   AS id,
@@ -39,8 +39,9 @@ export const marcadasRepository = {
        JOIN temas t     ON t.id  = bl.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        WHERE pm.usuario_id = $1
+         AND ($2::bigint IS NULL OR o.id = $2)
        ORDER BY pm.fecha_marcado DESC`,
-      [userId],
+      [userId, oposicionId],
     );
     return result.rows.map((row) => ({
       id: Number(row.id),

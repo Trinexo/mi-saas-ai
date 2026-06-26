@@ -35,13 +35,13 @@ describe('generateTestSchema — modo simulacro', () => {
 });
 
 describe('generateTestSchema — modo marcadas', () => {
-  it('marcadas sin temaId es válido', () => {
+  it('marcadas sin oposicionId falla', () => {
     const r = generateTestSchema.safeParse({ modo: 'marcadas', numeroPreguntas: 10 });
-    assert.equal(r.success, true);
+    assert.equal(r.success, false);
   });
 
-  it('marcadas con temaId también es válido', () => {
-    const r = generateTestSchema.safeParse({ modo: 'marcadas', temaId: 5, numeroPreguntas: 10 });
+  it('marcadas con oposicionId es válido', () => {
+    const r = generateTestSchema.safeParse({ modo: 'marcadas', oposicionId: 5, numeroPreguntas: 10 });
     assert.equal(r.success, true);
   });
 });
@@ -176,10 +176,11 @@ describe('testService.generate — modo marcadas', () => {
     testRepository.createTest = async () => ({ id: 88 });
     testRepository.insertTestPreguntas = async () => {};
 
-    await testService.generate({ userId: 5, numeroPreguntas: 1, modo: 'marcadas' });
+    await testService.generate({ userId: 5, oposicionId: 9, numeroPreguntas: 1, modo: 'marcadas' });
 
     assert.equal(llamadas.length, 1);
     assert.equal(llamadas[0].userId, 5);
+    assert.equal(llamadas[0].oposicionId, 9);
 
     Object.assign(testRepository, orig);
   });

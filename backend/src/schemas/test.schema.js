@@ -18,6 +18,9 @@ export const generateTestSchema = z.object({
   (d) => d.modo !== 'simulacro' || d.oposicionId != null,
   { message: 'El modo simulacro requiere oposicionId', path: ['oposicionId'] },
 ).refine(
+  (d) => d.modo !== 'marcadas' || d.oposicionId != null,
+  { message: 'El modo marcadas requiere oposicionId', path: ['oposicionId'] },
+).refine(
   (d) => ['simulacro', 'marcadas', 'repaso'].includes(d.modo) || d.temasMix != null || d.temaId != null || d.oposicionId != null,
   { message: 'Se requiere temaId, temasMix u oposicionId para este modo', path: ['temaId'] },
 );

@@ -17,8 +17,10 @@ const SELECT_MARCADAS_QUESTIONS_SQL = `
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas_marcadas pm
   JOIN preguntas p ON p.id = pm.pregunta_id
+  JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE pm.usuario_id = $1
+    AND t.oposicion_id = $3
   GROUP BY p.id
   ORDER BY RANDOM()
   LIMIT $2
@@ -66,8 +68,8 @@ export const testQuestionsSpecialRepository = {
     return result.rows;
   },
 
-  async pickMarcadasQuestions({ userId, numeroPreguntas }) {
-    const result = await pool.query(SELECT_MARCADAS_QUESTIONS_SQL, [userId, numeroPreguntas]);
+  async pickMarcadasQuestions({ userId, oposicionId, numeroPreguntas }) {
+    const result = await pool.query(SELECT_MARCADAS_QUESTIONS_SQL, [userId, numeroPreguntas, oposicionId]);
     return result.rows;
   },
 

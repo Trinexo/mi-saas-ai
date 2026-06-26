@@ -3,7 +3,7 @@ import { testRepository } from '../repositories/test.repository.js';
 export const testGenerationGenerateSelectionEspecialService = {
   async pickEspecial({ userId, oposicionId, temaId, numeroPreguntas, modo }) {
     if (modo === 'marcadas') {
-      return testRepository.pickMarcadasQuestions({ userId, numeroPreguntas });
+      return testRepository.pickMarcadasQuestions({ userId, oposicionId, numeroPreguntas });
     }
 
     if (modo === 'simulacro') {

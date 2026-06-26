@@ -21,7 +21,8 @@ export const desmarcarPregunta = async (req, res, next) => {
 
 export const getMarcadas = async (req, res, next) => {
   try {
-    const data = await marcadasService.getMarcadas(req.user.userId);
+    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const data = await marcadasService.getMarcadas(req.user.userId, oposicionId);
     return ok(res, data);
   } catch (error) {
     return next(error);
