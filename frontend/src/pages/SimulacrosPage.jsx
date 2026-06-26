@@ -252,14 +252,15 @@ export default function SimulacrosPage() {
   const [loadingPend,    setLoadingPend   ] = useState(true);
   const [continuandoId,  setContinuandoId ] = useState(null);
   const [cerrandoId,     setCerrandoId    ] = useState(null);
+  const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
+  const isAlbacer = modoPreparacion === 'albacer';
 
   useEffect(() => {
     const oposicionId = oposicionActiva?.id;
-    const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
     Promise.all([
       simulacrosApi.getPublicados(token, oposicionId).catch(() => []),
       testApi.history(token, { limit: 50, modo_preparacion: modoPreparacion, ...(oposicionId ? { oposicion_id: oposicionId } : {}) }).catch(() => ({ items: [] })),
-      testApi.getPendientes(token, oposicionId).catch(() => []),
+      testApi.getPendientes(token, oposicionId, { modo_preparacion: modoPreparacion }).catch(() => []),
     ]).then(([sims, histResp, pendRes]) => {
       const lista = Array.isArray(sims) ? sims : (sims?.data ?? []);
       setSimulacrosProfesor(lista);
@@ -423,6 +424,7 @@ export default function SimulacrosPage() {
           </div>
 
           {/* ══ SECCIÓN 3: Simulacro personalizado ══ */}
+          {!isAlbacer && (
           <div style={{ marginBottom: 36 }}>
             <SectionHeader label="Simulacro personalizado" />
             {!mostrarForm ? (
@@ -453,6 +455,7 @@ export default function SimulacrosPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* ══ SECCIÓN 4: Mis resultados ══ */}
           <div style={{ marginBottom: 32 }}>

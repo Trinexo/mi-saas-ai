@@ -27,6 +27,7 @@ export const simulacrosPublicosRepository = {
        LEFT JOIN simulacros_bloques sb ON sb.simulacro_id = s.id
        WHERE s.estado = 'publicado'
          AND s.oposicion_id = ANY($1::bigint[])
+         AND COALESCE(s.scope, 'experto') <> 'albacer_modulo_final'
        GROUP BY s.id, o.nombre
        ORDER BY s.fecha_publicacion ASC NULLS LAST, s.fecha_creacion ASC`,
       [oposicionIds],
@@ -41,7 +42,10 @@ export const simulacrosPublicosRepository = {
   async getPreguntasSimulacro(simulacroId) {
     const check = await pool.query(
       `SELECT id, oposicion_id, tiempo_limite_segundos, penalizacion, mostrar_resultados_al_final
-       FROM simulacros WHERE id = $1 AND estado = 'publicado'`,
+       FROM simulacros
+       WHERE id = $1
+         AND estado = 'publicado'
+         AND COALESCE(scope, 'experto') <> 'albacer_modulo_final'`,
       [simulacroId],
     );
     if (check.rows.length === 0) return null;
