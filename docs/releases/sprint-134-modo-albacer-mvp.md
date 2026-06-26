@@ -39,6 +39,7 @@ El cambio debe convivir con el modelo actual sin mezclar historicos, estadistica
 - El ranking solo usa resultados del `Modo Experto`.
 - El ranking es independiente por oposicion.
 - `Modo Albacer` no participa en ranking.
+- La participacion publica en ranking se decide por alumno y oposicion.
 
 ### Estadisticas
 
@@ -520,6 +521,7 @@ Debe mostrar:
 - El cambio de modo no mezcla historicos.
 - `Modo Albacer` no aparece en ranking.
 - Ranking sigue separado por oposicion.
+- El alumno puede activar/desactivar si aparece publicamente en ranking por oposicion.
 - `Plan de estudio` legacy no aparece en el frontend de alumno.
 - Profesor y admin pueden crear modulos Albacer.
 - Un modulo publicado aparece al alumno si tiene acceso activo a la oposicion.

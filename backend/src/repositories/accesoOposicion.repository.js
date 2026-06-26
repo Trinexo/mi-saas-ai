@@ -7,7 +7,7 @@ export const accesoOposicionRepository = {
   async getAccesosActivos(userId) {
     const result = await pool.query(
       `SELECT a.oposicion_id, o.nombre, a.fecha_fin,
-              a.tipo_alumno, a.modo_preparacion
+              a.tipo_alumno, a.modo_preparacion, a.ranking_publico
        FROM accesos_oposicion a
        JOIN oposiciones o ON o.id = a.oposicion_id
        WHERE a.usuario_id = $1
@@ -22,7 +22,7 @@ export const accesoOposicionRepository = {
   async getPreparacion(userId, oposicionId) {
     const result = await pool.query(
       `SELECT ao.usuario_id, ao.oposicion_id, o.nombre,
-              ao.tipo_alumno, ao.modo_preparacion
+              ao.tipo_alumno, ao.modo_preparacion, ao.ranking_publico
        FROM accesos_oposicion ao
        JOIN oposiciones o ON o.id = ao.oposicion_id
        WHERE ao.usuario_id = $1
@@ -35,19 +35,24 @@ export const accesoOposicionRepository = {
     return result.rows[0] ?? null;
   },
 
-  async updateModoPreparacion(userId, oposicionId, modoPreparacion) {
+  async updatePreparacion(userId, oposicionId, fields = {}) {
     const result = await pool.query(
       `UPDATE accesos_oposicion
-       SET modo_preparacion = $3,
+       SET modo_preparacion = COALESCE($3, modo_preparacion),
+           ranking_publico = COALESCE($4, ranking_publico),
            actualizada_en = NOW()
        WHERE usuario_id = $1
          AND oposicion_id = $2
          AND estado = 'activo'
          AND (fecha_fin IS NULL OR fecha_fin > NOW())
-       RETURNING usuario_id, oposicion_id, tipo_alumno, modo_preparacion`,
-      [userId, oposicionId, modoPreparacion],
+       RETURNING usuario_id, oposicion_id, tipo_alumno, modo_preparacion, ranking_publico`,
+      [userId, oposicionId, fields.modoPreparacion ?? null, fields.rankingPublico ?? null],
     );
     return result.rows[0] ?? null;
+  },
+
+  async updateModoPreparacion(userId, oposicionId, modoPreparacion) {
+    return accesoOposicionRepository.updatePreparacion(userId, oposicionId, { modoPreparacion });
   },
 
   /**
@@ -159,7 +164,7 @@ export const accesoOposicionRepository = {
       pool.query(
         `SELECT ao.id, ao.estado, ao.fecha_inicio, ao.fecha_fin, ao.precio_pagado, ao.notas,
                 ao.usuario_id, u.nombre AS usuario_nombre, u.email AS usuario_email,
-                ao.tipo_alumno, ao.modo_preparacion,
+                ao.tipo_alumno, ao.modo_preparacion, ao.ranking_publico,
                 ao.oposicion_id, o.nombre AS oposicion_nombre
          FROM accesos_oposicion ao
          JOIN usuarios   u ON u.id = ao.usuario_id

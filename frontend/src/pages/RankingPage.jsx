@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useAuth } from '../state/auth.jsx';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
+import { useUserAccesos } from '../hooks/useUserAccesos';
 import { testApi } from '../services/testApi';
 
 const O   = '#ea580c';
@@ -91,9 +92,11 @@ function RankingRow({ row }) {
 export default function RankingPage() {
   const { token } = useAuth();
   const { oposicionActiva } = useOposicionActiva();
+  const { actualizarRankingPublico } = useUserAccesos();
   const [ranking, setRanking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [savingConsent, setSavingConsent] = useState(false);
 
   useEffect(() => {
     if (!token || !oposicionActiva?.id) {
@@ -113,6 +116,23 @@ export default function RankingPage() {
   const percentil = ranking?.percentilSuperado ?? null;
   const totalParticipantes = ranking?.totalParticipantes ?? 0;
   const top = ranking?.top ?? [];
+  const rankingPublico = Boolean(ranking?.rankingPublico);
+
+  const toggleRankingPublico = async () => {
+    if (!oposicionActiva?.id || savingConsent) return;
+    const nextValue = !rankingPublico;
+    setSavingConsent(true);
+    setError('');
+    try {
+      await actualizarRankingPublico(oposicionActiva.id, nextValue);
+      const data = await testApi.getRanking(token, oposicionActiva.id);
+      setRanking(data);
+    } catch (err) {
+      setError(err.message || 'No se pudo actualizar tu participacion en el ranking');
+    } finally {
+      setSavingConsent(false);
+    }
+  };
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -141,6 +161,37 @@ export default function RankingPage() {
         <div style={{ ...CARD, padding: '2rem', color: '#dc2626', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>
       ) : (
         <>
+          <div style={{ ...CARD, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', background: rankingPublico ? '#f0fdf4' : '#f8fafc' }}>
+            <div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: DK }}>
+                Participacion publica en ranking
+              </div>
+              <div style={{ fontSize: '0.78rem', color: GL, marginTop: 3, lineHeight: 1.45 }}>
+                {rankingPublico
+                  ? 'Apareces con alias anonimo en el ranking publico de esta oposicion.'
+                  : 'Tu puntuacion se calcula para ti, pero no apareces en el ranking publico.'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleRankingPublico}
+              disabled={savingConsent}
+              style={{
+                minWidth: 174,
+                padding: '9px 14px',
+                borderRadius: 999,
+                border: rankingPublico ? '1px solid #86efac' : `1px solid ${BD}`,
+                background: rankingPublico ? '#16a34a' : '#fff',
+                color: rankingPublico ? '#fff' : DK,
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                cursor: savingConsent ? 'wait' : 'pointer',
+              }}
+            >
+              {savingConsent ? 'Guardando...' : rankingPublico ? 'Participando' : 'Activar ranking'}
+            </button>
+          </div>
+
           <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
 
             <div style={{ ...CARD, padding: '28px 24px', flex: '0 0 auto', minWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -209,7 +260,7 @@ export default function RankingPage() {
             <span style={{ fontSize: '1rem', flexShrink: 0 }}>{'\uD83D\uDD12'}</span>
             <span style={{ fontSize: '0.78rem', color: GL, lineHeight: 1.5 }}>
               Tu nombre no es visible para otros usuarios. El ranking muestra alias anonimos.
-              Solo tu profesor puede ver tu nombre y rendimiento real.
+              Puedes activar o desactivar tu participacion publica por oposicion.
             </span>
           </div>
         </>

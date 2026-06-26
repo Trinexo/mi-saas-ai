@@ -2,6 +2,14 @@ import { ok, created } from '../utils/response.js';
 import { accesoOposicionService } from '../services/accesoOposicion.service.js';
 import { ApiError } from '../utils/api-error.js';
 
+const parseOptionalBoolean = (value) => {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'boolean') return value;
+  if (value === 'true' || value === '1') return true;
+  if (value === 'false' || value === '0') return false;
+  throw new ApiError(400, 'rankingPublico debe ser booleano');
+};
+
 /**
  * GET /accesos/mis-oposiciones
  * Devuelve los accesos activos del usuario autenticado.
@@ -56,12 +64,16 @@ export const updatePreparacionAcceso = async (req, res, next) => {
     if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
       return next(new ApiError(400, 'oposicionId invalido'));
     }
-    const { modoPreparacion, modo_preparacion } = req.body ?? {};
+    const { modoPreparacion, modo_preparacion, rankingPublico, ranking_publico } = req.body ?? {};
     const modo = modoPreparacion ?? modo_preparacion;
-    if (!modo) return next(new ApiError(400, 'modoPreparacion es requerido'));
+    const hasRankingPublico = rankingPublico !== undefined || ranking_publico !== undefined;
+    if (!modo && !hasRankingPublico) return next(new ApiError(400, 'modoPreparacion o rankingPublico es requerido'));
 
-    const acceso = await accesoOposicionService.updateModoPreparacion(req.user.userId, oposicionId, modo);
-    return ok(res, acceso, 'Modo de preparacion actualizado');
+    const acceso = await accesoOposicionService.updatePreparacion(req.user.userId, oposicionId, {
+      modoPreparacion: modo ?? null,
+      rankingPublico: hasRankingPublico ? parseOptionalBoolean(rankingPublico ?? ranking_publico) : null,
+    });
+    return ok(res, acceso, 'Preparacion actualizada');
   } catch (e) {
     return next(e);
   }

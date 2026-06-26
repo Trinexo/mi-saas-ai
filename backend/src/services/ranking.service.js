@@ -18,8 +18,8 @@ export const rankingService = {
   async getRanking(userId, oposicionId) {
     if (!oposicionId) throw new ApiError(400, 'Se requiere oposicion_id');
 
-    const tieneAcceso = await accesoOposicionRepository.tieneAcceso(userId, oposicionId);
-    if (!tieneAcceso) throw new ApiError(403, 'No tienes acceso a esa oposicion');
+    const acceso = await accesoOposicionRepository.getPreparacion(userId, oposicionId);
+    if (!acceso) throw new ApiError(403, 'No tienes acceso a esa oposicion');
 
     const [miScore, top, totalParticipantes] = await Promise.all([
       rankingRepository.getUserScore(userId, oposicionId),
@@ -39,6 +39,7 @@ export const rankingService = {
       miPosicion,
       totalParticipantes,
       percentilSuperado,
+      rankingPublico: Boolean(acceso.ranking_publico),
       top,
     };
   },

@@ -29,7 +29,17 @@ export const accesoOposicionService = {
 
   async updateModoPreparacion(userId, oposicionId, modoPreparacion) {
     assertModoPreparacion(modoPreparacion);
-    const acceso = await accesoOposicionRepository.updateModoPreparacion(userId, oposicionId, modoPreparacion);
+    const acceso = await accesoOposicionRepository.updatePreparacion(userId, oposicionId, { modoPreparacion });
+    if (!acceso) throw new ApiError(404, 'Acceso activo no encontrado para esta oposicion');
+    return acceso;
+  },
+
+  async updatePreparacion(userId, oposicionId, { modoPreparacion, rankingPublico } = {}) {
+    if (modoPreparacion != null) assertModoPreparacion(modoPreparacion);
+    const acceso = await accesoOposicionRepository.updatePreparacion(userId, oposicionId, {
+      modoPreparacion: modoPreparacion ?? null,
+      rankingPublico: rankingPublico ?? null,
+    });
     if (!acceso) throw new ApiError(404, 'Acceso activo no encontrado para esta oposicion');
     return acceso;
   },
