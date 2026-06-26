@@ -3,7 +3,7 @@ import { repasoService } from '../services/repaso.service.js';
 
 export const getRepasoPendientes = async (req, res, next) => {
   try {
-    const data = await repasoService.getPendientes(req.user.userId, req.query.limit);
+    const data = await repasoService.getPendientes(req.user.userId, req.query.limit, req.query.oposicion_id);
     return ok(res, data);
   } catch (error) {
     return next(error);

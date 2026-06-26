@@ -95,14 +95,23 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   const [repasoDisponible, setRepasoDisponible] = useState(false);
   const [adaptativoDisponible, setAdaptativoDisponible] = useState(false);
 
-  // Comprobar si hay pendientes de repaso al montar (solo para usuarios pro/elite/admin)
+  // Calculados
+  const difActivas = DIF_OPTIONS.filter((d) => dificultades[d.key]);
+  const dificultadBackend = difActivas.length === 1 ? difActivas[0].key : 'mixto';
+  const efectivoOposicionId = oposicionId || (oposicionActiva?.id ? String(oposicionActiva.id) : '');
+  const oposicionNombre = usandoOposicionActiva
+    ? oposicionActiva.nombre
+    : oposiciones.find((o) => String(o.id) === String(oposicionId))?.nombre ?? '';
+
+  // Comprobar si hay pendientes de repaso para la oposición activa (solo pro/elite/admin)
   useEffect(() => {
     if (!token || !hasPlanAccess('pro')) return;
-    repasoApi.getPendientes(token, 1)
+    const realOposicionId = Number(efectivoOposicionId) || undefined;
+    repasoApi.getPendientes(token, 1, realOposicionId)
       .then((data) => setRepasoDisponible((data?.totalPendientes ?? 0) > 0))
       .catch(() => setRepasoDisponible(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, efectivoOposicionId]);
 
   // Comprobar si el usuario tiene suficiente historial para el modo adaptativo (>= 3 tests)
   useEffect(() => {
@@ -112,14 +121,6 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       .catch(() => setAdaptativoDisponible(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Calculados
-  const difActivas = DIF_OPTIONS.filter((d) => dificultades[d.key]);
-  const dificultadBackend = difActivas.length === 1 ? difActivas[0].key : 'mixto';
-  const efectivoOposicionId = oposicionId || (oposicionActiva?.id ? String(oposicionActiva.id) : '');
-  const oposicionNombre = usandoOposicionActiva
-    ? oposicionActiva.nombre
-    : oposiciones.find((o) => String(o.id) === String(oposicionId))?.nombre ?? '';
 
   // Modos visibles según datos disponibles
   const modoOptionsVisibles = MODO_OPTIONS.filter((opt) => {

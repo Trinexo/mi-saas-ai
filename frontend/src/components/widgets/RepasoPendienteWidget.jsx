@@ -50,7 +50,7 @@ export default function RepasoPendienteWidget() {
 
   useEffect(() => {
     if (planLoading || !tienePro || isAlbacer || !oposicionActiva?.id) return;
-    testApi.getRepasoPendientes(token, 20)
+    testApi.getRepasoPendientes(token, 20, oposicionActiva.id)
       .then(setData)
       .catch(() => setData({ totalPendientes: 0, temaIdSugerido: null, items: [] }));
   }, [token, tienePro, planLoading, isAlbacer, oposicionActiva?.id]);
@@ -71,7 +71,7 @@ export default function RepasoPendienteWidget() {
       }
     } catch {
       // Si falla, refrescar pendientes para que el widget se auto-desactive
-      testApi.getRepasoPendientes(token, 20)
+      testApi.getRepasoPendientes(token, 20, oposicionActiva.id)
         .then(setData)
         .catch(() => setData({ totalPendientes: 0, temaIdSugerido: null, items: [] }));
     } finally {
