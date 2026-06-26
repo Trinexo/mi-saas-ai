@@ -8,15 +8,15 @@ import { testRepository } from '../../src/repositories/test.repository.js';
 import { testService } from '../../src/services/test.service.js';
 
 describe('generateTestSchema — modo marcadas', () => {
-  it('acepta modo marcadas sin temaId', () => {
+  it('rechaza modo marcadas sin oposicionId', () => {
     const r = generateTestSchema.safeParse({ modo: 'marcadas', numeroPreguntas: 10 });
-    assert.equal(r.success, true);
-    assert.equal(r.data.modo, 'marcadas');
+    assert.equal(r.success, false);
   });
 
-  it('acepta modo marcadas con temaId (se ignora, no rompe)', () => {
-    const r = generateTestSchema.safeParse({ modo: 'marcadas', temaId: 5, numeroPreguntas: 10 });
+  it('acepta modo marcadas con oposicionId', () => {
+    const r = generateTestSchema.safeParse({ modo: 'marcadas', oposicionId: 1, numeroPreguntas: 10 });
     assert.equal(r.success, true);
+    assert.equal(r.data.modo, 'marcadas');
   });
 
   it('rechaza modo marcadas sin numeroPreguntas', () => {
@@ -42,7 +42,7 @@ describe('generateTestSchema — modo marcadas', () => {
   it('enum de modo incluye los 5 valores válidos', () => {
     const modos = ['normal', 'adaptativo', 'repaso', 'simulacro', 'marcadas'];
     for (const modo of modos) {
-      const payload = modo === 'simulacro'
+      const payload = modo === 'simulacro' || modo === 'marcadas'
         ? { modo, oposicionId: 1, numeroPreguntas: 10 }
         : { modo, temaId: 1, numeroPreguntas: 10 };
       const r = generateTestSchema.safeParse(payload);

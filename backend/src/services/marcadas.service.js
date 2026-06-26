@@ -16,7 +16,10 @@ export const marcadasService = {
     return marcadasRepository.desmarcar(userId, preguntaId);
   },
 
-  async getMarcadas(userId) {
-    return marcadasRepository.getMarcadas(userId);
+  async getMarcadas(userId, oposicionId = null) {
+    if (oposicionId != null && (!Number.isInteger(Number(oposicionId)) || Number(oposicionId) < 1)) {
+      throw new ApiError(400, 'oposicion_id invalido');
+    }
+    return marcadasRepository.getMarcadas(userId, oposicionId ? Number(oposicionId) : null);
   },
 };
