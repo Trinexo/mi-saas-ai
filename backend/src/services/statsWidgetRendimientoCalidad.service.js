@@ -1,12 +1,12 @@
 import { widgetStatsRepository } from '../repositories/widgetStats.repository.js';
 
 export const statsWidgetRendimientoCalidadService = {
-  async getBalancePrecision(userId, oposicionId = null) {
-    return widgetStatsRepository.getBalancePrecision(userId, oposicionId);
+  async getBalancePrecision(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getBalancePrecision(userId, oposicionId, options);
   },
 
-  async getInsightMensual(userId, oposicionId = null) {
-    return widgetStatsRepository.getInsightMensual(userId, oposicionId);
+  async getInsightMensual(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getInsightMensual(userId, oposicionId, options);
   },
 
   async getTemasDebiles(userId, oposicionId = null) {

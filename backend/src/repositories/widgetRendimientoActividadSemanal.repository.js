@@ -1,7 +1,9 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetRendimientoActividadSemanalRepository = {
-  async getProgresoSemanal(userId, oposicionId = null) {
+  async getProgresoSemanal(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const diasResult = await pool.query(
       `SELECT
          gs::date::text AS fecha,
@@ -23,12 +25,13 @@ export const widgetRendimientoActividadSemanalRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
            AND rt.fecha::date >= CURRENT_DATE - INTERVAL '6 days'
          GROUP BY rt.fecha::date
        ) a ON a.dia = gs::date
        ORDER BY fecha ASC`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const dias = diasResult.rows.map((row) => ({
@@ -51,7 +54,8 @@ export const widgetRendimientoActividadSemanalRepository = {
     };
   },
 
-  async getResumenSemana(userId, oposicionId = null) {
+  async getResumenSemana(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const result = await pool.query(
       `SELECT
          COUNT(*)::int AS tests_ultimos_7_dias,
@@ -62,9 +66,10 @@ export const widgetRendimientoActividadSemanalRepository = {
        JOIN resultados_test rt ON rt.test_id = t.id
        WHERE t.usuario_id = $1
          AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+         ${widgetModeSql('t')}
          AND t.estado = 'finalizado'
          AND t.fecha_fin >= NOW() - INTERVAL '7 days'`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const row = result.rows[0] ?? {};

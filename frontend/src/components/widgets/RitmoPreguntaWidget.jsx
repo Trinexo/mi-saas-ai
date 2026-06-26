@@ -4,15 +4,15 @@ import { testApi } from '../../services/testApi';
 
 const SECTION = { background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', marginBottom: 16 };
 
-export default function RitmoPreguntaWidget() {
+export default function RitmoPreguntaWidget({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    testApi.getRitmoPregunta(token)
+    testApi.getRitmoPregunta(token, oposicionId, options)
       .then(setData)
       .catch(() => setData({ segundosMediosPorPregunta: 0, preguntasAnalizadas: 0, testsAnalizados: 0, tendenciaRitmo: 'estable' }));
-  }, [token]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   return (
     <div style={SECTION}>

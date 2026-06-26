@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetEngagementFocoSesionRepository = {
   async getFocoHoy(userId) {
@@ -141,7 +142,8 @@ export const widgetEngagementFocoSesionRepository = {
     };
   },
 
-  async getObjetivoDiario(userId, oposicionId = null) {
+  async getObjetivoDiario(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const result = await pool.query(
       `WITH objetivo AS (
          SELECT COALESCE(objetivo_diario_preguntas, 10)::int AS valor
@@ -156,6 +158,7 @@ export const widgetEngagementFocoSesionRepository = {
          LEFT JOIN tests t ON t.id = ru.test_id
            AND t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
          GROUP BY gs::date
          ORDER BY gs::date DESC
        )
@@ -164,7 +167,7 @@ export const widgetEngagementFocoSesionRepository = {
          a.dia::text,
          a.respondidas
        FROM actividad a`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const objetivoPreguntasDia = Math.max(1, Number(result.rows[0]?.objetivo_preguntas_dia ?? 30));

@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -46,7 +47,9 @@ const calcCurrentStreak = (dayIndexesDesc, todayIndex) => {
 };
 
 export const widgetEngagementRachaStreaksRepository = {
-  async getRacha(userId, oposicionId = null) {
+  async getRacha(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
+    const params = [userId, oposicionId, modoPreparacion, albacerModuloId];
     const [todayResult, daysResult, activity7DaysResult] = await Promise.all([
       pool.query('SELECT CURRENT_DATE::text AS today'),
       pool.query(
@@ -55,9 +58,10 @@ export const widgetEngagementRachaStreaksRepository = {
          JOIN resultados_test rt ON rt.test_id = t.id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
          ORDER BY dia DESC`,
-        [userId, oposicionId],
+        params,
       ),
       pool.query(
         `SELECT gs::date::text AS fecha,
@@ -69,12 +73,13 @@ export const widgetEngagementRachaStreaksRepository = {
            JOIN resultados_test rt ON rt.test_id = t.id
            WHERE t.usuario_id = $1
              AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+             ${widgetModeSql('t')}
              AND t.estado = 'finalizado'
              AND rt.fecha::date >= CURRENT_DATE - INTERVAL '6 days'
            GROUP BY rt.fecha::date
          ) a ON a.dia = gs::date
          ORDER BY fecha ASC`,
-        [userId, oposicionId],
+        params,
       ),
     ]);
 

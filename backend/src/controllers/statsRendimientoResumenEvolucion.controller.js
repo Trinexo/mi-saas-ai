@@ -27,7 +27,7 @@ export const getEvolucion = async (req, res, next) => {
 
 export const getRacha = async (req, res, next) => {
   try {
-    const data = await statsService.getRacha(req.user.userId, getOposicionId(req));
+    const data = await statsService.getRacha(req.user.userId, getOposicionId(req), getModoOptions(req));
     return ok(res, data);
   } catch (error) {
     return next(error);

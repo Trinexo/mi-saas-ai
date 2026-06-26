@@ -17,7 +17,7 @@ const CARD = {
   boxShadow: '0 1px 4px rgba(0,0,0,.06)',
 };
 
-export default function RachaObjetivoSection({ oposicionId }) {
+export default function RachaObjetivoSection({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const { isTablet } = useBreakpoint();
   const [rachaData, setRachaData] = useState(null);
@@ -25,14 +25,14 @@ export default function RachaObjetivoSection({ oposicionId }) {
 
   useEffect(() => {
     let cancelled = false;
-    testApi.getRacha(token, oposicionId)
+    testApi.getRacha(token, oposicionId, options)
       .then((data) => { if (!cancelled) setRachaData(data); })
       .catch(() => { if (!cancelled) setRachaData(null); });
-    testApi.getObjetivoDiario(token, oposicionId)
+    testApi.getObjetivoDiario(token, oposicionId, options)
       .then((data) => { if (!cancelled) setObjetivoData(data); })
       .catch(() => { if (!cancelled) setObjetivoData(null); });
     return () => { cancelled = true; };
-  }, [token, oposicionId]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   if (!rachaData && !objetivoData) return null;
 

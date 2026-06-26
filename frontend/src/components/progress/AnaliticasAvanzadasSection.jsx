@@ -30,7 +30,7 @@ function TendenciaBadge({ tendencia }) {
   );
 }
 
-export default function AnaliticasAvanzadasSection({ oposicionId }) {
+export default function AnaliticasAvanzadasSection({ oposicionId, options = {} }) {
   const { token } = useAuth();
   const [eficiencia, setEficiencia] = useState(null);
   const [balance, setBalance] = useState(null);
@@ -40,10 +40,10 @@ export default function AnaliticasAvanzadasSection({ oposicionId }) {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      testApi.getEficienciaTiempo(token, oposicionId).catch(() => null),
-      testApi.getBalancePrecision(token, oposicionId).catch(() => null),
-      testApi.getInsightMensual(token, oposicionId).catch(() => null),
-      testApi.getRitmoPregunta(token, oposicionId).catch(() => null),
+      testApi.getEficienciaTiempo(token, oposicionId, options).catch(() => null),
+      testApi.getBalancePrecision(token, oposicionId, options).catch(() => null),
+      testApi.getInsightMensual(token, oposicionId, options).catch(() => null),
+      testApi.getRitmoPregunta(token, oposicionId, options).catch(() => null),
     ]).then(([ef, bal, ins, rit]) => {
       if (cancelled) return;
       setEficiencia(ef);
@@ -52,7 +52,7 @@ export default function AnaliticasAvanzadasSection({ oposicionId }) {
       setRitmo(rit);
     });
     return () => { cancelled = true; };
-  }, [token, oposicionId]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   const tiempoMedioMin = Math.round(Number(eficiencia?.tiempoMedioPorTestSegundos ?? 0) / 60);
   const pctAcierto = Number(balance?.porcentajeAcierto ?? 0);

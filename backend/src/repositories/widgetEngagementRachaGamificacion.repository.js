@@ -1,14 +1,17 @@
 import pool from '../config/db.js';
+import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetEngagementRachaGamificacionRepository = {
-  async getGamificacion(userId, oposicionId = null) {
+  async getGamificacion(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const result = await pool.query(
       `WITH tests_finalizados AS (
          SELECT COUNT(*)::int AS total
-         FROM tests
-         WHERE usuario_id = $1
-           AND ($2::bigint IS NULL OR oposicion_id = $2)
-           AND estado = 'finalizado'
+         FROM tests t
+         WHERE t.usuario_id = $1
+           AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
+           AND t.estado = 'finalizado'
        ),
        aciertos_totales AS (
          SELECT COALESCE(SUM(rt.aciertos), 0)::int AS total
@@ -16,12 +19,13 @@ export const widgetEngagementRachaGamificacionRepository = {
          JOIN tests t ON t.id = rt.test_id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           ${widgetModeSql('t')}
            AND t.estado = 'finalizado'
        )
        SELECT
          (SELECT total FROM tests_finalizados) AS total_tests,
          (SELECT total FROM aciertos_totales) AS total_aciertos`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const totalTests = Number(result.rows[0]?.total_tests ?? 0);
