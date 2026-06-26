@@ -26,11 +26,7 @@ export function useUserAccesos() {
   const tieneAcceso = (oposicionId) =>
     accesos.some((a) => Number(a.oposicion_id) === Number(oposicionId));
 
-  const actualizarPreparacion = async (oposicionId, modoPreparacion) => {
-    if (!token) throw new Error('Sesion no iniciada');
-    const updated = await accesosApi.updatePreparacion(token, oposicionId, {
-      modoPreparacion,
-    });
+  const mergeAccesoActualizado = (oposicionId, updated, fallback = {}) => {
     setAccesos((prev) =>
       prev.map((acceso) =>
         Number(acceso.oposicion_id) === Number(oposicionId)
@@ -38,16 +34,34 @@ export function useUserAccesos() {
               ...acceso,
               ...updated,
               oposicion_id: updated?.oposicion_id ?? acceso.oposicion_id,
-              modo_preparacion: updated?.modo_preparacion ?? modoPreparacion,
+              modo_preparacion: updated?.modo_preparacion ?? fallback.modoPreparacion ?? acceso.modo_preparacion,
               tipo_alumno: updated?.tipo_alumno ?? acceso.tipo_alumno,
+              ranking_publico: updated?.ranking_publico ?? fallback.rankingPublico ?? acceso.ranking_publico,
             }
           : acceso,
       ),
     );
+  };
+
+  const actualizarPreparacion = async (oposicionId, modoPreparacion) => {
+    if (!token) throw new Error('Sesion no iniciada');
+    const updated = await accesosApi.updatePreparacion(token, oposicionId, {
+      modoPreparacion,
+    });
+    mergeAccesoActualizado(oposicionId, updated, { modoPreparacion });
+    return updated;
+  };
+
+  const actualizarRankingPublico = async (oposicionId, rankingPublico) => {
+    if (!token) throw new Error('Sesion no iniciada');
+    const updated = await accesosApi.updatePreparacion(token, oposicionId, {
+      rankingPublico,
+    });
+    mergeAccesoActualizado(oposicionId, updated, { rankingPublico });
     return updated;
   };
 
   const tieneAlgunAcceso = accesos.length > 0;
 
-  return { accesos, loading, tieneAcceso, tieneAlgunAcceso, actualizarPreparacion };
+  return { accesos, loading, tieneAcceso, tieneAlgunAcceso, actualizarPreparacion, actualizarRankingPublico };
 }

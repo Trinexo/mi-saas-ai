@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS accesos_oposicion (
     CHECK (tipo_alumno IN ('libre', 'albacer')),
   modo_preparacion TEXT NOT NULL DEFAULT 'albacer'
     CHECK (modo_preparacion IN ('experto', 'albacer')),
+  ranking_publico BOOLEAN NOT NULL DEFAULT FALSE,
   creada_en TIMESTAMP NOT NULL DEFAULT NOW(),
   actualizada_en TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE(usuario_id, oposicion_id)
@@ -423,6 +424,9 @@ CREATE TABLE IF NOT EXISTS albacer_modulo_progreso (
 
 CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_tipo_modo
   ON accesos_oposicion(oposicion_id, tipo_alumno, modo_preparacion);
+CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_ranking_publico
+  ON accesos_oposicion(oposicion_id, ranking_publico)
+  WHERE estado = 'activo';
 CREATE INDEX IF NOT EXISTS idx_albacer_modulos_oposicion_orden
   ON albacer_modulos(oposicion_id, orden, id);
 CREATE INDEX IF NOT EXISTS idx_albacer_modulos_estado ON albacer_modulos(estado);

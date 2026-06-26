@@ -65,11 +65,17 @@ export const rankingRepository = {
            ), 0)::int                                       AS rendimiento,
            COUNT(DISTINCT t.id)::int                       AS tests_realizados,
            MAX(t.fecha_fin)                                AS ultima_actividad
-         FROM tests t
-         JOIN resultados_test rt ON rt.test_id = t.id
-         WHERE t.oposicion_id = $1
-           AND t.modo_preparacion = 'experto'
-           AND t.estado       = 'finalizado'
+       FROM tests t
+       JOIN resultados_test rt ON rt.test_id = t.id
+       JOIN accesos_oposicion ao
+         ON ao.usuario_id = t.usuario_id
+        AND ao.oposicion_id = t.oposicion_id
+        AND ao.estado = 'activo'
+        AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
+        AND ao.ranking_publico = TRUE
+       WHERE t.oposicion_id = $1
+         AND t.modo_preparacion = 'experto'
+         AND t.estado       = 'finalizado'
          GROUP BY t.usuario_id
          HAVING COUNT(DISTINCT t.id) >= 1
        ),
@@ -124,6 +130,12 @@ export const rankingRepository = {
     const result = await pool.query(
       `SELECT COUNT(DISTINCT t.usuario_id)::int AS total
        FROM tests t
+       JOIN accesos_oposicion ao
+         ON ao.usuario_id = t.usuario_id
+        AND ao.oposicion_id = t.oposicion_id
+        AND ao.estado = 'activo'
+        AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
+        AND ao.ranking_publico = TRUE
        WHERE t.oposicion_id = $1
          AND t.modo_preparacion = 'experto'
          AND t.estado = 'finalizado'`,
