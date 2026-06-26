@@ -4,6 +4,7 @@ import { testRecomendadoService } from '../services/testRecomendado.service.js';
 import { testContinuarService } from '../services/testContinuar.service.js';
 import { testPendientesService } from '../services/testPendientes.service.js';
 import { testDemoService } from '../services/testDemo.service.js';
+import { testModeGuardService } from '../services/testModeGuard.service.js';
 import { historyQuerySchema, reviewParamsSchema } from '../schemas/test.schema.js';
 import { ApiError } from '../utils/api-error.js';
 import { PLAN_LIMITS } from '../config/plans.config.js';
@@ -23,6 +24,8 @@ export const generateTest = async (req, res, next) => {
     // Limitar número de preguntas
     const numPreguntasFinal = Math.min(numeroPreguntas, limits.maxPreguntasPorTest);
 
+    await testModeGuardService.assertAlumnoCanGenerateFreeTest(req.user, req.body);
+
     const data = await testService.generate({
       userId: req.user.userId,
       ...req.body,
@@ -39,6 +42,7 @@ export const generateTest = async (req, res, next) => {
 
 export const generateRefuerzo = async (req, res, next) => {
   try {
+    await testModeGuardService.assertAlumnoCanGenerateFreeTest(req.user, req.body);
     const data = await testService.generateRefuerzo({ userId: req.user.userId, ...req.body });
     return created(res, data, 'Test de refuerzo generado');
   } catch (error) {
