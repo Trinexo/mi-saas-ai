@@ -42,7 +42,7 @@ describe('generateTestSchema — modo marcadas', () => {
   it('enum de modo incluye los 5 valores válidos', () => {
     const modos = ['normal', 'adaptativo', 'repaso', 'simulacro', 'marcadas'];
     for (const modo of modos) {
-      const payload = modo === 'simulacro' || modo === 'marcadas'
+      const payload = modo === 'simulacro' || modo === 'marcadas' || modo === 'repaso'
         ? { modo, oposicionId: 1, numeroPreguntas: 10 }
         : { modo, temaId: 1, numeroPreguntas: 10 };
       const r = generateTestSchema.safeParse(payload);

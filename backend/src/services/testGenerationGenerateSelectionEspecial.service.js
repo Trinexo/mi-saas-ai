@@ -11,7 +11,7 @@ export const testGenerationGenerateSelectionEspecialService = {
     }
 
     if (modo === 'repaso') {
-      return testRepository.pickDueQuestions({ userId, temaId, numeroPreguntas });
+      return testRepository.pickDueQuestions({ userId, temaId, oposicionId, numeroPreguntas });
     }
 
     if (!temaId && oposicionId) {

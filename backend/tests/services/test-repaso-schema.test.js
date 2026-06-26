@@ -12,6 +12,16 @@ describe("generateTestSchema — modo 'repaso'", () => {
     assert.equal(result.data.modo, 'repaso');
   });
 
+  it("modo 'repaso' es valido con oposicionId", () => {
+    const result = generateTestSchema.safeParse({ oposicionId: 1, numeroPreguntas: 10, modo: 'repaso' });
+    assert.equal(result.success, true);
+  });
+
+  it("modo 'repaso' sin temaId ni oposicionId falla", () => {
+    const result = generateTestSchema.safeParse({ numeroPreguntas: 10, modo: 'repaso' });
+    assert.equal(result.success, false);
+  });
+
   it("en modo 'repaso' dificultad por defecto es 'mixto'", () => {
     const result = generateTestSchema.safeParse({ temaId: 1, numeroPreguntas: 10, modo: 'repaso' });
     assert.equal(result.success, true);

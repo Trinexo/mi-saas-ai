@@ -21,6 +21,9 @@ export const generateTestSchema = z.object({
   (d) => d.modo !== 'marcadas' || d.oposicionId != null,
   { message: 'El modo marcadas requiere oposicionId', path: ['oposicionId'] },
 ).refine(
+  (d) => d.modo !== 'repaso' || d.temaId != null || d.oposicionId != null,
+  { message: 'El modo repaso requiere temaId u oposicionId', path: ['oposicionId'] },
+).refine(
   (d) => ['simulacro', 'marcadas', 'repaso'].includes(d.modo) || d.temasMix != null || d.temaId != null || d.oposicionId != null,
   { message: 'Se requiere temaId, temasMix u oposicionId para este modo', path: ['temaId'] },
 );

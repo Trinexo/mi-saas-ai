@@ -186,6 +186,32 @@ describe('testService.generate — modo marcadas', () => {
   });
 });
 
+describe('testService.generate — modo repaso', () => {
+  it('usa pickDueQuestions con oposicionId cuando modo es repaso', async () => {
+    const orig = {
+      pickDueQuestions: testRepository.pickDueQuestions,
+      createTest: testRepository.createTest,
+      insertTestPreguntas: testRepository.insertTestPreguntas,
+    };
+
+    const llamadas = [];
+    testRepository.pickDueQuestions = async (params) => {
+      llamadas.push(params);
+      return [{ id: 3, enunciado: 'Q3', nivel_dificultad: 'media', opciones: [{ id: 30, texto: 'C' }] }];
+    };
+    testRepository.createTest = async () => ({ id: 89 });
+    testRepository.insertTestPreguntas = async () => {};
+
+    await testService.generate({ userId: 5, oposicionId: 12, numeroPreguntas: 1, modo: 'repaso' });
+
+    assert.equal(llamadas.length, 1);
+    assert.equal(llamadas[0].userId, 5);
+    assert.equal(llamadas[0].oposicionId, 12);
+
+    Object.assign(testRepository, orig);
+  });
+});
+
 describe('testService.generateRefuerzo', () => {
   it('usa pickRefuerzoQuestions y crea un test con tipoTest refuerzo', async () => {
     const orig = {
