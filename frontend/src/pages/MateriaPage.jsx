@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 import MateriaMaestriaBar from '../components/materia/MateriaMaestriaBar';
 import MateriaTemasTable from '../components/materia/MateriaTemasTable';
 
@@ -9,6 +10,7 @@ export default function BloquePage() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { oposicionActiva } = useOposicionActiva();
   const [bloques, setBloques] = useState([]);
   const [temaInfo, setTemaInfo] = useState(null); // fallback cuando no hay bloques
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,8 @@ export default function BloquePage() {
   const temaNombre = bloques[0]?.temaNombre ?? temaInfo?.temaNombre ?? `Tema #${id}`;
   const oposicionId = bloques[0]?.oposicionId ?? temaInfo?.oposicionId ?? null;
   const oposicionNombre = bloques[0]?.oposicionNombre ?? temaInfo?.oposicionNombre ?? null;
+  const isAlbacer = Number(oposicionActiva?.id) === Number(oposicionId)
+    && oposicionActiva?.modoPreparacion === 'albacer';
   const totalDominadas = bloques.reduce((sum, b) => sum + (b.dominadas ?? 0), 0);
   const totalPreguntas = bloques.length > 0
     ? bloques.reduce((sum, b) => sum + (b.totalPreguntas ?? 0), 0)
@@ -96,11 +100,18 @@ export default function BloquePage() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
-          <Link to="/configurar-test" state={{ temaId: Number(id), oposicionId }}
-            style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-            Practicar todo el tema
-          </Link>
-          {errores > 0 && (
+          {isAlbacer ? (
+            <Link to="/"
+              style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+              Ver módulos Albacer
+            </Link>
+          ) : (
+            <Link to="/configurar-test" state={{ temaId: Number(id), oposicionId }}
+              style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+              Practicar todo el tema
+            </Link>
+          )}
+          {!isAlbacer && errores > 0 && (
             <Link to="/configurar-test" state={{ temaId: Number(id), oposicionId, modoSugerido: 'errores' }}
               style={{ padding: '10px 22px', borderRadius: 8, border: '1px solid #fde68a', background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
               Repasar errores
@@ -129,24 +140,36 @@ export default function BloquePage() {
       <MateriaMaestriaBar dominioGlobal={dominioGlobal} dominadas={totalDominadas} totalPreguntas={totalPreguntas} />
       <MateriaTemasTable
         bloques={bloques}
+        isAlbacer={isAlbacer}
         onPracticar={(bloqueId) => navigate('/', { state: { bloqueId, temaId: Number(id) } })}
       />
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
-        <Link
-          to="/configurar-test"
-          state={{ temaId: Number(id), oposicionId }}
-          style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
-        >
-          Practicar todo el tema
-        </Link>
-        <Link
-          to="/configurar-test"
-          state={{ temaId: Number(id), oposicionId, modoSugerido: 'errores' }}
-          style={{ padding: '10px 22px', borderRadius: 8, border: '1px solid #fde68a', background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
-        >
-          Repasar errores
-        </Link>
+        {isAlbacer ? (
+          <Link
+            to="/"
+            style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+          >
+            Ver módulos Albacer
+          </Link>
+        ) : (
+          <>
+            <Link
+              to="/configurar-test"
+              state={{ temaId: Number(id), oposicionId }}
+              style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+            >
+              Practicar todo el tema
+            </Link>
+            <Link
+              to="/configurar-test"
+              state={{ temaId: Number(id), oposicionId, modoSugerido: 'errores' }}
+              style={{ padding: '10px 22px', borderRadius: 8, border: '1px solid #fde68a', background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}
+            >
+              Repasar errores
+            </Link>
+          </>
+        )}
         {oposicionId && (
           <Link
             to={`/oposicion/${oposicionId}`}

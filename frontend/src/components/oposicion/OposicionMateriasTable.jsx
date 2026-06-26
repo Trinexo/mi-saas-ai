@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function OposicionMateriasTable({ temas, oposicionId, onPracticar }) {
+export default function OposicionMateriasTable({ temas, oposicionId, onPracticar, isAlbacer = false }) {
   if (temas.length === 0) return null;
 
   return (
@@ -40,12 +40,21 @@ export default function OposicionMateriasTable({ temas, oposicionId, onPracticar
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>{m.porcentajeAcierto}%</td>
                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                    <button
-                      onClick={() => onPracticar(m.temaId)}
-                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
-                    >
-                      Practicar
-                    </button>
+                    {isAlbacer ? (
+                      <Link
+                        to={`/tema/${m.temaId}`}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}
+                      >
+                        Ver tema
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => onPracticar(m.temaId)}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                      >
+                        Practicar
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

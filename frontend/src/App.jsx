@@ -191,7 +191,7 @@ export default function App() {
         <Route path="progreso" element={<ProgressPage />} />
         <Route path="historial" element={<HistorialPage />} />
         <Route path="revision/:testId" element={<ReviewPage />} />
-        <Route path="marcadas" element={<MarcadasPage />} />
+        <Route path="marcadas" element={<AlumnoModeRoute blockInAlbacer><MarcadasPage /></AlumnoModeRoute>} />
         <Route path="perfil" element={<ProfilePage />} />
         <Route path="oposicion/:id" element={<OposicionPage />} />
         <Route path="tema/:id" element={<MateriaPage />} />

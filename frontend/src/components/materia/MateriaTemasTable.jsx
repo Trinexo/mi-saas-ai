@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function MateriaTemasTable({ bloques = [], onPracticar }) {
+export default function MateriaTemasTable({ bloques = [], onPracticar, isAlbacer = false }) {
   if (bloques.length === 0) {
     return (
       <p style={{ color: '#64748b', textAlign: 'center', marginTop: 40 }}>
@@ -43,12 +43,21 @@ export default function MateriaTemasTable({ bloques = [], onPracticar }) {
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', color: '#475569' }}>{t.porcentajeAcierto}%</td>
                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                    <button
-                      onClick={() => onPracticar(t.bloqueId)}
-                      style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
-                    >
-                      Practicar
-                    </button>
+                    {isAlbacer ? (
+                      <Link
+                        to={`/bloque/${t.bloqueId}`}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}
+                      >
+                        Ver bloque
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => onPracticar(t.bloqueId)}
+                        style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#374151', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}
+                      >
+                        Practicar
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
