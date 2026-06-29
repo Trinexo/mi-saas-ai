@@ -32,13 +32,16 @@ export const progressGeneralStatsRepository = {
     };
   },
 
-  async getDashboard(userId, oposicionId = null) {
+  async getDashboard(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion = 'experto', albacerModuloId = null } = options ?? {};
     const result = await pool.query(
       `WITH total_tests AS (
          SELECT COUNT(*)::int AS valor
          FROM tests
          WHERE usuario_id = $1
            AND ($2::bigint IS NULL OR oposicion_id = $2)
+           AND modo_preparacion = $3
+           AND ($4::bigint IS NULL OR albacer_modulo_id = $4)
            AND estado = 'finalizado'
        ),
        nota_media AS (
@@ -47,6 +50,8 @@ export const progressGeneralStatsRepository = {
          JOIN tests t ON t.id = rt.test_id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           AND t.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR t.albacer_modulo_id = $4)
            AND t.estado = 'finalizado'
        ),
        mejor_simulacro AS (
@@ -55,18 +60,27 @@ export const progressGeneralStatsRepository = {
          JOIN tests t ON t.id = rt.test_id
          WHERE t.usuario_id = $1
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
+           AND t.modo_preparacion = $3
+           AND ($4::bigint IS NULL OR t.albacer_modulo_id = $4)
            AND t.tipo_test = 'simulacro'
            AND t.estado = 'finalizado'
        ),
        pendientes_repaso AS (
          SELECT COUNT(*)::int AS valor
-         FROM repeticion_espaciada
-         WHERE usuario_id = $1 AND proxima_revision <= NOW()
+         FROM repeticion_espaciada re
+         JOIN preguntas p ON p.id = re.pregunta_id
+         JOIN temas te ON te.id = p.tema_id
+         WHERE re.usuario_id = $1
+           AND re.proxima_revision <= NOW()
+           AND ($2::bigint IS NULL OR te.oposicion_id = $2)
        ),
        total_marcadas AS (
          SELECT COUNT(*)::int AS valor
-         FROM preguntas_marcadas
-         WHERE usuario_id = $1
+         FROM preguntas_marcadas pm
+         JOIN preguntas p ON p.id = pm.pregunta_id
+         JOIN temas te ON te.id = p.tema_id
+         WHERE pm.usuario_id = $1
+           AND ($2::bigint IS NULL OR te.oposicion_id = $2)
        )
        SELECT
          (SELECT valor FROM total_tests)       AS total_tests,
@@ -74,7 +88,7 @@ export const progressGeneralStatsRepository = {
          (SELECT valor FROM mejor_simulacro)   AS mejor_simulacro,
          (SELECT valor FROM pendientes_repaso) AS pendientes_repaso,
          (SELECT valor FROM total_marcadas)    AS total_marcadas`,
-      [userId, oposicionId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
     const r = result.rows[0];
     return {

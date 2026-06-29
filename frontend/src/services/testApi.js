@@ -25,7 +25,7 @@ export const testApi = {
   temaStats: (token, bloqueId) => apiRequest('/stats/bloque', { token, query: { bloque_id: bloqueId } }),
   repasoStats: (token, bloqueId) => apiRequest('/stats/repaso', { token, query: { bloque_id: bloqueId } }),
   simulacroStats: (token, oposicionId, options = {}) => apiRequest('/stats/simulacros', { token, query: { oposicion_id: oposicionId, ...options } }),
-  getDashboard: (token) => apiRequest('/stats/dashboard', { token }),
+  getDashboard: (token, oposicionId, options = {}) => apiRequest('/stats/dashboard', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getObjetivoDiario: (token, oposicionId, options = {}) => apiRequest('/stats/objetivo-diario', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getGamificacion: (token, oposicionId, options = {}) => apiRequest('/stats/gamificacion', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getRacha: (token, oposicionId, options = {}) => apiRequest('/stats/racha', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),

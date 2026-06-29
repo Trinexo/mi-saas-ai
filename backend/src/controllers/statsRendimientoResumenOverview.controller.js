@@ -45,7 +45,7 @@ export const getObjetivoDiario = async (req, res, next) => {
 
 export const getDashboard = async (req, res, next) => {
   try {
-    const data = await statsService.getDashboard(req.user.userId);
+    const data = await statsService.getDashboard(req.user.userId, getOposicionId(req), getModoOptions(req));
     return ok(res, data);
   } catch (error) {
     return next(error);

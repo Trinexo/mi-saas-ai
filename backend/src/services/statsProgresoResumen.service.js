@@ -17,8 +17,8 @@ export const statsProgresoResumenService = {
     return progressStatsRepository.getProgresoTemaReal(userId, temaId, options);
   },
 
-  async getDashboard(userId, oposicionId = null) {
-    return progressStatsRepository.getDashboard(userId, oposicionId);
+  async getDashboard(userId, oposicionId = null, options = {}) {
+    return progressStatsRepository.getDashboard(userId, oposicionId, options);
   },
 
   async getUserStats(userId, oposicionId = null, options = {}) {
