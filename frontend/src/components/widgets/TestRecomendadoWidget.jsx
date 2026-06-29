@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
+import { useOposicionActiva } from '../../state/oposicionActiva.jsx';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useUserPlan } from '../../hooks/useUserPlan';
 import { testApi } from '../../services/testApi';
@@ -24,15 +25,23 @@ const META_LABEL = { color: '#9ca3af', marginRight: 4 };
 export default function TestRecomendadoWidget() {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const { isLoading, runAction } = useAsyncAction();
   const { hasAccess } = useUserPlan();
   const [data, setData] = useState(null);
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
-    testApi.getRecommended(token)
+    if (isAlbacer) {
+      setData(null);
+      return;
+    }
+    testApi.getRecommended(token, oposicionActiva?.id)
       .then(setData)
       .catch(() => setData({ modo: 'adaptativo', temaId: null, oposicionId: null, oposicionNombre: null, numeroPreguntas: 10, motivo: 'Empieza con un test rápido de 10 preguntas' }));
-  }, [token]);
+  }, [token, oposicionActiva?.id, isAlbacer]);
+
+  if (isAlbacer) return null;
 
   const onStart = async () => {
     const suggestion = data;

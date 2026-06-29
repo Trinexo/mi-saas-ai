@@ -30,17 +30,23 @@ export const testRecomendadoRepository = {
    * Tema con más preguntas pendientes de repaso del usuario.
    * Devuelve { temaId, temaNombre, pendientes } o null si no hay repaso pendiente.
    */
-  async bloqueConMasRepasoPendiente(userId) {
+  async bloqueConMasRepasoPendiente(userId, oposicionId = null) {
+    const params = [userId];
+    const oposicionFilter = oposicionId ? 'AND t.oposicion_id = $2' : '';
+    if (oposicionId) params.push(oposicionId);
+
     const result = await pool.query(
       `SELECT p.bloque_id, bl.nombre AS bloque_nombre, COUNT(*)::int AS pendientes
        FROM repeticion_espaciada re
        JOIN preguntas p ON p.id = re.pregunta_id
        JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas t ON t.id = bl.tema_id
        WHERE re.usuario_id = $1 AND re.proxima_revision <= NOW()
+       ${oposicionFilter}
        GROUP BY p.bloque_id, bl.nombre
        ORDER BY pendientes DESC
        LIMIT 1`,
-      [userId],
+      params,
     );
     if (!result.rowCount) return null;
     const row = result.rows[0];
@@ -129,10 +135,18 @@ export const testRecomendadoRepository = {
   /**
    * Devuelve el número de tests realizados por el usuario (para detectar nuevos usuarios).
    */
-  async contarTests(userId) {
+  async contarTests(userId, oposicionId = null, modoPreparacion = 'experto') {
+    const params = [userId, modoPreparacion];
+    const oposicionFilter = oposicionId ? 'AND oposicion_id = $3' : '';
+    if (oposicionId) params.push(oposicionId);
+
     const result = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM tests WHERE usuario_id = $1`,
-      [userId],
+      `SELECT COUNT(*)::int AS total
+       FROM tests
+       WHERE usuario_id = $1
+         AND modo_preparacion = $2
+         ${oposicionFilter}`,
+      params,
     );
     return result.rows[0]?.total ?? 0;
   },
@@ -141,17 +155,25 @@ export const testRecomendadoRepository = {
    * Devuelve los tema_id de tests finalizados en las últimas N horas.
    * Se usa para evitar recomendar el mismo tema practicado recientemente.
    */
-  async bloquesRecientesPracticados(userId, horasAtras = 24) {
+  async bloquesRecientesPracticados(userId, horasAtras = 24, oposicionId = null, modoPreparacion = 'experto') {
+    const params = [userId, horasAtras, modoPreparacion];
+    const oposicionFilter = oposicionId ? 'AND te.oposicion_id = $4' : '';
+    if (oposicionId) params.push(oposicionId);
+
     const result = await pool.query(
       `SELECT DISTINCT p.bloque_id::int
-       FROM tests t
-       JOIN tests_preguntas tp ON tp.test_id = t.id
+       FROM tests ts
+       JOIN tests_preguntas tp ON tp.test_id = ts.id
        JOIN preguntas p ON p.id = tp.pregunta_id
-       WHERE t.usuario_id = $1
-         AND t.estado = 'finalizado'
-         AND t.fecha_creacion >= NOW() - ($2 || ' hours')::interval
+       JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas te ON te.id = bl.tema_id
+       WHERE ts.usuario_id = $1
+         AND ts.estado = 'finalizado'
+         AND ts.fecha_creacion >= NOW() - ($2 || ' hours')::interval
+         AND ts.modo_preparacion = $3
+         ${oposicionFilter}
          AND p.bloque_id IS NOT NULL`,
-      [userId, horasAtras],
+      params,
     );
     return result.rows.map((r) => Number(r.bloque_id));
   },

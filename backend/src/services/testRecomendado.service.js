@@ -3,20 +3,40 @@ import { accesoOposicionRepository } from '../repositories/accesoOposicion.repos
 import { PLAN_LIMITS } from '../config/plans.config.js';
 
 export const testRecomendadoService = {
-  async getSugerencia(userId, plan = 'free') {
+  async getSugerencia(userId, plan = 'free', options = {}) {
     const limits = PLAN_LIMITS[plan];
+    const requestedOposicionId = options?.oposicionId ? Number(options.oposicionId) : null;
 
     const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const oposicionId = accesos.length > 0 ? Number(accesos[0].oposicion_id) : null;
-    const oposicionNombre = await testRecomendadoRepository.getNombreOposicion(oposicionId);
+    const accesoActivo = requestedOposicionId
+      ? await accesoOposicionRepository.getPreparacion(userId, requestedOposicionId)
+      : accesos[0];
+    const oposicionId = accesoActivo ? Number(accesoActivo.oposicion_id) : null;
+    const oposicionNombre = accesoActivo?.nombre ?? await testRecomendadoRepository.getNombreOposicion(oposicionId);
 
     const s = (campos) => ({ oposicionNombre, ...campos });
 
+    if (requestedOposicionId && !accesoActivo) {
+      return s({
+        modo: 'adaptativo', bloqueId: null, oposicionId: null,
+        numeroPreguntas: 10, dificultad: 'mixto',
+        motivo: 'Accede al catalogo para comprar esta oposicion.',
+      });
+    }
+
+    if (accesoActivo?.modo_preparacion === 'albacer') {
+      return s({
+        modo: 'albacer', bloqueId: null, oposicionId,
+        numeroPreguntas: 0, dificultad: 'mixto',
+        motivo: 'Continua tu preparacion desde los modulos Albacer de esta oposicion.',
+      });
+    }
+
     // Bloques practicados en las últimas 24h — se usan para evitar recomendar el mismo
-    const recientes = await testRecomendadoRepository.bloquesRecientesPracticados(userId);
+    const recientes = await testRecomendadoRepository.bloquesRecientesPracticados(userId, 24, oposicionId);
 
     if (limits.repasoEspaciado) {
-      const bloqueRepaso = await testRecomendadoRepository.bloqueConMasRepasoPendiente(userId);
+      const bloqueRepaso = await testRecomendadoRepository.bloqueConMasRepasoPendiente(userId, oposicionId);
       if (bloqueRepaso && bloqueRepaso.pendientes >= 3) {
         return s({
           modo: 'repaso', bloqueId: bloqueRepaso.bloqueId, oposicionId,
@@ -52,7 +72,7 @@ export const testRecomendadoService = {
       });
     }
 
-    const totalTests = await testRecomendadoRepository.contarTests(userId);
+    const totalTests = await testRecomendadoRepository.contarTests(userId, oposicionId);
     if (oposicionId && totalTests < 3) {
       const bloqueNuevo = await testRecomendadoRepository.bloqueConMenosVistas(userId, oposicionId, recientes)
         ?? await testRecomendadoRepository.bloqueConMenosVistas(userId, oposicionId);
