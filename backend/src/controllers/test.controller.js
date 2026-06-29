@@ -53,6 +53,7 @@ export const generateRefuerzo = async (req, res, next) => {
 export const generateDemo = async (req, res, next) => {
   try {
     const { oposicionId } = req.body;
+    await testModeGuardService.assertAlumnoCanGenerateFreeTest(req.user, { oposicionId: Number(oposicionId) });
     const data = await testDemoService.generateDemo({ userId: req.user.userId, oposicionId: Number(oposicionId) });
     return created(res, data, 'Test demo generado');
   } catch (error) {
