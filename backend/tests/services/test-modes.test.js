@@ -194,7 +194,7 @@ describe('testService.generate — modo marcadas', () => {
 });
 
 describe('testService.generate — modo repaso', () => {
-  it('usa pickDueQuestions con oposicionId cuando modo es repaso', async () => {
+  it('usa pickDueQuestions con oposicionId y bloqueId cuando modo es repaso', async () => {
     const orig = {
       pickDueQuestions: testRepository.pickDueQuestions,
       createTest: testRepository.createTest,
@@ -209,11 +209,12 @@ describe('testService.generate — modo repaso', () => {
     testRepository.createTest = async () => ({ id: 89 });
     testRepository.insertTestPreguntas = async () => {};
 
-    await testService.generate({ userId: 5, oposicionId: 12, numeroPreguntas: 1, modo: 'repaso' });
+    await testService.generate({ userId: 5, oposicionId: 12, bloqueId: 99, numeroPreguntas: 1, modo: 'repaso' });
 
     assert.equal(llamadas.length, 1);
     assert.equal(llamadas[0].userId, 5);
     assert.equal(llamadas[0].oposicionId, 12);
+    assert.equal(llamadas[0].bloqueId, 99);
 
     Object.assign(testRepository, orig);
   });
@@ -271,6 +272,37 @@ describe('testModeGuardService — refuerzo Albacer', () => {
         (error) => error.status === 403
           && error.details?.code === 'ALBACER_FREE_TEST_BLOCKED'
           && error.details?.oposicionId === 14,
+      );
+    } finally {
+      Object.assign(pool, { query: orig.query });
+      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+    }
+  });
+});
+
+describe('testModeGuardService — repaso por bloque Albacer', () => {
+  it('bloquea generate si el bloque pertenece a una oposición en Modo Albacer', async () => {
+    const orig = {
+      query: pool.query,
+      getPreparacion: accesoOposicionRepository.getPreparacion,
+    };
+
+    pool.query = async (sql) => (
+      String(sql).includes('FROM bloques')
+        ? { rows: [{ oposicion_id: 21 }] }
+        : { rows: [] }
+    );
+    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+
+    try {
+      await assert.rejects(
+        () => testModeGuardService.assertAlumnoCanGenerateFreeTest(
+          { userId: 7, role: 'alumno' },
+          { modo: 'repaso', bloqueId: 44, numeroPreguntas: 10 },
+        ),
+        (error) => error.status === 403
+          && error.details?.code === 'ALBACER_FREE_TEST_BLOCKED'
+          && error.details?.oposicionId === 21,
       );
     } finally {
       Object.assign(pool, { query: orig.query });

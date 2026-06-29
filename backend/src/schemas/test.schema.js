@@ -7,6 +7,7 @@ const temasMixItemSchema = z.object({
 
 export const generateTestSchema = z.object({
   temaId: z.coerce.number().int().positive().optional(),
+  bloqueId: z.coerce.number().int().positive().optional(),
   temasMix: z.array(temasMixItemSchema).min(2).max(10).optional(),
   oposicionId: z.coerce.number().int().positive().optional(),
   numeroPreguntas: z.coerce.number().int().min(1).max(200),
@@ -21,8 +22,8 @@ export const generateTestSchema = z.object({
   (d) => d.modo !== 'marcadas' || d.oposicionId != null,
   { message: 'El modo marcadas requiere oposicionId', path: ['oposicionId'] },
 ).refine(
-  (d) => d.modo !== 'repaso' || d.temaId != null || d.oposicionId != null,
-  { message: 'El modo repaso requiere temaId u oposicionId', path: ['oposicionId'] },
+  (d) => d.modo !== 'repaso' || d.bloqueId != null || d.temaId != null || d.oposicionId != null,
+  { message: 'El modo repaso requiere bloqueId, temaId u oposicionId', path: ['oposicionId'] },
 ).refine(
   (d) => ['simulacro', 'marcadas', 'repaso'].includes(d.modo) || d.temasMix != null || d.temaId != null || d.oposicionId != null,
   { message: 'Se requiere temaId, temasMix u oposicionId para este modo', path: ['temaId'] },

@@ -17,7 +17,13 @@ describe("generateTestSchema — modo 'repaso'", () => {
     assert.equal(result.success, true);
   });
 
-  it("modo 'repaso' sin temaId ni oposicionId falla", () => {
+  it("modo 'repaso' es valido con bloqueId", () => {
+    const result = generateTestSchema.safeParse({ bloqueId: 8, numeroPreguntas: 10, modo: 'repaso' });
+    assert.equal(result.success, true);
+    assert.equal(result.data.bloqueId, 8);
+  });
+
+  it("modo 'repaso' sin bloqueId, temaId ni oposicionId falla", () => {
     const result = generateTestSchema.safeParse({ numeroPreguntas: 10, modo: 'repaso' });
     assert.equal(result.success, false);
   });
