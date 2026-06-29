@@ -36,6 +36,49 @@ describe('generateTestSchema — modo simulacro', () => {
   });
 });
 
+describe('testModeGuardService - demo Albacer', () => {
+  it('bloquea generate-demo si el alumno ya tiene esa oposicion en Modo Albacer', async () => {
+    const orig = {
+      getPreparacion: accesoOposicionRepository.getPreparacion,
+    };
+
+    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+
+    try {
+      await assert.rejects(
+        () => testModeGuardService.assertAlumnoCanGenerateFreeTest(
+          { userId: 7, role: 'alumno' },
+          { oposicionId: 21 },
+        ),
+        (error) => error.status === 403
+          && error.details?.code === 'ALBACER_FREE_TEST_BLOCKED'
+          && error.details?.oposicionId === 21,
+      );
+    } finally {
+      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+    }
+  });
+
+  it('permite generate-demo si el alumno no tiene acceso activo en esa oposicion', async () => {
+    const orig = {
+      getPreparacion: accesoOposicionRepository.getPreparacion,
+    };
+
+    accesoOposicionRepository.getPreparacion = async () => null;
+
+    try {
+      await assert.doesNotReject(
+        () => testModeGuardService.assertAlumnoCanGenerateFreeTest(
+          { userId: 7, role: 'alumno' },
+          { oposicionId: 21 },
+        ),
+      );
+    } finally {
+      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+    }
+  });
+});
+
 describe('generateTestSchema — modo marcadas', () => {
   it('marcadas sin oposicionId falla', () => {
     const r = generateTestSchema.safeParse({ modo: 'marcadas', numeroPreguntas: 10 });
