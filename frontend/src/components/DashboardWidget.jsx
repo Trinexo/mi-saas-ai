@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { testApi } from '../services/testApi';
 import { useAuth } from '../state/auth.jsx';
+import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 
 const CARD_STYLE = {
   background: '#f9fafb',
@@ -18,13 +19,16 @@ const LABEL = { fontSize: '0.75rem', color: '#6b7280', marginTop: 4 };
 
 export default function DashboardWidget() {
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const [data, setData] = useState(null);
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
-    testApi.getDashboard(token).then((res) => {
+    const options = { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' };
+    testApi.getDashboard(token, oposicionActiva?.id, options).then((res) => {
       if (res) setData(res);
     });
-  }, [token]);
+  }, [token, oposicionActiva?.id, oposicionActiva?.modoPreparacion]);
 
   if (!data) return null;
 
@@ -44,6 +48,8 @@ export default function DashboardWidget() {
           <div style={BIG_NUM}>{data.mejorSimulacro ?? '—'}</div>
           <div style={LABEL}>Mejor simulacro</div>
         </div>
+        {!isAlbacer && (
+          <>
         <Link to="/progreso" style={{ ...CARD_STYLE, textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <div style={{ ...BIG_NUM, color: data.pendientesRepaso > 0 ? '#dc2626' : '#1d4ed8' }}>{data.pendientesRepaso}</div>
           <div style={LABEL}>Pendientes de repaso ↗</div>
@@ -52,6 +58,8 @@ export default function DashboardWidget() {
           <div style={BIG_NUM}>{data.totalMarcadas}</div>
           <div style={LABEL}>Preguntas marcadas ↗</div>
         </Link>
+          </>
+        )}
       </div>
     </div>
   );
