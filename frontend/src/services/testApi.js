@@ -4,7 +4,7 @@ export const testApi = {
   generate: (token, payload) => apiRequest('/tests/generate', { method: 'POST', body: payload, token }),
   generateDemo: (token, oposicionId) => apiRequest('/tests/generate-demo', { method: 'POST', body: { oposicionId }, token }),
   generateRefuerzo: (token, payload) => apiRequest('/tests/generate-refuerzo', { method: 'POST', body: payload, token }),
-  getRecommended: (token) => apiRequest('/tests/recomendado', { token }),
+  getRecommended: (token, oposicionId) => apiRequest('/tests/recomendado', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getContinuar: (token, oposicionId) => apiRequest('/tests/continuar', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
   getPendientes: (token, oposicionId, options = {}) => apiRequest('/tests/pendientes', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   cerrar: (token, testId) => apiRequest(`/tests/${testId}/cerrar`, { method: 'POST', token }),
