@@ -17,7 +17,7 @@ export const statsWidgetEngagementActividadService = {
     return widgetStatsRepository.getResumenSemana(userId, oposicionId, options);
   },
 
-  async getFocoHoy(userId) {
-    return widgetStatsRepository.getFocoHoy(userId);
+  async getFocoHoy(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getFocoHoy(userId, oposicionId, options);
   },
 };

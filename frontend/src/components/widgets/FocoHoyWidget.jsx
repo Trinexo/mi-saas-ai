@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
+import { useOposicionActiva } from '../../state/oposicionActiva.jsx';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { testApi } from '../../services/testApi';
 
@@ -18,15 +19,23 @@ const IconPlay = () => (
 export default function FocoHoyWidget() {
   const navigate = useNavigate();
   const { token } = useAuth();
+  const { oposicionActiva } = useOposicionActiva();
   const { isLoading, runAction } = useAsyncAction();
   const [data, setData] = useState(null);
   const [hov, setHov] = useState(false);
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
-    testApi.getFocoHoy(token)
+    if (isAlbacer) {
+      setData(null);
+      return;
+    }
+    testApi.getFocoHoy(token, oposicionActiva?.id, { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' })
       .then(setData)
       .catch(() => setData({ modo: 'adaptativo', temaId: null, numeroPreguntas: 10, motivo: 'Activa tu sesion con 10 preguntas' }));
-  }, [token]);
+  }, [token, oposicionActiva?.id, oposicionActiva?.modoPreparacion, isAlbacer]);
+
+  if (isAlbacer) return null;
 
   const onStart = async () => {
     const foco = data;
