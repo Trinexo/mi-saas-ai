@@ -3,7 +3,7 @@ import { simulacrosPublicosService } from '../services/simulacrosPublicos.servic
 
 export const getSimulacrosPublicados = async (req, res, next) => {
   try {
-    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const oposicionId = req.query.oposicion_id ?? null;
     const items = await simulacrosPublicosService.getPublicados(req.user.userId, oposicionId);
     return ok(res, items);
   } catch (err) {
@@ -13,7 +13,7 @@ export const getSimulacrosPublicados = async (req, res, next) => {
 
 export const iniciarSimulacroPublicado = async (req, res, next) => {
   try {
-    const simulacroId = Number(req.params.id);
+    const simulacroId = req.params.id;
     const data = await simulacrosPublicosService.iniciarSimulacroPublicado(req.user.userId, simulacroId);
     return created(res, data, 'Simulacro iniciado');
   } catch (err) {
