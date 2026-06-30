@@ -9,7 +9,7 @@ export const statsWidgetRendimientoCalidadService = {
     return widgetStatsRepository.getInsightMensual(userId, oposicionId, options);
   },
 
-  async getTemasDebiles(userId, oposicionId = null) {
-    return widgetStatsRepository.getTemasDebiles(userId, oposicionId);
+  async getTemasDebiles(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getTemasDebiles(userId, oposicionId, options);
   },
 };
