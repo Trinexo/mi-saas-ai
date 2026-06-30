@@ -39,11 +39,15 @@ export default function ReviewPage() {
         setTestInfo(data.test ?? null);
       }
     });
-    marcadasApi.getMarcadas(token)
-      .then((data) => setMarcadas(new Set((data || []).map((m) => m.id))))
-      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId, token]);
+
+  useEffect(() => {
+    if (!testInfo) return;
+    marcadasApi.getMarcadas(token, testInfo.oposicionId ?? null)
+      .then((data) => setMarcadas(new Set((data || []).map((m) => m.id))))
+      .catch(() => {});
+  }, [token, testInfo?.oposicionId]);
 
   const openReportModal = (preguntaId) => {
     setReportModal({ preguntaId });

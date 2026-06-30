@@ -371,10 +371,10 @@ export default function TestPage() {
   }, [navigate, test, token]);
 
   useEffect(() => {
-    marcadasApi.getMarcadas(token)
+    marcadasApi.getMarcadas(token, test?.oposicionId ?? null)
       .then((data) => setMarcadas(new Set((data || []).map((m) => m.id))))
       .catch(() => {});
-  }, [token]);
+  }, [token, test?.oposicionId]);
 
   const toggleMarcada = async (preguntaId) => {
     try {
