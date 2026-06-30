@@ -29,7 +29,7 @@ export const testApi = {
   getObjetivoDiario: (token, oposicionId, options = {}) => apiRequest('/stats/objetivo-diario', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getGamificacion: (token, oposicionId, options = {}) => apiRequest('/stats/gamificacion', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getRacha: (token, oposicionId, options = {}) => apiRequest('/stats/racha', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
-  getRachaBloques: (token) => apiRequest('/stats/racha-bloques', { token }),
+  getRachaBloques: (token, oposicionId, options = {}) => apiRequest('/stats/racha-bloques', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getResumenOposicion: (token, oposicionId, options = {}) => apiRequest('/stats/resumen-oposicion', { token, query: { oposicion_id: oposicionId, ...options } }),
   getProgresoBloques: (token, oposicionId, options = {}) => apiRequest('/stats/progreso-bloques', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getProgresoBloquesByTema: (token, temaId, options = {}) => apiRequest('/stats/progreso-bloques-tema', { token, query: { tema_id: temaId, ...options } }),

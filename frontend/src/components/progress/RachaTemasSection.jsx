@@ -17,17 +17,17 @@ function RachaBadge({ racha }) {
   );
 }
 
-export default function RachaTemasSection() {
+export default function RachaTemasSection({ oposicionId = null, options = {} }) {
   const { token } = useAuth();
   const [rachaBloques, setRachaBloques] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    testApi.getRachaBloques(token)
+    testApi.getRachaBloques(token, oposicionId, options)
       .then((data) => { if (!cancelled) setRachaBloques(Array.isArray(data) ? data : []); })
       .catch(() => { if (!cancelled) setRachaBloques([]); });
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, oposicionId, options?.modo_preparacion, options?.albacer_modulo_id]);
 
   if (!rachaBloques || rachaBloques.length === 0) return null;
 
