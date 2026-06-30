@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const id = z.coerce.number().int().positive();
+
 export const listEtiquetasQuerySchema = z.object({
   q:         z.string().optional(),
   page:      z.coerce.number().int().positive().optional().default(1),
@@ -22,13 +24,13 @@ export const updateEtiquetaSchema = z.object({
 );
 
 export const setEtiquetasDePreguntaSchema = z.object({
-  etiqueta_ids: z.array(z.number().int().positive()).max(20),
+  etiqueta_ids: z.array(id).max(20),
 });
 
 export const etiquetaIdParamSchema = z.object({
-  id: z.coerce.number().int().positive(),
+  id,
 });
 
 export const preguntaEtiquetasParamSchema = z.object({
-  preguntaId: z.coerce.number().int().positive(),
+  preguntaId: id,
 });

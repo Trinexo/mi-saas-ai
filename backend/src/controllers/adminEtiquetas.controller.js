@@ -8,8 +8,8 @@ export const listEtiquetas = async (req, res, next) => {
     const { q, page = 1, page_size = 50 } = req.query;
     const data = await adminEtiquetasService.listEtiquetas({
       q: q || null,
-      page: Number(page),
-      pageSize: Number(page_size),
+      page,
+      pageSize: page_size,
     });
     return ok(res, data);
   } catch (e) { return next(e); }
