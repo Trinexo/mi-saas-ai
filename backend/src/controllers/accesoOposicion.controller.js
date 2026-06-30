@@ -44,9 +44,6 @@ export const checkAcceso = async (req, res, next) => {
 export const getPreparacionAcceso = async (req, res, next) => {
   try {
     const oposicionId = Number(req.params.oposicionId);
-    if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
-      return next(new ApiError(400, 'oposicionId invalido'));
-    }
     const acceso = await accesoOposicionService.getPreparacion(req.user.userId, oposicionId);
     return ok(res, acceso, 'Preparacion de oposicion');
   } catch (e) {
@@ -61,13 +58,9 @@ export const getPreparacionAcceso = async (req, res, next) => {
 export const updatePreparacionAcceso = async (req, res, next) => {
   try {
     const oposicionId = Number(req.params.oposicionId);
-    if (!Number.isInteger(oposicionId) || oposicionId <= 0) {
-      return next(new ApiError(400, 'oposicionId invalido'));
-    }
     const { modoPreparacion, modo_preparacion, rankingPublico, ranking_publico } = req.body ?? {};
     const modo = modoPreparacion ?? modo_preparacion;
     const hasRankingPublico = rankingPublico !== undefined || ranking_publico !== undefined;
-    if (!modo && !hasRankingPublico) return next(new ApiError(400, 'modoPreparacion o rankingPublico es requerido'));
 
     const acceso = await accesoOposicionService.updatePreparacion(req.user.userId, oposicionId, {
       modoPreparacion: modo ?? null,
@@ -114,8 +107,6 @@ export const asignarAcceso = async (req, res, next) => {
       tipoAlumno = 'libre',
       modoPreparacion = 'albacer',
     } = req.body;
-    if (!email)       return next(new ApiError(400, 'email es requerido'));
-    if (!oposicionId) return next(new ApiError(400, 'oposicionId es requerido'));
     const usuario = await accesoOposicionService.getUserByEmail(email.trim());
     if (!usuario) return next(new ApiError(404, `No existe ningún usuario con el email: ${email}`));
     const acceso = await accesoOposicionService.asignarAcceso({
