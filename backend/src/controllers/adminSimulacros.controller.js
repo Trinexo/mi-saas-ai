@@ -9,9 +9,9 @@ export const listSimulacros = async (req, res, next) => {
     const data = await adminSimulacrosService.listSimulacros({
       q: q || null,
       estado: estado || null,
-      oposicionId: oposicion_id ? Number(oposicion_id) : null,
-      page: Number(page),
-      pageSize: Number(page_size),
+      oposicionId: oposicion_id ?? null,
+      page,
+      pageSize: page_size,
     }, req.user);
     return ok(res, data);
   } catch (e) { return next(e); }
