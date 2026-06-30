@@ -29,7 +29,7 @@ export const getMisAccesos = async (req, res, next) => {
  */
 export const checkAcceso = async (req, res, next) => {
   try {
-    const oposicionId = Number(req.params.oposicionId);
+    const { oposicionId } = req.params;
     const tiene = await accesoOposicionService.tieneAcceso(req.user.userId, oposicionId);
     return ok(res, { tieneAcceso: tiene, oposicionId });
   } catch (e) {
@@ -43,7 +43,7 @@ export const checkAcceso = async (req, res, next) => {
  */
 export const getPreparacionAcceso = async (req, res, next) => {
   try {
-    const oposicionId = Number(req.params.oposicionId);
+    const { oposicionId } = req.params;
     const acceso = await accesoOposicionService.getPreparacion(req.user.userId, oposicionId);
     return ok(res, acceso, 'Preparacion de oposicion');
   } catch (e) {
@@ -57,7 +57,7 @@ export const getPreparacionAcceso = async (req, res, next) => {
  */
 export const updatePreparacionAcceso = async (req, res, next) => {
   try {
-    const oposicionId = Number(req.params.oposicionId);
+    const { oposicionId } = req.params;
     const { modoPreparacion, modo_preparacion, rankingPublico, ranking_publico } = req.body ?? {};
     const modo = modoPreparacion ?? modo_preparacion;
     const hasRankingPublico = rankingPublico !== undefined || ranking_publico !== undefined;
@@ -80,10 +80,10 @@ export const listAccesos = async (req, res, next) => {
   try {
     const { page = 1, page_size = 20, email, oposicion_id } = req.query;
     const result = await accesoOposicionService.listAll({
-      page: Number(page),
-      pageSize: Number(page_size),
-      email: email ? String(email).trim() : null,
-      oposicionId: oposicion_id ? Number(oposicion_id) : null,
+      page,
+      pageSize: page_size,
+      email: email ?? null,
+      oposicionId: oposicion_id ?? null,
     });
     return ok(res, result, 'Listado de accesos');
   } catch (e) {
@@ -111,7 +111,7 @@ export const asignarAcceso = async (req, res, next) => {
     if (!usuario) return next(new ApiError(404, `No existe ningún usuario con el email: ${email}`));
     const acceso = await accesoOposicionService.asignarAcceso({
       userId: usuario.id,
-      oposicionId: Number(oposicionId),
+      oposicionId,
       fechaFin,
       precioPagado,
       notas,
@@ -130,8 +130,7 @@ export const asignarAcceso = async (req, res, next) => {
  */
 export const cancelarAcceso = async (req, res, next) => {
   try {
-    const userId = Number(req.params.userId);
-    const oposicionId = Number(req.params.oposicionId);
+    const { userId, oposicionId } = req.params;
     const result = await accesoOposicionService.cancelarAcceso(userId, oposicionId);
     if (!result) return next(new ApiError(404, 'Acceso no encontrado'));
     return ok(res, result, 'Acceso cancelado');
@@ -147,8 +146,7 @@ export const cancelarAcceso = async (req, res, next) => {
  */
 export const editarAcceso = async (req, res, next) => {
   try {
-    const userId = Number(req.params.userId);
-    const oposicionId = Number(req.params.oposicionId);
+    const { userId, oposicionId } = req.params;
     const ESTADOS_VALIDOS = ['activo', 'cancelado', 'expirado'];
     const { fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion } = req.body;
     if (estado && !ESTADOS_VALIDOS.includes(estado)) {
@@ -156,7 +154,7 @@ export const editarAcceso = async (req, res, next) => {
     }
     const result = await accesoOposicionService.updateAcceso(userId, oposicionId, {
       fechaFin: fechaFin ?? null,
-      precioPagado: precioPagado != null ? Number(precioPagado) : null,
+      precioPagado: precioPagado ?? null,
       notas: notas ?? null,
       estado: estado ?? 'activo',
       tipoAlumno: tipoAlumno ?? null,
