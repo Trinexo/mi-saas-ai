@@ -3,7 +3,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { marcadaParamsSchema } from '../../src/schemas/marcadas.schema.js';
+import { marcadaParamsSchema, marcadasQuerySchema } from '../../src/schemas/marcadas.schema.js';
 import { marcadasRepository } from '../../src/repositories/marcadas.repository.js';
 import { marcadasService } from '../../src/services/marcadas.service.js';
 
@@ -27,6 +27,20 @@ describe('marcadaParamsSchema', () => {
   it('rechaza cuando falta preguntaId', () => {
     const result = marcadaParamsSchema.safeParse({});
     assert.equal(result.success, false);
+  });
+});
+
+describe('marcadasQuerySchema', () => {
+  it('normaliza oposicion_id desde string', () => {
+    const result = marcadasQuerySchema.safeParse({ oposicion_id: '12' });
+    assert.equal(result.success, true);
+    assert.equal(result.data.oposicion_id, 12);
+  });
+
+  it('permite query vacia', () => {
+    const result = marcadasQuerySchema.safeParse({});
+    assert.equal(result.success, true);
+    assert.equal(result.data.oposicion_id, undefined);
   });
 });
 

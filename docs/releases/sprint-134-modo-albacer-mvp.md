@@ -565,6 +565,7 @@ Debe mostrar:
 - Estado validacion etiquetas admin: las rutas admin de etiquetas normalizan paginacion e ids de preguntas/etiquetas antes del servicio.
 - Estado validacion catalogo admin: el listado admin de oposiciones usa la paginacion normalizada por Zod y los schemas cubren ids de temas/bloques.
 - Estado validacion suscripciones: el controlador usa userId, limit y offset normalizados por Zod antes de llamar al servicio/repositorio.
+- Estado validacion marcadas: el controlador usa preguntaId y oposicion_id normalizados por Zod antes del servicio.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
 - Estado configurador libre: la disponibilidad del modo adaptativo se calcula con estadisticas de la oposicion activa en `Modo Experto`, evitando habilitarlo por historial de otra oposicion.
 - Estado marcadas en test/revision: las pantallas de realizacion y revision cargan preguntas marcadas filtradas por la oposicion del test.
