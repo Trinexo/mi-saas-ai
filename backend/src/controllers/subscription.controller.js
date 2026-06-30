@@ -21,7 +21,7 @@ export const getMyPlan = async (req, res, next) => {
  */
 export const assignPlan = async (req, res, next) => {
   try {
-    const targetUserId = Number(req.params.userId);
+    const targetUserId = req.params.userId;
     const { plan, fecha_fin, notas } = req.body;
     const data = await subscriptionService.assignPlan({
       targetUserId,
@@ -58,8 +58,8 @@ export const listSuscripciones = async (req, res, next) => {
     const data = await subscriptionRepository.listAll({
       plan,
       estado,
-      limit: Number(limit ?? 50),
-      offset: Number(offset ?? 0),
+      limit,
+      offset,
     });
     return ok(res, data);
   } catch (error) {
