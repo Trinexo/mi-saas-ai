@@ -551,6 +551,7 @@ Debe mostrar:
 - Estado foco hoy: `/stats/foco-hoy` acepta oposicion activa, limita repaso/recientes/bloques debiles a esa oposicion y devuelve respuesta neutra en `Modo Albacer`.
 - Estado temas debiles: `/stats/temas-debiles` calcula desde intentos finalizados y respeta oposicion activa, `modo_preparacion` y `albacer_modulo_id`.
 - Estado progreso de contenido: resumen de oposicion, progreso por tema, detalle de tema y detalle de bloque respetan `modo_preparacion` y `albacer_modulo_id`.
+- Estado racha por bloque: `/stats/racha-bloques` acepta oposicion activa, `modo_preparacion` y `albacer_modulo_id`, evitando mezclar bloques practicados de otras oposiciones o modulos.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
 - Estado configurador libre: la disponibilidad del modo adaptativo se calcula con estadisticas de la oposicion activa en `Modo Experto`, evitando habilitarlo por historial de otra oposicion.
 - Estado marcadas en test/revision: las pantallas de realizacion y revision cargan preguntas marcadas filtradas por la oposicion del test.

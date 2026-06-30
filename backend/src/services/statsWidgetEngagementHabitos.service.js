@@ -13,7 +13,7 @@ export const statsWidgetEngagementHabitosService = {
     return widgetStatsRepository.getRacha(userId, oposicionId, options);
   },
 
-  async getRachaBloques(userId) {
-    return widgetStatsRepository.getRachaBloques(userId);
+  async getRachaBloques(userId, oposicionId = null, options = {}) {
+    return widgetStatsRepository.getRachaBloques(userId, oposicionId, options);
   },
 };

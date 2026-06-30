@@ -103,7 +103,8 @@ export const widgetEngagementRachaStreaksRepository = {
     };
   },
 
-  async getRachaBloques(userId) {
+  async getRachaBloques(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion, albacerModuloId } = resolveWidgetModeOptions(options);
     const result = await pool.query(
       `SELECT
          t.bloque_id,
@@ -114,12 +115,14 @@ export const widgetEngagementRachaStreaksRepository = {
        JOIN bloques bl ON bl.id = t.bloque_id
        JOIN temas te ON te.id = bl.tema_id
        WHERE t.usuario_id = $1
+         AND ($2::bigint IS NULL OR te.oposicion_id = $2)
+         ${widgetModeSql('t')}
          AND t.estado = 'finalizado'
          AND t.bloque_id IS NOT NULL
          AND t.fecha_fin IS NOT NULL
        GROUP BY t.bloque_id, bl.nombre, te.nombre, t.fecha_fin::date
        ORDER BY t.bloque_id, dia DESC`,
-      [userId],
+      [userId, oposicionId, modoPreparacion, albacerModuloId],
     );
 
     const bloquesMap = new Map();
