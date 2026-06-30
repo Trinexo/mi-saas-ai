@@ -38,6 +38,10 @@ export const generateRefuerzoSchema = z.object({
   { message: 'El refuerzo requiere temaId u oposicionId', path: ['oposicionId'] },
 );
 
+export const generateDemoSchema = z.object({
+  oposicionId: z.coerce.number().int().positive(),
+});
+
 export const submitTestSchema = z.object({
   testId: z.coerce.number().int().positive(),
   respuestas: z

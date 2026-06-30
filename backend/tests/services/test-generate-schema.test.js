@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateTestSchema } from '../../src/schemas/test.schema.js';
+import { generateDemoSchema, generateTestSchema } from '../../src/schemas/test.schema.js';
 
 describe('generateTestSchema — campo modo', () => {
   it('modo es opcional y toma "adaptativo" por defecto', () => {
@@ -23,6 +23,23 @@ describe('generateTestSchema — campo modo', () => {
       () => generateTestSchema.parse({ temaId: 1, numeroPreguntas: 10, modo: 'aleatorio' }),
       (err) => {
         assert.ok(err.constructor.name === 'ZodError', 'Debe ser ZodError');
+        return true;
+      },
+    );
+  });
+});
+
+describe('generateDemoSchema', () => {
+  it('normaliza oposicionId numerico desde string', () => {
+    const result = generateDemoSchema.parse({ oposicionId: '3' });
+    assert.equal(result.oposicionId, 3);
+  });
+
+  it('rechaza demo sin oposicionId valido', () => {
+    assert.throws(
+      () => generateDemoSchema.parse({ oposicionId: 'abc' }),
+      (err) => {
+        assert.equal(err.constructor.name, 'ZodError');
         return true;
       },
     );
