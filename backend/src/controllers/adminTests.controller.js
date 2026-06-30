@@ -1,7 +1,6 @@
 import { ok, created } from '../utils/response.js';
 import { adminTestsService } from '../services/adminTests.service.js';
 import { profesorWorkspaceSeleccionService } from '../services/profesorWorkspaceSeleccion.service.js';
-import { ApiError } from '../utils/api-error.js';
 
 export const listTests = async (req, res, next) => {
   try {
@@ -9,9 +8,9 @@ export const listTests = async (req, res, next) => {
     const data = await adminTestsService.listTests({
       q: q || null,
       estado: estado || null,
-      oposicionId: oposicion_id ? Number(oposicion_id) : null,
-      page: Number(page),
-      pageSize: Number(page_size),
+      oposicionId: oposicion_id ?? null,
+      page,
+      pageSize: page_size,
     }, req.user);
     return ok(res, data);
   } catch (e) { return next(e); }
@@ -48,9 +47,6 @@ export const deleteTest = async (req, res, next) => {
 export const addPreguntas = async (req, res, next) => {
   try {
     const { pregunta_ids } = req.body;
-    if (!Array.isArray(pregunta_ids) || pregunta_ids.length === 0) {
-      return next(new ApiError(400, 'pregunta_ids es requerido'));
-    }
     const data = await adminTestsService.addPreguntas(req.params.id, pregunta_ids, req.user);
     return ok(res, data, 'Preguntas añadidas');
   } catch (e) { return next(e); }

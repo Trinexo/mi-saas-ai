@@ -561,6 +561,7 @@ Debe mostrar:
 - Estado validacion modulos Albacer: los formularios de modulos, items, tests y generacion automatica normalizan ids, cantidades, duraciones y puntuaciones numericas antes del servicio.
 - Estado validacion simulacros profesor: los formularios y controladores de simulacros propios normalizan ids, paginacion, bloques, preguntas y puntuaciones antes del servicio.
 - Estado validacion simulacros admin: los formularios y controladores admin de simulacros normalizan ids, paginacion, bloques, preguntas y puntuaciones antes del servicio.
+- Estado validacion tests admin: los formularios y rutas admin de tests normalizan ids, paginacion, temas, preguntas, duracion y puntuaciones antes del servicio.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
 - Estado configurador libre: la disponibilidad del modo adaptativo se calcula con estadisticas de la oposicion activa en `Modo Experto`, evitando habilitarlo por historial de otra oposicion.
 - Estado marcadas en test/revision: las pantallas de realizacion y revision cargan preguntas marcadas filtradas por la oposicion del test.
