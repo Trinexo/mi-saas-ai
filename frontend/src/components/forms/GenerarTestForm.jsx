@@ -113,14 +113,15 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, efectivoOposicionId]);
 
-  // Comprobar si el usuario tiene suficiente historial para el modo adaptativo (>= 3 tests)
+  // Comprobar si el usuario tiene suficiente historial en esta oposicion para el modo adaptativo (>= 3 tests)
   useEffect(() => {
     if (!token) return;
-    testApi.userStats(token)
+    const realOposicionId = Number(efectivoOposicionId) || undefined;
+    testApi.userStats(token, realOposicionId, { modo_preparacion: 'experto' })
       .then((data) => setAdaptativoDisponible((data?.totalTests ?? 0) >= 3))
       .catch(() => setAdaptativoDisponible(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, efectivoOposicionId]);
 
   // Modos visibles según datos disponibles
   const modoOptionsVisibles = MODO_OPTIONS.filter((opt) => {

@@ -552,6 +552,7 @@ Debe mostrar:
 - Estado temas debiles: `/stats/temas-debiles` calcula desde intentos finalizados y respeta oposicion activa, `modo_preparacion` y `albacer_modulo_id`.
 - Estado progreso de contenido: resumen de oposicion, progreso por tema, detalle de tema y detalle de bloque respetan `modo_preparacion` y `albacer_modulo_id`.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
+- Estado configurador libre: la disponibilidad del modo adaptativo se calcula con estadisticas de la oposicion activa en `Modo Experto`, evitando habilitarlo por historial de otra oposicion.
 - Estadisticas e historial se filtran por modo y oposicion.
 
 ---
