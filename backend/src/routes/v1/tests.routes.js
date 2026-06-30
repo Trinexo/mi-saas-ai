@@ -4,7 +4,16 @@ import { validate } from '../../middleware/validate.middleware.js';
 import { rateLimit } from '../../middleware/rate-limit.middleware.js';
 import { loadUserPlan, requirePlan } from '../../middleware/plan.middleware.js';
 import { requireAccesoOposicion } from '../../middleware/acceso.middleware.js';
-import { generateTestSchema, submitTestSchema, generateRefuerzoSchema } from '../../schemas/test.schema.js';
+import {
+  generateTestSchema,
+  submitTestSchema,
+  generateRefuerzoSchema,
+  historyQuerySchema,
+  testIdParamsSchema,
+  testOposicionQuerySchema,
+  testPendientesQuerySchema,
+  reviewParamsSchema,
+} from '../../schemas/test.schema.js';
 import { generateTest, submitTest, getTestHistory, getTestReview, getTestConfig, generateRefuerzo, generateDemo, getTestRecomendado, getTestContinuar, getTestPendientes, cerrarTest } from '../../controllers/test.controller.js';
 
 const router = Router();
@@ -24,15 +33,15 @@ router.post('/generate-demo', requireAuth, generateDemo);
 router.post('/generate-refuerzo', requireAuth, loadUserPlan, requirePlan('pro', 'el refuerzo de preguntas falladas'), validate(generateRefuerzoSchema), generateRefuerzo);
 router.post('/submit', requireAuth, submitRateLimit, validate(submitTestSchema), submitTest);
 // history: carga el plan para limitar resultados en plan free
-router.get('/history', requireAuth, loadUserPlan, getTestHistory);
+router.get('/history', requireAuth, loadUserPlan, validate(historyQuerySchema, 'query'), getTestHistory);
 // recomendado: sugerencia personalizada
-router.get('/recomendado', requireAuth, loadUserPlan, getTestRecomendado);
+router.get('/recomendado', requireAuth, loadUserPlan, validate(testOposicionQuerySchema, 'query'), getTestRecomendado);
 // continuar: lógica inteligente de qué hacer a continuación
-router.get('/continuar', requireAuth, getTestContinuar);
+router.get('/continuar', requireAuth, validate(testOposicionQuerySchema, 'query'), getTestContinuar);
 // pendientes: tests generados con al menos 1 respuesta (sin finalizar)
-router.get('/pendientes', requireAuth, getTestPendientes);
-router.post('/:testId/cerrar', requireAuth, cerrarTest);
-router.get('/:testId/review', requireAuth, getTestReview);
-router.get('/:testId/config', requireAuth, getTestConfig);
+router.get('/pendientes', requireAuth, validate(testPendientesQuerySchema, 'query'), getTestPendientes);
+router.post('/:testId/cerrar', requireAuth, validate(testIdParamsSchema, 'params'), cerrarTest);
+router.get('/:testId/review', requireAuth, validate(reviewParamsSchema, 'params'), getTestReview);
+router.get('/:testId/config', requireAuth, validate(reviewParamsSchema, 'params'), getTestConfig);
 
 export default router;

@@ -64,3 +64,16 @@ export const historyQuerySchema = z.object({
 export const reviewParamsSchema = z.object({
   testId: z.coerce.number().int().positive(),
 });
+
+export const testOposicionQuerySchema = z.object({
+  oposicion_id: z.coerce.number().int().positive().optional(),
+});
+
+export const testPendientesQuerySchema = z.object({
+  oposicion_id: z.coerce.number().int().positive().optional(),
+  modo_preparacion: z.enum(['experto', 'albacer']).optional(),
+});
+
+export const testIdParamsSchema = z.object({
+  testId: z.coerce.number().int().positive(),
+});
