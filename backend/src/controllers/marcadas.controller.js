@@ -3,7 +3,7 @@ import { marcadasService } from '../services/marcadas.service.js';
 
 export const marcarPregunta = async (req, res, next) => {
   try {
-    const data = await marcadasService.marcar(req.user.userId, Number(req.params.preguntaId));
+    const data = await marcadasService.marcar(req.user.userId, req.params.preguntaId);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -12,7 +12,7 @@ export const marcarPregunta = async (req, res, next) => {
 
 export const desmarcarPregunta = async (req, res, next) => {
   try {
-    const data = await marcadasService.desmarcar(req.user.userId, Number(req.params.preguntaId));
+    const data = await marcadasService.desmarcar(req.user.userId, req.params.preguntaId);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -21,7 +21,7 @@ export const desmarcarPregunta = async (req, res, next) => {
 
 export const getMarcadas = async (req, res, next) => {
   try {
-    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const oposicionId = req.query.oposicion_id ?? null;
     const data = await marcadasService.getMarcadas(req.user.userId, oposicionId);
     return ok(res, data);
   } catch (error) {
