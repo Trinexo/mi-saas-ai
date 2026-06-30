@@ -11,7 +11,7 @@ export const testApi = {
   getFocoHoy: (token, oposicionId, options = {}) => apiRequest('/stats/foco-hoy', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getResumenSemana: (token, oposicionId, options = {}) => apiRequest('/stats/resumen-semana', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getActividad14Dias: (token, oposicionId, options = {}) => apiRequest('/stats/actividad-14dias', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
-  getTemasDebiles: (token, oposicionId) => apiRequest('/stats/temas-debiles', { token, query: oposicionId ? { oposicion_id: oposicionId } : {} }),
+  getTemasDebiles: (token, oposicionId, options = {}) => apiRequest('/stats/temas-debiles', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getProgresoTemas: (token, oposicionId, options = {}) => apiRequest('/stats/progreso-temas', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getProgresoTemasReal: (token, oposicionId, options = {}) => apiRequest('/stats/progreso-temas-real', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),
   getInsightMensual: (token, oposicionId, options = {}) => apiRequest('/stats/insight-mensual', { token, query: { ...(oposicionId ? { oposicion_id: oposicionId } : {}), ...options } }),

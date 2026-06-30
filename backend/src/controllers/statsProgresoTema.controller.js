@@ -11,7 +11,7 @@ const getModoOptions = (req) => ({
 export const getTemasDebiles = async (req, res, next) => {
   try {
     const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
-    const data = await statsService.getTemasDebiles(req.user.userId, oposicionId);
+    const data = await statsService.getTemasDebiles(req.user.userId, oposicionId, getModoOptions(req));
     return ok(res, data);
   } catch (error) {
     return next(error);

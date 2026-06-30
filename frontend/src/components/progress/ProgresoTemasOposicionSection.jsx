@@ -104,7 +104,7 @@ export default function ProgresoTemasOposicionSection({ oposicionId, options = n
 
           {oposicionId && temas?.length > 0 && (
             <>
-              {options?.modo_preparacion !== 'albacer' && <TemasDebilesWidget oposicionId={oposicionId} />}
+              {options?.modo_preparacion !== 'albacer' && <TemasDebilesWidget oposicionId={oposicionId} options={options ?? {}} />}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
                 <span style={{ fontSize: 12, color: '#94a3b8' }}>{practicados}/{temas.length} temas practicados</span>

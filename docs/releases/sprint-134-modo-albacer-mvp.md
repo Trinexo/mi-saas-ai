@@ -549,6 +549,7 @@ Debe mostrar:
 - Estado recomendado: `/tests/recomendado` acepta `oposicion_id`, calcula la sugerencia con la oposicion activa y devuelve una respuesta neutra si esa oposicion esta en `Modo Albacer`.
 - Estado perfil: el resumen de actividad de `/perfil` consulta `/stats/dashboard` con oposicion activa y `modo_preparacion`, evitando mezclar resultados de otras oposiciones o modos.
 - Estado foco hoy: `/stats/foco-hoy` acepta oposicion activa, limita repaso/recientes/bloques debiles a esa oposicion y devuelve respuesta neutra en `Modo Albacer`.
+- Estado temas debiles: `/stats/temas-debiles` calcula desde intentos finalizados y respeta oposicion activa, `modo_preparacion` y `albacer_modulo_id`.
 - Estado progreso de contenido: resumen de oposicion, progreso por tema, detalle de tema y detalle de bloque respetan `modo_preparacion` y `albacer_modulo_id`.
 - Estadisticas e historial se filtran por modo y oposicion.
 

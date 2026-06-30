@@ -326,7 +326,7 @@ function RecomendadoParaTi() {
 
   useEffect(() => {
     if (!oposicionActiva?.id || isAlbacer) { setCargando(false); return; }
-    testApi.getProgresoTemasReal(token, oposicionActiva.id)
+    testApi.getProgresoTemasReal(token, oposicionActiva.id, { modo_preparacion: oposicionActiva?.modoPreparacion ?? 'experto' })
       .then((data) => {
         const conActividad = (data || [])
           .filter((t) => (t.preguntasRespondidas ?? t.totalRespondidas ?? t.intentos ?? 0) > 0)
@@ -337,7 +337,7 @@ function RecomendadoParaTi() {
       })
       .catch(() => setTemas([]))
       .finally(() => setCargando(false));
-  }, [token, oposicionActiva?.id, isAlbacer]);
+  }, [token, oposicionActiva?.id, oposicionActiva?.modoPreparacion, isAlbacer]);
 
   const onPracticar = async (tema) => {
     if (generandoId) return;
