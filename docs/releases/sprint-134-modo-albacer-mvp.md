@@ -556,6 +556,7 @@ Debe mostrar:
 - Estado validacion stats: los endpoints de widgets y progreso validan `oposicion_id`, `modo_preparacion`, `albacer_modulo_id`, `tema_id` e ids de bloque antes de ejecutar consultas.
 - Estado validacion alumno: marcadas, tests sugeridos, simulacros publicados y consultas de tests validan ids y modo antes de entrar en los controladores.
 - Estado validacion accesos: rutas de acceso por oposicion, cambio de modo/ranking y administracion de accesos validan ids, filtros, tipo de alumno y modo de preparacion.
+- Estado controladores accesos: los controladores de accesos usan params, query y body ya normalizados por Zod antes de llamar al servicio.
 - Estado validacion demo: `generate-demo` valida `oposicionId` antes de comprobar el bloqueo por modo Albacer y crear el test demo.
 - Estado validacion modulos Albacer: los formularios de modulos, items, tests y generacion automatica normalizan ids, cantidades, duraciones y puntuaciones numericas antes del servicio.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
