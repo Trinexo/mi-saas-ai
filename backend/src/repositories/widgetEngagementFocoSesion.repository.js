@@ -2,18 +2,32 @@ import pool from '../config/db.js';
 import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetEngagementFocoSesionRepository = {
-  async getFocoHoy(userId) {
-    // Oposición primaria del usuario (para scope del generate)
-    const oposicionResult = await pool.query(
-      `SELECT oposicion_id FROM accesos_oposicion
-       WHERE usuario_id = $1 AND estado = 'activo'
-         AND (fecha_fin IS NULL OR fecha_fin > NOW())
-       ORDER BY fecha_inicio DESC LIMIT 1`,
-      [userId],
-    );
-    const oposicionId = oposicionResult.rows[0]?.oposicion_id
-      ? Number(oposicionResult.rows[0].oposicion_id)
-      : null;
+  async getFocoHoy(userId, oposicionId = null, options = {}) {
+    const { modoPreparacion = 'experto' } = resolveWidgetModeOptions(options);
+
+    if (modoPreparacion === 'albacer') {
+      return {
+        modo: 'albacer',
+        bloqueId: null,
+        oposicionId: oposicionId ? Number(oposicionId) : null,
+        numeroPreguntas: 0,
+        motivo: 'Continua tu preparacion desde los modulos Albacer de esta oposicion.',
+      };
+    }
+
+    let resolvedOposicionId = oposicionId ? Number(oposicionId) : null;
+    if (!resolvedOposicionId) {
+      const oposicionResult = await pool.query(
+        `SELECT oposicion_id FROM accesos_oposicion
+         WHERE usuario_id = $1 AND estado = 'activo'
+           AND (fecha_fin IS NULL OR fecha_fin > NOW())
+         ORDER BY fecha_inicio DESC LIMIT 1`,
+        [userId],
+      );
+      resolvedOposicionId = oposicionResult.rows[0]?.oposicion_id
+        ? Number(oposicionResult.rows[0].oposicion_id)
+        : null;
+    }
 
     const pendientesResult = await pool.query(
       `SELECT p.bloque_id,
@@ -22,12 +36,14 @@ export const widgetEngagementFocoSesionRepository = {
        FROM repeticion_espaciada re
        JOIN preguntas p ON p.id = re.pregunta_id
        JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas te ON te.id = bl.tema_id
        WHERE re.usuario_id = $1
          AND re.proxima_revision <= NOW()
+         AND ($2::bigint IS NULL OR te.oposicion_id = $2)
        GROUP BY p.bloque_id, bl.nombre
        ORDER BY pendientes DESC
        LIMIT 1`,
-      [userId],
+      [userId, resolvedOposicionId],
     );
 
     const pendienteTop = pendientesResult.rows[0];
@@ -36,32 +52,36 @@ export const widgetEngagementFocoSesionRepository = {
       return {
         modo: 'repaso',
         bloqueId: Number(pendienteTop.bloque_id),
-        oposicionId,
+        oposicionId: resolvedOposicionId,
         numeroPreguntas,
         motivo: `Tienes ${Number(pendienteTop.pendientes)} preguntas pendientes en ${pendienteTop.bloque_nombre}`,
       };
     }
 
-    // Bloques practicados en las últimas 24h para evitar repetir la misma sugerencia
     const recientesResult = await pool.query(
       `SELECT DISTINCT p.bloque_id::int
        FROM tests t
        JOIN tests_preguntas tp ON tp.test_id = t.id
        JOIN preguntas p ON p.id = tp.pregunta_id
+       JOIN bloques bl ON bl.id = p.bloque_id
+       JOIN temas te ON te.id = bl.tema_id
        WHERE t.usuario_id = $1
          AND t.estado = 'finalizado'
+         AND t.modo_preparacion = $2
+         AND ($3::bigint IS NULL OR te.oposicion_id = $3)
          AND t.fecha_creacion >= NOW() - INTERVAL '24 hours'
          AND p.bloque_id IS NOT NULL`,
-      [userId],
+      [userId, modoPreparacion, resolvedOposicionId],
     );
     const recientes = recientesResult.rows.map((r) => Number(r.bloque_id));
 
-    // Bloque débil: intenta excluir los practicados hoy; si no hay resultado, sin exclusión
     const buildDebilQuery = (withExclude) => {
       const excludeClause = withExclude && recientes.length > 0
-        ? 'AND pu.bloque_id != ALL($2::bigint[])'
+        ? 'AND pu.bloque_id != ALL($3::bigint[])'
         : '';
-      const params = withExclude && recientes.length > 0 ? [userId, recientes] : [userId];
+      const params = withExclude && recientes.length > 0
+        ? [userId, resolvedOposicionId, recientes]
+        : [userId, resolvedOposicionId];
       return { excludeClause, params };
     };
 
@@ -75,7 +95,9 @@ export const widgetEngagementFocoSesionRepository = {
                 ROUND((pu.aciertos::numeric / NULLIF(pu.aciertos + pu.errores, 0)) * 100, 0) AS porcentaje_acierto
          FROM progreso_usuario pu
          JOIN bloques bl ON bl.id = pu.bloque_id
+         JOIN temas te ON te.id = bl.tema_id
          WHERE pu.usuario_id = $1
+           AND ($2::bigint IS NULL OR te.oposicion_id = $2)
            AND (pu.aciertos + pu.errores) >= 10
            ${excludeClause}
          ORDER BY porcentaje_acierto ASC NULLS FIRST, (pu.errores - pu.aciertos) DESC
@@ -91,13 +113,14 @@ export const widgetEngagementFocoSesionRepository = {
 
     const bloqueDebil = debilResult.rows[0];
     if (bloqueDebil) {
-      // Busca un segundo bloque con preguntas sin ver para mezclar (50% débil + 50% nuevo)
       const excluirNuevo = [Number(bloqueDebil.bloque_id), ...recientes];
       const nuevoResult = await pool.query(
         `SELECT bl.id AS bloque_id, bl.nombre AS bloque_nombre
          FROM colecciones bl
          JOIN preguntas p ON p.bloque_id = bl.id
+         JOIN temas te ON te.id = bl.tema_id
          WHERE bl.id != ALL($2::bigint[])
+           AND ($3::bigint IS NULL OR te.oposicion_id = $3)
            AND NOT EXISTS (
              SELECT 1 FROM progreso_usuario pu
              WHERE pu.bloque_id = bl.id AND pu.usuario_id = $1
@@ -106,7 +129,7 @@ export const widgetEngagementFocoSesionRepository = {
          HAVING COUNT(p.id) >= 5
          ORDER BY RANDOM()
          LIMIT 1`,
-        [userId, excluirNuevo],
+        [userId, excluirNuevo, resolvedOposicionId],
       );
 
       if (nuevoResult.rows[0]) {
@@ -114,20 +137,20 @@ export const widgetEngagementFocoSesionRepository = {
         return {
           modo: 'adaptativo',
           bloqueId: null,
-          oposicionId,
+          oposicionId: resolvedOposicionId,
           temasMix: [
             { bloqueId: Number(bloqueDebil.bloque_id), pct: 50 },
             { bloqueId: Number(bloqueNuevo.bloque_id), pct: 50 },
           ],
           numeroPreguntas: 10,
-          motivo: `Combina "${bloqueDebil.bloque_nombre}" (tu punto débil) con "${bloqueNuevo.bloque_nombre}" (bloque nuevo).`,
+          motivo: `Combina "${bloqueDebil.bloque_nombre}" (tu punto debil) con "${bloqueNuevo.bloque_nombre}" (bloque nuevo).`,
         };
       }
 
       return {
         modo: 'adaptativo',
         bloqueId: Number(bloqueDebil.bloque_id),
-        oposicionId,
+        oposicionId: resolvedOposicionId,
         numeroPreguntas: 10,
         motivo: `Activa tu sesion reforzando "${bloqueDebil.bloque_nombre}" (acierto ${Number(bloqueDebil.porcentaje_acierto ?? 0)}%)`,
       };
@@ -136,7 +159,7 @@ export const widgetEngagementFocoSesionRepository = {
     return {
       modo: 'adaptativo',
       bloqueId: null,
-      oposicionId,
+      oposicionId: resolvedOposicionId,
       numeroPreguntas: 10,
       motivo: 'Empieza con un test adaptativo rapido para activar tu sesion',
     };

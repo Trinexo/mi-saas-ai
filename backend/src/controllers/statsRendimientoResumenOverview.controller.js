@@ -18,7 +18,7 @@ export const getResumenSemana = async (req, res, next) => {
 
 export const getFocoHoy = async (req, res, next) => {
   try {
-    const data = await statsService.getFocoHoy(req.user.userId);
+    const data = await statsService.getFocoHoy(req.user.userId, getOposicionId(req), getModoOptions(req));
     return ok(res, data);
   } catch (error) {
     return next(error);
