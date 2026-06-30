@@ -551,6 +551,7 @@ Debe mostrar:
 - Estado foco hoy: `/stats/foco-hoy` acepta oposicion activa, limita repaso/recientes/bloques debiles a esa oposicion y devuelve respuesta neutra en `Modo Albacer`.
 - Estado temas debiles: `/stats/temas-debiles` calcula desde intentos finalizados y respeta oposicion activa, `modo_preparacion` y `albacer_modulo_id`.
 - Estado progreso de contenido: resumen de oposicion, progreso por tema, detalle de tema y detalle de bloque respetan `modo_preparacion` y `albacer_modulo_id`.
+- Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
 - Estadisticas e historial se filtran por modo y oposicion.
 
 ---

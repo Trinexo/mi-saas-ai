@@ -20,6 +20,9 @@ export const rankingService = {
 
     const acceso = await accesoOposicionRepository.getPreparacion(userId, oposicionId);
     if (!acceso) throw new ApiError(403, 'No tienes acceso a esa oposicion');
+    if (acceso.modo_preparacion === 'albacer') {
+      throw new ApiError(403, 'El ranking solo esta disponible en Modo Experto');
+    }
 
     const [miScore, top, totalParticipantes] = await Promise.all([
       rankingRepository.getUserScore(userId, oposicionId),

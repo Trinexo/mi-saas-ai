@@ -97,11 +97,18 @@ export default function RankingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingConsent, setSavingConsent] = useState(false);
+  const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
 
   useEffect(() => {
     if (!token || !oposicionActiva?.id) {
       setRanking(null);
       setLoading(false);
+      return;
+    }
+    if (isAlbacer) {
+      setRanking(null);
+      setLoading(false);
+      setError('');
       return;
     }
     setLoading(true);
@@ -110,7 +117,7 @@ export default function RankingPage() {
       .then(setRanking)
       .catch((err) => setError(err.message || 'No se pudo cargar el ranking'))
       .finally(() => setLoading(false));
-  }, [token, oposicionActiva?.id]);
+  }, [token, oposicionActiva?.id, isAlbacer]);
 
   const miScore = ranking?.miScore;
   const percentil = ranking?.percentilSuperado ?? null;
@@ -154,6 +161,14 @@ export default function RankingPage() {
       {!oposicionActiva ? (
         <div style={{ ...CARD, padding: '3rem', textAlign: 'center', color: GL }}>
           Selecciona una oposicion activa para ver tu ranking.
+        </div>
+      ) : isAlbacer ? (
+        <div style={{ ...CARD, padding: '2.5rem', textAlign: 'center', color: GL }}>
+          <div style={{ fontSize: '2rem', marginBottom: 12 }}>{'\uD83D\uDD12'}</div>
+          <div style={{ fontWeight: 800, color: DK, marginBottom: 6 }}>Ranking no disponible en Modo Albacer</div>
+          <div style={{ fontSize: '0.86rem', lineHeight: 1.6 }}>
+            Los rankings se calculan solo con tests y simulacros realizados en Modo Experto.
+          </div>
         </div>
       ) : loading ? (
         <Spinner />
