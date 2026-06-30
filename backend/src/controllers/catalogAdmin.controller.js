@@ -9,8 +9,8 @@ export const listOposiciones = async (req, res, next) => {
       q: q || null,
       estado: estado || null,
       categoria: categoria || null,
-      page: Number(page),
-      pageSize: Number(page_size),
+      page,
+      pageSize: page_size,
     });
     return ok(res, data);
   } catch (e) { return next(e); }
