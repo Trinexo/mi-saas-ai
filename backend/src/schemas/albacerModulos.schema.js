@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-const temaIdsSchema = z.array(z.number().int().positive()).max(100);
+const id = z.coerce.number().int().positive();
+const temaIdsSchema = z.array(id).max(100);
 
 export const albacerModuloIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -15,19 +16,19 @@ export const listAlbacerModulosQuerySchema = z.object({
 });
 
 export const createAlbacerModuloSchema = z.object({
-  oposicion_id: z.number().int().positive(),
+  oposicion_id: id,
   nombre: z.string().trim().min(3).max(200),
   descripcion: z.string().trim().max(2000).nullable().optional(),
-  orden: z.number().int().min(0).optional().default(0),
+  orden: z.coerce.number().int().min(0).optional().default(0),
   estado: z.enum(['borrador', 'publicado', 'archivado']).optional().default('borrador'),
   tema_ids: temaIdsSchema.optional().default([]),
 });
 
 export const updateAlbacerModuloSchema = z.object({
-  oposicion_id: z.number().int().positive().optional(),
+  oposicion_id: id.optional(),
   nombre: z.string().trim().min(3).max(200).optional(),
   descripcion: z.string().trim().max(2000).nullable().optional(),
-  orden: z.number().int().min(0).optional(),
+  orden: z.coerce.number().int().min(0).optional(),
   estado: z.enum(['borrador', 'publicado', 'archivado']).optional(),
   tema_ids: temaIdsSchema.optional(),
 }).refine(
@@ -44,9 +45,9 @@ export const createAlbacerModuloItemSchema = z.object({
   tipo: z.enum(['test', 'simulacro_final']),
   titulo: z.string().trim().min(3).max(200),
   descripcion: z.string().trim().max(2000).nullable().optional(),
-  plantilla_test_id: z.number().int().positive().optional(),
-  simulacro_id: z.number().int().positive().optional(),
-  orden: z.number().int().min(0).optional(),
+  plantilla_test_id: id.optional(),
+  simulacro_id: id.optional(),
+  orden: z.coerce.number().int().min(0).optional(),
   obligatorio: z.boolean().optional().default(false),
 }).superRefine((payload, ctx) => {
   if (payload.tipo === 'test' && !payload.plantilla_test_id) {
@@ -66,7 +67,7 @@ export const createAlbacerModuloItemSchema = z.object({
 export const updateAlbacerModuloItemSchema = z.object({
   titulo: z.string().trim().min(3).max(200).optional(),
   descripcion: z.string().trim().max(2000).nullable().optional(),
-  orden: z.number().int().min(0).optional(),
+  orden: z.coerce.number().int().min(0).optional(),
   obligatorio: z.boolean().optional(),
 }).refine(
   (payload) => Object.keys(payload).length > 0,
@@ -76,31 +77,31 @@ export const updateAlbacerModuloItemSchema = z.object({
 export const createAlbacerModuloTestSchema = z.object({
   nombre: z.string().trim().min(3).max(200).optional(),
   descripcion: z.string().trim().max(2000).nullable().optional(),
-  orden: z.number().int().min(0).optional(),
+  orden: z.coerce.number().int().min(0).optional(),
   estado: z.enum(['borrador', 'publicado', 'archivado']).optional().default('borrador'),
   nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional().nullable(),
-  duracion_minutos: z.number().int().positive().optional().nullable(),
+  duracion_minutos: z.coerce.number().int().positive().optional().nullable(),
   mezclar_preguntas: z.boolean().optional().default(true),
   mostrar_resultados: z.boolean().optional().default(true),
   mostrar_explicaciones: z.boolean().optional().default(false),
   tipo_puntuacion: z.enum(['estandar', 'personalizada']).optional().default('estandar'),
-  pts_acierto: z.number().optional().default(1),
-  pts_fallo: z.number().optional().default(-0.25),
-  pts_blanco: z.number().optional().default(0),
+  pts_acierto: z.coerce.number().optional().default(1),
+  pts_fallo: z.coerce.number().optional().default(-0.25),
+  pts_blanco: z.coerce.number().optional().default(0),
 });
 
 export const generateAlbacerModuloAutoSchema = z.object({
-  numero_tests: z.number().int().min(1).max(20).default(2),
-  preguntas_por_test: z.number().int().min(1).max(200).default(20),
-  preguntas_simulacro_final: z.number().int().min(1).max(300).default(50),
+  numero_tests: z.coerce.number().int().min(1).max(20).default(2),
+  preguntas_por_test: z.coerce.number().int().min(1).max(200).default(20),
+  preguntas_simulacro_final: z.coerce.number().int().min(1).max(300).default(50),
   nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional().nullable(),
   estado: z.enum(['borrador', 'publicado', 'archivado']).optional().default('borrador'),
   permitir_repetidas: z.boolean().optional().default(false),
-  duracion_minutos_test: z.number().int().positive().optional().nullable(),
-  duracion_minutos_simulacro: z.number().int().positive().optional().nullable(),
-  pts_acierto: z.number().optional().default(1),
-  pts_fallo: z.number().optional().default(-0.25),
-  pts_blanco: z.number().optional().default(0),
+  duracion_minutos_test: z.coerce.number().int().positive().optional().nullable(),
+  duracion_minutos_simulacro: z.coerce.number().int().positive().optional().nullable(),
+  pts_acierto: z.coerce.number().optional().default(1),
+  pts_fallo: z.coerce.number().optional().default(-0.25),
+  pts_blanco: z.coerce.number().optional().default(0),
 });
 
 export const albacerModuloUsedQuestionsQuerySchema = z.object({
