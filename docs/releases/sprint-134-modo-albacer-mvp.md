@@ -555,6 +555,7 @@ Debe mostrar:
 - Estado validacion stats: los endpoints de widgets y progreso validan `oposicion_id`, `modo_preparacion`, `albacer_modulo_id`, `tema_id` e ids de bloque antes de ejecutar consultas.
 - Estado validacion alumno: marcadas, tests sugeridos, simulacros publicados y consultas de tests validan ids y modo antes de entrar en los controladores.
 - Estado validacion accesos: rutas de acceso por oposicion, cambio de modo/ranking y administracion de accesos validan ids, filtros, tipo de alumno y modo de preparacion.
+- Estado validacion demo: `generate-demo` valida `oposicionId` antes de comprobar el bloqueo por modo Albacer y crear el test demo.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
 - Estado configurador libre: la disponibilidad del modo adaptativo se calcula con estadisticas de la oposicion activa en `Modo Experto`, evitando habilitarlo por historial de otra oposicion.
 - Estado marcadas en test/revision: las pantallas de realizacion y revision cargan preguntas marcadas filtradas por la oposicion del test.
