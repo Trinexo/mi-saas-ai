@@ -80,7 +80,18 @@ export const adminTestsRepository = {
          AND ($2::text IS NULL OR t.estado = $2)
          AND ($3::bigint IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = $3)
          AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))
-         AND (($5::text IS NULL AND COALESCE(t.scope, 'experto') <> 'albacer_modulo') OR COALESCE(t.scope, 'experto') = $5)
+         AND (
+           ($5::text IS NULL
+             AND COALESCE(t.scope, 'experto') <> 'albacer_modulo'
+             AND t.albacer_modulo_id IS NULL
+             AND NOT EXISTS (
+               SELECT 1
+               FROM albacer_modulo_items mi
+               WHERE mi.plantilla_test_id = t.id
+             )
+           )
+           OR COALESCE(t.scope, 'experto') = $5
+         )
        GROUP BY t.id, o.nombre, te.nombre, tt.temas_resumen, tt.tema_ids
        ORDER BY t.fecha_creacion DESC
        LIMIT $6 OFFSET $7`,
@@ -106,7 +117,18 @@ export const adminTestsRepository = {
          AND ($2::text IS NULL OR t.estado = $2)
          AND ($3::bigint IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = $3)
          AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))
-         AND (($5::text IS NULL AND COALESCE(t.scope, 'experto') <> 'albacer_modulo') OR COALESCE(t.scope, 'experto') = $5)`,
+         AND (
+           ($5::text IS NULL
+             AND COALESCE(t.scope, 'experto') <> 'albacer_modulo'
+             AND t.albacer_modulo_id IS NULL
+             AND NOT EXISTS (
+               SELECT 1
+               FROM albacer_modulo_items mi
+               WHERE mi.plantilla_test_id = t.id
+             )
+           )
+           OR COALESCE(t.scope, 'experto') = $5
+         )`,
       [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null, scope ?? null],
     );
     return { items: rows.rows, total: countRow.rows[0].total };

@@ -23,7 +23,13 @@ export const profesorSimulacrosRepository = {
       args.push(scope);
       conds.push(`COALESCE(at.scope, 'experto') = $${args.length}`);
     } else {
-      conds.push("COALESCE(at.scope, 'experto') <> 'albacer_modulo'");
+      conds.push(`COALESCE(at.scope, 'experto') <> 'albacer_modulo'
+        AND at.albacer_modulo_id IS NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM albacer_modulo_items mi
+          WHERE mi.plantilla_test_id = at.id
+        )`);
     }
 
     const where = conds.join(' AND ');
