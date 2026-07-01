@@ -119,7 +119,7 @@ export const getTestConfig = async (req, res, next) => {
 export const getTestRecomendado = async (req, res, next) => {
   try {
     const plan = req.user.plan ?? 'free';
-    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const oposicionId = req.query.oposicion_id ?? null;
     const data = await testRecomendadoService.getSugerencia(req.user.userId, plan, { oposicionId });
     return ok(res, data);
   } catch (error) {
@@ -129,7 +129,7 @@ export const getTestRecomendado = async (req, res, next) => {
 
 export const getTestContinuar = async (req, res, next) => {
   try {
-    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
+    const oposicionId = req.query.oposicion_id ?? null;
     const modoPreparacion = await testModeGuardService.getModoPreparacion(req.user.userId, oposicionId);
     if (modoPreparacion === 'albacer') {
       return ok(res, {
@@ -149,8 +149,8 @@ export const getTestContinuar = async (req, res, next) => {
 
 export const getTestPendientes = async (req, res, next) => {
   try {
-    const oposicionId = req.query.oposicion_id ? Number(req.query.oposicion_id) : null;
-    const modoPreparacion = req.query.modo_preparacion || null;
+    const oposicionId = req.query.oposicion_id ?? null;
+    const modoPreparacion = req.query.modo_preparacion ?? null;
     const data = await testPendientesService.getPendientes(req.user.userId, oposicionId, modoPreparacion);
     return ok(res, data);
   } catch (error) {
@@ -160,8 +160,7 @@ export const getTestPendientes = async (req, res, next) => {
 
 export const cerrarTest = async (req, res, next) => {
   try {
-    const testId = Number(req.params.testId);
-    if (!testId) return next(new ApiError(400, 'testId inválido'));
+    const { testId } = req.params;
     const data = await testPendientesService.cerrar(req.user.userId, testId);
     return ok(res, data, 'Test cerrado');
   } catch (error) {

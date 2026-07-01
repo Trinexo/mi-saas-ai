@@ -548,6 +548,7 @@ Debe mostrar:
 - Estado refuerzo: `generate-refuerzo` exige `temaId` u `oposicionId`; el selector limita fallos por oposicion activa cuando se informa.
 - Estado bloqueo backend: `/tests/generate`, `/tests/generate-refuerzo` y `/tests/generate-demo` bloquean tests libres si la oposicion resuelta esta en `Modo Albacer`; los demos publicos siguen disponibles para usuarios sin acceso activo y `/tests/continuar` devuelve una respuesta neutra de Modulo Albacer en ese modo.
 - Estado recomendado: `/tests/recomendado` acepta `oposicion_id`, calcula la sugerencia con la oposicion activa y devuelve una respuesta neutra si esa oposicion esta en `Modo Albacer`.
+- Estado validacion tests alumno: recomendado, continuar, pendientes y cierre de test usan queries/params normalizados por Zod antes de llegar al servicio.
 - Estado perfil: el resumen de actividad de `/perfil` consulta `/stats/dashboard` con oposicion activa y `modo_preparacion`, evitando mezclar resultados de otras oposiciones o modos.
 - Estado foco hoy: `/stats/foco-hoy` acepta oposicion activa, limita repaso/recientes/bloques debiles a esa oposicion y devuelve respuesta neutra en `Modo Albacer`.
 - Estado temas debiles: `/stats/temas-debiles` calcula desde intentos finalizados y respeta oposicion activa, `modo_preparacion` y `albacer_modulo_id`.
