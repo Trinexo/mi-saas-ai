@@ -81,7 +81,10 @@ export const albacerAlumnoRepository = {
              'orden', mi.orden,
              'obligatorio', mi.obligatorio,
              'estado_contenido', COALESCE(at.estado, s.estado),
-             'total_preguntas', COALESCE(test_q.total_preguntas, sim_q.total_preguntas, 0),
+             'total_preguntas', CASE
+               WHEN mi.tipo = 'simulacro_final' THEN COALESCE(sim_q.total_preguntas, 0)
+               ELSE COALESCE(test_q.total_preguntas, 0)
+             END,
              'duracion_segundos', COALESCE(at.duracion_minutos * 60, s.tiempo_limite_segundos)
            )
            ORDER BY mi.orden, mi.id
