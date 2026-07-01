@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { albacerModulosService } from '../../src/services/albacerModulos.service.js';
 import { albacerModulosRepository } from '../../src/repositories/albacerModulos.repository.js';
+import { albacerAlumnoRepository } from '../../src/repositories/albacerAlumno.repository.js';
 import { profesorAccessRepository } from '../../src/repositories/profesorAccess.repository.js';
 import { adminTestsService } from '../../src/services/adminTests.service.js';
 import { adminSimulacrosService } from '../../src/services/adminSimulacros.service.js';
 import { ApiError } from '../../src/utils/api-error.js';
+import pool from '../../src/config/db.js';
 
 function snapshot(...repos) {
   return repos.map((repo) => ({ repo, copy: { ...repo } }));
@@ -167,4 +169,21 @@ test('albacerModulosService.createItem solo permite un simulacro final por modul
   );
 
   restore(snaps);
+});
+
+test('albacerAlumnoRepository.listModulos cuenta preguntas por tipo de item', async () => {
+  const originalQuery = pool.query;
+  let capturedSql = '';
+  pool.query = async (sql) => {
+    capturedSql = sql;
+    return { rows: [] };
+  };
+
+  try {
+    await albacerAlumnoRepository.listModulos(8, 11);
+    assert.match(capturedSql, /WHEN mi\.tipo = 'simulacro_final' THEN COALESCE\(sim_q\.total_preguntas, 0\)/);
+    assert.match(capturedSql, /ELSE COALESCE\(test_q\.total_preguntas, 0\)/);
+  } finally {
+    pool.query = originalQuery;
+  }
 });
