@@ -558,6 +558,7 @@ Debe mostrar:
 - Estado validacion rendimiento stats: los controllers de rendimiento consumen contexto ya normalizado por Zod sin casteos manuales.
 - Estado validacion progreso stats: los controllers de progreso consumen ids y contexto ya normalizados por Zod sin validaciones duplicadas.
 - Estado validacion notificaciones: el listado recibe paginacion e indicador de no leidas ya normalizados por Zod.
+- Estado validacion settings admin: `smtp_secure` se normaliza a booleano y la lectura SMTP conserva compatibilidad con valores legacy.
 - Estado validacion alumno: marcadas, tests sugeridos, simulacros publicados y consultas de tests validan ids y modo antes de entrar en los controladores.
 - Estado validacion accesos: rutas de acceso por oposicion, cambio de modo/ranking y administracion de accesos validan ids, filtros, tipo de alumno y modo de preparacion.
 - Estado controladores accesos: los controladores de accesos usan params, query, body, ranking publico y estados ya normalizados por Zod antes de llamar al servicio.

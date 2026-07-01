@@ -51,6 +51,12 @@ const DEFINICIONES = {
   stripe_webhook_secret: { grupo: 'stripe', esSecreto: true,  label: 'Webhook secret Stripe' },
 };
 
+const isSecureSmtpEnabled = (value) => {
+  if (value === undefined || value === null || value === '') return true;
+  if (typeof value === 'boolean') return value;
+  return String(value).toLowerCase() !== 'false';
+};
+
 // ─── Cache en memoria ─────────────────────────────────────────────────────────
 // TTL de 5 minutos. Se invalida al guardar un cambio.
 
@@ -89,7 +95,7 @@ export const settingsService = {
     return {
       host:    s.smtp_host    || process.env.SMTP_HOST    || null,
       port:    Number(s.smtp_port || process.env.SMTP_PORT || 465),
-      secure:  (s.smtp_secure ?? process.env.SMTP_SECURE) !== 'false',
+      secure:  isSecureSmtpEnabled(s.smtp_secure ?? process.env.SMTP_SECURE),
       user:    s.smtp_user    || process.env.SMTP_USER    || null,
       pass:    s.smtp_pass    || process.env.SMTP_PASS    || null,
       from:    s.email_from   || process.env.EMAIL_FROM   || '"Plataforma Test" <noreply@plataformatest.es>',
