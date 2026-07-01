@@ -44,12 +44,13 @@ export const profesorSimulacrosService = {
     });
   },
 
-  async getMisSimulacros(userId, { oposicionId, estado, q, page, pageSize }) {
+  async getMisSimulacros(userId, { oposicionId, estado, q, scope, page, pageSize }) {
     if (oposicionId) await this.assertOposicionAsignada(userId, oposicionId);
     return profesorSimulacrosRepository.getMisSimulacros(userId, {
       oposicionId: oposicionId ?? null,
       estado: estado ?? null,
       q: q ?? null,
+      scope: scope ?? null,
       limit: pageSize,
       offset: (page - 1) * pageSize,
     });

@@ -5,11 +5,12 @@ import { adminSimulacrosService } from '../services/adminSimulacros.service.js';
 
 export const listSimulacros = async (req, res, next) => {
   try {
-    const { q, estado, oposicion_id, page = 1, page_size = 20 } = req.query;
+    const { q, estado, oposicion_id, scope, page = 1, page_size = 20 } = req.query;
     const data = await adminSimulacrosService.listSimulacros({
       q: q || null,
       estado: estado || null,
       oposicionId: oposicion_id ?? null,
+      scope: scope || null,
       page,
       pageSize: page_size,
     }, req.user);

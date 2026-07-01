@@ -7,6 +7,7 @@ export const listSimulacrosQuerySchema = z.object({
   q:           z.string().optional(),
   estado:      z.enum(['borrador', 'publicado', 'archivado']).optional(),
   oposicion_id: id.optional(),
+  scope:       z.enum(['experto', 'albacer_modulo_final', 'sugerido_profesor']).optional(),
   page:        z.coerce.number().int().positive().optional().default(1),
   page_size:   z.coerce.number().int().min(1).max(100).optional().default(20),
 });

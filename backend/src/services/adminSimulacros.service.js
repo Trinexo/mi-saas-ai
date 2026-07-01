@@ -43,7 +43,7 @@ export const adminSimulacrosService = {
     if (!belongs) throw new ApiError(404, 'Bloque no encontrado en este simulacro');
   },
 
-  async listSimulacros({ q, estado, oposicionId, page, pageSize }, caller = {}) {
+  async listSimulacros({ q, estado, oposicionId, scope, page, pageSize }, caller = {}) {
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
     if (allowedOposicionIds && oposicionId) this.assertOposicionAllowed(oposicionId, allowedOposicionIds);
     return adminSimulacrosRepository.listSimulacros({
@@ -51,6 +51,7 @@ export const adminSimulacrosService = {
       estado: estado ?? null,
       oposicionId: oposicionId ?? null,
       allowedOposicionIds,
+      scope: scope ?? null,
       limit: pageSize,
       offset: (page - 1) * pageSize,
     });

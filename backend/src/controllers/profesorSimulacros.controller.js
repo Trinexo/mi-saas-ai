@@ -21,11 +21,12 @@ export const getMisTests = async (req, res, next) => {
 export const getMisSimulacros = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const { oposicion_id, estado, q, page = 1, page_size = 20 } = req.query;
+    const { oposicion_id, estado, q, scope, page = 1, page_size = 20 } = req.query;
     const data = await profesorSimulacrosService.getMisSimulacros(userId, {
       oposicionId: oposicion_id,
       estado,
       q,
+      scope,
       page,
       pageSize: page_size,
     });

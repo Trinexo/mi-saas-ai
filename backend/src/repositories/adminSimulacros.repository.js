@@ -2,12 +2,13 @@ import pool from '../config/db.js';
 
 export const adminSimulacrosRepository = {
   // ─── Listado con paginación y filtros ────────────────────────────────────────
-  async listSimulacros({ q, estado, oposicionId, allowedOposicionIds, limit, offset }) {
+  async listSimulacros({ q, estado, oposicionId, allowedOposicionIds, scope, limit, offset }) {
     const params = [
       q ? `%${q}%` : null,
       estado ?? null,
       oposicionId ?? null,
       allowedOposicionIds ?? null,
+      scope ?? null,
       limit,
       offset,
     ];
@@ -19,6 +20,8 @@ export const adminSimulacrosRepository = {
          s.creado_por, s.fecha_creacion, s.fecha_actualizacion,
          o.nombre      AS oposicion_nombre,
          s.oposicion_id,
+         COALESCE(s.scope, 'experto') AS scope,
+         s.albacer_modulo_id,
          COUNT(DISTINCT sb.id)::int AS total_bloques,
          COALESCE(SUM(sb.numero_preguntas), 0)::int AS total_preguntas
        FROM simulacros s
@@ -28,9 +31,21 @@ export const adminSimulacrosRepository = {
          AND ($2::text IS NULL OR s.estado = $2)
          AND ($3::bigint IS NULL OR s.oposicion_id = $3)
          AND ($4::bigint[] IS NULL OR s.oposicion_id = ANY($4::bigint[]))
+         AND (
+           ($5::text IS NULL
+             AND COALESCE(s.scope, 'experto') <> 'albacer_modulo_final'
+             AND s.albacer_modulo_id IS NULL
+             AND NOT EXISTS (
+               SELECT 1
+               FROM albacer_modulo_items mi
+               WHERE mi.simulacro_id = s.id
+             )
+           )
+           OR COALESCE(s.scope, 'experto') = $5
+         )
        GROUP BY s.id, o.nombre
        ORDER BY s.fecha_creacion DESC
-       LIMIT $5 OFFSET $6`,
+       LIMIT $6 OFFSET $7`,
       params,
     );
     const countRow = await pool.query(
@@ -38,8 +53,20 @@ export const adminSimulacrosRepository = {
        WHERE ($1::text IS NULL OR s.nombre ILIKE $1)
          AND ($2::text IS NULL OR s.estado = $2)
          AND ($3::bigint IS NULL OR s.oposicion_id = $3)
-         AND ($4::bigint[] IS NULL OR s.oposicion_id = ANY($4::bigint[]))`,
-      [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null],
+         AND ($4::bigint[] IS NULL OR s.oposicion_id = ANY($4::bigint[]))
+         AND (
+           ($5::text IS NULL
+             AND COALESCE(s.scope, 'experto') <> 'albacer_modulo_final'
+             AND s.albacer_modulo_id IS NULL
+             AND NOT EXISTS (
+               SELECT 1
+               FROM albacer_modulo_items mi
+               WHERE mi.simulacro_id = s.id
+             )
+           )
+           OR COALESCE(s.scope, 'experto') = $5
+         )`,
+      [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null, scope ?? null],
     );
     return { items: rows.rows, total: countRow.rows[0].total };
   },
