@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, requireRole } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validate.middleware.js';
-import { checkoutSessionBodySchema, patchPrecioBodySchema } from '../../schemas/billing.schema.js';
+import { billingOposicionParamSchema, checkoutSessionBodySchema, patchPrecioBodySchema } from '../../schemas/billing.schema.js';
 import {
   postCheckoutSession,
   postWebhook,
@@ -37,6 +37,7 @@ router.patch(
   '/oposiciones/:oposicionId/precio',
   requireAuth,
   requireRole('admin'),
+  validate(billingOposicionParamSchema, 'params'),
   validate(patchPrecioBodySchema, 'body'),
   patchPrecioOposicion,
 );
