@@ -41,7 +41,7 @@ export const getWorkspaceTemario = async (req, res, next) => {
 
 export const getWorkspaceTema = async (req, res, next) => {
   try {
-    const data = await profesorWorkspaceAnalyticsService.temaDetalle(req.user.userId, Number(req.params.id));
+    const data = await profesorWorkspaceAnalyticsService.temaDetalle(req.user.userId, req.params.id);
     return ok(res, data);
   } catch (error) {
     return next(error);
