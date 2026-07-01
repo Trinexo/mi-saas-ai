@@ -6,7 +6,7 @@ export const postCheckoutSession = async (req, res, next) => {
     const { oposicionId } = req.body;
     const result = await billingService.crearCheckoutSession({
       userId: req.user.userId,
-      oposicionId: Number(oposicionId),
+      oposicionId,
       userEmail: req.user.email,
     });
     return ok(res, result);
@@ -28,7 +28,7 @@ export const postWebhook = async (req, res, next) => {
 
 export const patchPrecioOposicion = async (req, res, next) => {
   try {
-    const oposicionId = Number(req.params.oposicionId);
+    const { oposicionId } = req.params;
     const { precioEuros } = req.body;
     const result = await billingService.setPrecio(oposicionId, precioEuros);
     if (!result) {
