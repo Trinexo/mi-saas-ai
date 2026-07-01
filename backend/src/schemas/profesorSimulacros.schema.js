@@ -15,6 +15,7 @@ export const misSimulacrosQuerySchema = z.object({
   oposicion_id: id.optional(),
   estado: z.enum(['borrador', 'publicado', 'archivado']).optional(),
   q: z.string().max(200).optional(),
+  scope: z.enum(['experto', 'albacer_modulo_final', 'sugerido_profesor']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(100).default(20),
 });

@@ -63,7 +63,7 @@ export const profesorSimulacrosRepository = {
 
   // ─── Simulacros propios ───────────────────────────────────────────────────────
   // El profesor puede crear/editar simulacros limitados a sus oposiciones asignadas.
-  async getMisSimulacros(userId, { oposicionId, estado, q, limit, offset }) {
+  async getMisSimulacros(userId, { oposicionId, estado, q, scope, limit, offset }) {
     const args = [userId];
     const conds = [
       's.creado_por = $1',
@@ -76,6 +76,18 @@ export const profesorSimulacrosRepository = {
     if (oposicionId) { args.push(oposicionId);    conds.push(`s.oposicion_id = $${args.length}`); }
     if (estado)      { args.push(estado);          conds.push(`s.estado = $${args.length}`); }
     if (q)           { args.push(`%${q}%`);        conds.push(`s.nombre ILIKE $${args.length}`); }
+    if (scope) {
+      args.push(scope);
+      conds.push(`COALESCE(s.scope, 'experto') = $${args.length}`);
+    } else {
+      conds.push(`COALESCE(s.scope, 'experto') <> 'albacer_modulo_final'
+        AND s.albacer_modulo_id IS NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM albacer_modulo_items mi
+          WHERE mi.simulacro_id = s.id
+        )`);
+    }
 
     const where = conds.join(' AND ');
     args.push(limit, offset);
@@ -85,6 +97,7 @@ export const profesorSimulacrosRepository = {
               s.tiempo_limite_segundos, s.puntuacion_maxima,
               s.fecha_publicacion, s.fecha_creacion,
               o.nombre AS oposicion_nombre, s.oposicion_id,
+              COALESCE(s.scope, 'experto') AS scope, s.albacer_modulo_id,
               COUNT(DISTINCT sb.id)::int             AS total_bloques,
               COALESCE(SUM(sb.numero_preguntas), 0)::int AS total_preguntas
        FROM simulacros s
