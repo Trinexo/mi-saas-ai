@@ -564,6 +564,7 @@ Debe mostrar:
 - Estado validacion tests admin: los formularios y rutas admin de tests normalizan ids, paginacion, temas, preguntas, duracion y puntuaciones antes del servicio.
 - Estado validacion etiquetas admin: las rutas admin de etiquetas normalizan paginacion e ids de preguntas/etiquetas antes del servicio.
 - Estado validacion catalogo admin: el listado admin de oposiciones usa la paginacion normalizada por Zod y los schemas cubren ids de temas/bloques.
+- Estado validacion panel admin: los widgets del dashboard admin normalizan `limit` y `dias` por Zod antes de llegar a controladores.
 - Estado validacion suscripciones: el controlador usa userId, limit y offset normalizados por Zod antes de llamar al servicio/repositorio.
 - Estado validacion marcadas: el controlador usa preguntaId y oposicion_id normalizados por Zod antes del servicio.
 - Estado validacion plan estudio legacy: los schemas salen de la ruta y el controlador usa id/oposicion_id normalizados por Zod.

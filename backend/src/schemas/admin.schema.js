@@ -72,6 +72,22 @@ export const listAuditoriaQuerySchema = z.object({
   accion: z.enum(['create', 'update', 'delete']).optional(),
 });
 
+export const bloquesErroresQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).optional().default(10),
+});
+
+export const topOposicionesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(10).optional().default(5),
+});
+
+export const evolucionUsuariosQuerySchema = z.object({
+  dias: z.coerce.number().int().min(7).max(90).optional().default(30),
+});
+
+export const actividadRecienteQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+});
+
 export const listUsersQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
