@@ -4,10 +4,11 @@ import { profesorWorkspaceSeleccionService } from '../services/profesorWorkspace
 
 export const listTests = async (req, res, next) => {
   try {
-    const { q, estado, oposicion_id, page = 1, page_size = 20 } = req.query;
+    const { q, estado, scope, oposicion_id, page = 1, page_size = 20 } = req.query;
     const data = await adminTestsService.listTests({
       q: q || null,
       estado: estado || null,
+      scope: scope || null,
       oposicionId: oposicion_id ?? null,
       page,
       pageSize: page_size,

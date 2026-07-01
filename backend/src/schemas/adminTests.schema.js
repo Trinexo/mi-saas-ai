@@ -7,6 +7,7 @@ const scoreNumber = z.coerce.number().min(-100).max(100);
 const estado = z.enum(['borrador', 'publicado', 'archivado']);
 const dificultad = z.enum(['facil', 'media', 'dificil']).nullable().optional();
 const tipoPuntuacion = z.enum(['estandar', 'personalizada']).optional();
+const scope = z.enum(['experto', 'albacer_modulo', 'sugerido_profesor']);
 
 const testBaseSchema = z.object({
   nombre: z.string().trim().min(1).max(255),
@@ -30,6 +31,7 @@ const testBaseSchema = z.object({
 export const listTestsQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   estado: estado.optional(),
+  scope: scope.optional(),
   oposicion_id: id.optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(100).default(20),

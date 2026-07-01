@@ -4,10 +4,11 @@ import { ok, created } from '../utils/response.js';
 export const getMisTests = async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const { oposicion_id, q, page = 1, page_size = 20 } = req.query;
+    const { oposicion_id, q, scope, page = 1, page_size = 20 } = req.query;
     const data = await profesorSimulacrosService.getMisTests(userId, {
       oposicionId: oposicion_id,
       q,
+      scope,
       page,
       pageSize: page_size,
     });

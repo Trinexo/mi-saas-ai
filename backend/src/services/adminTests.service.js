@@ -65,12 +65,12 @@ export const adminTestsService = {
     }
   },
 
-  async listTests({ q, estado, oposicionId, page, pageSize }, caller = {}) {
+  async listTests({ q, estado, scope, oposicionId, page, pageSize }, caller = {}) {
     const allowedOposicionIds = await this.getAllowedOposicionIds(caller);
     if (allowedOposicionIds && oposicionId) this.assertOposicionAllowed(oposicionId, allowedOposicionIds);
     const limit = pageSize;
     const offset = (page - 1) * pageSize;
-    return adminTestsRepository.listTests({ q, estado, oposicionId, allowedOposicionIds, limit, offset });
+    return adminTestsRepository.listTests({ q, estado, scope, oposicionId, allowedOposicionIds, limit, offset });
   },
 
   async getTest(id, caller = {}) {
