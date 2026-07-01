@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+const booleanLikeSchema = z.preprocess(
+  (value) => {
+    if (value === undefined) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return value;
+  },
+  z.boolean().optional()
+);
+
 export const accesoOposicionParamSchema = z.object({
   oposicionId: z.coerce.number().int().positive(),
 });
@@ -38,8 +49,8 @@ export const editarAccesoBodySchema = z.object({
 export const preparacionAccesoBodySchema = z.object({
   modoPreparacion: z.enum(['experto', 'albacer']).optional(),
   modo_preparacion: z.enum(['experto', 'albacer']).optional(),
-  rankingPublico: z.union([z.boolean(), z.enum(['true', 'false', '1', '0'])]).optional(),
-  ranking_publico: z.union([z.boolean(), z.enum(['true', 'false', '1', '0'])]).optional(),
+  rankingPublico: booleanLikeSchema,
+  ranking_publico: booleanLikeSchema,
 }).refine(
   (body) => body.modoPreparacion != null
     || body.modo_preparacion != null
