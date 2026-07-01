@@ -41,7 +41,7 @@ export const uploadImagenPregunta = (req, res, next) => {
     try {
       if (!req.file) throw new ApiError(400, 'No se ha enviado ninguna imagen');
 
-      const preguntaId = Number(req.params.id);
+      const preguntaId = req.params.id;
       const hierarquia = await getPreguntaHierarquia(preguntaId);
       if (!hierarquia) throw new ApiError(404, 'Pregunta no encontrada');
 
@@ -71,7 +71,7 @@ export const uploadImagenPregunta = (req, res, next) => {
  */
 export const deleteImagenPregunta = async (req, res, next) => {
   try {
-    const preguntaId = Number(req.params.id);
+    const preguntaId = req.params.id;
 
     const check = await pool.query(
       `SELECT p.imagen_url, t.oposicion_id

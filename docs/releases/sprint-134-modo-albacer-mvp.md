@@ -563,6 +563,7 @@ Debe mostrar:
 - Estado validacion simulacros admin: los formularios y controladores admin de simulacros normalizan ids, paginacion, bloques, preguntas y puntuaciones antes del servicio.
 - Estado validacion tests admin: los formularios y rutas admin de tests normalizan ids, paginacion, temas, preguntas, duracion y puntuaciones antes del servicio.
 - Estado validacion etiquetas admin: las rutas admin de etiquetas normalizan paginacion e ids de preguntas/etiquetas antes del servicio.
+- Estado validacion medios admin/profesor: los endpoints de imagenes y audios de preguntas usan ids normalizados por Zod antes de gestionar archivos.
 - Estado validacion catalogo admin: el listado admin de oposiciones usa la paginacion normalizada por Zod y los schemas cubren ids de temas/bloques.
 - Estado validacion panel admin: los widgets del dashboard admin normalizan `limit` y `dias` por Zod antes de llegar a controladores.
 - Estado validacion suscripciones: el controlador usa userId, limit y offset normalizados por Zod antes de llamar al servicio/repositorio.
