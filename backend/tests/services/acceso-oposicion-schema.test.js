@@ -56,6 +56,7 @@ test('editarAccesoBodySchema rechaza estados y modos no soportados', () => {
 test('preparacionAccesoBodySchema exige modo o ranking publico', () => {
   assert.equal(preparacionAccesoBodySchema.safeParse({}).success, false);
   assert.equal(preparacionAccesoBodySchema.safeParse({ modo_preparacion: 'albacer' }).success, true);
-  assert.equal(preparacionAccesoBodySchema.safeParse({ ranking_publico: '1' }).success, true);
+  assert.deepEqual(preparacionAccesoBodySchema.parse({ ranking_publico: '1' }), { ranking_publico: true });
+  assert.deepEqual(preparacionAccesoBodySchema.parse({ rankingPublico: 'false' }), { rankingPublico: false });
   assert.equal(preparacionAccesoBodySchema.safeParse({ rankingPublico: 'si' }).success, false);
 });

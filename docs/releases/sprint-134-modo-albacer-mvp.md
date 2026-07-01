@@ -560,7 +560,7 @@ Debe mostrar:
 - Estado validacion notificaciones: el listado recibe paginacion e indicador de no leidas ya normalizados por Zod.
 - Estado validacion alumno: marcadas, tests sugeridos, simulacros publicados y consultas de tests validan ids y modo antes de entrar en los controladores.
 - Estado validacion accesos: rutas de acceso por oposicion, cambio de modo/ranking y administracion de accesos validan ids, filtros, tipo de alumno y modo de preparacion.
-- Estado controladores accesos: los controladores de accesos usan params, query y body ya normalizados por Zod antes de llamar al servicio.
+- Estado controladores accesos: los controladores de accesos usan params, query, body, ranking publico y estados ya normalizados por Zod antes de llamar al servicio.
 - Estado validacion demo: `generate-demo` valida `oposicionId` antes de comprobar el bloqueo por modo Albacer y crear el test demo.
 - Estado validacion modulos Albacer: los formularios de modulos, items, tests y generacion automatica normalizan ids, cantidades, duraciones y puntuaciones numericas antes del servicio.
 - Estado validacion simulacros profesor: los formularios y controladores de simulacros propios normalizan ids, paginacion, bloques, preguntas y puntuaciones antes del servicio.

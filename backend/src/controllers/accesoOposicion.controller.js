@@ -2,14 +2,6 @@ import { ok, created } from '../utils/response.js';
 import { accesoOposicionService } from '../services/accesoOposicion.service.js';
 import { ApiError } from '../utils/api-error.js';
 
-const parseOptionalBoolean = (value) => {
-  if (value === undefined || value === null) return null;
-  if (typeof value === 'boolean') return value;
-  if (value === 'true' || value === '1') return true;
-  if (value === 'false' || value === '0') return false;
-  throw new ApiError(400, 'rankingPublico debe ser booleano');
-};
-
 /**
  * GET /accesos/mis-oposiciones
  * Devuelve los accesos activos del usuario autenticado.
@@ -64,7 +56,7 @@ export const updatePreparacionAcceso = async (req, res, next) => {
 
     const acceso = await accesoOposicionService.updatePreparacion(req.user.userId, oposicionId, {
       modoPreparacion: modo ?? null,
-      rankingPublico: hasRankingPublico ? parseOptionalBoolean(rankingPublico ?? ranking_publico) : null,
+      rankingPublico: hasRankingPublico ? rankingPublico ?? ranking_publico : null,
     });
     return ok(res, acceso, 'Preparacion actualizada');
   } catch (e) {
@@ -147,11 +139,7 @@ export const cancelarAcceso = async (req, res, next) => {
 export const editarAcceso = async (req, res, next) => {
   try {
     const { userId, oposicionId } = req.params;
-    const ESTADOS_VALIDOS = ['activo', 'cancelado', 'expirado'];
     const { fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion } = req.body;
-    if (estado && !ESTADOS_VALIDOS.includes(estado)) {
-      return next(new ApiError(400, `Estado inválido. Valores permitidos: ${ESTADOS_VALIDOS.join(', ')}`));
-    }
     const result = await accesoOposicionService.updateAcceso(userId, oposicionId, {
       fechaFin: fechaFin ?? null,
       precioPagado: precioPagado ?? null,
