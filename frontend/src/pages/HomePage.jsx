@@ -807,13 +807,29 @@ function HomeAlbacer({ nombre, saludo, fecha }) {
 
 /* ── página principal ────────────────────────────────────── */
 export default function HomePage() {
-  const { user } = useAuth();
-  const { oposicionActiva } = useOposicionActiva();
+  const { user, token } = useAuth();
+  const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
+  const [cambiandoAlbacer, setCambiandoAlbacer] = useState(false);
+  const [modoError, setModoError] = useState('');
   const nombre = user?.nombre?.split(' ')[0] || 'alumno';
   const hour   = new Date().getHours();
   const saludo = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fecha  = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   const isAlbacer = oposicionActiva?.modoPreparacion === 'albacer';
+
+  const activarAlbacer = async () => {
+    if (!oposicionActiva?.id || cambiandoAlbacer) return;
+    setCambiandoAlbacer(true);
+    setModoError('');
+    try {
+      await accesosApi.updatePreparacion(token, oposicionActiva.id, { modoPreparacion: 'albacer' });
+      setOposicionActiva({ ...oposicionActiva, modoPreparacion: 'albacer' });
+    } catch (err) {
+      setModoError(err.message || 'No se pudo cambiar a Modo Albacer.');
+    } finally {
+      setCambiandoAlbacer(false);
+    }
+  };
 
   if (isAlbacer) {
     return <HomeAlbacer nombre={nombre} saludo={saludo} fecha={fecha} />;
@@ -842,12 +858,28 @@ export default function HomePage() {
             {fecha.charAt(0).toUpperCase() + fecha.slice(1)} — Prepara. Practica. Consigue.
           </p>
         </div>
-        {!isAlbacer && (
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {oposicionActiva?.id && (
+            <button
+              type="button"
+              onClick={activarAlbacer}
+              disabled={cambiandoAlbacer}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: `1px solid ${OL}55`, background: '#fff', color: O, padding: '11px 18px', borderRadius: 10, fontWeight: 800, fontSize: '0.86rem', cursor: cambiandoAlbacer ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}
+            >
+              {cambiandoAlbacer ? 'Cambiando...' : 'Cambiar a Modo Albacer'}
+            </button>
+          )}
           <Link to="/configurar-test" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: O, color: '#fff', padding: '11px 22px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', boxShadow: `0 3px 12px ${O}45`, whiteSpace: 'nowrap' }}>
             <IconPlay /> Nuevo test
           </Link>
-        )}
+        </div>
       </div>
+
+      {modoError && (
+        <div style={{ ...CARD, padding: '12px 16px', color: '#b91c1c', background: '#fef2f2', borderColor: '#fecaca', fontSize: '0.82rem', fontWeight: 700 }}>
+          {modoError}
+        </div>
+      )}
 
       {/* ── KPIs ─────────────────────────────────────────── */}
       <KpiBar />
