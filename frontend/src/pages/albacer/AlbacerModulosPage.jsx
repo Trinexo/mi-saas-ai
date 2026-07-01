@@ -551,11 +551,6 @@ function ModuloTestModal({ open, modulo, item, testId, defaultNombre, temasModul
               </div>
 
               <Panel title="Anadir preguntas" subtitle="Filtra por los temas del modulo y selecciona las preguntas que quieres incorporar." style={{ padding: 18 }}>
-                {isCreateMode && (
-                  <div style={{ background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', fontSize: '.82rem', fontWeight: 850, marginBottom: 12 }}>
-                    Primero guarda el test. No se creara ningun contenido en el modulo hasta que pulses guardar.
-                  </div>
-                )}
                 <div className="albacer-test-modal-tools" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(180px, .8fr) minmax(140px, .55fr) auto', gap: 10, marginBottom: 12 }}>
                   <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar preguntas..." style={FIELD} disabled={isCreateMode} />
                   <select value={temaId} onChange={(event) => setTemaId(event.target.value)} style={FIELD} disabled={isCreateMode}>
