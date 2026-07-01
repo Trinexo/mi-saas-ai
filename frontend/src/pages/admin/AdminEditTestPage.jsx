@@ -375,6 +375,7 @@ export default function AdminEditTestPage() {
   const { token, user } = useAuth();
   const isProfesor = user?.role === 'profesor';
   const basePath = isProfesor ? '/profesor/tests' : '/admin/tests';
+  const workspacePath = isProfesor ? '/profesor' : '/admin';
   const testApi = useMemo(() => (isProfesor
     ? {
       get: profesorApi.getMiTest,
@@ -403,6 +404,10 @@ export default function AdminEditTestPage() {
   const [preguntas, setPreguntas] = useState([]);
   const [albacerModuloId, setAlbacerModuloId] = useState(null);
   const [moduleUsedQuestionIds, setModuleUsedQuestionIds] = useState([]);
+  const locationParams = new URLSearchParams(location.search);
+  const isAlbacerModuleTest = locationParams.get('from') === 'albacer' || Boolean(albacerModuloId);
+  const returnPath = isAlbacerModuleTest ? `${workspacePath}/albacer/modulos` : basePath;
+  const breadcrumbLabel = isAlbacerModuleTest ? 'Módulos Albacer' : 'Tests';
 
   useEffect(() => {
     if (!isNew) return;
@@ -518,7 +523,7 @@ export default function AdminEditTestPage() {
         navigate(`${basePath}/${created.id}/editar`, { replace: true });
       } else {
         await testApi.update(token, id, payload);
-        navigate(basePath);
+        navigate(returnPath);
       }
     } catch (e) {
       setError(e?.message ?? 'Error al guardar.');
@@ -589,7 +594,7 @@ export default function AdminEditTestPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '.8rem', color: '#9ca3af', marginBottom: 4 }}>
-            <button onClick={() => navigate(basePath)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: P, fontWeight: 600, padding: 0, fontSize: '.8rem' }}>Tests</button>
+            <button onClick={() => navigate(returnPath)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: P, fontWeight: 600, padding: 0, fontSize: '.8rem' }}>{breadcrumbLabel}</button>
             <span>/</span>
             <span>{isNew ? 'Nuevo test' : (form.nombre || 'Editar test')}</span>
           </div>
@@ -597,7 +602,7 @@ export default function AdminEditTestPage() {
           <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '.9rem' }}>{isNew ? 'Configura la informacion y las reglas del test' : 'Modifica la informacion y configuracion del test'}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button onClick={() => navigate(basePath)} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>Cancelar</button>
+          <button onClick={() => navigate(returnPath)} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>Cancelar</button>
           <button onClick={handleSave} disabled={saving} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: saving ? '#c4b5fd' : P, color: '#fff', cursor: saving ? 'default' : 'pointer', fontWeight: 700, fontSize: '.85rem' }}>
             {saving ? 'Guardando...' : (isNew ? 'Crear test' : 'Guardar cambios')}
           </button>

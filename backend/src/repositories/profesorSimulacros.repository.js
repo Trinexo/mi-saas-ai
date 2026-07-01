@@ -8,7 +8,7 @@ export const profesorSimulacrosRepository = {
   // ─── Tests de práctica propios ───────────────────────────────────────────────
   // El profesor consulta los tests (sesiones) que él mismo generó para revisar
   // el comportamiento de preguntas propias.
-  async getMisTests(userId, { oposicionId, q, limit, offset }) {
+  async getMisTests(userId, { oposicionId, q, scope, limit, offset }) {
     const args = [userId];
     const conds = [
       `EXISTS (
@@ -19,6 +19,12 @@ export const profesorSimulacrosRepository = {
 
     if (oposicionId) { args.push(oposicionId); conds.push(`at.oposicion_id = $${args.length}`); }
     if (q)           { args.push(`%${q}%`);    conds.push(`at.nombre ILIKE $${args.length}`); }
+    if (scope) {
+      args.push(scope);
+      conds.push(`COALESCE(at.scope, 'experto') = $${args.length}`);
+    } else {
+      conds.push("COALESCE(at.scope, 'experto') <> 'albacer_modulo'");
+    }
 
     const where = conds.join(' AND ');
     args.push(limit, offset);
@@ -27,7 +33,7 @@ export const profesorSimulacrosRepository = {
       `SELECT at.id, at.nombre, at.descripcion, at.estado,
               at.nivel_dificultad, at.duracion_minutos,
               at.fecha_creacion, at.fecha_actualizacion,
-              at.oposicion_id, at.tema_id,
+              at.oposicion_id, at.tema_id, COALESCE(at.scope, 'experto') AS scope,
               o.nombre AS oposicion_nombre,
               te.nombre AS tema_nombre,
               COUNT(DISTINCT atp.pregunta_id)::int AS total_preguntas

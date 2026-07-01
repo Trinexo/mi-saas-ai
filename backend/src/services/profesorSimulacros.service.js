@@ -33,11 +33,12 @@ export const profesorSimulacrosService = {
     if (!belongs) throw new ApiError(404, 'Bloque no encontrado en este simulacro');
   },
 
-  async getMisTests(userId, { oposicionId, q, page, pageSize }) {
+  async getMisTests(userId, { oposicionId, q, scope, page, pageSize }) {
     if (oposicionId) await this.assertOposicionAsignada(userId, oposicionId);
     return profesorSimulacrosRepository.getMisTests(userId, {
       oposicionId: oposicionId ?? null,
       q: q ?? null,
+      scope: scope ?? null,
       limit: pageSize,
       offset: (page - 1) * pageSize,
     });

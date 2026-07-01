@@ -456,6 +456,18 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     }
   };
 
+  const editItemContent = (item) => {
+    const base = isAdmin ? '/admin' : '/profesor';
+    const suffix = `?from=albacer&modulo_id=${contentModulo.id}`;
+    if (item.tipo === 'test' && item.plantilla_test_id) {
+      navigate(`${base}/tests/${item.plantilla_test_id}/editar${suffix}`);
+      return;
+    }
+    if (item.tipo === 'simulacro_final' && item.simulacro_id) {
+      navigate(`${base}/simulacros/${item.simulacro_id}/editar${suffix}`);
+    }
+  };
+
   const createModuleTest = async () => {
     if (!contentModulo?.id) return;
     setSavingItem(true);
@@ -467,7 +479,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
       });
       const testId = result?.test?.id;
       if (testId) {
-        navigate(`${isAdmin ? '/admin' : '/profesor'}/tests/${testId}/editar`);
+        navigate(`${isAdmin ? '/admin' : '/profesor'}/tests/${testId}/editar?from=albacer&modulo_id=${contentModulo.id}`);
       } else {
         await loadItems(contentModulo);
         await loadModulos();
@@ -704,13 +716,22 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
                         Orden {item.orden} · {preguntaTotal ?? 0} preguntas · {estadoItem ?? 'sin estado'}{item.obligatorio ? ' · obligatorio' : ''}
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      disabled={savingItem}
-                      style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: savingItem ? 'not-allowed' : 'pointer' }}
-                    >
-                      Quitar
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => editItemContent(item)}
+                        disabled={savingItem || (!item.plantilla_test_id && !item.simulacro_id)}
+                        style={{ border: '1px solid #ddd6fe', background: '#f5f3ff', color: P, borderRadius: 8, padding: '7px 10px', fontWeight: 900, cursor: savingItem ? 'not-allowed' : 'pointer' }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        disabled={savingItem}
+                        style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: savingItem ? 'not-allowed' : 'pointer' }}
+                      >
+                        Quitar
+                      </button>
+                    </div>
                   </div>
                 );
               })}
