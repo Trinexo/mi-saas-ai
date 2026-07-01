@@ -33,12 +33,13 @@ const ensureAdminTestsTemasTable = async () => {
 };
 
 export const adminTestsRepository = {
-  async listTests({ q, estado, oposicionId, allowedOposicionIds, limit, offset }) {
+  async listTests({ q, estado, scope, oposicionId, allowedOposicionIds, limit, offset }) {
     const params = [
       q ? `%${q}%` : null,
       estado ?? null,
       oposicionId ?? null,
       allowedOposicionIds ?? null,
+      scope ?? null,
       limit,
       offset,
     ];
@@ -48,7 +49,7 @@ export const adminTestsRepository = {
          t.nivel_dificultad, t.duracion_minutos,
          t.mezclar_preguntas, t.mostrar_resultados, t.mostrar_explicaciones,
          t.tipo_puntuacion, t.fecha_creacion, t.fecha_actualizacion,
-         t.oposicion_id, t.tema_id,
+         t.oposicion_id, t.tema_id, COALESCE(t.scope, 'experto') AS scope,
          COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) AS resolved_oposicion_id,
          o.nombre AS oposicion_nombre,
          te.nombre AS tema_nombre,
@@ -79,9 +80,10 @@ export const adminTestsRepository = {
          AND ($2::text IS NULL OR t.estado = $2)
          AND ($3::bigint IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = $3)
          AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))
+         AND (($5::text IS NULL AND COALESCE(t.scope, 'experto') <> 'albacer_modulo') OR COALESCE(t.scope, 'experto') = $5)
        GROUP BY t.id, o.nombre, te.nombre, tt.temas_resumen, tt.tema_ids
        ORDER BY t.fecha_creacion DESC
-       LIMIT $5 OFFSET $6`,
+       LIMIT $6 OFFSET $7`,
       params,
     );
     const countRow = await pool.query(
@@ -103,8 +105,9 @@ export const adminTestsRepository = {
        WHERE ($1::text IS NULL OR t.nombre ILIKE $1)
          AND ($2::text IS NULL OR t.estado = $2)
          AND ($3::bigint IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = $3)
-         AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))`,
-      [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null],
+         AND ($4::bigint[] IS NULL OR COALESCE(t.oposicion_id, tt.temas_oposicion_id, tp.preguntas_oposicion_id) = ANY($4::bigint[]))
+         AND (($5::text IS NULL AND COALESCE(t.scope, 'experto') <> 'albacer_modulo') OR COALESCE(t.scope, 'experto') = $5)`,
+      [q ? `%${q}%` : null, estado ?? null, oposicionId ?? null, allowedOposicionIds ?? null, scope ?? null],
     );
     return { items: rows.rows, total: countRow.rows[0].total };
   },

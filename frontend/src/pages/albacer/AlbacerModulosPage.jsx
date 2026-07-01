@@ -61,12 +61,58 @@ const emptyForm = {
   tema_ids: [],
 };
 
+const emptyTestForm = {
+  nombre: '',
+  descripcion: '',
+  estado: 'borrador',
+  nivel_dificultad: '',
+  duracion_minutos: '',
+  mezclar_preguntas: true,
+  mostrar_resultados: true,
+  mostrar_explicaciones: false,
+  tipo_puntuacion: 'estandar',
+  pts_acierto: 1,
+  pts_fallo: -0.25,
+  pts_blanco: 0,
+  tema_ids: [],
+};
+
 function normalizeOposiciones(payload) {
   const items = payload?.items ?? payload?.oposiciones ?? payload ?? [];
   return Array.isArray(items) ? items.map((item) => ({
     id: Number(item.id ?? item.oposicion_id),
     nombre: item.nombre ?? item.oposicion_nombre ?? 'Oposición',
   })).filter((item) => item.id) : [];
+}
+
+function normalizeTemaIds(items) {
+  return [...new Set(
+    (Array.isArray(items) ? items : [])
+      .map((value) => String(value))
+      .filter(Boolean),
+  )];
+}
+
+function Toggle({ value, onChange, label }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      style={{
+        border: '1px solid #e5e7eb',
+        background: value ? '#f5f3ff' : '#fff',
+        color: value ? P : '#475569',
+        borderRadius: 9,
+        padding: '9px 10px',
+        fontWeight: 900,
+        cursor: 'pointer',
+        textAlign: 'left',
+      }}
+    >
+      <span style={{ display: 'inline-block', width: 30, color: value ? P : '#94a3b8' }}>{value ? 'ON' : 'OFF'}</span>
+      {label}
+    </button>
+  );
 }
 
 function normalizeTemas(payload) {
@@ -204,6 +250,313 @@ function ModuloModal({ open, form, temas, oposiciones, saving, error, isAdmin, o
   );
 }
 
+function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdmin, api, onClose, onChanged }) {
+  const [form, setForm] = useState(emptyTestForm);
+  const [preguntas, setPreguntas] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [q, setQ] = useState('');
+  const [temaId, setTemaId] = useState('');
+  const [dificultad, setDificultad] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const testApi = useMemo(() => (isAdmin
+    ? {
+      get: adminApi.getTest,
+      update: adminApi.updateTest,
+      addPreguntas: adminApi.addPreguntasTest,
+      removePregunta: adminApi.removePreguntaTest,
+      listPreguntas: adminApi.listPreguntas,
+    }
+    : {
+      get: profesorApi.getMiTest,
+      update: profesorApi.updateMiTest,
+      addPreguntas: profesorApi.addPreguntasMiTest,
+      removePregunta: profesorApi.removePreguntaMiTest,
+      listPreguntas: profesorApi.getMisPreguntas,
+    }), [isAdmin]);
+
+  const selectedTemaIds = useMemo(
+    () => normalizeTemaIds(form.tema_ids.length ? form.tema_ids : (modulo?.tema_ids ?? [])),
+    [form.tema_ids, modulo?.tema_ids],
+  );
+  const preguntaIds = useMemo(() => new Set(preguntas.map((pregunta) => Number(pregunta.id))), [preguntas]);
+
+  const loadTest = useCallback(async () => {
+    if (!open || !testId) return;
+    setLoading(true);
+    setError('');
+    try {
+      const test = await testApi.get(token, testId);
+      const temaIds = normalizeTemaIds((test.temas ?? []).map((tema) => tema.id));
+      setForm({
+        nombre: test.nombre ?? '',
+        descripcion: test.descripcion ?? '',
+        estado: test.estado ?? 'borrador',
+        nivel_dificultad: test.nivel_dificultad ?? '',
+        duracion_minutos: test.duracion_minutos ?? '',
+        mezclar_preguntas: test.mezclar_preguntas ?? true,
+        mostrar_resultados: test.mostrar_resultados ?? true,
+        mostrar_explicaciones: test.mostrar_explicaciones ?? false,
+        tipo_puntuacion: test.tipo_puntuacion ?? 'estandar',
+        pts_acierto: test.pts_acierto ?? 1,
+        pts_fallo: test.pts_fallo ?? -0.25,
+        pts_blanco: test.pts_blanco ?? 0,
+        tema_ids: temaIds.length ? temaIds : normalizeTemaIds(test.tema_id ? [test.tema_id] : (modulo?.tema_ids ?? [])),
+      });
+      setPreguntas(test.preguntas ?? []);
+    } catch (err) {
+      setError(err.message || 'No se pudo cargar el test del modulo.');
+    } finally {
+      setLoading(false);
+    }
+  }, [modulo?.tema_ids, open, testApi, testId, token]);
+
+  const loadCandidates = useCallback(async () => {
+    if (!open || !modulo?.oposicion_id) return;
+    setLoadingCandidates(true);
+    try {
+      const effectiveTemaIds = temaId ? [temaId] : selectedTemaIds;
+      const payload = await testApi.listPreguntas(token, {
+        q: q || undefined,
+        oposicion_id: modulo.oposicion_id,
+        tema_id: temaId || undefined,
+        tema_ids: !temaId && effectiveTemaIds.length ? effectiveTemaIds.join(',') : undefined,
+        nivel_dificultad: dificultad || undefined,
+        page: 1,
+        page_size: 30,
+      });
+      setCandidates(payload?.items ?? []);
+    } catch {
+      setCandidates([]);
+    } finally {
+      setLoadingCandidates(false);
+    }
+  }, [dificultad, modulo?.oposicion_id, open, q, selectedTemaIds, temaId, testApi, token]);
+
+  useEffect(() => { loadTest(); }, [loadTest]);
+  useEffect(() => { loadCandidates(); }, [loadCandidates]);
+
+  if (!open) return null;
+
+  const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  const saveTest = async () => {
+    if (!form.nombre.trim()) {
+      setError('El nombre del test es obligatorio.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const payload = {
+        ...form,
+        oposicion_id: Number(modulo.oposicion_id),
+        tema_ids: form.tema_ids.map(Number),
+        nivel_dificultad: form.nivel_dificultad || null,
+        duracion_minutos: form.duracion_minutos ? Number(form.duracion_minutos) : null,
+        pts_acierto: Number(form.pts_acierto),
+        pts_fallo: Number(form.pts_fallo),
+        pts_blanco: Number(form.pts_blanco),
+      };
+      await testApi.update(token, testId, payload);
+      if (item?.id) {
+        await api.updateItem(token, modulo.id, item.id, {
+          titulo: form.nombre.trim(),
+          descripcion: form.descripcion?.trim() || null,
+        });
+      }
+      await onChanged();
+    } catch (err) {
+      setError(err.message || 'No se pudo guardar el test.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removePregunta = async (preguntaId) => {
+    setSaving(true);
+    setError('');
+    try {
+      await testApi.removePregunta(token, testId, preguntaId);
+      await loadTest();
+      await onChanged();
+    } catch (err) {
+      setError(err.message || 'No se pudo quitar la pregunta.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleCandidate = (id) => {
+    if (preguntaIds.has(Number(id))) return;
+    setSelected((current) => (
+      current.includes(id)
+        ? current.filter((itemId) => itemId !== id)
+        : [...current, id]
+    ));
+  };
+
+  const addPreguntas = async () => {
+    if (!selected.length) return;
+    setSaving(true);
+    setError('');
+    try {
+      await testApi.addPreguntas(token, testId, selected.map(Number));
+      setSelected([]);
+      await loadTest();
+      await loadCandidates();
+      await onChanged();
+    } catch (err) {
+      setError(err.message || 'No se pudieron anadir las preguntas.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.52)', zIndex: 900, display: 'grid', placeItems: 'center', padding: 18 }}>
+      <div style={{ width: 'min(1120px, 100%)', maxHeight: '92vh', overflow: 'hidden', background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 24px 80px rgba(15,23,42,.28)', display: 'grid', gridTemplateRows: 'auto 1fr auto' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 950 }}>Test del modulo</h2>
+            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '.82rem' }}>{modulo?.nombre}</p>
+          </div>
+          <button onClick={onClose} style={{ border: 'none', background: '#f8fafc', color: '#64748b', borderRadius: 9, width: 34, height: 34, cursor: 'pointer', fontWeight: 900 }}>x</button>
+        </div>
+
+        <div style={{ overflowY: 'auto', padding: 20, display: 'grid', gap: 16 }}>
+          {loading ? (
+            <div style={{ color: '#64748b', padding: 28, textAlign: 'center' }}>Cargando test...</div>
+          ) : (
+            <>
+              {error && <div style={{ background: '#fef2f2', color: '#b91c1c', borderRadius: 10, padding: '10px 12px', fontSize: '.84rem', fontWeight: 800 }}>{error}</div>}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, .95fr) minmax(360px, 1.2fr)', gap: 16, alignItems: 'start' }}>
+                <Panel title="Configuracion del test" style={{ padding: 18 }}>
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    <label style={{ display: 'grid', gap: 5 }}>
+                      <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Nombre</span>
+                      <input value={form.nombre} onChange={(event) => setField('nombre', event.target.value)} style={FIELD} />
+                    </label>
+                    <label style={{ display: 'grid', gap: 5 }}>
+                      <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Descripcion</span>
+                      <textarea value={form.descripcion ?? ''} onChange={(event) => setField('descripcion', event.target.value)} style={TEXTAREA} />
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <label style={{ display: 'grid', gap: 5 }}>
+                        <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Estado</span>
+                        <select value={form.estado} onChange={(event) => setField('estado', event.target.value)} style={FIELD}>
+                          <option value="borrador">Borrador</option>
+                          <option value="publicado">Publicado</option>
+                          <option value="archivado">Archivado</option>
+                        </select>
+                      </label>
+                      <label style={{ display: 'grid', gap: 5 }}>
+                        <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Dificultad</span>
+                        <select value={form.nivel_dificultad ?? ''} onChange={(event) => setField('nivel_dificultad', event.target.value)} style={FIELD}>
+                          <option value="">Mixta</option>
+                          <option value="facil">Facil</option>
+                          <option value="media">Media</option>
+                          <option value="dificil">Dificil</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                      <label style={{ display: 'grid', gap: 5 }}>
+                        <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Acierto</span>
+                        <input type="number" step="0.01" value={form.pts_acierto} onChange={(event) => setField('pts_acierto', event.target.value)} style={FIELD} />
+                      </label>
+                      <label style={{ display: 'grid', gap: 5 }}>
+                        <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Fallo</span>
+                        <input type="number" step="0.01" value={form.pts_fallo} onChange={(event) => setField('pts_fallo', event.target.value)} style={FIELD} />
+                      </label>
+                      <label style={{ display: 'grid', gap: 5 }}>
+                        <span style={{ color: '#64748b', fontSize: '.74rem', fontWeight: 900 }}>Blanco</span>
+                        <input type="number" step="0.01" value={form.pts_blanco} onChange={(event) => setField('pts_blanco', event.target.value)} style={FIELD} />
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+                      <Toggle value={form.mezclar_preguntas} onChange={(value) => setField('mezclar_preguntas', value)} label="Mezclar preguntas" />
+                      <Toggle value={form.mostrar_resultados} onChange={(value) => setField('mostrar_resultados', value)} label="Mostrar resultados al finalizar" />
+                      <Toggle value={form.mostrar_explicaciones} onChange={(value) => setField('mostrar_explicaciones', value)} label="Mostrar explicaciones" />
+                    </div>
+                  </div>
+                </Panel>
+
+                <Panel title={`Preguntas seleccionadas (${preguntas.length})`} style={{ padding: 18 }}>
+                  {preguntas.length === 0 ? (
+                    <div style={{ color: '#94a3b8', padding: 16, textAlign: 'center' }}>Este test aun no tiene preguntas.</div>
+                  ) : (
+                    <div style={{ maxHeight: 360, overflowY: 'auto', display: 'grid', gap: 8 }}>
+                      {preguntas.map((pregunta) => (
+                        <div key={pregunta.id} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'center' }}>
+                          <div>
+                            <div style={{ color: '#0f172a', fontSize: '.84rem', fontWeight: 850, lineHeight: 1.35 }}>{pregunta.enunciado}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '.74rem', marginTop: 4 }}>{pregunta.tema_nombre ?? 'Sin tema'} · {pregunta.nivel_dificultad ?? 'sin dificultad'}</div>
+                          </div>
+                          <button onClick={() => removePregunta(pregunta.id)} disabled={saving} style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer' }}>Quitar</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </div>
+
+              <Panel title="Anadir preguntas" subtitle="Filtra por los temas del modulo y selecciona las preguntas que quieres incorporar." style={{ padding: 18 }}>
+                <div className="albacer-test-modal-tools" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(180px, .8fr) minmax(140px, .55fr) auto', gap: 10, marginBottom: 12 }}>
+                  <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar preguntas..." style={FIELD} />
+                  <select value={temaId} onChange={(event) => setTemaId(event.target.value)} style={FIELD}>
+                    <option value="">Temas del modulo</option>
+                    {temasModulo.map((tema) => <option key={tema.id} value={tema.id}>{tema.nombre}</option>)}
+                  </select>
+                  <select value={dificultad} onChange={(event) => setDificultad(event.target.value)} style={FIELD}>
+                    <option value="">Dificultad</option>
+                    <option value="facil">Facil</option>
+                    <option value="media">Media</option>
+                    <option value="dificil">Dificil</option>
+                  </select>
+                  <button onClick={addPreguntas} disabled={saving || selected.length === 0} style={{ border: 'none', background: selected.length ? P : '#c4b5fd', color: '#fff', borderRadius: 9, padding: '0 14px', minHeight: 40, fontWeight: 900, cursor: selected.length ? 'pointer' : 'not-allowed' }}>Anadir {selected.length || ''}</button>
+                </div>
+                {loadingCandidates ? (
+                  <div style={{ color: '#64748b', padding: 18, textAlign: 'center' }}>Cargando preguntas...</div>
+                ) : candidates.length === 0 ? (
+                  <div style={{ color: '#94a3b8', padding: 18, textAlign: 'center' }}>No hay preguntas con esos filtros.</div>
+                ) : (
+                  <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    {candidates.map((pregunta) => {
+                      const exists = preguntaIds.has(Number(pregunta.id));
+                      const checked = selected.includes(pregunta.id);
+                      return (
+                        <label key={pregunta.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr auto', gap: 10, alignItems: 'center', padding: 11, borderBottom: '1px solid #f1f5f9', cursor: exists ? 'not-allowed' : 'pointer', background: checked ? '#f5f3ff' : '#fff' }}>
+                          <input type="checkbox" checked={checked || exists} disabled={exists} onChange={() => toggleCandidate(pregunta.id)} style={{ accentColor: P }} />
+                          <span>
+                            <span style={{ display: 'block', color: '#0f172a', fontSize: '.83rem', fontWeight: 800, lineHeight: 1.35 }}>{pregunta.enunciado}</span>
+                            <span style={{ display: 'block', color: exists ? '#16a34a' : '#94a3b8', fontSize: '.72rem', marginTop: 3 }}>{exists ? 'Ya esta en este test' : (pregunta.tema_nombre ?? 'Sin tema')}</span>
+                          </span>
+                          <span style={{ color: '#64748b', fontSize: '.72rem', fontWeight: 900 }}>{pregunta.nivel_dificultad ?? '-'}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </Panel>
+            </>
+          )}
+        </div>
+
+        <div style={{ padding: '14px 20px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <button onClick={onClose} style={{ border: '1px solid #e5e7eb', background: '#fff', color: '#334155', borderRadius: 9, padding: '9px 14px', fontWeight: 900, cursor: 'pointer' }}>Cerrar</button>
+          <button onClick={saveTest} disabled={saving || loading} style={{ border: 'none', background: saving ? '#c4b5fd' : P, color: '#fff', borderRadius: 9, padding: '9px 16px', fontWeight: 950, cursor: saving ? 'not-allowed' : 'pointer' }}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AlbacerModulosPage({ scope = 'profesor' }) {
   const { token, user } = useAuth();
   const navigate = useNavigate();
@@ -237,6 +590,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     nivel_dificultad: '',
     permitir_repetidas: false,
   });
+  const [testEditor, setTestEditor] = useState(null);
 
   const api = useMemo(() => ({
     list: isAdmin ? albacerApi.listAdminModulos : albacerApi.listProfesorModulos,
@@ -456,6 +810,18 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     }
   };
 
+  const editItemContent = (item) => {
+    const base = isAdmin ? '/admin' : '/profesor';
+    const suffix = `?from=albacer&modulo_id=${contentModulo.id}`;
+    if (item.tipo === 'test' && item.plantilla_test_id) {
+      setTestEditor({ testId: item.plantilla_test_id, item });
+      return;
+    }
+    if (item.tipo === 'simulacro_final' && item.simulacro_id) {
+      navigate(`${base}/simulacros/${item.simulacro_id}/editar${suffix}`);
+    }
+  };
+
   const createModuleTest = async () => {
     if (!contentModulo?.id) return;
     setSavingItem(true);
@@ -467,7 +833,9 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
       });
       const testId = result?.test?.id;
       if (testId) {
-        navigate(`${isAdmin ? '/admin' : '/profesor'}/tests/${testId}/editar`);
+        await loadItems(contentModulo);
+        await loadModulos();
+        setTestEditor({ testId, item: result?.item ?? null });
       } else {
         await loadItems(contentModulo);
         await loadModulos();
@@ -704,13 +1072,22 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
                         Orden {item.orden} · {preguntaTotal ?? 0} preguntas · {estadoItem ?? 'sin estado'}{item.obligatorio ? ' · obligatorio' : ''}
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      disabled={savingItem}
-                      style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: savingItem ? 'not-allowed' : 'pointer' }}
-                    >
-                      Quitar
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => editItemContent(item)}
+                        disabled={savingItem || (!item.plantilla_test_id && !item.simulacro_id)}
+                        style={{ border: '1px solid #ddd6fe', background: '#f5f3ff', color: P, borderRadius: 8, padding: '7px 10px', fontWeight: 900, cursor: savingItem ? 'not-allowed' : 'pointer' }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        disabled={savingItem}
+                        style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: savingItem ? 'not-allowed' : 'pointer' }}
+                      >
+                        Quitar
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -732,17 +1109,39 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
         onSave={saveModulo}
       />
 
+      {testEditor && contentModulo && (
+        <ModuloTestModal
+          open
+          modulo={contentModulo}
+          item={testEditor.item}
+          testId={testEditor.testId}
+          temasModulo={(contentModulo.temas ?? []).length
+            ? contentModulo.temas
+            : temas.filter((tema) => (contentModulo.tema_ids ?? []).map(Number).includes(Number(tema.id)))}
+          token={token}
+          isAdmin={isAdmin}
+          api={api}
+          onClose={() => setTestEditor(null)}
+          onChanged={async () => {
+            await loadItems(contentModulo);
+            await loadModulos();
+          }}
+        />
+      )}
+
       <style>{`
         @media (max-width: 980px) {
           .albacer-modulo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
           .albacer-modulo-filters { grid-template-columns: 1fr !important; }
           .albacer-modulo-content-tools { grid-template-columns: 1fr !important; }
           .albacer-modulo-auto-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .albacer-test-modal-tools { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 720px) {
           .albacer-modulo-metrics { grid-template-columns: 1fr !important; }
           .albacer-modulo-modal-grid { grid-template-columns: 1fr !important; }
           .albacer-modulo-auto-tools { grid-template-columns: 1fr !important; }
+          .albacer-test-modal-tools { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </PageShell>

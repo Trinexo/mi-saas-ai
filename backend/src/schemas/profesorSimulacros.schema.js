@@ -6,6 +6,7 @@ const nonNegativeInt = z.coerce.number().int().min(0);
 export const misTestsQuerySchema = z.object({
   oposicion_id: id.optional(),
   q: z.string().max(200).optional(),
+  scope: z.enum(['experto', 'albacer_modulo', 'sugerido_profesor']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(100).default(20),
 });
