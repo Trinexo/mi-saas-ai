@@ -77,6 +77,16 @@ const emptyTestForm = {
   tema_ids: [],
 };
 
+const emptySimulacroForm = {
+  nombre: '',
+  descripcion: '',
+  estado: 'borrador',
+  tiempo_limite_minutos: '',
+  puntuacion_maxima: 100,
+  penalizacion: 0.25,
+  mostrar_resultados_al_final: true,
+};
+
 function normalizeOposiciones(payload) {
   const items = payload?.items ?? payload?.oposiciones ?? payload ?? [];
   return Array.isArray(items) ? items.map((item) => ({
@@ -250,8 +260,10 @@ function ModuloModal({ open, form, temas, oposiciones, saving, error, isAdmin, o
   );
 }
 
-function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdmin, api, onClose, onChanged }) {
+function ModuloTestModal({ open, modulo, item, testId, defaultNombre, temasModulo, token, isAdmin, api, onClose, onChanged, onCreated }) {
   const [form, setForm] = useState(emptyTestForm);
+  const [activeTestId, setActiveTestId] = useState(testId || null);
+  const [activeItem, setActiveItem] = useState(item || null);
   const [preguntas, setPreguntas] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -262,6 +274,7 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const isCreateMode = !activeTestId;
 
   const testApi = useMemo(() => (isAdmin
     ? {
@@ -286,11 +299,11 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
   const preguntaIds = useMemo(() => new Set(preguntas.map((pregunta) => Number(pregunta.id))), [preguntas]);
 
   const loadTest = useCallback(async () => {
-    if (!open || !testId) return;
+    if (!open || !activeTestId) return;
     setLoading(true);
     setError('');
     try {
-      const test = await testApi.get(token, testId);
+      const test = await testApi.get(token, activeTestId);
       const temaIds = normalizeTemaIds((test.temas ?? []).map((tema) => tema.id));
       setForm({
         nombre: test.nombre ?? '',
@@ -313,7 +326,7 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
     } finally {
       setLoading(false);
     }
-  }, [modulo?.tema_ids, open, testApi, testId, token]);
+  }, [activeTestId, modulo?.tema_ids, open, testApi, token]);
 
   const loadCandidates = useCallback(async () => {
     if (!open || !modulo?.oposicion_id) return;
@@ -340,6 +353,23 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
   useEffect(() => { loadTest(); }, [loadTest]);
   useEffect(() => { loadCandidates(); }, [loadCandidates]);
 
+  useEffect(() => {
+    if (!open) return;
+    setActiveTestId(testId || null);
+    setActiveItem(item || null);
+    setSelected([]);
+    setPreguntas([]);
+    setError('');
+    if (!testId) {
+      setForm({
+        ...emptyTestForm,
+        nombre: defaultNombre || `${modulo?.nombre ?? 'Modulo'} - Test`,
+        descripcion: `Test del modulo ${modulo?.nombre ?? ''}`.trim(),
+        tema_ids: normalizeTemaIds(modulo?.tema_ids ?? []),
+      });
+    }
+  }, [defaultNombre, item, modulo?.nombre, modulo?.tema_ids, open, testId]);
+
   if (!open) return null;
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -362,9 +392,18 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
         pts_fallo: Number(form.pts_fallo),
         pts_blanco: Number(form.pts_blanco),
       };
-      await testApi.update(token, testId, payload);
-      if (item?.id) {
-        await api.updateItem(token, modulo.id, item.id, {
+      if (activeTestId) {
+        await testApi.update(token, activeTestId, payload);
+      } else {
+        const result = await api.createModuloTest(token, modulo.id, payload);
+        const createdTestId = result?.test?.id;
+        if (!createdTestId) throw new Error('No se pudo crear el test del modulo.');
+        setActiveTestId(createdTestId);
+        setActiveItem(result?.item ?? null);
+        await onCreated?.({ testId: createdTestId, item: result?.item ?? null });
+      }
+      if (activeItem?.id) {
+        await api.updateItem(token, modulo.id, activeItem.id, {
           titulo: form.nombre.trim(),
           descripcion: form.descripcion?.trim() || null,
         });
@@ -378,10 +417,11 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
   };
 
   const removePregunta = async (preguntaId) => {
+    if (!activeTestId) return;
     setSaving(true);
     setError('');
     try {
-      await testApi.removePregunta(token, testId, preguntaId);
+      await testApi.removePregunta(token, activeTestId, preguntaId);
       await loadTest();
       await onChanged();
     } catch (err) {
@@ -401,11 +441,11 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
   };
 
   const addPreguntas = async () => {
-    if (!selected.length) return;
+    if (!activeTestId || !selected.length) return;
     setSaving(true);
     setError('');
     try {
-      await testApi.addPreguntas(token, testId, selected.map(Number));
+      await testApi.addPreguntas(token, activeTestId, selected.map(Number));
       setSelected([]);
       await loadTest();
       await loadCandidates();
@@ -422,7 +462,7 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
       <div style={{ width: 'min(1120px, 100%)', maxHeight: '92vh', overflow: 'hidden', background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 24px 80px rgba(15,23,42,.28)', display: 'grid', gridTemplateRows: 'auto 1fr auto' }}>
         <div style={{ padding: '18px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 950 }}>Test del modulo</h2>
+            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 950 }}>{isCreateMode ? 'Nuevo test del modulo' : 'Test del modulo'}</h2>
             <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '.82rem' }}>{modulo?.nombre}</p>
           </div>
           <button onClick={onClose} style={{ border: 'none', background: '#f8fafc', color: '#64748b', borderRadius: 9, width: 34, height: 34, cursor: 'pointer', fontWeight: 900 }}>x</button>
@@ -488,7 +528,11 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
                 </Panel>
 
                 <Panel title={`Preguntas seleccionadas (${preguntas.length})`} style={{ padding: 18 }}>
-                  {preguntas.length === 0 ? (
+                  {isCreateMode ? (
+                    <div style={{ color: '#64748b', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: 16, textAlign: 'center', fontSize: '.84rem', fontWeight: 800 }}>
+                      Guarda el test para poder seleccionar preguntas.
+                    </div>
+                  ) : preguntas.length === 0 ? (
                     <div style={{ color: '#94a3b8', padding: 16, textAlign: 'center' }}>Este test aun no tiene preguntas.</div>
                   ) : (
                     <div style={{ maxHeight: 360, overflowY: 'auto', display: 'grid', gap: 8 }}>
@@ -507,21 +551,28 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
               </div>
 
               <Panel title="Anadir preguntas" subtitle="Filtra por los temas del modulo y selecciona las preguntas que quieres incorporar." style={{ padding: 18 }}>
+                {isCreateMode && (
+                  <div style={{ background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', fontSize: '.82rem', fontWeight: 850, marginBottom: 12 }}>
+                    Primero guarda el test. No se creara ningun contenido en el modulo hasta que pulses guardar.
+                  </div>
+                )}
                 <div className="albacer-test-modal-tools" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(180px, .8fr) minmax(140px, .55fr) auto', gap: 10, marginBottom: 12 }}>
-                  <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar preguntas..." style={FIELD} />
-                  <select value={temaId} onChange={(event) => setTemaId(event.target.value)} style={FIELD}>
+                  <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar preguntas..." style={FIELD} disabled={isCreateMode} />
+                  <select value={temaId} onChange={(event) => setTemaId(event.target.value)} style={FIELD} disabled={isCreateMode}>
                     <option value="">Temas del modulo</option>
                     {temasModulo.map((tema) => <option key={tema.id} value={tema.id}>{tema.nombre}</option>)}
                   </select>
-                  <select value={dificultad} onChange={(event) => setDificultad(event.target.value)} style={FIELD}>
+                  <select value={dificultad} onChange={(event) => setDificultad(event.target.value)} style={FIELD} disabled={isCreateMode}>
                     <option value="">Dificultad</option>
                     <option value="facil">Facil</option>
                     <option value="media">Media</option>
                     <option value="dificil">Dificil</option>
                   </select>
-                  <button onClick={addPreguntas} disabled={saving || selected.length === 0} style={{ border: 'none', background: selected.length ? P : '#c4b5fd', color: '#fff', borderRadius: 9, padding: '0 14px', minHeight: 40, fontWeight: 900, cursor: selected.length ? 'pointer' : 'not-allowed' }}>Anadir {selected.length || ''}</button>
+                  <button onClick={addPreguntas} disabled={isCreateMode || saving || selected.length === 0} style={{ border: 'none', background: !isCreateMode && selected.length ? P : '#c4b5fd', color: '#fff', borderRadius: 9, padding: '0 14px', minHeight: 40, fontWeight: 900, cursor: !isCreateMode && selected.length ? 'pointer' : 'not-allowed' }}>Anadir {selected.length || ''}</button>
                 </div>
-                {loadingCandidates ? (
+                {isCreateMode ? (
+                  <div style={{ color: '#94a3b8', padding: 18, textAlign: 'center' }}>Las preguntas apareceran aqui despues de guardar el test.</div>
+                ) : loadingCandidates ? (
                   <div style={{ color: '#64748b', padding: 18, textAlign: 'center' }}>Cargando preguntas...</div>
                 ) : candidates.length === 0 ? (
                   <div style={{ color: '#94a3b8', padding: 18, textAlign: 'center' }}>No hay preguntas con esos filtros.</div>
@@ -550,7 +601,130 @@ function ModuloTestModal({ open, modulo, item, testId, temasModulo, token, isAdm
 
         <div style={{ padding: '14px 20px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <button onClick={onClose} style={{ border: '1px solid #e5e7eb', background: '#fff', color: '#334155', borderRadius: 9, padding: '9px 14px', fontWeight: 900, cursor: 'pointer' }}>Cerrar</button>
-          <button onClick={saveTest} disabled={saving || loading} style={{ border: 'none', background: saving ? '#c4b5fd' : P, color: '#fff', borderRadius: 9, padding: '9px 16px', fontWeight: 950, cursor: saving ? 'not-allowed' : 'pointer' }}>{saving ? 'Guardando...' : 'Guardar cambios'}</button>
+          <button onClick={saveTest} disabled={saving || loading} style={{ border: 'none', background: saving ? '#c4b5fd' : P, color: '#fff', borderRadius: 9, padding: '9px 16px', fontWeight: 950, cursor: saving ? 'not-allowed' : 'pointer' }}>{saving ? 'Guardando...' : (isCreateMode ? 'Crear test' : 'Guardar cambios')}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModuloSimulacroModal({ open, modulo, token, isAdmin, api, onClose, onCreated }) {
+  const [form, setForm] = useState(emptySimulacroForm);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setForm({
+      ...emptySimulacroForm,
+      nombre: `${modulo?.nombre ?? 'Modulo'} - Simulacro final`,
+      descripcion: `Simulacro final del modulo ${modulo?.nombre ?? ''}`.trim(),
+    });
+    setError('');
+  }, [modulo?.nombre, open]);
+
+  if (!open) return null;
+
+  const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  const saveSimulacro = async () => {
+    if (!form.nombre.trim()) {
+      setError('El nombre del simulacro es obligatorio.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    let createdSimulacroId = null;
+    try {
+      const payload = {
+        nombre: form.nombre.trim(),
+        descripcion: form.descripcion?.trim() || null,
+        oposicion_id: Number(modulo.oposicion_id),
+        tiempo_limite_segundos: form.tiempo_limite_minutos ? Number(form.tiempo_limite_minutos) * 60 : null,
+        puntuacion_maxima: Number(form.puntuacion_maxima || 100),
+        penalizacion: Number(form.penalizacion || 0),
+        mostrar_resultados_al_final: Boolean(form.mostrar_resultados_al_final),
+      };
+      if (isAdmin) payload.estado = form.estado;
+      const simulacro = await api.createSimulacro(token, payload);
+      const simulacroId = simulacro?.id ?? simulacro?.simulacro?.id;
+      if (!simulacroId) throw new Error('No se pudo crear el simulacro final.');
+      createdSimulacroId = simulacroId;
+      await api.createItem(token, modulo.id, {
+        tipo: 'simulacro_final',
+        titulo: form.nombre.trim(),
+        descripcion: form.descripcion?.trim() || null,
+        simulacro_id: Number(simulacroId),
+        obligatorio: true,
+      });
+      await onCreated?.();
+      onClose();
+    } catch (err) {
+      if (createdSimulacroId && api.deleteSimulacro) {
+        try {
+          await api.deleteSimulacro(token, createdSimulacroId);
+        } catch {}
+      }
+      setError(err.message || 'No se pudo crear el simulacro final.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.52)', zIndex: 900, display: 'grid', placeItems: 'center', padding: 18 }}>
+      <div style={{ width: 'min(720px, 100%)', maxHeight: '92vh', overflowY: 'auto', background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 24px 80px rgba(15,23,42,.28)' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 950 }}>Nuevo simulacro final</h2>
+            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '.82rem' }}>{modulo?.nombre}</p>
+          </div>
+          <button onClick={onClose} style={{ border: 'none', background: '#f8fafc', color: '#64748b', borderRadius: 9, width: 34, height: 34, cursor: 'pointer', fontWeight: 900 }}>x</button>
+        </div>
+
+        <div style={{ padding: 20, display: 'grid', gap: 14 }}>
+          {error && <div style={{ background: '#fef2f2', color: '#b91c1c', borderRadius: 10, padding: '10px 12px', fontSize: '.84rem', fontWeight: 800 }}>{error}</div>}
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Nombre</span>
+            <input value={form.nombre} onChange={(event) => setField('nombre', event.target.value)} style={FIELD} />
+          </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Descripcion</span>
+            <textarea value={form.descripcion ?? ''} onChange={(event) => setField('descripcion', event.target.value)} style={TEXTAREA} />
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(4, minmax(0, 1fr))' : 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+            {isAdmin && (
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Estado</span>
+                <select value={form.estado} onChange={(event) => setField('estado', event.target.value)} style={FIELD}>
+                  <option value="borrador">Borrador</option>
+                  <option value="publicado">Publicado</option>
+                  <option value="archivado">Archivado</option>
+                </select>
+              </label>
+            )}
+            <label style={{ display: 'grid', gap: 6 }}>
+              <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Tiempo min.</span>
+              <input type="number" min="1" value={form.tiempo_limite_minutos} onChange={(event) => setField('tiempo_limite_minutos', event.target.value)} style={FIELD} placeholder="Sin limite" />
+            </label>
+            <label style={{ display: 'grid', gap: 6 }}>
+              <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Puntuacion max.</span>
+              <input type="number" min="1" step="0.01" value={form.puntuacion_maxima} onChange={(event) => setField('puntuacion_maxima', event.target.value)} style={FIELD} />
+            </label>
+            <label style={{ display: 'grid', gap: 6 }}>
+              <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Penalizacion</span>
+              <input type="number" min="0" step="0.01" value={form.penalizacion} onChange={(event) => setField('penalizacion', event.target.value)} style={FIELD} />
+            </label>
+          </div>
+          <Toggle value={form.mostrar_resultados_al_final} onChange={(value) => setField('mostrar_resultados_al_final', value)} label="Mostrar resultados al finalizar" />
+          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: 12, color: '#64748b', fontSize: '.8rem', lineHeight: 1.45 }}>
+            El simulacro se vinculara al modulo solo al guardar. Despues podras editarlo para configurar bloques y preguntas.
+          </div>
+        </div>
+
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button onClick={saveSimulacro} disabled={saving}>{saving ? 'Creando...' : 'Crear simulacro final'}</Button>
         </div>
       </div>
     </div>
@@ -591,6 +765,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     permitir_repetidas: false,
   });
   const [testEditor, setTestEditor] = useState(null);
+  const [simulacroModalOpen, setSimulacroModalOpen] = useState(false);
 
   const api = useMemo(() => ({
     list: isAdmin ? albacerApi.listAdminModulos : albacerApi.listProfesorModulos,
@@ -602,6 +777,8 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     updateItem: isAdmin ? albacerApi.updateAdminModuloItem : albacerApi.updateProfesorModuloItem,
     deleteItem: isAdmin ? albacerApi.deleteAdminModuloItem : albacerApi.deleteProfesorModuloItem,
     createModuloTest: isAdmin ? albacerApi.createAdminModuloTest : albacerApi.createProfesorModuloTest,
+    createSimulacro: isAdmin ? adminApi.createSimulacro : profesorApi.createMiSimulacro,
+    deleteSimulacro: isAdmin ? adminApi.deleteSimulacro : profesorApi.deleteMiSimulacro,
     generateModuloAuto: isAdmin ? albacerApi.generateAdminModuloAuto : albacerApi.generateProfesorModuloAuto,
   }), [isAdmin]);
 
@@ -822,29 +999,15 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     }
   };
 
-  const createModuleTest = async () => {
+  const createModuleTest = () => {
     if (!contentModulo?.id) return;
-    setSavingItem(true);
     setItemError('');
-    try {
-      const result = await api.createModuloTest(token, contentModulo.id, {
-        nombre: `${contentModulo.nombre} - Test ${items.filter((item) => item.tipo === 'test').length + 1}`,
-        descripcion: `Test del modulo ${contentModulo.nombre}`,
-      });
-      const testId = result?.test?.id;
-      if (testId) {
-        await loadItems(contentModulo);
-        await loadModulos();
-        setTestEditor({ testId, item: result?.item ?? null });
-      } else {
-        await loadItems(contentModulo);
-        await loadModulos();
-      }
-    } catch (err) {
-      setItemError(err.message || 'No se pudo crear el test del módulo.');
-    } finally {
-      setSavingItem(false);
-    }
+    const nextIndex = items.filter((item) => item.tipo === 'test').length + 1;
+    setTestEditor({
+      testId: null,
+      item: null,
+      defaultNombre: `${contentModulo.nombre} - Test ${nextIndex}`,
+    });
   };
 
   const generateAutoContent = async () => {
@@ -986,7 +1149,8 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           action={(
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Button onClick={createModuleTest} disabled={savingItem}>+ Crear test del módulo</Button>
-              <Button variant="secondary" onClick={() => setContentModulo(null)}>Cerrar</Button>
+              <Button variant="secondary" onClick={() => setSimulacroModalOpen(true)} disabled={savingItem || items.some((item) => item.tipo === 'simulacro_final')}>+ Crear simulacro final</Button>
+              <Button variant="secondary" onClick={() => { setContentModulo(null); setTestEditor(null); setSimulacroModalOpen(false); }}>Cerrar</Button>
             </div>
           )}
         >
@@ -1115,6 +1279,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           modulo={contentModulo}
           item={testEditor.item}
           testId={testEditor.testId}
+          defaultNombre={testEditor.defaultNombre}
           temasModulo={(contentModulo.temas ?? []).length
             ? contentModulo.temas
             : temas.filter((tema) => (contentModulo.tema_ids ?? []).map(Number).includes(Number(tema.id)))}
@@ -1122,9 +1287,30 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           isAdmin={isAdmin}
           api={api}
           onClose={() => setTestEditor(null)}
+          onCreated={({ testId, item }) => setTestEditor((current) => ({
+            ...(current ?? {}),
+            testId,
+            item,
+          }))}
           onChanged={async () => {
             await loadItems(contentModulo);
             await loadModulos();
+          }}
+        />
+      )}
+
+      {simulacroModalOpen && contentModulo && (
+        <ModuloSimulacroModal
+          open
+          modulo={contentModulo}
+          token={token}
+          isAdmin={isAdmin}
+          api={api}
+          onClose={() => setSimulacroModalOpen(false)}
+          onCreated={async () => {
+            await loadItems(contentModulo);
+            await loadModulos();
+            await loadCandidates(contentModulo, itemTipo);
           }}
         />
       )}
