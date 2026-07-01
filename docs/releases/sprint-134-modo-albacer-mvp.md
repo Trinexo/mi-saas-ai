@@ -556,6 +556,7 @@ Debe mostrar:
 - Estado racha por bloque: `/stats/racha-bloques` acepta oposicion activa, `modo_preparacion` y `albacer_modulo_id`, evitando mezclar bloques practicados de otras oposiciones o modulos.
 - Estado validacion stats: los endpoints de widgets y progreso validan `oposicion_id`, `modo_preparacion`, `albacer_modulo_id`, `tema_id` e ids de bloque antes de ejecutar consultas.
 - Estado validacion rendimiento stats: los controllers de rendimiento consumen contexto ya normalizado por Zod sin casteos manuales.
+- Estado validacion progreso stats: los controllers de progreso consumen ids y contexto ya normalizados por Zod sin validaciones duplicadas.
 - Estado validacion alumno: marcadas, tests sugeridos, simulacros publicados y consultas de tests validan ids y modo antes de entrar en los controladores.
 - Estado validacion accesos: rutas de acceso por oposicion, cambio de modo/ranking y administracion de accesos validan ids, filtros, tipo de alumno y modo de preparacion.
 - Estado controladores accesos: los controladores de accesos usan params, query y body ya normalizados por Zod antes de llamar al servicio.
