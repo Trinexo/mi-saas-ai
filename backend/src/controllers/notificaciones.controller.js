@@ -3,8 +3,7 @@ import { notificacionesService } from '../services/notificaciones.service.js';
 
 export const listNotificaciones = async (req, res, next) => {
   try {
-    const { page, page_size: pageSize, solo_no_leidas } = req.query;
-    const soloNoLeidas = solo_no_leidas === 'true';
+    const { page, page_size: pageSize, solo_no_leidas: soloNoLeidas } = req.query;
     const data = await notificacionesService.list({
       usuarioId: req.user.userId,
       page,
