@@ -624,6 +624,9 @@ function HomeAlbacer({ nombre, saludo, fecha }) {
   const itemsActuales = moduloActual?.items ?? [];
   const testsActuales = itemsActuales.filter((item) => item.tipo === 'test');
   const finalActual = itemsActuales.find((item) => item.tipo === 'simulacro_final') ?? null;
+  const modulosPractica = modulos.filter((modulo) => (
+    modulo.estado_calculado === 'superado' || modulo.estado_calculado === 'disponible'
+  ));
 
   const startItem = async (item) => {
     if (!item?.id || startingId) return;
@@ -675,9 +678,19 @@ function HomeAlbacer({ nombre, saludo, fecha }) {
             {fecha.charAt(0).toUpperCase() + fecha.slice(1)} · Avanza por módulos y supera el simulacro final de cada nivel.
           </p>
         </div>
-        <Link to="/mis-oposiciones" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: O, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', fontWeight: 800, fontSize: '0.84rem', border: `1px solid ${OL}55` }}>
-          Cambiar curso
-        </Link>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={activarExperto}
+            disabled={activandoExperto}
+            style={{ border: 'none', borderRadius: 10, background: O, color: '#fff', padding: '10px 16px', fontWeight: 900, cursor: activandoExperto ? 'wait' : 'pointer', fontSize: '0.84rem' }}
+          >
+            {activandoExperto ? 'Cambiando...' : 'Cambiar a Modo Experto'}
+          </button>
+          <Link to="/mis-oposiciones" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: O, padding: '10px 16px', borderRadius: 10, textDecoration: 'none', fontWeight: 800, fontSize: '0.84rem', border: `1px solid ${OL}55` }}>
+            Cambiar curso
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -716,38 +729,48 @@ function HomeAlbacer({ nombre, saludo, fecha }) {
                 {moduloActual?.descripcion && <p style={{ margin: 0, color: G, fontSize: '0.84rem', lineHeight: 1.55 }}>{moduloActual.descripcion}</p>}
               </div>
               {planCompletado && (
-                <button
-                  type="button"
-                  onClick={activarExperto}
-                  disabled={activandoExperto}
-                  style={{ border: 'none', borderRadius: 10, background: O, color: '#fff', padding: '10px 16px', fontWeight: 900, cursor: activandoExperto ? 'wait' : 'pointer' }}
-                >
-                  {activandoExperto ? 'Activando...' : 'Activar Modo Experto'}
-                </button>
+                <div style={{ background: '#dcfce7', color: '#166534', borderRadius: 999, padding: '6px 12px', fontSize: '0.76rem', fontWeight: 900 }}>
+                  Ruta completada
+                </div>
               )}
             </div>
             <ProgressBar pct={progresoPct} />
           </div>
 
-          {!planCompletado && (
+          {modulosPractica.length > 0 && (
             <div className="albacer-home-main-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(260px, .8fr)', gap: 16, alignItems: 'start' }}>
               <div style={{ ...CARD, padding: '20px 22px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 900, color: DK }}>Actividades del módulo</div>
-                    <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Los tests entrenan; el simulacro final decide el nivel.</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 900, color: DK }}>Actividades disponibles</div>
+                    <div style={{ fontSize: '0.72rem', color: GL, marginTop: 2 }}>Puedes repetir los tests y simulacros de módulos superados cuando quieras.</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {testsActuales.map((item) => (
-                    <AlbacerItemCard key={item.id} item={item} startingId={startingId} onStart={startItem} />
-                  ))}
-                  {finalActual && <AlbacerItemCard item={finalActual} startingId={startingId} onStart={startItem} />}
-                  {!itemsActuales.length && (
-                    <div style={{ border: `1px dashed ${BD}`, borderRadius: 12, padding: 18, color: GL, fontSize: '0.82rem' }}>
-                      Este módulo todavía no tiene tests publicados.
-                    </div>
-                  )}
+                  {modulosPractica.map((modulo) => {
+                    const moduloTests = (modulo.items ?? []).filter((item) => item.tipo === 'test');
+                    const moduloFinal = (modulo.items ?? []).find((item) => item.tipo === 'simulacro_final') ?? null;
+                    const superado = modulo.estado_calculado === 'superado';
+                    return (
+                      <div key={modulo.id} style={{ border: `1px solid ${superado ? '#bbf7d0' : BD}`, borderRadius: 14, padding: 12, background: superado ? '#f0fdf4' : '#fff', display: 'grid', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ color: DK, fontSize: '0.83rem', fontWeight: 950 }}>{modulo.nombre}</div>
+                            <div style={{ color: GL, fontSize: '0.68rem', marginTop: 2 }}>{superado ? 'Módulo superado · repetición libre' : 'Módulo actual'}</div>
+                          </div>
+                        </div>
+                        {moduloTests.map((item) => (
+                          <AlbacerItemCard key={item.id} item={item} startingId={startingId} onStart={startItem} />
+                        ))}
+                        {moduloFinal && <AlbacerItemCard item={moduloFinal} startingId={startingId} onStart={startItem} />}
+                        {!modulo.items?.length && (
+                          <div style={{ border: `1px dashed ${BD}`, borderRadius: 12, padding: 18, color: GL, fontSize: '0.82rem' }}>
+                            Este módulo todavía no tiene tests publicados.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
