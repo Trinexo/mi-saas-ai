@@ -60,7 +60,11 @@ import {
   profesorOposicionPayloadSchema,
   listProfesoresQuerySchema,
   createProfesorSchema,
+  actividadRecienteQuerySchema,
+  bloquesErroresQuerySchema,
+  evolucionUsuariosQuerySchema,
   updateProfesorSchema,
+  topOposicionesQuerySchema,
 } from '../../schemas/admin.schema.js';
 
 const router = Router();
@@ -100,12 +104,12 @@ router.get('/stats', requireRole('admin'), getAdminStats);
 // GET /api/admin/stats/evolucion-usuarios?dias=30 → evolución de registros por día
 router.get('/stats/full',              requireRole('admin'), getAdminStatsFull);
 router.get('/stats/contenido',         requireRole('admin'), getDistribucionContenido);
-router.get('/stats/top-oposiciones',   requireRole('admin'), getTopOposiciones);
-router.get('/stats/evolucion-usuarios',requireRole('admin'), getEvolucionUsuarios);
+router.get('/stats/top-oposiciones',   requireRole('admin'), validate(topOposicionesQuerySchema, 'query'), getTopOposiciones);
+router.get('/stats/evolucion-usuarios',requireRole('admin'), validate(evolucionUsuariosQuerySchema, 'query'), getEvolucionUsuarios);
 
 // --- B5: Actividad reciente ---
 // GET /api/admin/actividad?limit=20  → últimos N eventos del log actividad_global
-router.get('/actividad', requireRole('admin'), getActividadReciente);
+router.get('/actividad', requireRole('admin'), validate(actividadRecienteQuerySchema, 'query'), getActividadReciente);
 
 // --- Usuarios ---
 router.get('/users', requireRole('admin'), validate(listUsersQuerySchema, 'query'), listUsers);
@@ -115,7 +119,7 @@ router.delete('/users/:id', requireRole('admin'), validate(idParamSchema, 'param
 router.post('/users/bulk', requireRole('admin'), validate(bulkUsersSchema), bulkUsers);
 
 // --- Stats: temas con más errores ---
-router.get('/stats/bloques-errores', requireRole('admin'), getBloquesConMasErrores);
+router.get('/stats/bloques-errores', requireRole('admin'), validate(bloquesErroresQuerySchema, 'query'), getBloquesConMasErrores);
 
 // --- Profesor: gestión de asignaciones de oposiciones ---
 router.get('/profesores/asignaciones', requireRole('admin'), validate(profesorAsignacionesQuerySchema, 'query'), listProfesorAsignaciones);

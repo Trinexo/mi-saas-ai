@@ -86,8 +86,7 @@ export const bulkUsers = async (req, res, next) => {
 
 export const getBloquesConMasErrores = async (req, res, next) => {
   try {
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
-    const data = await adminService.getBloquesConMasErrores(limit);
+    const data = await adminService.getBloquesConMasErrores(req.query.limit);
     return ok(res, data);
   } catch (error) {
     return next(error);
@@ -175,16 +174,14 @@ export const getDistribucionContenido = async (req, res, next) => {
 
 export const getTopOposiciones = async (req, res, next) => {
   try {
-    const limit = Math.min(10, Math.max(1, Number(req.query.limit) || 5));
-    const data = await adminPanelUsersStatsService.getTopOposiciones(limit);
+    const data = await adminPanelUsersStatsService.getTopOposiciones(req.query.limit);
     return ok(res, data);
   } catch (e) { return next(e); }
 };
 
 export const getEvolucionUsuarios = async (req, res, next) => {
   try {
-    const dias = Math.min(90, Math.max(7, Number(req.query.dias) || 30));
-    const data = await adminPanelUsersStatsService.getEvolucionUsuarios(dias);
+    const data = await adminPanelUsersStatsService.getEvolucionUsuarios(req.query.dias);
     return ok(res, data);
   } catch (e) { return next(e); }
 };
@@ -193,8 +190,7 @@ export const getEvolucionUsuarios = async (req, res, next) => {
 
 export const getActividadReciente = async (req, res, next) => {
   try {
-    const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
-    const data = await adminPanelUsersStatsService.getActividadReciente(limit);
+    const data = await adminPanelUsersStatsService.getActividadReciente(req.query.limit);
     return ok(res, data);
   } catch (e) { return next(e); }
 };
