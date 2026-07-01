@@ -12,7 +12,7 @@ export const listPlanEstudio = async (req, res, next) => {
 
 export const empezarPlanEstudio = async (req, res, next) => {
   try {
-    const data = await planEstudioService.empezar(req.user.userId, Number(req.params.id));
+    const data = await planEstudioService.empezar(req.user.userId, req.params.id);
     return ok(res, data, 'Actividad iniciada');
   } catch (error) {
     return next(error);
