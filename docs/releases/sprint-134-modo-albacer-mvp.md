@@ -567,6 +567,7 @@ Debe mostrar:
 - Estado validacion suscripciones: el controlador usa userId, limit y offset normalizados por Zod antes de llamar al servicio/repositorio.
 - Estado validacion marcadas: el controlador usa preguntaId y oposicion_id normalizados por Zod antes del servicio.
 - Estado validacion plan estudio legacy: los schemas salen de la ruta y el controlador usa id/oposicion_id normalizados por Zod.
+- Estado validacion workspace profesor: los filtros, parametros e ids del workspace profesor quedan normalizados por Zod antes de llegar a servicios.
 - Estado ranking: el backend rechaza `/stats/ranking` si el acceso activo esta en `Modo Albacer` y la pantalla `/ranking` muestra bloqueo sin consultar datos.
 - Estado configurador libre: la disponibilidad del modo adaptativo se calcula con estadisticas de la oposicion activa en `Modo Experto`, evitando habilitarlo por historial de otra oposicion.
 - Estado marcadas en test/revision: las pantallas de realizacion y revision cargan preguntas marcadas filtradas por la oposicion del test.
