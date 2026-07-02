@@ -518,12 +518,15 @@ function AlbacerMetric({ label, value, hint }) {
   );
 }
 
-function AlbacerItemCard({ item, disabled, startingId, onStart }) {
+function AlbacerItemCard({ item, disabled, startingId, onStart, repeat = false }) {
   const isFinal = item.tipo === 'simulacro_final';
   const title = item.titulo || (isFinal ? 'Simulacro final' : 'Test del módulo');
   const total = Number(item.total_preguntas ?? 0);
   const duration = item.duracion_segundos ? Math.round(Number(item.duracion_segundos) / 60) : null;
   const starting = startingId === item.id;
+  const buttonLabel = repeat
+    ? (isFinal ? 'Repetir simulacro' : 'Repetir test')
+    : (isFinal ? 'Intentar nivel' : 'Empezar');
 
   return (
     <div style={{
@@ -573,8 +576,61 @@ function AlbacerItemCard({ item, disabled, startingId, onStart }) {
           whiteSpace: 'nowrap',
         }}
       >
-        <IconPlay /> {starting ? 'Abriendo...' : isFinal ? 'Intentar nivel' : 'Empezar'}
+        <IconPlay /> {starting ? 'Abriendo...' : buttonLabel}
       </button>
+    </div>
+  );
+}
+
+function AlbacerModuloActivities({ modulo, startingId, onStart }) {
+  const superado = modulo.estado_calculado === 'superado';
+  const actual = modulo.estado_calculado === 'disponible';
+  const [open, setOpen] = useState(actual);
+  const moduloTests = (modulo.items ?? []).filter((item) => item.tipo === 'test');
+  const moduloFinal = (modulo.items ?? []).find((item) => item.tipo === 'simulacro_final') ?? null;
+  const totalItems = moduloTests.length + (moduloFinal ? 1 : 0);
+
+  useEffect(() => {
+    setOpen(actual);
+  }, [actual, modulo.id]);
+
+  return (
+    <div style={{ border: `1px solid ${superado ? '#bbf7d0' : BD}`, borderRadius: 14, background: superado ? '#f0fdf4' : '#fff', overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((next) => !next)}
+        aria-expanded={open}
+        style={{ width: '100%', border: 'none', background: 'transparent', padding: 14, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: 10, alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: DK, fontSize: '0.83rem', fontWeight: 950, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modulo.nombre}</div>
+          <div style={{ color: GL, fontSize: '0.68rem', marginTop: 2 }}>
+            {actual ? 'Módulo actual' : `${totalItems} actividades disponibles`}
+          </div>
+        </div>
+        {superado && (
+          <span style={{ background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: 999, padding: '4px 10px', fontSize: '0.68rem', fontWeight: 950, whiteSpace: 'nowrap' }}>
+            Módulo superado
+          </span>
+        )}
+        <span style={{ color: O, fontSize: '0.72rem', fontWeight: 950, whiteSpace: 'nowrap' }}>
+          {open ? 'Cerrar' : 'Abrir'}
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 12px 12px' }}>
+          {moduloTests.map((item) => (
+            <AlbacerItemCard key={item.id} item={item} startingId={startingId} onStart={onStart} repeat={superado} />
+          ))}
+          {moduloFinal && <AlbacerItemCard item={moduloFinal} startingId={startingId} onStart={onStart} repeat={superado} />}
+          {!modulo.items?.length && (
+            <div style={{ border: `1px dashed ${BD}`, borderRadius: 12, padding: 18, color: GL, fontSize: '0.82rem' }}>
+              Este módulo todavía no tiene tests publicados.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -747,30 +803,14 @@ function HomeAlbacer({ nombre, saludo, fecha }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {modulosPractica.map((modulo) => {
-                    const moduloTests = (modulo.items ?? []).filter((item) => item.tipo === 'test');
-                    const moduloFinal = (modulo.items ?? []).find((item) => item.tipo === 'simulacro_final') ?? null;
-                    const superado = modulo.estado_calculado === 'superado';
-                    return (
-                      <div key={modulo.id} style={{ border: `1px solid ${superado ? '#bbf7d0' : BD}`, borderRadius: 14, padding: 12, background: superado ? '#f0fdf4' : '#fff', display: 'grid', gap: 10 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ color: DK, fontSize: '0.83rem', fontWeight: 950 }}>{modulo.nombre}</div>
-                            <div style={{ color: GL, fontSize: '0.68rem', marginTop: 2 }}>{superado ? 'Módulo superado · repetición libre' : 'Módulo actual'}</div>
-                          </div>
-                        </div>
-                        {moduloTests.map((item) => (
-                          <AlbacerItemCard key={item.id} item={item} startingId={startingId} onStart={startItem} />
-                        ))}
-                        {moduloFinal && <AlbacerItemCard item={moduloFinal} startingId={startingId} onStart={startItem} />}
-                        {!modulo.items?.length && (
-                          <div style={{ border: `1px dashed ${BD}`, borderRadius: 12, padding: 18, color: GL, fontSize: '0.82rem' }}>
-                            Este módulo todavía no tiene tests publicados.
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {modulosPractica.map((modulo) => (
+                    <AlbacerModuloActivities
+                      key={modulo.id}
+                      modulo={modulo}
+                      startingId={startingId}
+                      onStart={startItem}
+                    />
+                  ))}
                 </div>
               </div>
 
