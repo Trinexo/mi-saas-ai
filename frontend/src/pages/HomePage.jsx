@@ -733,10 +733,28 @@ function AlbacerActivityCard({ history }) {
 }
 
 function AlbacerWeeklyCard({ weekly, stats }) {
-  const raw = Array.isArray(weekly?.items) ? weekly.items : Array.isArray(weekly) ? weekly : [];
+  const raw = Array.isArray(weekly?.dias)
+    ? weekly.dias
+    : Array.isArray(weekly?.items)
+      ? weekly.items
+      : Array.isArray(weekly)
+        ? weekly
+        : [];
   const points = raw.slice(-7);
-  const values = points.map((p) => Number(p.porcentaje ?? p.acierto ?? p.media_aciertos ?? p.pct ?? 0));
+  const values = points.map((p) => {
+    const explicitPct = p.porcentaje ?? p.acierto ?? p.media_aciertos ?? p.pct ?? p.porcentajeAcierto;
+    if (explicitPct != null) return Number(explicitPct);
+    const total = Number(p.aciertos ?? 0) + Number(p.errores ?? 0) + Number(p.blancos ?? 0);
+    if (total > 0) return Math.round((Number(p.aciertos ?? 0) / total) * 100);
+    if (p.notaMedia != null || p.nota_media != null) return Math.round(Number(p.notaMedia ?? p.nota_media ?? 0) * 10);
+    return 0;
+  });
   const chartValues = values.length ? values : [0, 0, 0, 0, 0, 0, 0];
+  const dayLabels = (points.length ? points : chartValues).map((point, index) => (
+    point?.fecha
+      ? new Date(`${point.fecha}T00:00:00`).toLocaleDateString('es-ES', { weekday: 'narrow' }).toUpperCase()
+      : ['L', 'M', 'X', 'J', 'V', 'S', 'D'][index]
+  ));
   const width = 280;
   const height = 150;
   const padding = 18;
@@ -749,7 +767,7 @@ function AlbacerWeeklyCard({ weekly, stats }) {
   const areaPath = `${linePath} L ${chartPoints.at(-1)?.x ?? padding} ${height - padding} L ${chartPoints[0]?.x ?? padding} ${height - padding} Z`;
   const avg = stats?.aciertos || stats?.errores || stats?.blancos
     ? Math.round((Number(stats.aciertos ?? 0) / Math.max(1, Number(stats.aciertos ?? 0) + Number(stats.errores ?? 0) + Number(stats.blancos ?? 0))) * 100)
-    : (values.at(-1) || 0);
+    : (values.filter((value) => value > 0).at(-1) || 0);
   return (
     <div style={{ ...CARD, padding: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 18 }}>
@@ -774,7 +792,7 @@ function AlbacerWeeklyCard({ weekly, stats }) {
           ))}
         </svg>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${chartValues.length}, 1fr)`, color: '#64748b', fontSize: '.68rem', fontWeight: 900, paddingLeft: 22, paddingRight: 12 }}>
-          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].slice(0, chartValues.length).map((day) => <span key={day} style={{ textAlign: 'center' }}>{day}</span>)}
+          {dayLabels.map((day, index) => <span key={`${day}-${index}`} style={{ textAlign: 'center' }}>{day}</span>)}
         </div>
         <div style={{ position: 'absolute', top: 8, right: 6, background: O, color: '#fff', borderRadius: 8, padding: '4px 8px', fontSize: '.72rem', fontWeight: 950 }}>
           {avg}%
@@ -784,7 +802,7 @@ function AlbacerWeeklyCard({ weekly, stats }) {
         {[
           ['Tests realizados', stats?.totalTests ?? 0],
           ['Media de aciertos', `${avg}%`],
-          ['Módulos completados', stats?.modulosSuperados ?? '-'],
+          ['Tests esta semana', weekly?.testsSemana ?? points.reduce((acc, point) => acc + Number(point.tests ?? 0), 0)],
         ].map(([label, value]) => (
           <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: `1px solid ${BD}`, color: '#334155', fontSize: '.82rem', fontWeight: 850 }}>
             <span>{label}</span><strong style={{ color: DK }}>{value}</strong>
