@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../state/auth.jsx';
 import { adminApi } from '../../services/adminApi';
 import { profesorApi } from '../../services/profesorApi';
@@ -603,20 +602,131 @@ function ModuloTestModal({ open, modulo, item, testId, defaultNombre, temasModul
   );
 }
 
-function ModuloSimulacroModal({ open, modulo, token, isAdmin, api, onClose, onCreated }) {
+function ModuloSimulacroModal({ open, modulo, item, simulacroId, temasModulo, token, isAdmin, api, onClose, onChanged, onCreated }) {
   const [form, setForm] = useState(emptySimulacroForm);
+  const [activeSimulacroId, setActiveSimulacroId] = useState(simulacroId || null);
+  const [activeItem, setActiveItem] = useState(item || null);
+  const [bloques, setBloques] = useState([]);
+  const [selectedBloqueId, setSelectedBloqueId] = useState('');
+  const [candidates, setCandidates] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [q, setQ] = useState('');
+  const [temaId, setTemaId] = useState('');
+  const [dificultad, setDificultad] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const isCreateMode = !activeSimulacroId;
+
+  const simulacroApi = useMemo(() => (isAdmin
+    ? {
+      get: adminApi.getSimulacro,
+      create: adminApi.createSimulacro,
+      update: adminApi.updateSimulacro,
+      delete: adminApi.deleteSimulacro,
+      createBloque: adminApi.createSimulacroBloque,
+      updateBloque: adminApi.updateSimulacroBloque,
+      deleteBloque: adminApi.deleteSimulacroBloque,
+      addPreguntas: adminApi.asignarPreguntasBloque,
+      removePregunta: adminApi.quitarPreguntaBloque,
+      listPreguntas: adminApi.listPreguntas,
+    }
+    : {
+      get: profesorApi.getMiSimulacro,
+      create: profesorApi.createMiSimulacro,
+      update: profesorApi.updateMiSimulacro,
+      delete: profesorApi.deleteMiSimulacro,
+      createBloque: profesorApi.createMiSimulacroBloque,
+      updateBloque: profesorApi.updateMiSimulacroBloque,
+      deleteBloque: profesorApi.deleteMiSimulacroBloque,
+      addPreguntas: profesorApi.asignarPreguntasMiSimulacro,
+      removePregunta: profesorApi.quitarPreguntaMiSimulacro,
+      listPreguntas: profesorApi.getMisPreguntas,
+    }), [isAdmin]);
+
+  const selectedTemaIds = useMemo(
+    () => normalizeTemaIds(modulo?.tema_ids ?? []),
+    [modulo?.tema_ids],
+  );
+  const selectedBloque = useMemo(
+    () => bloques.find((bloque) => Number(bloque.id) === Number(selectedBloqueId)) ?? bloques[0] ?? null,
+    [bloques, selectedBloqueId],
+  );
+  const preguntas = selectedBloque?.preguntas ?? [];
+  const preguntaIds = useMemo(() => new Set(preguntas.map((pregunta) => Number(pregunta.id))), [preguntas]);
+
+  const loadSimulacro = useCallback(async (id = activeSimulacroId) => {
+    if (!open || !id) return;
+    setLoading(true);
+    setError('');
+    try {
+      const simulacro = await simulacroApi.get(token, id);
+      setForm({
+        nombre: simulacro.nombre ?? '',
+        descripcion: simulacro.descripcion ?? '',
+        estado: simulacro.estado ?? 'borrador',
+        tiempo_limite_minutos: simulacro.tiempo_limite_segundos ? Math.round(Number(simulacro.tiempo_limite_segundos) / 60) : '',
+        puntuacion_maxima: simulacro.puntuacion_maxima ?? 100,
+        penalizacion: simulacro.penalizacion ?? 0.25,
+        mostrar_resultados_al_final: simulacro.mostrar_resultados_al_final ?? true,
+      });
+      const nextBloques = simulacro.bloques ?? [];
+      setBloques(nextBloques);
+      setSelectedBloqueId((current) => (
+        current && nextBloques.some((bloque) => Number(bloque.id) === Number(current))
+          ? current
+          : String(nextBloques[0]?.id ?? '')
+      ));
+    } catch (err) {
+      setError(err.message || 'No se pudo cargar el simulacro final.');
+    } finally {
+      setLoading(false);
+    }
+  }, [activeSimulacroId, open, simulacroApi, token]);
+
+  const loadCandidates = useCallback(async () => {
+    if (!open || !modulo?.oposicion_id) return;
+    setLoadingCandidates(true);
+    try {
+      const effectiveTemaIds = temaId ? [temaId] : selectedTemaIds;
+      const payload = await simulacroApi.listPreguntas(token, {
+        q: q || undefined,
+        oposicion_id: modulo.oposicion_id,
+        tema_id: temaId || undefined,
+        tema_ids: !temaId && effectiveTemaIds.length ? effectiveTemaIds.join(',') : undefined,
+        nivel_dificultad: dificultad || undefined,
+        page: 1,
+        page_size: 30,
+      });
+      setCandidates(payload?.items ?? []);
+    } catch {
+      setCandidates([]);
+    } finally {
+      setLoadingCandidates(false);
+    }
+  }, [dificultad, modulo?.oposicion_id, open, q, selectedTemaIds, simulacroApi, temaId, token]);
 
   useEffect(() => {
     if (!open) return;
+    setActiveSimulacroId(simulacroId || null);
+    setActiveItem(item || null);
+    setBloques([]);
+    setSelectedBloqueId('');
+    setSelected([]);
+    setQ('');
+    setTemaId('');
+    setDificultad('');
     setForm({
       ...emptySimulacroForm,
       nombre: `${modulo?.nombre ?? 'Modulo'} - Simulacro final`,
       descripcion: `Simulacro final del modulo ${modulo?.nombre ?? ''}`.trim(),
     });
     setError('');
-  }, [modulo?.nombre, open]);
+  }, [item, modulo?.nombre, open, simulacroId]);
+
+  useEffect(() => { loadSimulacro(); }, [loadSimulacro]);
+  useEffect(() => { loadCandidates(); }, [loadCandidates]);
 
   if (!open) return null;
 
@@ -639,87 +749,228 @@ function ModuloSimulacroModal({ open, modulo, token, isAdmin, api, onClose, onCr
         puntuacion_maxima: Number(form.puntuacion_maxima || 100),
         penalizacion: Number(form.penalizacion || 0),
         mostrar_resultados_al_final: Boolean(form.mostrar_resultados_al_final),
+        estado: form.estado,
       };
-      if (isAdmin) payload.estado = form.estado;
-      const simulacro = await api.createSimulacro(token, payload);
-      const simulacroId = simulacro?.id ?? simulacro?.simulacro?.id;
-      if (!simulacroId) throw new Error('No se pudo crear el simulacro final.');
-      createdSimulacroId = simulacroId;
-      await api.createItem(token, modulo.id, {
-        tipo: 'simulacro_final',
-        titulo: form.nombre.trim(),
-        descripcion: form.descripcion?.trim() || null,
-        simulacro_id: Number(simulacroId),
-        obligatorio: true,
-      });
-      await onCreated?.();
-      onClose();
+      if (activeSimulacroId) {
+        await simulacroApi.update(token, activeSimulacroId, payload);
+        if (activeItem?.id) {
+          await api.updateItem(token, modulo.id, activeItem.id, {
+            titulo: form.nombre.trim(),
+            descripcion: form.descripcion?.trim() || null,
+          });
+        }
+        await loadSimulacro(activeSimulacroId);
+      } else {
+        const simulacro = await simulacroApi.create(token, payload);
+        const nextSimulacroId = simulacro?.id ?? simulacro?.simulacro?.id;
+        if (!nextSimulacroId) throw new Error('No se pudo crear el simulacro final.');
+        createdSimulacroId = nextSimulacroId;
+        const createdItem = await api.createItem(token, modulo.id, {
+          tipo: 'simulacro_final',
+          titulo: form.nombre.trim(),
+          descripcion: form.descripcion?.trim() || null,
+          simulacro_id: Number(nextSimulacroId),
+          obligatorio: true,
+        });
+        setActiveSimulacroId(nextSimulacroId);
+        setActiveItem(createdItem ?? null);
+        const bloque = await simulacroApi.createBloque(token, nextSimulacroId, {
+          nombre: 'Simulacro final',
+          orden: 1,
+          numero_preguntas: 0,
+        });
+        setSelectedBloqueId(String(bloque?.id ?? ''));
+        await onCreated?.({ simulacroId: nextSimulacroId, item: createdItem ?? null });
+        await loadSimulacro(nextSimulacroId);
+      }
+      await onChanged?.();
     } catch (err) {
-      if (createdSimulacroId && api.deleteSimulacro) {
+      if (createdSimulacroId && simulacroApi.delete) {
         try {
-          await api.deleteSimulacro(token, createdSimulacroId);
+          await simulacroApi.delete(token, createdSimulacroId);
         } catch {}
       }
-      setError(err.message || 'No se pudo crear el simulacro final.');
+      setError(err.message || 'No se pudo guardar el simulacro final.');
     } finally {
       setSaving(false);
     }
   };
 
+  const addPreguntas = async () => {
+    if (!activeSimulacroId || !selectedBloque || !selected.length) return;
+    setSaving(true);
+    setError('');
+    try {
+      await simulacroApi.addPreguntas(token, activeSimulacroId, selectedBloque.id, selected.map(Number));
+      await simulacroApi.updateBloque(token, activeSimulacroId, selectedBloque.id, {
+        numero_preguntas: preguntas.length + selected.filter((id) => !preguntaIds.has(Number(id))).length,
+      });
+      setSelected([]);
+      await loadSimulacro(activeSimulacroId);
+      await loadCandidates();
+      await onChanged?.();
+    } catch (err) {
+      setError(err.message || 'No se pudieron anadir las preguntas.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removePregunta = async (preguntaId) => {
+    if (!activeSimulacroId || !selectedBloque) return;
+    setSaving(true);
+    setError('');
+    try {
+      await simulacroApi.removePregunta(token, activeSimulacroId, selectedBloque.id, preguntaId);
+      await simulacroApi.updateBloque(token, activeSimulacroId, selectedBloque.id, {
+        numero_preguntas: Math.max(0, preguntas.length - 1),
+      });
+      await loadSimulacro(activeSimulacroId);
+      await onChanged?.();
+    } catch (err) {
+      setError(err.message || 'No se pudo quitar la pregunta.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleCandidate = (id) => {
+    if (preguntaIds.has(Number(id))) return;
+    setSelected((current) => (
+      current.includes(id)
+        ? current.filter((itemId) => itemId !== id)
+        : [...current, id]
+    ));
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.52)', zIndex: 900, display: 'grid', placeItems: 'center', padding: 18 }}>
-      <div style={{ width: 'min(720px, 100%)', maxHeight: '92vh', overflowY: 'auto', background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 24px 80px rgba(15,23,42,.28)' }}>
+      <div style={{ width: 'min(1120px, 100%)', maxHeight: '92vh', overflow: 'hidden', background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', boxShadow: '0 24px 80px rgba(15,23,42,.28)', display: 'grid', gridTemplateRows: 'auto 1fr auto' }}>
         <div style={{ padding: '18px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 950 }}>Nuevo simulacro final</h2>
+            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 950 }}>{isCreateMode ? 'Nuevo simulacro final' : 'Simulacro final del modulo'}</h2>
             <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '.82rem' }}>{modulo?.nombre}</p>
           </div>
           <button onClick={onClose} style={{ border: 'none', background: '#f8fafc', color: '#64748b', borderRadius: 9, width: 34, height: 34, cursor: 'pointer', fontWeight: 900 }}>x</button>
         </div>
 
-        <div style={{ padding: 20, display: 'grid', gap: 14 }}>
-          {error && <div style={{ background: '#fef2f2', color: '#b91c1c', borderRadius: 10, padding: '10px 12px', fontSize: '.84rem', fontWeight: 800 }}>{error}</div>}
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Nombre</span>
-            <input value={form.nombre} onChange={(event) => setField('nombre', event.target.value)} style={FIELD} />
-          </label>
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Descripcion</span>
-            <textarea value={form.descripcion ?? ''} onChange={(event) => setField('descripcion', event.target.value)} style={TEXTAREA} />
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(4, minmax(0, 1fr))' : 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-            {isAdmin && (
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Estado</span>
-                <select value={form.estado} onChange={(event) => setField('estado', event.target.value)} style={FIELD}>
-                  <option value="borrador">Borrador</option>
-                  <option value="publicado">Publicado</option>
-                  <option value="archivado">Archivado</option>
-                </select>
-              </label>
-            )}
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Tiempo min.</span>
-              <input type="number" min="1" value={form.tiempo_limite_minutos} onChange={(event) => setField('tiempo_limite_minutos', event.target.value)} style={FIELD} placeholder="Sin limite" />
-            </label>
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Puntuacion max.</span>
-              <input type="number" min="1" step="0.01" value={form.puntuacion_maxima} onChange={(event) => setField('puntuacion_maxima', event.target.value)} style={FIELD} />
-            </label>
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Penalizacion</span>
-              <input type="number" min="0" step="0.01" value={form.penalizacion} onChange={(event) => setField('penalizacion', event.target.value)} style={FIELD} />
-            </label>
-          </div>
-          <Toggle value={form.mostrar_resultados_al_final} onChange={(value) => setField('mostrar_resultados_al_final', value)} label="Mostrar resultados al finalizar" />
-          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: 12, color: '#64748b', fontSize: '.8rem', lineHeight: 1.45 }}>
-            El simulacro se vinculara al modulo solo al guardar. Despues podras editarlo para configurar bloques y preguntas.
-          </div>
+        <div style={{ overflowY: 'auto', padding: 20, display: 'grid', gap: 16 }}>
+          {loading ? (
+            <div style={{ color: '#64748b', padding: 28, textAlign: 'center' }}>Cargando simulacro...</div>
+          ) : (
+            <>
+              {error && <div style={{ background: '#fef2f2', color: '#b91c1c', borderRadius: 10, padding: '10px 12px', fontSize: '.84rem', fontWeight: 800 }}>{error}</div>}
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, .95fr) minmax(360px, 1.2fr)', gap: 16, alignItems: 'start' }}>
+                <Panel title="Configuracion del simulacro" style={{ padding: 18 }}>
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    <label style={{ display: 'grid', gap: 6 }}>
+                      <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Nombre</span>
+                      <input value={form.nombre} onChange={(event) => setField('nombre', event.target.value)} style={FIELD} />
+                    </label>
+                    <label style={{ display: 'grid', gap: 6 }}>
+                      <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Descripcion</span>
+                      <textarea value={form.descripcion ?? ''} onChange={(event) => setField('descripcion', event.target.value)} style={TEXTAREA} />
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                      <label style={{ display: 'grid', gap: 6 }}>
+                        <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Estado</span>
+                        <select value={form.estado} onChange={(event) => setField('estado', event.target.value)} style={FIELD}>
+                          <option value="borrador">Borrador</option>
+                          <option value="publicado">Publicado</option>
+                          <option value="archivado">Archivado</option>
+                        </select>
+                      </label>
+                      <label style={{ display: 'grid', gap: 6 }}>
+                        <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Tiempo min.</span>
+                        <input type="number" min="1" value={form.tiempo_limite_minutos} onChange={(event) => setField('tiempo_limite_minutos', event.target.value)} style={FIELD} placeholder="Sin limite" />
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                      <label style={{ display: 'grid', gap: 6 }}>
+                        <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Puntuacion max.</span>
+                        <input type="number" min="1" step="0.01" value={form.puntuacion_maxima} onChange={(event) => setField('puntuacion_maxima', event.target.value)} style={FIELD} />
+                      </label>
+                      <label style={{ display: 'grid', gap: 6 }}>
+                        <span style={{ color: '#334155', fontSize: '.78rem', fontWeight: 900 }}>Penalizacion</span>
+                        <input type="number" min="0" step="0.01" value={form.penalizacion} onChange={(event) => setField('penalizacion', event.target.value)} style={FIELD} />
+                      </label>
+                    </div>
+                    <Toggle value={form.mostrar_resultados_al_final} onChange={(value) => setField('mostrar_resultados_al_final', value)} label="Mostrar resultados al finalizar" />
+                  </div>
+                </Panel>
+
+                <Panel title={`Preguntas seleccionadas (${preguntas.length})`} style={{ padding: 18 }}>
+                  {isCreateMode ? (
+                    <div style={{ color: '#64748b', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: 16, textAlign: 'center', fontSize: '.84rem', fontWeight: 800 }}>
+                      Guarda el simulacro para poder seleccionar preguntas.
+                    </div>
+                  ) : !selectedBloque ? (
+                    <div style={{ color: '#94a3b8', padding: 16, textAlign: 'center' }}>Este simulacro aun no tiene bloque.</div>
+                  ) : preguntas.length === 0 ? (
+                    <div style={{ color: '#94a3b8', padding: 16, textAlign: 'center' }}>Este simulacro aun no tiene preguntas.</div>
+                  ) : (
+                    <div style={{ maxHeight: 360, overflowY: 'auto', display: 'grid', gap: 8 }}>
+                      {preguntas.map((pregunta) => (
+                        <div key={pregunta.id} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, alignItems: 'center' }}>
+                          <div>
+                            <div style={{ color: '#0f172a', fontSize: '.84rem', fontWeight: 850, lineHeight: 1.35 }}>{pregunta.enunciado}</div>
+                            <div style={{ color: '#94a3b8', fontSize: '.74rem', marginTop: 4 }}>{pregunta.nivel_dificultad ?? 'sin dificultad'}</div>
+                          </div>
+                          <button onClick={() => removePregunta(pregunta.id)} disabled={saving} style={{ border: '1px solid #fecaca', background: '#fff', color: '#dc2626', borderRadius: 8, padding: '7px 10px', fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer' }}>Quitar</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              </div>
+
+              <Panel title="Anadir preguntas" subtitle="Filtra por los temas del modulo y selecciona las preguntas del simulacro final." style={{ padding: 18 }}>
+                <div className="albacer-test-modal-tools" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(180px, .8fr) minmax(140px, .55fr) auto', gap: 10, marginBottom: 12 }}>
+                  <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Buscar preguntas..." style={FIELD} disabled={isCreateMode} />
+                  <select value={temaId} onChange={(event) => setTemaId(event.target.value)} style={FIELD} disabled={isCreateMode}>
+                    <option value="">Temas del modulo</option>
+                    {temasModulo.map((tema) => <option key={tema.id} value={tema.id}>{tema.nombre}</option>)}
+                  </select>
+                  <select value={dificultad} onChange={(event) => setDificultad(event.target.value)} style={FIELD} disabled={isCreateMode}>
+                    <option value="">Dificultad</option>
+                    <option value="facil">Facil</option>
+                    <option value="media">Media</option>
+                    <option value="dificil">Dificil</option>
+                  </select>
+                  <button onClick={addPreguntas} disabled={isCreateMode || saving || !selectedBloque || selected.length === 0} style={{ border: 'none', background: !isCreateMode && selected.length ? P : '#c4b5fd', color: '#fff', borderRadius: 9, padding: '0 14px', minHeight: 40, fontWeight: 900, cursor: !isCreateMode && selected.length ? 'pointer' : 'not-allowed' }}>Anadir {selected.length || ''}</button>
+                </div>
+                {isCreateMode ? (
+                  <div style={{ color: '#94a3b8', padding: 18, textAlign: 'center' }}>Las preguntas apareceran aqui despues de guardar el simulacro.</div>
+                ) : loadingCandidates ? (
+                  <div style={{ color: '#64748b', padding: 18, textAlign: 'center' }}>Cargando preguntas...</div>
+                ) : candidates.length === 0 ? (
+                  <div style={{ color: '#94a3b8', padding: 18, textAlign: 'center' }}>No hay preguntas con esos filtros.</div>
+                ) : (
+                  <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    {candidates.map((pregunta) => {
+                      const exists = preguntaIds.has(Number(pregunta.id));
+                      const checked = selected.includes(pregunta.id);
+                      return (
+                        <label key={pregunta.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr auto', gap: 10, alignItems: 'center', padding: 11, borderBottom: '1px solid #f1f5f9', cursor: exists ? 'not-allowed' : 'pointer', background: checked ? '#f5f3ff' : '#fff' }}>
+                          <input type="checkbox" checked={checked || exists} disabled={exists} onChange={() => toggleCandidate(pregunta.id)} style={{ accentColor: P }} />
+                          <span>
+                            <span style={{ display: 'block', color: '#0f172a', fontSize: '.83rem', fontWeight: 800, lineHeight: 1.35 }}>{pregunta.enunciado}</span>
+                            <span style={{ display: 'block', color: exists ? '#16a34a' : '#94a3b8', fontSize: '.72rem', marginTop: 3 }}>{exists ? 'Ya esta en este simulacro' : (pregunta.tema_nombre ?? 'Sin tema')}</span>
+                          </span>
+                          <span style={{ color: '#64748b', fontSize: '.72rem', fontWeight: 900 }}>{pregunta.nivel_dificultad ?? '-'}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </Panel>
+            </>
+          )}
         </div>
 
         <div style={{ padding: '16px 20px', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-          <Button onClick={saveSimulacro} disabled={saving}>{saving ? 'Creando...' : 'Crear simulacro final'}</Button>
+          <Button onClick={saveSimulacro} disabled={saving || loading}>{saving ? 'Guardando...' : (isCreateMode ? 'Crear simulacro final' : 'Guardar cambios')}</Button>
         </div>
       </div>
     </div>
@@ -728,7 +979,6 @@ function ModuloSimulacroModal({ open, modulo, token, isAdmin, api, onClose, onCr
 
 export default function AlbacerModulosPage({ scope = 'profesor' }) {
   const { token, user } = useAuth();
-  const navigate = useNavigate();
   const isAdmin = scope === 'admin' || user?.role === 'admin';
   const [oposiciones, setOposiciones] = useState([]);
   const [selectedOposicion, setSelectedOposicion] = useState('');
@@ -760,7 +1010,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     permitir_repetidas: false,
   });
   const [testEditor, setTestEditor] = useState(null);
-  const [simulacroModalOpen, setSimulacroModalOpen] = useState(false);
+  const [simulacroEditor, setSimulacroEditor] = useState(null);
 
   const api = useMemo(() => ({
     list: isAdmin ? albacerApi.listAdminModulos : albacerApi.listProfesorModulos,
@@ -772,8 +1022,6 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
     updateItem: isAdmin ? albacerApi.updateAdminModuloItem : albacerApi.updateProfesorModuloItem,
     deleteItem: isAdmin ? albacerApi.deleteAdminModuloItem : albacerApi.deleteProfesorModuloItem,
     createModuloTest: isAdmin ? albacerApi.createAdminModuloTest : albacerApi.createProfesorModuloTest,
-    createSimulacro: isAdmin ? adminApi.createSimulacro : profesorApi.createMiSimulacro,
-    deleteSimulacro: isAdmin ? adminApi.deleteSimulacro : profesorApi.deleteMiSimulacro,
     generateModuloAuto: isAdmin ? albacerApi.generateAdminModuloAuto : albacerApi.generateProfesorModuloAuto,
   }), [isAdmin]);
 
@@ -983,14 +1231,12 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
   };
 
   const editItemContent = (item) => {
-    const base = isAdmin ? '/admin' : '/profesor';
-    const suffix = `?from=albacer&modulo_id=${contentModulo.id}`;
     if (item.tipo === 'test' && item.plantilla_test_id) {
       setTestEditor({ testId: item.plantilla_test_id, item });
       return;
     }
     if (item.tipo === 'simulacro_final' && item.simulacro_id) {
-      navigate(`${base}/simulacros/${item.simulacro_id}/editar${suffix}`);
+      setSimulacroEditor({ simulacroId: item.simulacro_id, item });
     }
   };
 
@@ -1144,8 +1390,8 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
           action={(
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Button onClick={createModuleTest} disabled={savingItem}>+ Crear test del módulo</Button>
-              <Button variant="secondary" onClick={() => setSimulacroModalOpen(true)} disabled={savingItem || items.some((item) => item.tipo === 'simulacro_final')}>+ Crear simulacro final</Button>
-              <Button variant="secondary" onClick={() => { setContentModulo(null); setTestEditor(null); setSimulacroModalOpen(false); }}>Cerrar</Button>
+              <Button variant="secondary" onClick={() => setSimulacroEditor({ simulacroId: null, item: null })} disabled={savingItem || items.some((item) => item.tipo === 'simulacro_final')}>+ Crear simulacro final</Button>
+              <Button variant="secondary" onClick={() => { setContentModulo(null); setTestEditor(null); setSimulacroEditor(null); }}>Cerrar</Button>
             </div>
           )}
         >
@@ -1294,15 +1540,25 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
         />
       )}
 
-      {simulacroModalOpen && contentModulo && (
+      {simulacroEditor && contentModulo && (
         <ModuloSimulacroModal
           open
           modulo={contentModulo}
+          item={simulacroEditor.item}
+          simulacroId={simulacroEditor.simulacroId}
+          temasModulo={(contentModulo.temas ?? []).length
+            ? contentModulo.temas
+            : temas.filter((tema) => (contentModulo.tema_ids ?? []).map(Number).includes(Number(tema.id)))}
           token={token}
           isAdmin={isAdmin}
           api={api}
-          onClose={() => setSimulacroModalOpen(false)}
-          onCreated={async () => {
+          onClose={() => setSimulacroEditor(null)}
+          onCreated={({ simulacroId, item }) => setSimulacroEditor((current) => ({
+            ...(current ?? {}),
+            simulacroId,
+            item,
+          }))}
+          onChanged={async () => {
             await loadItems(contentModulo);
             await loadModulos();
             await loadCandidates(contentModulo, itemTipo);
