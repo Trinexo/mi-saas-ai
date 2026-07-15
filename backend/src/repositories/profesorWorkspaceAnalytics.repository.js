@@ -1,10 +1,5 @@
 import pool from '../config/db.js';
 
-const assignedWhere = `EXISTS (
-  SELECT 1 FROM profesores_oposiciones po
-  WHERE po.user_id = $1 AND po.oposicion_id = o.id
-)`;
-
 const questionAssignedJoin = `
   JOIN temas te ON te.id = p.tema_id
   JOIN oposiciones o ON o.id = te.oposicion_id
@@ -13,37 +8,93 @@ const questionAssignedJoin = `
 export const profesorWorkspaceAnalyticsRepository = {
   async listOposiciones(userId) {
     const result = await pool.query(
-      `SELECT
-         o.id,
-         o.nombre,
-         o.slug,
-         o.categoria,
-         o.estado,
-         COUNT(DISTINCT ao.usuario_id)::int AS alumnos_activos,
-         COUNT(DISTINCT te.id)::int AS total_temas,
-         COUNT(DISTINCT p.id)::int AS total_preguntas,
-         COUNT(DISTINCT at.id)::int AS total_plantillas_test,
-         COUNT(DISTINCT s.id)::int AS total_simulacros,
-         COUNT(DISTINCT rp.id) FILTER (WHERE rp.estado IN ('abierto', 'en_revision'))::int AS reportes_abiertos,
+      `WITH assigned AS (
+         SELECT o.id, o.nombre, o.slug, o.categoria, o.estado
+         FROM oposiciones o
+         JOIN profesores_oposiciones po ON po.oposicion_id = o.id
+         WHERE po.user_id = $1
+       ),
+       temas_count AS (
+         SELECT te.oposicion_id, COUNT(*)::int AS total_temas
+         FROM temas te
+         JOIN assigned a ON a.id = te.oposicion_id
+         GROUP BY te.oposicion_id
+       ),
+       preguntas_count AS (
+         SELECT te.oposicion_id, COUNT(p.id)::int AS total_preguntas
+         FROM temas te
+         JOIN assigned a ON a.id = te.oposicion_id
+         LEFT JOIN preguntas p ON p.tema_id = te.id
+         GROUP BY te.oposicion_id
+       ),
+       plantillas_count AS (
+         SELECT at.oposicion_id, COUNT(*)::int AS total_plantillas_test
+         FROM admin_tests at
+         JOIN assigned a ON a.id = at.oposicion_id
+         GROUP BY at.oposicion_id
+       ),
+       simulacros_count AS (
+         SELECT s.oposicion_id, COUNT(*)::int AS total_simulacros
+         FROM simulacros s
+         JOIN assigned a ON a.id = s.oposicion_id
+         GROUP BY s.oposicion_id
+       ),
+       alumnos_count AS (
+         SELECT ao.oposicion_id, COUNT(DISTINCT ao.usuario_id)::int AS alumnos_activos
+         FROM accesos_oposicion ao
+         JOIN assigned a ON a.id = ao.oposicion_id
+         WHERE ao.estado = 'activo'
+           AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
+         GROUP BY ao.oposicion_id
+       ),
+       resultados AS (
+         SELECT
+           t.oposicion_id,
+           COALESCE(SUM(rt.aciertos), 0)::int AS aciertos,
+           COALESCE(SUM(rt.errores), 0)::int AS errores,
+           COALESCE(SUM(rt.blancos), 0)::int AS blancos,
+           MAX(t.fecha_fin) AS ultima_actividad
+         FROM tests t
+         JOIN assigned a ON a.id = t.oposicion_id
+         LEFT JOIN resultados_test rt ON rt.test_id = t.id
+         WHERE t.estado = 'finalizado'
+         GROUP BY t.oposicion_id
+       ),
+       reportes_count AS (
+         SELECT te.oposicion_id, COUNT(DISTINCT rp.id)::int AS reportes_abiertos
+         FROM reportes_preguntas rp
+         JOIN preguntas p ON p.id = rp.pregunta_id
+         JOIN temas te ON te.id = p.tema_id
+         JOIN assigned a ON a.id = te.oposicion_id
+         WHERE rp.estado IN ('abierto', 'en_revision')
+         GROUP BY te.oposicion_id
+       )
+       SELECT
+         a.id,
+         a.nombre,
+         a.slug,
+         a.categoria,
+         a.estado,
+         COALESCE(al.alumnos_activos, 0)::int AS alumnos_activos,
+         COALESCE(tc.total_temas, 0)::int AS total_temas,
+         COALESCE(pc.total_preguntas, 0)::int AS total_preguntas,
+         COALESCE(pl.total_plantillas_test, 0)::int AS total_plantillas_test,
+         COALESCE(sc.total_simulacros, 0)::int AS total_simulacros,
+         COALESCE(rc.reportes_abiertos, 0)::int AS reportes_abiertos,
          COALESCE(ROUND(
-           100.0 * SUM(rt.aciertos)::numeric
-           / NULLIF(SUM(rt.aciertos + rt.errores + rt.blancos), 0)
+           100.0 * COALESCE(r.aciertos, 0)::numeric
+           / NULLIF(COALESCE(r.aciertos, 0) + COALESCE(r.errores, 0) + COALESCE(r.blancos, 0), 0)
          ), 0)::int AS media_aciertos,
-         MAX(t.fecha_fin) AS ultima_actividad
-       FROM oposiciones o
-       LEFT JOIN temas te ON te.oposicion_id = o.id
-       LEFT JOIN preguntas p ON p.tema_id = te.id
-       LEFT JOIN admin_tests at ON at.oposicion_id = o.id
-       LEFT JOIN simulacros s ON s.oposicion_id = o.id
-       LEFT JOIN accesos_oposicion ao ON ao.oposicion_id = o.id
-        AND ao.estado = 'activo'
-        AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
-       LEFT JOIN tests t ON t.oposicion_id = o.id AND t.estado = 'finalizado'
-       LEFT JOIN resultados_test rt ON rt.test_id = t.id
-       LEFT JOIN reportes_preguntas rp ON rp.pregunta_id = p.id
-       WHERE ${assignedWhere}
-       GROUP BY o.id
-       ORDER BY o.nombre ASC`,
+         r.ultima_actividad
+       FROM assigned a
+       LEFT JOIN temas_count tc ON tc.oposicion_id = a.id
+       LEFT JOIN preguntas_count pc ON pc.oposicion_id = a.id
+       LEFT JOIN plantillas_count pl ON pl.oposicion_id = a.id
+       LEFT JOIN simulacros_count sc ON sc.oposicion_id = a.id
+       LEFT JOIN alumnos_count al ON al.oposicion_id = a.id
+       LEFT JOIN resultados r ON r.oposicion_id = a.id
+       LEFT JOIN reportes_count rc ON rc.oposicion_id = a.id
+       ORDER BY a.nombre ASC`,
       [userId],
     );
     return result.rows;

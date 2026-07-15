@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   actividadFeedQuerySchema,
   planificacionIdParamSchema,
@@ -65,4 +67,16 @@ test('schemas del workspace profesor rechazan valores invalidos', () => {
   assert.equal(workspaceListQuerySchema.safeParse({ page_size: '500' }).success, false);
   assert.equal(actividadFeedQuerySchema.safeParse({ tipo: 'login' }).success, false);
   assert.equal(planificacionIdParamSchema.safeParse({ id: 'abc' }).success, false);
+});
+
+test('listOposiciones del workspace profesor usa agregaciones por CTE', () => {
+  const repositoryPath = fileURLToPath(new URL('../../src/repositories/profesorWorkspaceAnalytics.repository.js', import.meta.url));
+  const source = readFileSync(repositoryPath, 'utf8');
+  const listOposicionesBody = source.slice(source.indexOf('async listOposiciones'), source.indexOf('async getDashboardKpis'));
+
+  assert.match(listOposicionesBody, /WITH assigned AS/);
+  assert.match(listOposicionesBody, /temas_count AS/);
+  assert.match(listOposicionesBody, /preguntas_count AS/);
+  assert.match(listOposicionesBody, /resultados AS/);
+  assert.doesNotMatch(listOposicionesBody, /LEFT JOIN preguntas p[\s\S]*LEFT JOIN admin_tests at[\s\S]*LEFT JOIN simulacros s[\s\S]*LEFT JOIN accesos_oposicion ao[\s\S]*LEFT JOIN tests t/);
 });
