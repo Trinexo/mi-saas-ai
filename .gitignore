@@ -31,3 +31,8 @@ Thumbs.db
 # Local helper files
 .dev-pids.json
 backend/.ci-trigger
+
+# Volcados y registros locales de base de datos
+database/dump_*.sql
+database/import-log.txt
+database/railway-reimport.sql
