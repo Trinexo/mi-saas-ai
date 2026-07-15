@@ -18,6 +18,24 @@ const scoreRanking = (student) => {
   return Math.round((rendimiento * 0.6) + (actividad * 0.25) + (evolucion * 0.15));
 };
 
+const dashboardKpiDefaults = {
+  alumnos_activos: 0,
+  tests_realizados_hoy: 0,
+  media_aciertos: 0,
+  simulacros_completados: 0,
+  preguntas_pendientes_revision: 0,
+};
+
+const safeDashboardPart = async (label, promise, fallback) => {
+  try {
+    const result = await promise;
+    return result ?? fallback;
+  } catch (error) {
+    console.error(`[profesor-workspace-dashboard] ${label}:`, error.message);
+    return fallback;
+  }
+};
+
 export const profesorWorkspaceAnalyticsService = {
   async assertOposicion(userId, oposicionId) {
     if (!oposicionId) return;
@@ -43,11 +61,11 @@ export const profesorWorkspaceAnalyticsService = {
     const oposicionId = query.oposicion_id ?? null;
     await this.assertOposicion(userId, oposicionId);
     const [kpis, oposiciones, evolucion, actividad, problematicas] = await Promise.all([
-      profesorWorkspaceAnalyticsRepository.getDashboardKpis(userId, oposicionId),
-      profesorWorkspaceAnalyticsRepository.listOposiciones(userId),
-      profesorWorkspaceAnalyticsRepository.getEvolucion(userId, oposicionId, 30),
-      profesorWorkspaceAnalyticsRepository.getActividadReciente(userId, 8, oposicionId),
-      profesorWorkspaceAnalyticsRepository.getPreguntasProblematicas(userId, { oposicionId, limit: 5, offset: 0 }),
+      safeDashboardPart('kpis', profesorWorkspaceAnalyticsRepository.getDashboardKpis(userId, oposicionId), dashboardKpiDefaults),
+      safeDashboardPart('oposiciones', profesorWorkspaceAnalyticsRepository.listOposiciones(userId), []),
+      safeDashboardPart('evolucion', profesorWorkspaceAnalyticsRepository.getEvolucion(userId, oposicionId, 30), []),
+      safeDashboardPart('actividad', profesorWorkspaceAnalyticsRepository.getActividadReciente(userId, 8, oposicionId), []),
+      safeDashboardPart('preguntas-problematicas', profesorWorkspaceAnalyticsRepository.getPreguntasProblematicas(userId, { oposicionId, limit: 5, offset: 0 }), []),
     ]);
 
     const filteredOposiciones = oposicionId
