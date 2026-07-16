@@ -67,6 +67,8 @@ La fase 4 de linea base funcional se ejecuto el 2026-07-16 en la rama `chore/lin
 
 ## Linea Base Funcional 2026-07-16
 
+Esta fase deja establecida una linea base tecnica validada y una clasificacion funcional provisional. Los 368 tests del backend confirman una cobertura tecnica solida de lo que esas pruebas contemplan; el build del frontend confirma que la aplicacion compila; los HTTP 200 de Railway y Vercel confirman disponibilidad. No equivalen todavia a una validacion funcional completa de recorridos reales de usuario, porque el smoke E2E no se ejecuto y no se probaron sesiones reales por rol.
+
 ### Evidencia Tecnica Recogida
 
 - Rama usada: `chore/linea-base-funcional`.
@@ -80,7 +82,7 @@ La fase 4 de linea base funcional se ejecuto el 2026-07-16 en la rama `chore/lin
 - No se ejecutaron migraciones, reimports, dumps ni scripts SQL.
 - No se validaron credenciales reales de usuario, admin o profesor.
 
-### Clasificacion Funcional
+### Clasificacion De Linea Base
 
 | ID | Area | Estado | Evidencia | Prioridad |
 | --- | --- | --- | --- | --- |

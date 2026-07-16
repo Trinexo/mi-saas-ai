@@ -4,7 +4,7 @@ Ultima consolidacion documental: 2026-07-15.
 
 ## Completado
 
-- BL-001: Ejecutada fase 4 de linea base funcional en `chore/linea-base-funcional`, sin corregir errores durante la auditoria. Evidencias registradas en `docs/PROJECT_STATUS.md`.
+- BL-001: Ejecutada fase 4 de linea base funcional en `chore/linea-base-funcional`, sin corregir errores durante la auditoria. Queda como linea base tecnica validada y clasificacion funcional provisional; evidencias registradas en `docs/PROJECT_STATUS.md`.
 
 ## Critico
 
