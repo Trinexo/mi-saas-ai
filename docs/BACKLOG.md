@@ -2,19 +2,27 @@
 
 Ultima consolidacion documental: 2026-07-15.
 
+## Completado
+
+- BL-001: Ejecutada fase 4 de linea base funcional en `chore/linea-base-funcional`, sin corregir errores durante la auditoria. Evidencias registradas en `docs/PROJECT_STATUS.md`.
+
 ## Critico
 
-- BL-001: Ejecutar fase 4 de linea base funcional en `chore/linea-base-funcional`, sin corregir errores durante la auditoria. Documentar evidencias en `docs/PROJECT_STATUS.md` y prioridades en este backlog.
+- BL-020: Preparar verificacion E2E segura en entorno controlado, con credenciales/seed no productivos, para login, roles, test completo, admin, profesor y recuperacion de password.
+- BL-021: Verificar roles y permisos reales de admin, profesor y alumno contra flujos completos de frontend y API.
+- BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales.
 
 ## Importante
 
 - BL-004: Ampliar documentacion operativa de despliegue con pasos seguros para Railway/Vercel sin incluir secretos.
 - BL-005: Documentar endpoints principales de la API desde `backend/src/routes/index.js` y controladores reales.
-- BL-006: Revisar cobertura frontend: build, rutas criticas, login, test flow, progreso, admin y profesor.
+- BL-006: Ampliar cobertura frontend mas alla del build: rutas criticas, login, test flow, progreso, admin y profesor.
 - BL-007: Auditar permisos y roles en admin/profesor/alumno contra middleware y consultas SQL.
 - BL-017: Mantener optimizadas las consultas del dashboard profesor y progreso. Verificar planes SQL e indices antes de nuevas agregaciones.
 - BL-018: Proteger scripts SQL delicados. Ningun reimport, dump o script destructivo debe ejecutarse sin backup externo y aprobacion explicita.
 - BL-019: Verificar produccion despues de cambios funcionales. Confirmar Vercel, Railway, health endpoint y variables relevantes.
+- BL-023: Crear o adaptar smoke E2E para que pueda ejecutarse sin tocar produccion y con datos desechables.
+- BL-024: Verificar conexion a base de datos mediante consultas de solo lectura aprobadas, sin exponer secretos ni ejecutar migraciones.
 
 ## Producto
 

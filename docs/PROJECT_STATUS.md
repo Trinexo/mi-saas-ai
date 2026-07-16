@@ -61,6 +61,61 @@ La documentacion anterior contenia planes, sprints, instrucciones y arquitectura
 - Las funcionalidades amplias del panel profesor/admin requieren pruebas de regresion cuando se toque SQL o permisos.
 - Produccion puede cambiar; cualquier dato de Railway/Vercel debe verificarse de nuevo antes de actuar.
 
+## Estado De Fase 4
+
+La fase 4 de linea base funcional se ejecuto el 2026-07-16 en la rama `chore/linea-base-funcional`, sin corregir errores ni ejecutar migraciones.
+
+## Linea Base Funcional 2026-07-16
+
+### Evidencia Tecnica Recogida
+
+- Rama usada: `chore/linea-base-funcional`.
+- Backend dependencies presentes: `backend/node_modules` existe.
+- Frontend dependencies presentes: `frontend/node_modules` existe.
+- Backend tests: `npm.cmd test` en `backend` finalizo con 368 tests, 69 suites, 368 passed, 0 failed.
+- Frontend build: `npm.cmd run build` en `frontend` finalizo correctamente con Vite y PWA `generateSW`.
+- Backend produccion: `https://mi-saas-ai-production.up.railway.app/api/health` respondio HTTP 200 con `{"success":true,"data":{"status":"ok"}}`.
+- Frontend produccion: `https://mi-saas-ai.vercel.app` respondio HTTP 200.
+- Smoke E2E existente: `backend/tests/smoke/e2e-smoke.test.js` no se ejecuto porque requiere servidor, seed y crea/modifica datos.
+- No se ejecutaron migraciones, reimports, dumps ni scripts SQL.
+- No se validaron credenciales reales de usuario, admin o profesor.
+
+### Clasificacion Funcional
+
+| ID | Area | Estado | Evidencia | Prioridad |
+| --- | --- | --- | --- | --- |
+| BASE-001 | Instalacion local | Verificada y correcta | `backend/node_modules` y `frontend/node_modules` presentes. | - |
+| BASE-002 | Backend tests de servicios | Verificada y correcta | `npm.cmd test` en `backend`: 368 passed, 0 failed. | - |
+| BASE-003 | Frontend build | Verificada y correcta | `npm.cmd run build` en `frontend`: build Vite correcto y PWA generada. | - |
+| BASE-004 | Backend health produccion | Verificada y correcta | `/api/health` en Railway respondio HTTP 200 con `status: ok`. | - |
+| BASE-005 | Frontend produccion | Verificada y correcta | Vercel respondio HTTP 200 para `https://mi-saas-ai.vercel.app`. | - |
+| BASE-006 | Arranque backend local | Implementada, pendiente de verificacion | `backend/src/server.js` expone Express en `PORT || 3000`; no se arranco para evitar conectar accidentalmente a una DB no controlada. | Importante |
+| BASE-007 | Conexion a base de datos | Implementada, pendiente de verificacion | `backend/src/config/db.js` usa `DATABASE_URL` y SSL en produccion; no se abrio conexion ni se consulto DB real. | Importante |
+| BASE-008 | Registro, login y perfil | Implementada, pendiente de verificacion | Rutas `/api/auth`, controladores y tests `auth-profile`/schemas presentes; no se uso credencial real. | Importante |
+| BASE-009 | Recuperacion de password | Implementada, pendiente de verificacion | `authPasswordResetService`, rutas y paginas `ForgotPasswordPage`/`ResetPasswordPage` presentes; no se envio email. | Importante |
+| BASE-010 | Roles y permisos admin/profesor/alumno | Implementada, pendiente de verificacion | Guards frontend y middleware/rutas backend presentes; no se verifico sesion real por rol. | Critica |
+| BASE-011 | Catalogo y accesos a oposiciones | Implementada, pendiente de verificacion | Rutas catalogo/accesos, paginas `CatalogoPage`, `MisOposicionesPage` y tests de schemas/accesos presentes. | Importante |
+| BASE-012 | Generacion y realizacion de test | Implementada, pendiente de verificacion | Servicios `testGeneration*`, `testSubmit*`, paginas `ConfigurarTestPage`/`TestPage` y tests de generacion/scoring presentes. | Critica |
+| BASE-013 | Calculo de resultados | Implementada, pendiente de verificacion | Tests `test-submit-scoring` pasan; no se ejecuto flujo E2E con datos reales. | Critica |
+| BASE-014 | Historial y revision de test | Implementada, pendiente de verificacion | `testQueryHistory`, `testSessionDetailReview`, `ReviewPage` y tests relacionados presentes. | Importante |
+| BASE-015 | Progreso, estadisticas y dashboards alumno | Implementada, pendiente de verificacion | Rutas `/stats`, widgets y tests de estadisticas pasan; no se valido con datos reales de usuario. | Importante |
+| BASE-016 | Admin: preguntas, catalogo, usuarios, reportes, ajustes | Implementada, pendiente de verificacion | Rutas y paginas admin presentes; tests de schemas y servicios admin pasan. | Critica |
+| BASE-017 | Importacion CSV de preguntas | Implementada, pendiente de verificacion | `adminPreguntasImport*` y tests `admin-preguntas-import-csv-mapper` pasan; no se importo archivo real. | Importante |
+| BASE-018 | Profesor workspace | Implementada, pendiente de verificacion | Rutas `/profesor`, paginas profesor y tests `profesor-workspace-schema` pasan; PR #417 optimizo dashboard. | Critica |
+| BASE-019 | Modo Albacer y modulos | Implementada, pendiente de verificacion | Rutas `/albacer`, `AlbacerModulosPage` y tests `albacer-modulos-*` pasan. | Importante |
+| BASE-020 | Simulacros | Implementada, pendiente de verificacion | Servicios/rutas admin, profesor y publicos; tests de simulacros presentes y parte incluida en suite. | Importante |
+| BASE-021 | Marcadas, repaso, ranking y notificaciones | Implementada, pendiente de verificacion | Servicios/rutas y tests de schemas/repositorios presentes; no se verifico flujo manual. | Importante |
+| BASE-022 | Billing, planes y suscripciones | Implementada, pendiente de verificacion | `billing`, `subscription`, Stripe webhook y tests de schemas presentes; no se probo Stripe real. | Critica |
+| BASE-023 | Multimedia de preguntas | Implementada, pendiente de verificacion | Uploads estaticos `/uploads`, controladores imagen/audio y tests media presentes; no se subio archivo. | Importante |
+| BASE-024 | Smoke E2E completo | No determinable | Existe `backend/tests/smoke/e2e-smoke.test.js`, pero crea usuarios/preguntas y requiere seed; no se ejecuto por seguridad de datos. | Critica |
+
+### Limitaciones De La Linea Base
+
+- La verificacion funcional profunda requiere credenciales de alumno, profesor y admin o un entorno local/QA con datos desechables.
+- El estado de la base real no se puede deducir por completo sin consultas de solo lectura aprobadas y sin exponer secretos.
+- Los tests actuales cubren mucha logica de servicios y schemas, pero no sustituyen una prueba E2E segura con datos controlados.
+- No se ha encontrado un error funcional reproducible nuevo durante esta fase; lo pendiente principal es verificacion E2E controlada.
+
 ## Siguiente Paso Recomendado
 
-La siguiente tarea prioritaria es ejecutar la fase 4 de linea base funcional en una rama independiente, sin corregir errores durante la auditoria. El objetivo es clasificar con evidencia que funciona, que falla y que no puede determinarse.
+La siguiente tarea prioritaria es preparar una verificacion E2E segura en entorno controlado, con credenciales/seed no productivos, para comprobar login, roles, test completo, admin, profesor, billing simulado y recuperacion de password sin tocar datos reales.
