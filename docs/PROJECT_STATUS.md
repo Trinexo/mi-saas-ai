@@ -226,8 +226,35 @@ Fecha: 2026-07-16.
 - El workflow declara `NODE_ENV=test`, `ALLOW_E2E_WRITES=true`, `E2E_DB_ISOLATED=true`, `E2E_DATABASE_URL` local y `E2E_API_BASE` local.
 - El servicio PostgreSQL del workflow es efimero y se destruye al terminar el job.
 - El smoke queda preparado para fallar si el backend local no lee la misma base aislada.
-- Riesgo pendiente: `database/seed.sql` usa `opciones_respuesta.es_correcta`, mientras `database/schema.sql` define `opciones_respuesta.correcta`. No se corrigio en esta fase.
+- Riesgo pendiente detectado en fase 6: `database/seed.sql` usaba `opciones_respuesta.es_correcta`, mientras `database/schema.sql` define `opciones_respuesta.correcta`. Resuelto en fase 7.
 
 ### Siguiente Paso Recomendado
 
 La siguiente tarea unica es ejecutar el smoke dos veces en CI o en una maquina con PostgreSQL local disponible, verificando que el flujo pasa y que la comprobacion de residuos queda en cero despues de cada ejecucion.
+
+## Fase 7: Seed y Smoke E2E en CI
+
+Fecha: 2026-07-16.
+
+### Auditoria de Email
+
+- `backend/src/services/email.service.js` se considera codigo de produccion modificado.
+- El cambio introducido en fase 6 solo retorna antes de leer SMTP o crear transporter cuando `NODE_ENV=test`.
+- Se anadio prueba de regresion que demuestra dos comportamientos: en `NODE_ENV=test` no se consulta configuracion ni se crea transporte SMTP; en `NODE_ENV=development` se mantiene el flujo de envio con `settingsService.getEmailConfig`, `nodemailer.createTransport` y `sendMail`.
+- No se cambia la API publica del servicio.
+
+### Seed
+
+- Evidencia: `database/schema.sql` crea `opciones_respuesta.correcta`; repositorios y tests leen/escriben `correcta`; no existe migracion activa que cree `es_correcta`.
+- Correccion minima: `database/seed.sql` cambia las inserciones de `opciones_respuesta.es_correcta` a `opciones_respuesta.correcta`.
+- No se ejecuto seed contra Railway ni base remota.
+
+### CI
+
+- El workflow ejecuta tests unitarios backend, luego `npm run test:smoke` dos veces como pasos separados.
+- La API local guarda su PID y se detiene en un paso `always()`.
+- La validacion real de BL-020 queda pendiente del resultado de GitHub Actions sobre PostgreSQL efimero.
+
+### Siguiente Paso Recomendado
+
+Revisar los checks de la Pull Request lineal. Solo si los dos smokes de CI pasan y no dejan residuos debe marcarse BL-020 como completada.

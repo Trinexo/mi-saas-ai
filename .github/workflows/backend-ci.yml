@@ -65,6 +65,7 @@ jobs:
         working-directory: backend
         run: |
           nohup npm run start > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
 
       - name: Wait for API health
         run: |
@@ -79,15 +80,30 @@ jobs:
           cat /tmp/backend.log
           exit 1
 
-      - name: Run backend unit + smoke tests
+      - name: Run backend unit tests
         working-directory: backend
-        run: npm run test:ci
+        run: npm test
+
+      - name: Run smoke E2E first pass
+        working-directory: backend
+        run: npm run test:smoke
+
+      - name: Run smoke E2E second pass
+        working-directory: backend
+        run: npm run test:smoke
 
       - name: Dump backend log on failure
         if: failure()
         run: |
           echo "===== /tmp/backend.log ====="
           cat /tmp/backend.log || true
+
+      - name: Stop backend API
+        if: always()
+        run: |
+          if [ -f /tmp/backend.pid ]; then
+            kill "$(cat /tmp/backend.pid)" || true
+          fi
 
   build-frontend:
     runs-on: ubuntu-latest

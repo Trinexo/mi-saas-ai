@@ -7,6 +7,8 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-001: Ejecutada fase 4 de linea base funcional en `chore/linea-base-funcional`, sin corregir errores durante la auditoria. Queda como linea base tecnica validada y clasificacion funcional provisional; evidencias registradas en `docs/PROJECT_STATUS.md`.
 - BL-023: Smoke E2E protegido contra ejecucion accidental en produccion mediante `NODE_ENV=test`, `ALLOW_E2E_WRITES=true` y API base local obligatoria.
 - BL-027: Smoke E2E reforzado con verificacion de DB local aislada, marcador DB/API, identificador unico, limpieza por IDs exactos y bloqueo de emails en `NODE_ENV=test`.
+- BL-028: Corregido `database/seed.sql` para usar `opciones_respuesta.correcta`, alineado con `database/schema.sql` y repositorios. CI queda preparado para dos ejecuciones visibles del smoke sobre PostgreSQL efimero.
+- BL-029: Cubierto `email.service.js` con prueba de regresion: en `NODE_ENV=test` no crea transporter ni lee SMTP; fuera de `NODE_ENV=test` conserva el flujo de envio.
 
 ## Critico
 
@@ -26,7 +28,6 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-026: Ejecutar y validar la limpieza automatica del smoke E2E en entorno aislado real; debe quedar residuo cero tras dos ejecuciones consecutivas.
 - BL-024: Verificar conexion a base de datos mediante consultas de solo lectura aprobadas, sin exponer secretos ni ejecutar migraciones.
 - BL-025: Evaluar Playwright o alternativa de navegador para cubrir login, logout y pantallas no destructivas del frontend contra entorno aislado.
-- BL-028: Revisar seed de CI antes de ejecutar el smoke en GitHub Actions: `database/seed.sql` usa `opciones_respuesta.es_correcta`, mientras `database/schema.sql` define `opciones_respuesta.correcta`. No corregido en fase 6.
 
 ## Producto
 

@@ -95,6 +95,8 @@ npm run test:ci
 
 No ejecutes `test:smoke` contra Railway, Vercel ni una base de datos con usuarios reales. El smoke crea usuario, tests y una pregunta temporal, comprueba que la API local lee la misma base aislada y elimina los datos que crea.
 
+En CI, el smoke se ejecuta dos veces contra PostgreSQL efimero para comprobar repetibilidad y limpieza.
+
 Build frontend:
 
 ```powershell
