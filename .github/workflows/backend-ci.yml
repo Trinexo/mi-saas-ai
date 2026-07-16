@@ -27,6 +27,9 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/plataforma_test
       JWT_SECRET: change_this_secret_in_ci
       JWT_EXPIRES_IN: 7d
+      NODE_ENV: test
+      ALLOW_E2E_WRITES: true
+      E2E_API_BASE: http://localhost:3000/api
       PORT: 3000
 
     steps:

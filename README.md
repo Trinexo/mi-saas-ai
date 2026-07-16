@@ -72,9 +72,26 @@ Tests backend:
 ```powershell
 cd backend
 npm test
+```
+
+Smoke E2E backend contra API local aislada:
+
+```powershell
+cd backend
+$env:NODE_ENV='test'
+$env:ALLOW_E2E_WRITES='true'
+$env:E2E_API_BASE='http://localhost:3000/api'
 npm run test:smoke
+```
+
+Suite CI local:
+
+```powershell
+cd backend
 npm run test:ci
 ```
+
+No ejecutes `test:smoke` contra Railway, Vercel ni una base de datos con usuarios reales. El smoke crea usuario, tests y una pregunta temporal.
 
 Build frontend:
 

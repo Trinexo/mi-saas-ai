@@ -120,4 +120,67 @@ Esta fase deja establecida una linea base tecnica validada y una clasificacion f
 
 ## Siguiente Paso Recomendado
 
-La siguiente tarea prioritaria es preparar una verificacion E2E segura en entorno controlado, con credenciales/seed no productivos, para comprobar login, roles, test completo, admin, profesor, billing simulado y recuperacion de password sin tocar datos reales.
+La siguiente tarea prioritaria es disponer de una base aislada de pruebas y ejecutar el smoke E2E protegido contra ese entorno, verificando limpieza posterior y sin tocar produccion.
+
+## Fase 5: Preparacion E2E Segura
+
+Fecha: 2026-07-16.
+
+### Estado E2E
+
+- Framework navegador encontrado: ninguno. No hay Playwright, Cypress ni Selenium configurados.
+- Smoke E2E existente: `backend/tests/smoke/e2e-smoke.test.js`, basado en `node --test` y llamadas HTTP a la API.
+- El smoke existente no es solo lectura: registra un usuario, genera tests, envia resultados y, si el admin seed existe, crea/edita/elimina una pregunta.
+- CI existente: `.github/workflows/backend-ci.yml` levanta PostgreSQL local, aplica `database/schema.sql`, `database/seed.sql` y migraciones, arranca backend y ejecuta `npm run test:ci`.
+- Produccion no debe usarse para pruebas de escritura.
+
+### Protecciones Anadidas
+
+- `backend/tests/smoke/e2e-smoke.test.js` exige `NODE_ENV=test`.
+- `backend/tests/smoke/e2e-smoke.test.js` exige `ALLOW_E2E_WRITES=true`.
+- `backend/tests/smoke/e2e-smoke.test.js` bloquea cualquier `E2E_API_BASE` que no apunte a `localhost`, `127.0.0.1` o `::1`.
+- El usuario creado por smoke usa prefijo `e2e_smoke_user_` y dominio `test.local`.
+- `.github/workflows/backend-ci.yml` declara `NODE_ENV=test`, `ALLOW_E2E_WRITES=true` y `E2E_API_BASE=http://localhost:3000/api` para mantener el smoke en Postgres aislado de CI.
+
+### Pruebas Ejecutadas En Fase 5
+
+- No se ejecuto `npm run test:smoke`.
+- No se ejecuto ninguna prueba que cree, modifique o elimine datos reales.
+- Se ejecutaron tests backend y build frontend tras los cambios de proteccion.
+
+### Clasificacion Del Smoke E2E
+
+| Prueba | Riesgo | Motivo |
+| --- | --- | --- |
+| `SMOKE-U01 registro de usuario` | Escritura sin limpieza garantizada | Crea usuario E2E y no existe borrado posterior en el test. |
+| `SMOKE-U02 login de usuario` | Solo lectura | Autentica usuario creado por el propio smoke. |
+| `SMOKE-U03 catalogo oposiciones` | Solo lectura | Consulta catalogo. |
+| `SMOKE-U04 catalogo temas` | Solo lectura | Consulta catalogo. |
+| `SMOKE-U05 catalogo bloques` | Solo lectura | Consulta catalogo. |
+| `SMOKE-U06 generar test` | Escritura sin limpieza garantizada | Crea test/sesion si hay preguntas suficientes. |
+| `SMOKE-U07 enviar test` | Escritura sin limpieza garantizada | Guarda resultados del test. |
+| `SMOKE-U07B generar test sin enviar` | Escritura sin limpieza garantizada | Crea test pendiente. |
+| `SMOKE-U08 estadisticas de usuario` | Solo lectura | Lee estadisticas del usuario E2E. |
+| `SMOKE-U09 estadisticas por bloque` | Solo lectura | Lee estadisticas. |
+| `SMOKE-A01 login admin` | Dependiente de seed | Usa credenciales admin del seed local/CI. |
+| `SMOKE-A02 listar preguntas admin` | Solo lectura | Consulta admin. |
+| `SMOKE-A03 crear pregunta` | Escritura reversible parcial | Crea pregunta que despues intenta eliminar. |
+| `SMOKE-A04 obtener pregunta por id` | Solo lectura | Lee pregunta creada. |
+| `SMOKE-A05 editar pregunta` | Escritura reversible parcial | Modifica pregunta creada por el smoke. |
+| `SMOKE-A06 eliminar pregunta` | Escritura con limpieza parcial | Elimina la pregunta creada por el smoke. |
+| `SMOKE-A07 pregunta eliminada devuelve 404` | Solo lectura | Verifica borrado. |
+| `SMOKE-A08 listar reportes` | Solo lectura | Consulta admin. |
+| `SMOKE-S01 ruta protegida sin token` | Solo lectura | Verifica 401 sin crear datos. |
+| `SMOKE-S02 ruta admin con token usuario` | Solo lectura | Verifica 403. |
+| `SMOKE-S03 login incorrecto` | Solo lectura | Verifica 401. |
+
+### Entorno Seguro Pendiente
+
+El entorno seguro recomendado es una base PostgreSQL local o temporal, inicializada con schema, seed y migraciones, con backend local en `NODE_ENV=test`, `ALLOW_E2E_WRITES=true` y `E2E_API_BASE` local. Falta implementar limpieza comprobable para usuario/tests/resultados creados por el smoke antes de considerarlo repetible sin residuos.
+
+### Riesgos De Railway/Vercel Actuales
+
+- Railway/Vercel apuntan a produccion conectada a `main`.
+- El smoke crea datos y podria afectar usuarios, estadisticas, reportes o contenido si se apuntara a produccion.
+- Billing, email y notificaciones no estan mockeados para un E2E completo.
+- No hay usuarios de prueba productivos ni mecanismo de limpieza aprobado.

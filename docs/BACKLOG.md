@@ -5,10 +5,11 @@ Ultima consolidacion documental: 2026-07-15.
 ## Completado
 
 - BL-001: Ejecutada fase 4 de linea base funcional en `chore/linea-base-funcional`, sin corregir errores durante la auditoria. Queda como linea base tecnica validada y clasificacion funcional provisional; evidencias registradas en `docs/PROJECT_STATUS.md`.
+- BL-023: Smoke E2E protegido contra ejecucion accidental en produccion mediante `NODE_ENV=test`, `ALLOW_E2E_WRITES=true` y API base local obligatoria.
 
 ## Critico
 
-- BL-020: Preparar verificacion E2E segura en entorno controlado, con credenciales/seed no productivos, para login, roles, test completo, admin, profesor y recuperacion de password.
+- BL-020: Ejecutar verificacion E2E segura en entorno local/CI aislado, con limpieza comprobable de usuarios/tests/resultados creados por el smoke.
 - BL-021: Verificar roles y permisos reales de admin, profesor y alumno contra flujos completos de frontend y API.
 - BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales.
 
@@ -21,8 +22,9 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-017: Mantener optimizadas las consultas del dashboard profesor y progreso. Verificar planes SQL e indices antes de nuevas agregaciones.
 - BL-018: Proteger scripts SQL delicados. Ningun reimport, dump o script destructivo debe ejecutarse sin backup externo y aprobacion explicita.
 - BL-019: Verificar produccion despues de cambios funcionales. Confirmar Vercel, Railway, health endpoint y variables relevantes.
-- BL-023: Crear o adaptar smoke E2E para que pueda ejecutarse sin tocar produccion y con datos desechables.
+- BL-026: Completar limpieza automatica del smoke E2E para eliminar o aislar usuarios, tests, resultados y datos temporales creados durante la prueba.
 - BL-024: Verificar conexion a base de datos mediante consultas de solo lectura aprobadas, sin exponer secretos ni ejecutar migraciones.
+- BL-025: Evaluar Playwright o alternativa de navegador para cubrir login, logout y pantallas no destructivas del frontend contra entorno aislado.
 
 ## Producto
 

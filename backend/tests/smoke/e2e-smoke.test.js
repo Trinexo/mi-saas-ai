@@ -3,16 +3,31 @@
  *
  * Ejercita el flujo completo contra la API real en localhost:3000.
  * Requiere: servidor backend en marcha + seed inicial cargado.
+ * Escribe datos: solo debe ejecutarse contra una API local con base aislada.
  *
  * Ejecutar:
+ *   $env:NODE_ENV='test'
+ *   $env:ALLOW_E2E_WRITES='true'
  *   node --test tests/smoke/e2e-smoke.test.js
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const BASE = 'http://localhost:3000/api';
+const BASE = process.env.E2E_API_BASE || 'http://localhost:3000/api';
 const ADMIN_EMAIL = 'admin@albacer.test';
 const ADMIN_PASSWORD = 'albacer2024';
+
+const assertSafeE2EEnvironment = () => {
+  assert.equal(process.env.NODE_ENV, 'test', 'Smoke E2E requiere NODE_ENV=test');
+  assert.equal(process.env.ALLOW_E2E_WRITES, 'true', 'Smoke E2E requiere ALLOW_E2E_WRITES=true');
+
+  const url = new URL(BASE);
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+  assert.ok(localHosts.has(url.hostname), `Smoke E2E bloqueado fuera de entorno local: ${url.hostname}`);
+  assert.ok(url.pathname.startsWith('/api'), 'Smoke E2E debe apuntar a la API local bajo /api');
+};
+
+assertSafeE2EEnvironment();
 
 async function api(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -83,7 +98,7 @@ async function updatePreguntaCompat(token, preguntaId, payloadBase) {
 // ── Flujo usuario ──────────────────────────────────────────────
 let userToken;
 const timestamp = Date.now();
-const userEmail = `smoke_user_${timestamp}@test.com`;
+const userEmail = `e2e_smoke_user_${timestamp}@test.local`;
 
 test('SMOKE-U01: registro de usuario', async () => {
   const { status, data } = await api('/auth/register', {
