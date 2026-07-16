@@ -1,33 +1,78 @@
 /**
- * TKT-030 — Smoke E2E pre-release
+ * TKT-030 - Smoke E2E pre-release
  *
- * Ejercita el flujo completo contra la API real en localhost:3000.
- * Requiere: servidor backend en marcha + seed inicial cargado.
- * Escribe datos: solo debe ejecutarse contra una API local con base aislada.
+ * Ejercita el flujo completo contra una API local con base aislada.
+ * Escribe datos y se niega a ejecutarse sin senales explicitas de aislamiento.
  *
  * Ejecutar:
  *   $env:NODE_ENV='test'
  *   $env:ALLOW_E2E_WRITES='true'
+ *   $env:E2E_DB_ISOLATED='true'
+ *   $env:E2E_DATABASE_URL='postgres://postgres:postgres@localhost:5432/plataforma_test'
+ *   $env:E2E_API_BASE='http://localhost:3000/api'
  *   node --test tests/smoke/e2e-smoke.test.js
  */
-import test from 'node:test';
+import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import pkg from 'pg';
+
+const { Pool } = pkg;
 
 const BASE = process.env.E2E_API_BASE || 'http://localhost:3000/api';
+const E2E_DATABASE_URL = process.env.E2E_DATABASE_URL;
 const ADMIN_EMAIL = 'admin@albacer.test';
 const ADMIN_PASSWORD = 'albacer2024';
+const LOCAL_DB_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+const BLOCKED_DB_HOST_PATTERNS = [/railway/i, /rlwy/i, /vercel/i, /supabase/i, /neon/i, /render/i, /amazonaws/i];
 
-const assertSafeE2EEnvironment = () => {
-  assert.equal(process.env.NODE_ENV, 'test', 'Smoke E2E requiere NODE_ENV=test');
-  assert.equal(process.env.ALLOW_E2E_WRITES, 'true', 'Smoke E2E requiere ALLOW_E2E_WRITES=true');
+const runId = `e2e_smoke_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+const userEmail = `${runId}@test.local`;
+const userName = `Smoke User ${runId}`;
+const questionText = `Smoke test pregunta E2E ${runId}`;
+const markerName = `E2E DB marker ${runId}`;
 
-  const url = new URL(BASE);
-  const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
-  assert.ok(localHosts.has(url.hostname), `Smoke E2E bloqueado fuera de entorno local: ${url.hostname}`);
-  assert.ok(url.pathname.startsWith('/api'), 'Smoke E2E debe apuntar a la API local bajo /api');
+const created = {
+  userId: null,
+  testIds: new Set(),
+  preguntaIds: new Set(),
+  marker: {
+    oposicionId: null,
+    temaId: null,
+    preguntaId: null,
+  },
 };
 
-assertSafeE2EEnvironment();
+const pool = new Pool({ connectionString: E2E_DATABASE_URL, ssl: false });
+
+let userToken;
+let adminToken;
+let adminSuiteEnabled = true;
+let preguntasTest;
+let generatedTestOk = false;
+
+function assertSafeUrl() {
+  assert.equal(process.env.NODE_ENV, 'test', 'Smoke E2E requiere NODE_ENV=test');
+  assert.equal(process.env.ALLOW_E2E_WRITES, 'true', 'Smoke E2E requiere ALLOW_E2E_WRITES=true');
+  assert.equal(process.env.E2E_DB_ISOLATED, 'true', 'Smoke E2E requiere E2E_DB_ISOLATED=true');
+  assert.ok(E2E_DATABASE_URL, 'Smoke E2E requiere E2E_DATABASE_URL');
+
+  const apiUrl = new URL(BASE);
+  assert.ok(LOCAL_DB_HOSTS.has(apiUrl.hostname), `Smoke E2E bloqueado fuera de API local: ${apiUrl.hostname}`);
+  assert.ok(apiUrl.pathname.startsWith('/api'), 'Smoke E2E debe apuntar a la API local bajo /api');
+
+  const dbUrl = new URL(E2E_DATABASE_URL);
+  assert.ok(LOCAL_DB_HOSTS.has(dbUrl.hostname), `Smoke E2E bloqueado fuera de DB local: ${dbUrl.hostname}`);
+  assert.ok(
+    /(^|[_-])(test|ci|e2e)($|[_-])|plataforma_test/i.test(dbUrl.pathname.replace(/^\//, '')),
+    'Smoke E2E requiere nombre de base claramente de test',
+  );
+  assert.equal(
+    BLOCKED_DB_HOST_PATTERNS.some((pattern) => pattern.test(dbUrl.hostname)),
+    false,
+    'Smoke E2E bloqueado para host de base remoto o de produccion',
+  );
+}
 
 async function api(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -39,6 +84,84 @@ async function api(path, { method = 'GET', body, token } = {}) {
   });
   const json = await res.json();
   return { status: res.status, data: json.data, message: json.message };
+}
+
+async function query(sql, params = []) {
+  return pool.query(sql, params);
+}
+
+async function createDbMarker() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const oposicion = await client.query(
+      `INSERT INTO oposiciones (nombre, descripcion, estado)
+       VALUES ($1, $2, 'activa')
+       RETURNING id`,
+      [markerName, `Marker ${runId}`],
+    );
+    const oposicionId = Number(oposicion.rows[0].id);
+    const tema = await client.query(
+      `INSERT INTO temas (oposicion_id, nombre)
+       VALUES ($1, $2)
+       RETURNING id`,
+      [oposicionId, `Tema ${runId}`],
+    );
+    const temaId = Number(tema.rows[0].id);
+    const pregunta = await client.query(
+      `INSERT INTO preguntas (tema_id, enunciado, explicacion, nivel_dificultad, estado)
+       VALUES ($1, $2, $3, 1, 'aprobada')
+       RETURNING id`,
+      [temaId, `Pregunta marker ${runId}`, 'Marker E2E'],
+    );
+    const preguntaId = Number(pregunta.rows[0].id);
+    await client.query(
+      `INSERT INTO opciones_respuesta (pregunta_id, texto, correcta)
+       VALUES ($1, 'A', TRUE), ($1, 'B', FALSE)`,
+      [preguntaId],
+    );
+    await client.query('COMMIT');
+    created.marker = { oposicionId, temaId, preguntaId };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function cleanupMarker() {
+  const { oposicionId, temaId, preguntaId } = created.marker;
+  if (!oposicionId && !temaId && !preguntaId) return;
+  await query('DELETE FROM opciones_respuesta WHERE pregunta_id = $1', [preguntaId]);
+  await query('DELETE FROM preguntas WHERE id = $1', [preguntaId]);
+  await query('DELETE FROM temas WHERE id = $1', [temaId]);
+  await query('DELETE FROM oposiciones WHERE id = $1', [oposicionId]);
+  created.marker = { oposicionId: null, temaId: null, preguntaId: null };
+}
+
+async function assertApiUsesE2EDatabase() {
+  await createDbMarker();
+  try {
+    const { status, data } = await api('/oposiciones');
+    assert.equal(status, 200);
+    assert.ok(
+      Array.isArray(data) && data.some((oposicion) => oposicion.nombre === markerName),
+      'La API local no ve el marcador creado en E2E_DATABASE_URL; posible DATABASE_URL distinta',
+    );
+  } finally {
+    await cleanupMarker();
+  }
+}
+
+async function preventiveCleanup() {
+  const staleUsers = await query(
+    `SELECT id FROM usuarios
+     WHERE email LIKE 'e2e_smoke_%@test.local'`,
+  );
+  for (const row of staleUsers.rows) {
+    await cleanupUserById(Number(row.id));
+  }
 }
 
 async function generateTestCompat(token, numeroPreguntas = 5) {
@@ -95,18 +218,144 @@ async function updatePreguntaCompat(token, preguntaId, payloadBase) {
   });
 }
 
-// ── Flujo usuario ──────────────────────────────────────────────
-let userToken;
-const timestamp = Date.now();
-const userEmail = `e2e_smoke_user_${timestamp}@test.local`;
+async function getTrackedIds() {
+  const user = await query(
+    `SELECT id FROM usuarios
+     WHERE email = $1 OR email LIKE $2 OR nombre = $3`,
+    [userEmail, `${runId}%`, userName],
+  );
+  const userIds = new Set(user.rows.map((row) => Number(row.id)));
+  if (created.userId) userIds.add(created.userId);
+
+  const preguntas = await query(
+    `SELECT id FROM preguntas
+     WHERE id = ANY($1::bigint[]) OR enunciado = $2 OR enunciado LIKE $3`,
+    [[...created.preguntaIds], questionText, `${questionText}%`],
+  );
+  const preguntaIds = new Set(preguntas.rows.map((row) => Number(row.id)));
+  created.preguntaIds.forEach((id) => preguntaIds.add(id));
+
+  const testsByUser = userIds.size
+    ? await query('SELECT id FROM tests WHERE usuario_id = ANY($1::bigint[])', [[...userIds]])
+    : { rows: [] };
+  const testIds = new Set(testsByUser.rows.map((row) => Number(row.id)));
+  created.testIds.forEach((id) => testIds.add(id));
+
+  return { userIds, preguntaIds, testIds };
+}
+
+async function cleanupUserById(userId) {
+  const tests = await query('SELECT id FROM tests WHERE usuario_id = $1', [userId]);
+  const testIds = tests.rows.map((row) => Number(row.id));
+  await cleanupByIds({ userIds: new Set([userId]), preguntaIds: new Set(), testIds: new Set(testIds) });
+}
+
+async function cleanupByIds({ userIds, preguntaIds, testIds }) {
+  const users = [...userIds];
+  const preguntas = [...preguntaIds];
+  const tests = [...testIds];
+
+  if (preguntas.length) {
+    await query('DELETE FROM auditoria_preguntas WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+    await query('DELETE FROM preguntas_etiquetas WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+    await query('DELETE FROM colecciones_preguntas WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+    await query('DELETE FROM admin_tests_preguntas WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+    await query('DELETE FROM reportes_preguntas WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+    await query('DELETE FROM repeticion_espaciada WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+    await query('DELETE FROM opciones_respuesta WHERE pregunta_id = ANY($1::bigint[])', [preguntas]);
+  }
+
+  if (tests.length) {
+    await query('DELETE FROM respuestas_usuario WHERE test_id = ANY($1::bigint[])', [tests]);
+    await query('DELETE FROM resultados_test WHERE test_id = ANY($1::bigint[])', [tests]);
+    await query('DELETE FROM tests_preguntas WHERE test_id = ANY($1::bigint[])', [tests]);
+    await query('DELETE FROM tests WHERE id = ANY($1::bigint[])', [tests]);
+  }
+
+  if (users.length) {
+    await query('DELETE FROM notificaciones WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM password_resets WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM accesos_oposicion WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM profesores_oposiciones WHERE user_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM suscripciones WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM progreso_usuario WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM repeticion_espaciada WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM reportes_preguntas WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('UPDATE actividad_global SET usuario_id = NULL WHERE usuario_id = ANY($1::bigint[])', [users]);
+    await query('DELETE FROM usuarios WHERE id = ANY($1::bigint[])', [users]);
+  }
+
+  if (preguntas.length) {
+    await query('DELETE FROM preguntas WHERE id = ANY($1::bigint[])', [preguntas]);
+  }
+}
+
+async function cleanupRun() {
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  const ids = await getTrackedIds();
+  await cleanupByIds(ids);
+}
+
+async function assertNoResidues() {
+  const ids = await getTrackedIds();
+  const users = [...ids.userIds];
+  const preguntas = [...ids.preguntaIds];
+  const tests = [...ids.testIds];
+  const checks = [];
+
+  checks.push(['usuarios', (await query('SELECT COUNT(*)::int AS total FROM usuarios WHERE email = $1 OR nombre = $2', [userEmail, userName])).rows[0].total]);
+  checks.push(['preguntas_run', (await query('SELECT COUNT(*)::int AS total FROM preguntas WHERE enunciado LIKE $1', [`${questionText}%`])).rows[0].total]);
+
+  if (users.length) {
+    checks.push(['notificaciones', (await query('SELECT COUNT(*)::int AS total FROM notificaciones WHERE usuario_id = ANY($1::bigint[])', [users])).rows[0].total]);
+    checks.push(['password_resets', (await query('SELECT COUNT(*)::int AS total FROM password_resets WHERE usuario_id = ANY($1::bigint[])', [users])).rows[0].total]);
+    checks.push(['accesos_oposicion', (await query('SELECT COUNT(*)::int AS total FROM accesos_oposicion WHERE usuario_id = ANY($1::bigint[])', [users])).rows[0].total]);
+    checks.push(['progreso_usuario', (await query('SELECT COUNT(*)::int AS total FROM progreso_usuario WHERE usuario_id = ANY($1::bigint[])', [users])).rows[0].total]);
+    checks.push(['repeticion_espaciada_user', (await query('SELECT COUNT(*)::int AS total FROM repeticion_espaciada WHERE usuario_id = ANY($1::bigint[])', [users])).rows[0].total]);
+  }
+
+  if (tests.length) {
+    checks.push(['tests', (await query('SELECT COUNT(*)::int AS total FROM tests WHERE id = ANY($1::bigint[])', [tests])).rows[0].total]);
+    checks.push(['tests_preguntas', (await query('SELECT COUNT(*)::int AS total FROM tests_preguntas WHERE test_id = ANY($1::bigint[])', [tests])).rows[0].total]);
+    checks.push(['respuestas_usuario', (await query('SELECT COUNT(*)::int AS total FROM respuestas_usuario WHERE test_id = ANY($1::bigint[])', [tests])).rows[0].total]);
+    checks.push(['resultados_test', (await query('SELECT COUNT(*)::int AS total FROM resultados_test WHERE test_id = ANY($1::bigint[])', [tests])).rows[0].total]);
+  }
+
+  if (preguntas.length) {
+    checks.push(['preguntas', (await query('SELECT COUNT(*)::int AS total FROM preguntas WHERE id = ANY($1::bigint[])', [preguntas])).rows[0].total]);
+    checks.push(['opciones_respuesta', (await query('SELECT COUNT(*)::int AS total FROM opciones_respuesta WHERE pregunta_id = ANY($1::bigint[])', [preguntas])).rows[0].total]);
+    checks.push(['auditoria_preguntas', (await query('SELECT COUNT(*)::int AS total FROM auditoria_preguntas WHERE pregunta_id = ANY($1::bigint[])', [preguntas])).rows[0].total]);
+  }
+
+  const residues = checks.filter(([, total]) => total !== 0);
+  assert.deepEqual(residues, [], `Quedan residuos E2E: ${JSON.stringify(residues)}`);
+}
+
+before(async () => {
+  assertSafeUrl();
+  await query('SELECT 1');
+  await preventiveCleanup();
+  await assertApiUsesE2EDatabase();
+});
+
+after(async () => {
+  try {
+    await cleanupMarker();
+    await cleanupRun();
+    await assertNoResidues();
+  } finally {
+    await pool.end();
+  }
+});
 
 test('SMOKE-U01: registro de usuario', async () => {
   const { status, data } = await api('/auth/register', {
     method: 'POST',
-    body: { nombre: 'Smoke User', email: userEmail, password: 'pass1234' },
+    body: { nombre: userName, email: userEmail, password: 'pass1234' },
   });
   assert.equal(status, 201);
   assert.ok(data.id > 0, 'Debe devolver el id del usuario creado');
+  created.userId = Number(data.id);
 });
 
 test('SMOKE-U02: login de usuario', async () => {
@@ -119,28 +368,24 @@ test('SMOKE-U02: login de usuario', async () => {
   userToken = data.token;
 });
 
-test('SMOKE-U03: catálogo oposiciones', async () => {
+test('SMOKE-U03: catalogo oposiciones', async () => {
   const { status, data } = await api('/oposiciones');
   assert.equal(status, 200);
   assert.ok(Array.isArray(data), 'Debe ser array');
-  assert.ok(data.length > 0, 'Debe haber al menos 1 oposición');
+  assert.ok(data.length > 0, 'Debe haber al menos 1 oposicion');
 });
 
-test('SMOKE-U04: catálogo temas', async () => {
+test('SMOKE-U04: catalogo temas', async () => {
   const { status, data } = await api('/temas?oposicion_id=1');
   assert.equal(status, 200);
   assert.ok(Array.isArray(data));
 });
 
-test('SMOKE-U05: catálogo bloques', async () => {
+test('SMOKE-U05: catalogo bloques', async () => {
   const { status, data } = await api('/bloques?tema_id=1');
   assert.equal(status, 200);
   assert.ok(Array.isArray(data));
 });
-
-let testId;
-let preguntasTest;
-let generatedTestOk = false;
 
 test('SMOKE-U06: generar test', async () => {
   const { status, data } = await generateTestCompat(userToken, 5);
@@ -149,7 +394,7 @@ test('SMOKE-U06: generar test', async () => {
   if (status === 201) {
     assert.ok(data.testId > 0);
     assert.ok(data.preguntas.length > 0);
-    testId = Number(data.testId);
+    created.testIds.add(Number(data.testId));
     preguntasTest = data.preguntas;
     generatedTestOk = true;
   }
@@ -165,7 +410,7 @@ test('SMOKE-U07: enviar test con todas las respuestas', async () => {
   const { status, data } = await api('/tests/submit', {
     method: 'POST',
     token: userToken,
-    body: { testId, respuestas },
+    body: { testId: [...created.testIds][0], respuestas },
   });
   assert.equal(status, 200);
   assert.ok(typeof data.aciertos === 'number');
@@ -173,17 +418,18 @@ test('SMOKE-U07: enviar test con todas las respuestas', async () => {
   assert.ok(typeof data.nota !== 'undefined');
 });
 
-test('SMOKE-U07B: generar test sin enviar no debe contar en estadísticas finalizadas', async () => {
+test('SMOKE-U07B: generar test sin enviar no debe contar en estadisticas finalizadas', async () => {
   const { status, data } = await generateTestCompat(userToken, 5);
 
   assert.ok([201, 400].includes(status));
 
   if (status === 201) {
     assert.ok(data.testId > 0);
+    created.testIds.add(Number(data.testId));
   }
 });
 
-test('SMOKE-U08: estadísticas de usuario', async () => {
+test('SMOKE-U08: estadisticas de usuario', async () => {
   const { status, data } = await api('/stats/user', { token: userToken });
   assert.equal(status, 200);
   assert.ok(typeof data.totalTests === 'number');
@@ -194,15 +440,11 @@ test('SMOKE-U08: estadísticas de usuario', async () => {
   }
 });
 
-test('SMOKE-U09: estadísticas por bloque', async () => {
+test('SMOKE-U09: estadisticas por bloque', async () => {
   const { status, data } = await statsBloqueCompat(userToken);
   assert.equal(status, 200);
   assert.ok(typeof data.preguntasVistas === 'number');
 });
-
-// ── Flujo admin ────────────────────────────────────────────────
-let adminToken;
-let adminSuiteEnabled = true;
 
 test('SMOKE-A01: login admin', async () => {
   const { status, data } = await api('/auth/login', {
@@ -223,48 +465,48 @@ test('SMOKE-A02: listar preguntas admin', async () => {
   assert.ok(Array.isArray(data.preguntas ?? data.items ?? []));
 });
 
-let createdPreguntaId;
-
 test('SMOKE-A03: crear pregunta', async () => {
   if (!adminSuiteEnabled) return;
   const { status, data } = await createPreguntaCompat(adminToken, {
-      enunciado: 'Smoke test pregunta E2E',
-      explicacion: 'Test explicación',
-      referenciaNormativa: null,
-      nivelDificultad: 'media',
-      opciones: [
-        { texto: 'Opción A', correcta: true },
-        { texto: 'Opción B', correcta: false },
-        { texto: 'Opción C', correcta: false },
-        { texto: 'Opción D', correcta: false },
-      ],
+    enunciado: questionText,
+    explicacion: `Test explicacion ${runId}`,
+    referenciaNormativa: null,
+    nivelDificultad: 'media',
+    opciones: [
+      { texto: `Opcion A ${runId}`, correcta: true },
+      { texto: `Opcion B ${runId}`, correcta: false },
+      { texto: `Opcion C ${runId}`, correcta: false },
+      { texto: `Opcion D ${runId}`, correcta: false },
+    ],
   });
   assert.equal(status, 201);
   assert.ok(data.id > 0);
-  createdPreguntaId = data.id;
+  created.preguntaIds.add(Number(data.id));
 });
 
 test('SMOKE-A04: obtener pregunta por id', async () => {
   if (!adminSuiteEnabled) return;
-  const { status, data } = await api(`/admin/preguntas/${createdPreguntaId}`, { token: adminToken });
+  const preguntaId = [...created.preguntaIds][0];
+  const { status, data } = await api(`/admin/preguntas/${preguntaId}`, { token: adminToken });
   assert.equal(status, 200);
-  assert.equal(data.enunciado, 'Smoke test pregunta E2E');
+  assert.equal(data.enunciado, questionText);
   assert.equal(data.opciones.length, 4);
 });
 
 test('SMOKE-A05: editar pregunta', async () => {
   if (!adminSuiteEnabled) return;
-  const { status, data } = await updatePreguntaCompat(adminToken, createdPreguntaId, {
-      enunciado: 'Smoke test pregunta E2E (editada)',
-      explicacion: 'Explicación actualizada',
-      referenciaNormativa: null,
-      nivelDificultad: 'dificil',
-      opciones: [
-        { texto: 'Opción A actualizada', correcta: false },
-        { texto: 'Opción B actualizada', correcta: true },
-        { texto: 'Opción C actualizada', correcta: false },
-        { texto: 'Opción D actualizada', correcta: false },
-      ],
+  const preguntaId = [...created.preguntaIds][0];
+  const { status, data } = await updatePreguntaCompat(adminToken, preguntaId, {
+    enunciado: `${questionText} editada`,
+    explicacion: `Explicacion actualizada ${runId}`,
+    referenciaNormativa: null,
+    nivelDificultad: 'dificil',
+    opciones: [
+      { texto: `Opcion A actualizada ${runId}`, correcta: false },
+      { texto: `Opcion B actualizada ${runId}`, correcta: true },
+      { texto: `Opcion C actualizada ${runId}`, correcta: false },
+      { texto: `Opcion D actualizada ${runId}`, correcta: false },
+    ],
   });
   assert.equal(status, 200);
   assert.ok(data.id);
@@ -272,7 +514,8 @@ test('SMOKE-A05: editar pregunta', async () => {
 
 test('SMOKE-A06: eliminar pregunta', async () => {
   if (!adminSuiteEnabled) return;
-  const { status, data } = await api(`/admin/preguntas/${createdPreguntaId}`, {
+  const preguntaId = [...created.preguntaIds][0];
+  const { status, data } = await api(`/admin/preguntas/${preguntaId}`, {
     method: 'DELETE',
     token: adminToken,
   });
@@ -282,7 +525,8 @@ test('SMOKE-A06: eliminar pregunta', async () => {
 
 test('SMOKE-A07: pregunta eliminada devuelve 404', async () => {
   if (!adminSuiteEnabled) return;
-  const { status } = await api(`/admin/preguntas/${createdPreguntaId}`, { token: adminToken });
+  const preguntaId = [...created.preguntaIds][0];
+  const { status } = await api(`/admin/preguntas/${preguntaId}`, { token: adminToken });
   assert.equal(status, 404);
 });
 
@@ -292,7 +536,6 @@ test('SMOKE-A08: listar reportes', async () => {
   assert.equal(status, 200);
 });
 
-// ── Seguridad básica ───────────────────────────────────────────
 test('SMOKE-S01: ruta protegida sin token = 401', async () => {
   const { status } = await api('/tests/generate', { method: 'POST', body: { temaId: 1, numPreguntas: 5 } });
   assert.equal(status, 401);

@@ -184,3 +184,50 @@ El entorno seguro recomendado es una base PostgreSQL local o temporal, inicializ
 - El smoke crea datos y podria afectar usuarios, estadisticas, reportes o contenido si se apuntara a produccion.
 - Billing, email y notificaciones no estan mockeados para un E2E completo.
 - No hay usuarios de prueba productivos ni mecanismo de limpieza aprobado.
+
+## Fase 6: Smoke E2E Seguro
+
+Fecha: 2026-07-16.
+
+### Protecciones Implementadas
+
+- El smoke exige `NODE_ENV=test`, `ALLOW_E2E_WRITES=true`, `E2E_DB_ISOLATED=true` y `E2E_DATABASE_URL`.
+- `E2E_API_BASE` debe apuntar a API local bajo `/api`.
+- `E2E_DATABASE_URL` debe apuntar a host local (`localhost`, `127.0.0.1` o `::1`) y a una base con nombre claramente de test.
+- Se bloquean patrones de host remoto conocidos como Railway, Vercel, Supabase, Neon, Render y AWS.
+- Antes de escribir por API, el smoke crea un marcador en la base E2E local y comprueba que `/api/oposiciones` lo ve. Si no lo ve, aborta antes de registrar usuarios o crear tests.
+- Los emails se desactivan en `NODE_ENV=test` para evitar llamadas a SMTP/Ethereal durante el smoke.
+- Cada ejecucion usa un identificador `e2e_smoke_<timestamp>_<random>` en usuario, pregunta temporal y marcador.
+- La limpieza usa IDs exactos y prefijos reservados, elimina dependencias antes de entidades raiz y comprueba residuos.
+
+### Entidades Que Puede Tocar El Smoke
+
+- `usuarios`: usuario E2E creado por registro.
+- `tests`: tests generados por el alumno E2E.
+- `tests_preguntas`: relacion entre tests generados y preguntas usadas.
+- `respuestas_usuario`: respuestas del test enviado.
+- `resultados_test`: resultado del test finalizado.
+- `progreso_usuario`: progreso derivado del envio.
+- `repeticion_espaciada`: repaso derivado del envio.
+- `preguntas`: pregunta temporal admin y pregunta marcador DB/API.
+- `opciones_respuesta`: opciones de pregunta temporal y marcador.
+- `auditoria_preguntas`: auditoria async de create/update/delete de pregunta temporal.
+- `notificaciones`, `password_resets`, `accesos_oposicion`, `profesores_oposiciones`, `suscripciones`, `reportes_preguntas`, `actividad_global`: comprobadas/limpiadas si quedasen registros asociados al usuario o pregunta E2E.
+
+### Ejecucion Local
+
+- No se ejecuto el smoke E2E.
+- Motivo: en este entorno no estan disponibles `psql`, `pg_isready`, `createdb` ni `docker`, por lo que no se puede preparar ni demostrar una base PostgreSQL local aislada con schema, seed y migraciones.
+- No se uso Railway, Vercel, una base remota ni datos reales.
+- No se ejecutaron migraciones, dumps ni reimports.
+
+### CI
+
+- El workflow declara `NODE_ENV=test`, `ALLOW_E2E_WRITES=true`, `E2E_DB_ISOLATED=true`, `E2E_DATABASE_URL` local y `E2E_API_BASE` local.
+- El servicio PostgreSQL del workflow es efimero y se destruye al terminar el job.
+- El smoke queda preparado para fallar si el backend local no lee la misma base aislada.
+- Riesgo pendiente: `database/seed.sql` usa `opciones_respuesta.es_correcta`, mientras `database/schema.sql` define `opciones_respuesta.correcta`. No se corrigio en esta fase.
+
+### Siguiente Paso Recomendado
+
+La siguiente tarea unica es ejecutar el smoke dos veces en CI o en una maquina con PostgreSQL local disponible, verificando que el flujo pasa y que la comprobacion de residuos queda en cero despues de cada ejecucion.

@@ -80,6 +80,8 @@ Smoke E2E backend contra API local aislada:
 cd backend
 $env:NODE_ENV='test'
 $env:ALLOW_E2E_WRITES='true'
+$env:E2E_DB_ISOLATED='true'
+$env:E2E_DATABASE_URL='postgres://postgres:postgres@localhost:5432/plataforma_test'
 $env:E2E_API_BASE='http://localhost:3000/api'
 npm run test:smoke
 ```
@@ -91,7 +93,7 @@ cd backend
 npm run test:ci
 ```
 
-No ejecutes `test:smoke` contra Railway, Vercel ni una base de datos con usuarios reales. El smoke crea usuario, tests y una pregunta temporal.
+No ejecutes `test:smoke` contra Railway, Vercel ni una base de datos con usuarios reales. El smoke crea usuario, tests y una pregunta temporal, comprueba que la API local lee la misma base aislada y elimina los datos que crea.
 
 Build frontend:
 
