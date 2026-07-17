@@ -9,6 +9,7 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-027: Smoke E2E reforzado con verificacion de DB local aislada, marcador DB/API, identificador unico, limpieza por IDs exactos y bloqueo de emails en `NODE_ENV=test`.
 - BL-028: Corregido `database/seed.sql` para usar `opciones_respuesta.correcta`, alineado con `database/schema.sql` y repositorios. CI queda preparado para dos ejecuciones visibles del smoke sobre PostgreSQL efimero.
 - BL-029: Cubierto `email.service.js` con prueba de regresion: en `NODE_ENV=test` no crea transporter ni lee SMTP; fuera de `NODE_ENV=test` conserva el flujo de envio.
+- BL-030: Diagnosticado el fallo inicial del smoke E2E en CI: el marcador insertaba `oposiciones` sin `slug` despues de la migracion `032`. Corregido el marcador y endurecida la carga SQL del workflow con `ON_ERROR_STOP`.
 
 ## Critico
 

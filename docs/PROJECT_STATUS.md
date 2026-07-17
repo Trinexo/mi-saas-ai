@@ -258,3 +258,29 @@ Fecha: 2026-07-16.
 ### Siguiente Paso Recomendado
 
 Revisar los checks de la Pull Request lineal. Solo si los dos smokes de CI pasan y no dejan residuos debe marcarse BL-020 como completada.
+
+## Fase 8: Diagnostico Del Primer Smoke E2E
+
+Fecha: 2026-07-17.
+
+### Evidencia CI
+
+- PR #418, run `29512412371`, job `test-backend` `87668914164`: fallo en `Run smoke E2E first pass`.
+- Push run `29512396065`, job `test-backend` `87668857571`: mismo fallo en `Run smoke E2E first pass`.
+- `build-frontend` paso en ambos runs.
+- El backend arranco localmente en CI y los tests unitarios backend pasaron antes del smoke.
+- El fallo ocurria antes del flujo de usuario, en el hook inicial del smoke.
+
+### Causa
+
+El marcador de seguridad de `backend/tests/smoke/e2e-smoke.test.js` insertaba en `oposiciones` solo `nombre`, `descripcion` y `estado`. La migracion `database/migrations/032_add_slug_to_oposiciones.sql` deja `oposiciones.slug` como `NOT NULL`, por lo que PostgreSQL abortaba con codigo `23502`.
+
+### Correccion Aplicada
+
+- El marcador E2E crea ahora un `slug` unico derivado del `runId`.
+- El smoke imprime etapas claras de inicio, comprobacion de aislamiento, marcador DB/API, limpieza y verificacion de residuos.
+- El workflow de CI usa `psql -v ON_ERROR_STOP=1` al cargar schema, seed y migraciones para no continuar despues de errores SQL.
+
+### Estado
+
+BL-020 sigue abierta hasta que GitHub Actions confirme que las dos ejecuciones consecutivas de `npm run test:smoke` pasan en PostgreSQL efimero y que la limpieza queda sin residuos.

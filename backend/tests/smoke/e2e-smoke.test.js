@@ -31,6 +31,7 @@ const userEmail = `${runId}@test.local`;
 const userName = `Smoke User ${runId}`;
 const questionText = `Smoke test pregunta E2E ${runId}`;
 const markerName = `E2E DB marker ${runId}`;
+const markerSlug = `e2e-db-marker-${runId.replace(/_/g, '-')}`;
 
 const created = {
   userId: null,
@@ -83,22 +84,31 @@ async function api(path, { method = 'GET', body, token } = {}) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   const json = await res.json();
-  return { status: res.status, data: json.data, message: json.message };
+  return { status: res.status, data: json.data, message: json.message, method, path };
 }
 
 async function query(sql, params = []) {
   return pool.query(sql, params);
 }
 
+function logStage(message) {
+  console.log(`[E2E] ${message}`);
+}
+
+function describeApiResponse(label, response) {
+  return `${label} -> HTTP ${response.status}${response.message ? `: ${response.message}` : ''}`;
+}
+
 async function createDbMarker() {
+  logStage('Creating DB/API marker');
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const oposicion = await client.query(
-      `INSERT INTO oposiciones (nombre, descripcion, estado)
-       VALUES ($1, $2, 'activa')
+      `INSERT INTO oposiciones (nombre, descripcion, estado, slug)
+       VALUES ($1, $2, 'activa', $3)
        RETURNING id`,
-      [markerName, `Marker ${runId}`],
+      [markerName, `Marker ${runId}`, markerSlug],
     );
     const oposicionId = Number(oposicion.rows[0].id);
     const tema = await client.query(
@@ -143,8 +153,9 @@ async function cleanupMarker() {
 async function assertApiUsesE2EDatabase() {
   await createDbMarker();
   try {
-    const { status, data } = await api('/oposiciones');
-    assert.equal(status, 200);
+    logStage('Checking API reads the isolated E2E database');
+    const { status, data, message } = await api('/oposiciones');
+    assert.equal(status, 200, describeApiResponse('GET /oposiciones', { status, message }));
     assert.ok(
       Array.isArray(data) && data.some((oposicion) => oposicion.nombre === markerName),
       'La API local no ve el marcador creado en E2E_DATABASE_URL; posible DATABASE_URL distinta',
@@ -332,17 +343,24 @@ async function assertNoResidues() {
 }
 
 before(async () => {
+  logStage(`Starting smoke run ${runId}`);
+  logStage('Validating isolation flags and local targets');
   assertSafeUrl();
+  logStage('Checking database connectivity');
   await query('SELECT 1');
+  logStage('Cleaning stale E2E data before run');
   await preventiveCleanup();
   await assertApiUsesE2EDatabase();
 });
 
 after(async () => {
   try {
+    logStage('Cleaning smoke data');
     await cleanupMarker();
     await cleanupRun();
+    logStage('Checking zero residues');
     await assertNoResidues();
+    logStage('Smoke cleanup finished');
   } finally {
     await pool.end();
   }
