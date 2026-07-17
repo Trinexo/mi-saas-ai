@@ -120,7 +120,7 @@ async function createDbMarker() {
     const temaId = Number(tema.rows[0].id);
     const pregunta = await client.query(
       `INSERT INTO preguntas (tema_id, enunciado, explicacion, nivel_dificultad, estado)
-       VALUES ($1, $2, $3, 1, 'aprobada')
+       VALUES ($1, $2, $3, 'media', 'aprobada')
        RETURNING id`,
       [temaId, `Pregunta marker ${runId}`, 'Marker E2E'],
     );

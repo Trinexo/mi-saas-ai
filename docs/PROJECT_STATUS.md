@@ -278,8 +278,15 @@ El marcador de seguridad de `backend/tests/smoke/e2e-smoke.test.js` insertaba en
 ### Correccion Aplicada
 
 - El marcador E2E crea ahora un `slug` unico derivado del `runId`.
+- El marcador E2E usa `nivel_dificultad='media'`, alineado con `database/migrations/030_change_dificultad_to_text.sql`.
 - El smoke imprime etapas claras de inicio, comprobacion de aislamiento, marcador DB/API, limpieza y verificacion de residuos.
 - El workflow de CI usa `psql -v ON_ERROR_STOP=1` al cargar schema, seed y migraciones para no continuar despues de errores SQL.
+
+### Iteracion CI Posterior
+
+- Tras el commit `dff5ee2`, los nuevos runs `29580825758` y `29580823199` avanzaron mas alla del `slug` pero fallaron de nuevo en el mismo marcador inicial.
+- El nuevo error fue `preguntas_nivel_dificultad_check` porque el marcador insertaba `nivel_dificultad=1` y la migracion `030` requiere `facil`, `media` o `dificil`.
+- No se observo todavia fallo de flujo funcional de usuario: el smoke sigue bloqueado en la preparacion DB/API.
 
 ### Estado
 
