@@ -290,4 +290,6 @@ El marcador de seguridad de `backend/tests/smoke/e2e-smoke.test.js` insertaba en
 
 ### Estado
 
-BL-020 sigue abierta hasta que GitHub Actions confirme que las dos ejecuciones consecutivas de `npm run test:smoke` pasan en PostgreSQL efimero y que la limpieza queda sin residuos.
+Run de PR `29581036429` sobre commit `8d1178b`: `test-backend` completo en verde, incluyendo tests unitarios, `Run smoke E2E first pass` y `Run smoke E2E second pass`. `build-frontend` tambien paso. Como el smoke ejecuta `assertNoResidues()` al final de cada pass, BL-020 queda validada en CI sobre PostgreSQL efimero.
+
+Limitacion: el run de `push` asociado al mismo commit no pudo consultarse con `gh` local por rate limit/autenticacion (`HTTP 403/401`). La evidencia confirmada procede del conector de GitHub sobre el run de PR.
