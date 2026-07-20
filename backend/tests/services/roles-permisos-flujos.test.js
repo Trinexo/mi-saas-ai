@@ -12,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../../..');
 
 const readRepoFile = (...segments) => fs.readFileSync(path.join(repoRoot, ...segments), 'utf8');
+const TEST_JWT_SECRET = 'roles-permisos-test-secret';
 
 const callMiddleware = async (middleware, req = {}) => {
   let nextArg;
@@ -22,31 +23,41 @@ const callMiddleware = async (middleware, req = {}) => {
 };
 
 test('requireAuth rechaza ausencia de token y token invalido', async () => {
-  process.env.JWT_SECRET = 'roles-permisos-test-secret';
+  const previousJwtSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = TEST_JWT_SECRET;
 
-  const noToken = await callMiddleware(requireAuth, { headers: {} });
-  assert.ok(noToken.nextArg instanceof ApiError);
-  assert.equal(noToken.nextArg.status, 401);
+  try {
+    const noToken = await callMiddleware(requireAuth, { headers: {} });
+    assert.ok(noToken.nextArg instanceof ApiError);
+    assert.equal(noToken.nextArg.status, 401);
 
-  const invalid = await callMiddleware(requireAuth, {
-    headers: { authorization: 'Bearer token-invalido' },
-  });
-  assert.ok(invalid.nextArg instanceof ApiError);
-  assert.equal(invalid.nextArg.status, 401);
+    const invalid = await callMiddleware(requireAuth, {
+      headers: { authorization: 'Bearer token-invalido' },
+    });
+    assert.ok(invalid.nextArg instanceof ApiError);
+    assert.equal(invalid.nextArg.status, 401);
+  } finally {
+    process.env.JWT_SECRET = previousJwtSecret;
+  }
 });
 
 test('requireAuth hidrata usuario para tokens validos de admin, profesor y alumno', async () => {
-  process.env.JWT_SECRET = 'roles-permisos-test-secret';
+  const previousJwtSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = TEST_JWT_SECRET;
 
-  for (const role of ['admin', 'profesor', 'alumno']) {
-    const token = jwt.sign({ userId: role.length, role }, process.env.JWT_SECRET);
-    const result = await callMiddleware(requireAuth, {
-      headers: { authorization: `Bearer ${token}` },
-    });
+  try {
+    for (const role of ['admin', 'profesor', 'alumno']) {
+      const token = jwt.sign({ userId: role.length, role }, process.env.JWT_SECRET);
+      const result = await callMiddleware(requireAuth, {
+        headers: { authorization: `Bearer ${token}` },
+      });
 
-    assert.equal(result.nextArg, undefined);
-    assert.equal(result.req.user.role, role);
-    assert.equal(result.req.user.userId, role.length);
+      assert.equal(result.nextArg, undefined);
+      assert.equal(result.req.user.role, role);
+      assert.equal(result.req.user.userId, role.length);
+    }
+  } finally {
+    process.env.JWT_SECRET = previousJwtSecret;
   }
 });
 
@@ -104,7 +115,8 @@ test('rutas backend criticas conservan protecciones por rol', () => {
 });
 
 test('API Express bloquea accesos cruzados de roles antes de ejecutar handlers', async () => {
-  process.env.JWT_SECRET = 'roles-permisos-test-secret';
+  const previousJwtSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = TEST_JWT_SECRET;
   const server = app.listen(0);
 
   try {
@@ -139,6 +151,7 @@ test('API Express bloquea accesos cruzados de roles antes de ejecutar handlers',
     await new Promise((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
+    process.env.JWT_SECRET = previousJwtSecret;
   }
 });
 

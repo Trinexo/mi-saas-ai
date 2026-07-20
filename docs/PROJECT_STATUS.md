@@ -335,13 +335,24 @@ Esta fase valida de forma local y segura la frontera tecnica de roles y permisos
   - `ProfesorRoute` bloquea no-profesor;
   - login enruta admin/profesor/alumno a sus areas esperadas.
 
+### Pruebas Ejecutadas
+
+- Prueba individual: `node --test tests/services/roles-permisos-flujos.test.js`, 6 tests pasados.
+- Suite backend: `npm.cmd test`, 376 tests pasados, 0 fallos.
+- Frontend: `npm.cmd run build`, build Vite/PWA correcto.
+
 ### Limitaciones
 
 - No se ejecutaron flujos felices completos de admin/profesor/alumno contra base PostgreSQL aislada.
 - No se ejecutaron pruebas de navegador Playwright/Cypress porque no hay framework configurado.
+- La comprobacion frontend es estatica sobre `App.jsx` y `LoginForm.jsx`; no es un recorrido funcional de navegador.
 - No se usaron credenciales reales ni datos reales.
 - La validacion actual demuestra la frontera de permisos y bloqueos cruzados, no la operativa completa de cada pantalla con datos.
 
 ### Conclusion
 
 BL-021 queda validada parcialmente a nivel tecnico de permisos y rutas. Para cerrarla funcionalmente por completo falta ejecutar recorridos reales por rol en un entorno aislado con usuarios de prueba y datos desechables.
+
+### Siguiente Paso Recomendado
+
+Preparar un entorno aislado con usuarios de prueba `admin`, `profesor` y `alumno`, datos desechables y runner de navegador antes de ejecutar recorridos funcionales completos de BL-021.
