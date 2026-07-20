@@ -127,6 +127,76 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  stripe-checkout-webhook-isolated:
+    runs-on: ubuntu-latest
+    needs:
+      - test-backend
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: plataforma_test_stripe_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d plataforma_test_stripe_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/plataforma_test_stripe_e2e
+      JWT_SECRET: change_this_secret_in_ci
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: test
+      ALLOW_E2E_WRITES: true
+      E2E_DB_ISOLATED: true
+      ALLOW_STRIPE_E2E: true
+      STRIPE_E2E_MODE: mock
+      STRIPE_SECRET_KEY: sk_test_mock_only
+      STRIPE_WEBHOOK_SECRET: whsec_mock_only
+      FRONTEND_URL: http://127.0.0.1:4173
+      E2E_API_BASE: http://127.0.0.1:3000/api
+      VITE_API_URL: http://127.0.0.1:3000/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply schema and migrations
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
+          for f in $(ls database/migrations/*.sql | sort); do
+            echo "Applying migration: $f"
+            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
+          done
+
+      - name: Run isolated Stripe checkout and webhook first pass
+        working-directory: backend
+        run: npm run test:stripe
+
+      - name: Run isolated Stripe checkout and webhook second pass
+        working-directory: backend
+        run: npm run test:stripe
+
   browser-roles-e2e:
     runs-on: ubuntu-latest
     needs:
