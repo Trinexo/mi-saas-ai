@@ -293,3 +293,55 @@ El marcador de seguridad de `backend/tests/smoke/e2e-smoke.test.js` insertaba en
 Run de PR `29581036429` sobre commit `8d1178b`: `test-backend` completo en verde, incluyendo tests unitarios, `Run smoke E2E first pass` y `Run smoke E2E second pass`. `build-frontend` tambien paso. Como el smoke ejecuta `assertNoResidues()` al final de cada pass, BL-020 queda validada en CI sobre PostgreSQL efimero.
 
 Limitacion: el run de `push` asociado al mismo commit no pudo consultarse con `gh` local por rate limit/autenticacion (`HTTP 403/401`). La evidencia confirmada procede del conector de GitHub sobre el run de PR.
+
+## Fase 10: Validacion Tecnica De Roles Y Permisos
+
+Fecha: 2026-07-20.
+
+### Alcance
+
+Se inicio BL-021 en la rama `test/BL-021-roles-permisos-flujos`, sin trabajar directamente en `main`.
+
+Esta fase valida de forma local y segura la frontera tecnica de roles y permisos, sin usar datos reales, sin conectar con Railway/Vercel y sin ejecutar migraciones ni scripts SQL.
+
+### Evidencia Implementada
+
+- Nueva prueba backend: `backend/tests/services/roles-permisos-flujos.test.js`.
+- `requireAuth` rechaza ausencia de token y token invalido con 401.
+- `requireAuth` hidrata correctamente tokens validos de `admin`, `profesor` y `alumno`.
+- `requireRole` aplica la matriz de acceso esperada:
+  - `admin` accede a rutas admin.
+  - `profesor` no accede a rutas solo admin.
+  - `alumno` no accede a rutas admin/profesor.
+  - `admin` y `profesor` acceden a rutas compartidas cuando la ruta lo declara expresamente.
+- Prueba HTTP real contra `app` Express local para comprobar bloqueos cruzados antes de ejecutar handlers:
+  - `/api/admin/users` sin token -> 401.
+  - `/api/admin/users` con `alumno` -> 403.
+  - `/api/admin/users` con `profesor` -> 403.
+  - `/api/profesor/dashboard` sin token -> 401.
+  - `/api/profesor/dashboard` con `alumno` -> 403.
+  - `/api/profesor/dashboard` con `admin` -> 403.
+  - `/api/subscriptions/stats` con `alumno` -> 403.
+  - `/api/billing/oposiciones/1/precio` con `profesor` -> 403.
+- Comprobacion estatica de rutas criticas backend:
+  - `adminCatalogo.routes.js` exige `admin`.
+  - `adminGestion.routes.js` exige `admin`/`profesor` y mantiene subrutas sensibles solo `admin`.
+  - `profesor.routes.js` exige `profesor`.
+  - `subscription.routes.js` y `billing.routes.js` mantienen operaciones sensibles solo `admin`.
+- Comprobacion estatica de guards frontend en `frontend/src/App.jsx` y `LoginForm.jsx`:
+  - usuarios `admin` se redirigen a `/admin`;
+  - usuarios `profesor` se redirigen a `/profesor`;
+  - `AdminRoute` bloquea no-admin;
+  - `ProfesorRoute` bloquea no-profesor;
+  - login enruta admin/profesor/alumno a sus areas esperadas.
+
+### Limitaciones
+
+- No se ejecutaron flujos felices completos de admin/profesor/alumno contra base PostgreSQL aislada.
+- No se ejecutaron pruebas de navegador Playwright/Cypress porque no hay framework configurado.
+- No se usaron credenciales reales ni datos reales.
+- La validacion actual demuestra la frontera de permisos y bloqueos cruzados, no la operativa completa de cada pantalla con datos.
+
+### Conclusion
+
+BL-021 queda validada parcialmente a nivel tecnico de permisos y rutas. Para cerrarla funcionalmente por completo falta ejecutar recorridos reales por rol en un entorno aislado con usuarios de prueba y datos desechables.
