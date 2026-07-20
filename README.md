@@ -97,6 +97,22 @@ No ejecutes `test:smoke` contra Railway, Vercel ni una base de datos con usuario
 
 En CI, el smoke se ejecuta dos veces contra PostgreSQL efimero para comprobar repetibilidad y limpieza.
 
+Validacion funcional por navegador de roles admin/profesor/alumno:
+
+```powershell
+cd frontend
+$env:NODE_ENV='test'
+$env:ALLOW_E2E_WRITES='true'
+$env:E2E_DB_ISOLATED='true'
+$env:E2E_ROLE_FIXTURES_READY='true'
+$env:E2E_DATABASE_URL='postgres://postgres:postgres@localhost:5432/plataforma_test_roles_e2e'
+$env:E2E_API_BASE='http://127.0.0.1:3000/api'
+$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:4173'
+npm run test:e2e:roles
+```
+
+Antes de ejecutar esa suite deben existir backend local, frontend local y PostgreSQL aislado con `backend/tests/e2e/role-fixtures.mjs setup` aplicado. El workflow de CI prepara esos servicios y ejecuta Playwright dos veces contra Chromium. No apuntes esta suite a Railway, Vercel ni bases con datos reales.
+
 Build frontend:
 
 ```powershell

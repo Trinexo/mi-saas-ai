@@ -13,10 +13,11 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-020: Verificacion E2E segura validada en CI sobre PostgreSQL efimero en run de PR `29581036429`; pasaron tests unitarios backend, smoke first pass y smoke second pass, con comprobacion de residuos integrada.
 - BL-026: Validada la limpieza automatica del smoke E2E en dos ejecuciones consecutivas del mismo job de CI mediante `assertNoResidues()`.
 - BL-031: Validacion tecnica local de roles y permisos: `requireAuth`, `requireRole`, bloqueos HTTP cruzados en Express y guards frontend admin/profesor/alumno cubiertos por `backend/tests/services/roles-permisos-flujos.test.js`.
+- BL-025: Playwright preparado como runner de navegador para roles en entorno aislado: `frontend/e2e/roles.flows.spec.js`, fixture `backend/tests/e2e/role-fixtures.mjs` y job `browser-roles-e2e` en CI.
 
 ## Critico
 
-- BL-021: Completar verificacion funcional de roles y permisos reales de admin, profesor y alumno contra flujos felices de frontend y API en entorno aislado. Ya existe validacion tecnica local de bloqueos cruzados y guards; falta navegador/datos de prueba.
+- BL-021: Completar verificacion funcional de roles y permisos reales de admin, profesor y alumno contra flujos felices de frontend y API en entorno aislado. El runner Playwright y el job CI estan preparados, pero BL-021 no debe cerrarse hasta que los tres recorridos por rol y sus bloqueos cruzados pasen de forma repetible en CI.
 - BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales.
 
 ## Importante
@@ -29,7 +30,6 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-018: Proteger scripts SQL delicados. Ningun reimport, dump o script destructivo debe ejecutarse sin backup externo y aprobacion explicita.
 - BL-019: Verificar produccion despues de cambios funcionales. Confirmar Vercel, Railway, health endpoint y variables relevantes.
 - BL-024: Verificar conexion a base de datos mediante consultas de solo lectura aprobadas, sin exponer secretos ni ejecutar migraciones.
-- BL-025: Evaluar Playwright o alternativa de navegador para cubrir login, logout y pantallas no destructivas del frontend contra entorno aislado.
 
 ## Producto
 
