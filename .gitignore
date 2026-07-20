@@ -16,6 +16,8 @@ dist/
 build/
 coverage/
 frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/
 
 # Logs
 *.log

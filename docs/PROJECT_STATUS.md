@@ -356,3 +356,34 @@ BL-021 queda validada parcialmente a nivel tecnico de permisos y rutas. Para cer
 ### Siguiente Paso Recomendado
 
 Preparar un entorno aislado con usuarios de prueba `admin`, `profesor` y `alumno`, datos desechables y runner de navegador antes de ejecutar recorridos funcionales completos de BL-021.
+
+## Fase BL-021B: Preparacion De Validacion Funcional Por Rol
+
+Se preparo una validacion funcional real con navegador en la rama `test/BL-021-flujos-reales-por-rol`, sin trabajar en `main` y sin conectar con Railway, Vercel ni bases de datos reales.
+
+### Evidencia Implementada
+
+- Runner Playwright en `frontend/playwright.config.js`.
+- Suite de navegador `frontend/e2e/roles.flows.spec.js` con login real por formulario para `admin`, `profesor` y `alumno`.
+- Guardas de aislamiento en `frontend/e2e/support/roleE2eGuards.js`: exige `NODE_ENV=test`, `ALLOW_E2E_WRITES=true`, `E2E_DB_ISOLATED=true`, frontend local, API local y DB local de test; bloquea hosts remotos conocidos.
+- Fixture aislado `backend/tests/e2e/role-fixtures.mjs` para crear y limpiar usuarios `e2e_role_*@test.local`, oposicion, tema, bloque, pregunta y accesos necesarios en PostgreSQL efimero.
+- Job CI `browser-roles-e2e` en `.github/workflows/backend-ci.yml` con PostgreSQL efimero, backend local, frontend preview local, Chromium y dos pasadas consecutivas de la suite.
+
+### Cobertura Preparada
+
+- Admin: acceso a `/admin`, enlaces de administracion, `/api/admin/users`, `/api/subscriptions/stats` y bloqueo frente a `/api/profesor/dashboard`.
+- Profesor: acceso a `/profesor`, workspace docente, ruta compartida `/api/admin/preguntas`, bloqueo frente a `/api/admin/users` y `/api/subscriptions/stats`.
+- Alumno: acceso a `/catalogo`, rutas de alumno, `/api/stats/user` y bloqueo frente a endpoints admin/profesor.
+- Bloqueos cruzados frontend: redireccion de admin fuera de rutas no admin, profesor fuera de rutas no profesor y alumno fuera de rutas staff.
+- Logout por UI tras cada recorrido.
+
+### Validacion Local Ejecutada
+
+- `node --check backend/tests/e2e/role-fixtures.mjs`.
+- `npm.cmd run test:e2e:roles -- --list`: 3 tests listados, uno por rol.
+
+No se ejecuto localmente el flujo completo de navegador porque esta maquina no tiene `psql` ni Docker disponibles para levantar PostgreSQL aislado. No se debe sustituir esto por produccion.
+
+### Estado De BL-021
+
+BL-021 sigue abierta. Playwright y el workflow preparados no equivalen a validacion funcional completa. Solo debe cerrarse cuando admin, profesor, alumno y sus bloqueos cruzados pasen de forma repetible en CI.
