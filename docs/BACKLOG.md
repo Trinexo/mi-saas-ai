@@ -14,10 +14,10 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-026: Validada la limpieza automatica del smoke E2E en dos ejecuciones consecutivas del mismo job de CI mediante `assertNoResidues()`.
 - BL-031: Validacion tecnica local de roles y permisos: `requireAuth`, `requireRole`, bloqueos HTTP cruzados en Express y guards frontend admin/profesor/alumno cubiertos por `backend/tests/services/roles-permisos-flujos.test.js`.
 - BL-025: Playwright preparado como runner de navegador para roles en entorno aislado: `frontend/e2e/roles.flows.spec.js`, fixture `backend/tests/e2e/role-fixtures.mjs` y job `browser-roles-e2e` en CI.
+- BL-021: Validacion funcional completa de roles y permisos realizada con Playwright en CI sobre PostgreSQL efimero. Los recorridos de administrador, profesor y alumno, los accesos permitidos, los bloqueos cruzados y el cierre de sesion pasaron en dos ejecuciones consecutivas del job `browser-roles-e2e`, run `29743555297`, sin utilizar produccion ni datos reales.
 
 ## Critico
 
-- BL-021: Completar verificacion funcional de roles y permisos reales de admin, profesor y alumno contra flujos felices de frontend y API en entorno aislado. El runner Playwright y el job CI estan preparados, pero BL-021 no debe cerrarse hasta que los tres recorridos por rol y sus bloqueos cruzados pasen de forma repetible en CI.
 - BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales.
 
 ## Importante
