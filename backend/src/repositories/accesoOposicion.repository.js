@@ -82,8 +82,9 @@ export const accesoOposicionRepository = {
     notas = null,
     tipoAlumno = 'libre',
     modoPreparacion = 'albacer',
+    client = pool,
   }) {
-    const result = await pool.query(
+    const result = await client.query(
       `INSERT INTO accesos_oposicion
          (usuario_id, oposicion_id, estado, fecha_fin, precio_pagado, notas, tipo_alumno, modo_preparacion)
        VALUES ($1, $2, 'activo', $3, $4, $5, $6, $7)
