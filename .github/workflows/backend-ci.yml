@@ -27,6 +27,11 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/plataforma_test
       JWT_SECRET: change_this_secret_in_ci
       JWT_EXPIRES_IN: 7d
+      NODE_ENV: test
+      ALLOW_E2E_WRITES: true
+      E2E_DB_ISOLATED: true
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/plataforma_test
+      E2E_API_BASE: http://localhost:3000/api
       PORT: 3000
 
     steps:
@@ -49,17 +54,18 @@ jobs:
 
       - name: Apply schema and seed
         run: |
-          psql "$DATABASE_URL" -f database/schema.sql
-          psql "$DATABASE_URL" -f database/seed.sql
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
           for f in $(ls database/migrations/*.sql | sort); do
             echo "Applying migration: $f"
-            psql "$DATABASE_URL" -f "$f"
+            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
           done
 
       - name: Start backend API
         working-directory: backend
         run: |
           nohup npm run start > /tmp/backend.log 2>&1 &
+          echo $! > /tmp/backend.pid
 
       - name: Wait for API health
         run: |
@@ -74,15 +80,30 @@ jobs:
           cat /tmp/backend.log
           exit 1
 
-      - name: Run backend unit + smoke tests
+      - name: Run backend unit tests
         working-directory: backend
-        run: npm run test:ci
+        run: npm test
+
+      - name: Run smoke E2E first pass
+        working-directory: backend
+        run: npm run test:smoke
+
+      - name: Run smoke E2E second pass
+        working-directory: backend
+        run: npm run test:smoke
 
       - name: Dump backend log on failure
         if: failure()
         run: |
           echo "===== /tmp/backend.log ====="
           cat /tmp/backend.log || true
+
+      - name: Stop backend API
+        if: always()
+        run: |
+          if [ -f /tmp/backend.pid ]; then
+            kill "$(cat /tmp/backend.pid)" || true
+          fi
 
   build-frontend:
     runs-on: ubuntu-latest

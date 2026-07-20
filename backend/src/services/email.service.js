@@ -42,6 +42,7 @@ export const emailService = {
    * Email de bienvenida al registrarse.
    */
   async sendWelcome({ to, nombre }) {
+    if (process.env.NODE_ENV === 'test') return;
     const { transport, from, appName } = await getTransporter();
     const info = await transport.sendMail({
       from,
@@ -61,6 +62,7 @@ export const emailService = {
    * Email de confirmación de acceso a una oposición (tras pago con Stripe).
    */
   async sendAccesoConfirmado({ to, nombre, oposicionNombre, fechaFin }) {
+    if (process.env.NODE_ENV === 'test') return;
     const { transport, from, appName } = await getTransporter();
     const info = await transport.sendMail({
       from,
@@ -80,6 +82,7 @@ export const emailService = {
    * Email de confirmación al asignar un plan (Pro / Elite) manualmente desde el panel admin.
    */
   async sendSuscripcionConfirmada({ to, nombre, plan, fechaFin }) {
+    if (process.env.NODE_ENV === 'test') return;
     const { transport, from, appName } = await getTransporter();
     const info = await transport.sendMail({
       from,
@@ -100,6 +103,7 @@ export const emailService = {
    * token: el token en claro (no el hash)
    */
   async sendPasswordReset({ to, nombre, token }) {
+    if (process.env.NODE_ENV === 'test') return;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
     const { transport, from, appName } = await getTransporter();
