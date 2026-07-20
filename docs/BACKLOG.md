@@ -12,10 +12,11 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-030: Diagnosticado el fallo inicial del smoke E2E en CI: el marcador insertaba `oposiciones` sin `slug` despues de la migracion `032` y `preguntas.nivel_dificultad=1` despues de la migracion `030`. Corregido el marcador y endurecida la carga SQL del workflow con `ON_ERROR_STOP`.
 - BL-020: Verificacion E2E segura validada en CI sobre PostgreSQL efimero en run de PR `29581036429`; pasaron tests unitarios backend, smoke first pass y smoke second pass, con comprobacion de residuos integrada.
 - BL-026: Validada la limpieza automatica del smoke E2E en dos ejecuciones consecutivas del mismo job de CI mediante `assertNoResidues()`.
+- BL-031: Validacion tecnica local de roles y permisos: `requireAuth`, `requireRole`, bloqueos HTTP cruzados en Express y guards frontend admin/profesor/alumno cubiertos por `backend/tests/services/roles-permisos-flujos.test.js`.
 
 ## Critico
 
-- BL-021: Verificar roles y permisos reales de admin, profesor y alumno contra flujos completos de frontend y API.
+- BL-021: Completar verificacion funcional de roles y permisos reales de admin, profesor y alumno contra flujos felices de frontend y API en entorno aislado. Ya existe validacion tecnica local de bloqueos cruzados y guards; falta navegador/datos de prueba.
 - BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales.
 
 ## Importante
