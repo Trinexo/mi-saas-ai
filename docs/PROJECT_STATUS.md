@@ -410,3 +410,91 @@ Separacion de alcance:
 ### Siguiente Tarea Critica
 
 La primera tarea critica abierta en `docs/BACKLOG.md` pasa a ser BL-022: verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. No se inicia en esta fase.
+
+## Fase BL-022A: Auditoria Tecnica Stripe/Billing
+
+Fecha: 2026-07-20.
+
+### Alcance
+
+Se audito la implementacion real de Stripe, billing, planes y suscripciones en la rama `audit/BL-022-stripe-billing`, sin trabajar directamente en `main`, sin llamadas a Stripe, sin produccion, sin base de datos real y sin cambios funcionales.
+
+BL-022 permanece abierta. Esta fase solo deja planificada la validacion segura posterior.
+
+### Arquitectura Real Encontrada
+
+- Checkout real: `POST /api/billing/checkout`, autenticado, crea una Stripe Checkout Session para comprar acceso a una oposicion.
+- Webhook real: `POST /api/billing/webhook`, publico, valida firma con `stripe.webhooks.constructEvent` y solo maneja `checkout.session.completed`.
+- Administracion de precios: `PATCH /api/billing/oposiciones/:oposicionId/precio`, solo `admin`.
+- Planes funcionales: `free`, `pro` y `elite` estan definidos en codigo (`backend/src/config/plans.config.js`) y se almacenan localmente en `suscripciones`.
+- Acceso a cursos: el pago Stripe concede o reactiva `accesos_oposicion` durante 30 dias; no crea una fila de `suscripciones`.
+- Portal de cliente: no existe endpoint ni flujo implementado.
+- Customer Stripe: no se persiste `stripe_customer_id`; checkout usa `customer_email`.
+- Productos/precios Stripe: no hay IDs de productos o precios persistidos ni variables de price ID; checkout usa `price_data` dinamico con moneda EUR y precio local de `oposiciones.precio_mensual_cents`.
+
+### Variables Y Separacion De Entornos
+
+- Variables y claves soportadas por codigo/configuracion: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `FRONTEND_URL`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `NODE_ENV`, `PGSSLMODE`, `VITE_API_URL`.
+- No se localizaron variables especificas para `STRIPE_PUBLISHABLE_KEY`, IDs de precio, URL de portal, modo Stripe separado, backend URL dedicada ni success/cancel URL configurables.
+- La validacion de ajustes admite claves `sk_test_` y `sk_live_`; no existe todavia una barrera de ejecucion que bloquee claves live en pruebas o desarrollo.
+- El webhook exige firma valida; no hay ruta alternativa que acepte eventos sin firma.
+
+### Cobertura Existente
+
+- Tests de schemas de billing y suscripciones.
+- Tests de schema de ajustes Stripe.
+- Validacion tecnica de permisos para rutas sensibles: `subscriptions/stats` y cambio de precio de oposicion.
+- Build frontend y suite backend general cubren compilacion y regresiones no externas.
+
+No existe todavia cobertura de checkout con Stripe mockeado, firma de webhook, repeticion de eventos, errores de Stripe, portal, customer ownership, cancelaciones, pagos fallidos ni sincronizacion real de estados.
+
+### Riesgos Confirmados
+
+| ID | Riesgo | Evidencia | Prioridad |
+| --- | --- | --- | --- |
+| ST-001 | Uso accidental de clave live desde entorno no aislado | Schema acepta `sk_live_` y el servicio solo rechaza claves ausentes o placeholder | Critica |
+| ST-002 | Checkout de oposicion no filtra estado activo | `getOposicionConPrecio` consulta por `id` sin comprobar `estado` | Alta |
+| ST-003 | No hay idempotencia fuerte de webhook | No existe tabla de eventos; repetir `checkout.session.completed` puede reactivar/actualizar acceso y reenviar email | Alta |
+| ST-004 | El pago de acceso y los planes estan separados | Stripe crea `accesos_oposicion`, mientras `suscripciones` se gestiona localmente/admin | Alta |
+| ST-005 | No hay portal, cancelacion ni pago fallido implementados | No existen endpoints ni handlers para esos flujos | Alta |
+| ST-006 | No se persiste customer Stripe | Solo se usa `customer_email`; no hay relacion usuario-customer | Media |
+| ST-007 | Precio enviado a Stripe es dinamico local | No hay price IDs de Stripe; requiere validar coherencia entre importe local, checkout y webhook | Media |
+
+### Riesgos Descartados En Esta Auditoria
+
+- Webhook sin firma aceptada: descartado; el servicio usa `constructEvent` con `STRIPE_WEBHOOK_SECRET`.
+- Usuario manipulando precio desde frontend en checkout: descartado en el flujo actual; el frontend solo envia `oposicionId` y el precio se lee en backend.
+- Profesor modificando precios: descartado por middleware; la ruta de precio exige `admin`.
+- Acceso concedido antes del webhook: no se observa en codigo; el acceso se concede al procesar `checkout.session.completed`.
+
+### Entorno Seguro Propuesto Para BL-022
+
+- `NODE_ENV=test`, `ALLOW_STRIPE_E2E=true` y PostgreSQL efimero.
+- Backend local, frontend local y URLs de retorno locales.
+- Claves Stripe exclusivamente `sk_test_` y webhook secret test; bloqueo expreso de `sk_live_`.
+- Productos/precios de prueba o price data de prueba con importes controlados.
+- Usuarios E2E con prefijo reservado y limpieza por IDs exactos.
+- Webhook local firmado o simulacion firmada; nunca webhook de produccion.
+- Tests no automaticos si faltan variables de seguridad.
+
+### Matriz De Validacion Futura
+
+| Flujo | Backend | DB | Stripe test | Navegador | Resultado esperado |
+| --- | --- | --- | --- | --- | --- |
+| Listar planes | Si | Lectura | No necesario | Si | Planes correctos |
+| Crear checkout | Si | Lectura | Test | Si | Sesion test y URL local |
+| Checkout cancelado | Si | Controlado | Test | Si | Sin acceso nuevo |
+| Pago completado | Si | Escritura | Test | Si | Acceso activo trazable |
+| Webhook repetido | Si | Escritura | Evento firmado | No | Sin duplicado ni efecto adicional |
+| Portal | Pendiente | Lectura | Test | Si | Customer correcto cuando exista |
+| Cancelacion | Pendiente | Escritura | Evento firmado | Si | Estado coherente |
+| Pago fallido | Pendiente | Escritura | Evento firmado | No | Sin acceso indebido |
+| Usuario ajeno | Si | No | No | Si | 403/404 |
+
+### Criterios De Cierre BL-022
+
+BL-022 no debe cerrarse hasta demostrar separacion inequivoca test/produccion, ausencia de claves reales, checkout test, cancelacion sin acceso, pago test con activacion correcta, webhook firmado, idempotencia de eventos repetidos, portal asociado al customer correcto cuando se implemente, cancelacion y pago fallido sincronizados, permisos validados, PostgreSQL aislado, cero cargos reales, documentacion actualizada y CI segura/repetible.
+
+### Siguiente Tarea Unica
+
+Implementar barreras de modo test y pruebas aisladas de Stripe para checkout/webhook antes de ejecutar cualquier flujo externo, manteniendo BL-022 abierta hasta que los criterios anteriores pasen de forma repetible.

@@ -15,10 +15,11 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-031: Validacion tecnica local de roles y permisos: `requireAuth`, `requireRole`, bloqueos HTTP cruzados en Express y guards frontend admin/profesor/alumno cubiertos por `backend/tests/services/roles-permisos-flujos.test.js`.
 - BL-025: Playwright preparado como runner de navegador para roles en entorno aislado: `frontend/e2e/roles.flows.spec.js`, fixture `backend/tests/e2e/role-fixtures.mjs` y job `browser-roles-e2e` en CI.
 - BL-021: Validacion funcional completa de roles y permisos realizada con Playwright en CI sobre PostgreSQL efimero. Los recorridos de administrador, profesor y alumno, los accesos permitidos, los bloqueos cruzados y el cierre de sesion pasaron en dos ejecuciones consecutivas del job `browser-roles-e2e`, run `29743555297`, sin utilizar produccion ni datos reales.
+- BL-032: Auditoria tecnica BL-022A de Stripe, billing, planes y suscripciones realizada en rama `audit/BL-022-stripe-billing`, sin llamadas a Stripe, sin produccion y sin cambios funcionales. Queda documentada la arquitectura real, cobertura existente, riesgos y entorno seguro requerido para validar BL-022.
 
 ## Critico
 
-- BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales.
+- BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. Debe permanecer abierta hasta validar checkout test, webhook firmado, idempotencia, cancelacion/pago fallido, permisos y trazabilidad en entorno aislado.
 
 ## Importante
 
