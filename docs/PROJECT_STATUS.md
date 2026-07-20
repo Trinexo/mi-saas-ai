@@ -386,4 +386,27 @@ No se ejecuto localmente el flujo completo de navegador porque esta maquina no t
 
 ### Estado De BL-021
 
-BL-021 sigue abierta. Playwright y el workflow preparados no equivalen a validacion funcional completa. Solo debe cerrarse cuando admin, profesor, alumno y sus bloqueos cruzados pasen de forma repetible en CI.
+PR #420 fue fusionada mediante squash e integrada en `main` con el commit `37b28a0675503a33dff656d890856d7048d06b1e`.
+
+El run de CI `29743555297` termino correctamente. El job `browser-roles-e2e` ejecuto dos pasadas consecutivas con Playwright sobre Chromium, PostgreSQL efimero, backend local y frontend local. Los usuarios y datos usados fueron exclusivamente fixtures E2E (`e2e_role_*@test.local`) creados en la base aislada y limpiados al finalizar.
+
+Cobertura validada en BL-021:
+
+- Administrador: login real por formulario, area `/admin`, endpoints permitidos de administracion y bloqueo frente a rutas de profesor.
+- Profesor: login real por formulario, area `/profesor`, workspace docente, ruta compartida permitida y bloqueo frente a rutas solo admin.
+- Alumno: login real por formulario, area de alumno, endpoint propio de estadisticas y bloqueo frente a rutas admin/profesor.
+- Bloqueos cruzados frontend y API.
+- Logout por UI tras cada recorrido.
+- Sin Railway, Vercel, bases reales ni datos reales.
+
+BL-021 queda completada funcionalmente para los recorridos y permisos incluidos en la suite. Esto no afirma que toda la plataforma este funcionalmente validada.
+
+Separacion de alcance:
+
+- BL-031: validacion tecnica local de middleware `requireAuth`, `requireRole`, rutas protegidas y guards frontend.
+- BL-025: preparacion del runner Playwright, fixture y job de CI.
+- BL-021: validacion funcional real ejecutada en CI con navegador y entorno aislado.
+
+### Siguiente Tarea Critica
+
+La primera tarea critica abierta en `docs/BACKLOG.md` pasa a ser BL-022: verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. No se inicia en esta fase.
