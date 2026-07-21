@@ -18,19 +18,40 @@ async function startCheckout(page, oposicionName) {
 }
 
 async function fillStripeCheckout(page) {
-  await page.getByLabel(/card number|numero de tarjeta|número de tarjeta/i).fill('4242424242424242');
-  await page.getByLabel(/expiration|caducidad|fecha de vencimiento/i).fill('1234');
-  await page.getByLabel(/cvc|codigo de seguridad|código de seguridad/i).fill('123');
+  await page
+    .locator('input[name="cardNumber"], input[autocomplete="cc-number"], input[placeholder*="1234"]')
+    .first()
+    .fill('4242424242424242');
+  await page
+    .locator('input[name="cardExpiry"], input[autocomplete="cc-exp"], input[placeholder*="MM"], input[placeholder*="AA"]')
+    .first()
+    .fill('1234');
+  await page
+    .locator('input[name="cardCvc"], input[autocomplete="cc-csc"], input[placeholder*="CVC"]')
+    .first()
+    .fill('123');
 
-  const name = page.getByLabel(/name on card|nombre en la tarjeta|nombre completo/i);
+  const name = page.locator('input[name="billingName"], input[autocomplete="cc-name"]').first();
   if (await name.count()) {
-    await name.first().fill('E2E Stripe Alumno');
+    await name.fill('E2E Stripe Alumno');
   }
 
-  const email = page.getByLabel(/^email$/i);
+  const email = page.locator('input[type="email"], input[name="email"]').first();
   if (await email.count()) {
-    await email.first().fill(STRIPE_SANDBOX_FIXTURE.email);
+    await email.fill(STRIPE_SANDBOX_FIXTURE.email);
   }
+
+  const postalCode = page.locator('input[name="billingPostalCode"], input[autocomplete="postal-code"]').first();
+  if (await postalCode.count()) {
+    await postalCode.fill('28001');
+  }
+}
+
+async function waitForPurchasedAccess(page, oposicionName) {
+  await expect(async () => {
+    await page.goto('/mis-oposiciones?pago=ok');
+    await expect(page.locator('body')).toContainText(oposicionName, { timeout: 10_000 });
+  }).toPass({ timeout: 60_000, intervals: [2_000, 3_000, 5_000] });
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -45,9 +66,9 @@ test('Stripe sandbox: checkout success concede acceso tras webhook real de test'
   await loginAsStripeAlumno(page);
   await startCheckout(page, STRIPE_SANDBOX_FIXTURE.successOposicionName);
   await fillStripeCheckout(page);
-  await page.getByRole('button', { name: /pay|pagar/i }).click();
+  await page.locator('button[type="submit"]').first().click();
   await page.waitForURL(/\/mis-oposiciones\?pago=ok/, { timeout: 60_000 });
-  await expect(page.locator('body')).toContainText(STRIPE_SANDBOX_FIXTURE.successOposicionName);
+  await waitForPurchasedAccess(page, STRIPE_SANDBOX_FIXTURE.successOposicionName);
 });
 
 test('Stripe sandbox: checkout cancelado no concede acceso', async ({ page }) => {
