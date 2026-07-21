@@ -89,7 +89,7 @@ test('alumno: crea, resuelve, revisa y consulta historial/progreso de un test re
   await expect(page.locator('body')).toContainText('2E');
   await expect(page.getByRole('link', { name: /^Revisar$/i }).first()).toBeVisible();
 
-  await page.getByRole('link', { name: /estadisticas/i }).first().click();
+  await page.locator('a[href="/progreso"]').first().click();
   await expect(page).toHaveURL(/\/progreso\/?$/);
   await expect(page.locator('body')).toContainText(manifest.oposicion.nombre);
   await expect(page.locator('body')).toContainText('Mi progreso');
