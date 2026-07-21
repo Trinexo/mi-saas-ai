@@ -38,6 +38,7 @@ La documentacion archivada en `docs/_archive/2026-07-15/` es historica. No preva
 - `docs/ARCHITECTURE.md`: arquitectura real.
 - `docs/DECISIONS.md`: decisiones vigentes.
 - `docs/BACKLOG.md`: pendientes priorizados.
+- `docs/AI_DEVELOPMENT_WORKFLOW.md`: protocolo común para alternar trabajo entre VS Copilot y Codex.
 
 ## Produccion
 
