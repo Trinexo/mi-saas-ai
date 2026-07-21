@@ -559,4 +559,26 @@ BL-022 permanece abierta. Esta fase no implementa Customer Portal, cancelaciones
 
 ### Siguiente Tarea Unica
 
-Validar checkout y webhook contra Stripe sandbox con claves test y datos E2E, manteniendo todas las barreras: sin claves live, sin produccion, sin cargos reales, PostgreSQL aislado, webhook firmado y limpieza controlada.
+Preparar un workflow manual y protegido para validar checkout y webhook contra Stripe sandbox con claves test y datos E2E, manteniendo todas las barreras: sin claves live, sin produccion, sin cargos reales, PostgreSQL aislado, webhook firmado y limpieza controlada.
+
+## Fase BL-022C: Preparacion Validacion Stripe Sandbox
+
+Fecha: 2026-07-21.
+
+### Alcance
+
+Se prepara en la rama `test/BL-022-stripe-sandbox` una validacion controlada de Stripe sandbox. Esta fase no ejecuta Stripe real localmente, no solicita claves en el chat, no toca produccion y no cierra BL-022.
+
+### Cambios Tecnicos
+
+- `STRIPE_E2E_MODE` queda separado en dos modos: `mock` para fake Stripe sin red externa y `sandbox` para Stripe real exclusivamente con claves `sk_test_`.
+- `backend/src/utils/stripe-test-guards.js` endurece barreras para `sandbox`: `NODE_ENV=test`, `ALLOW_STRIPE_E2E=true`, `E2E_DB_ISOLATED=true`, PostgreSQL local, frontend/backend locales, bloqueo de `sk_live_`, `pk_live_`, eventos `livemode=true`, hosts remotos y emails no reservados.
+- `backend/src/services/billing.service.js` anade metadata E2E identificable (`runId`, `testPurpose=BL-022`) solo en modo sandbox.
+- `backend/tests/services/stripe-sandbox-guards.test.js` cubre aceptacion sandbox y rechazos de claves live, livemode, URLs remotas, DB remota, email no reservado y mezcla con modo mock.
+- `backend/tests/e2e/stripe-sandbox-fixtures.mjs` crea y limpia alumno E2E y oposiciones success/cancel en PostgreSQL aislado, y valida por DB acceso concedido o ausencia de acceso.
+- `frontend/e2e/stripe.sandbox.spec.js` prepara recorridos Playwright para checkout success y cancelado contra frontend/backend locales.
+- `.github/workflows/stripe-sandbox-e2e.yml` queda como workflow independiente, manual (`workflow_dispatch`), environment `stripe-test`, permisos minimos, PostgreSQL efimero, Stripe CLI listener local, secreto webhook temporal enmascarado, logs sanitizados y artifacts solo en fallo.
+
+### Estado De BL-022
+
+BL-022 permanece abierta. Esta fase solo deja preparada la ejecucion segura; el cierre exige ejecutar y repetir el workflow sandbox con checks verdes, sin claves live, sin produccion, sin cargos reales, validando checkout success, cancelacion, webhook firmado, idempotencia ya cubierta por BL-022B y limpieza de fixtures.

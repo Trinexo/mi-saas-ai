@@ -17,10 +17,11 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-021: Validacion funcional completa de roles y permisos realizada con Playwright en CI sobre PostgreSQL efimero. Los recorridos de administrador, profesor y alumno, los accesos permitidos, los bloqueos cruzados y el cierre de sesion pasaron en dos ejecuciones consecutivas del job `browser-roles-e2e`, run `29743555297`, sin utilizar produccion ni datos reales.
 - BL-032: Auditoria tecnica BL-022A de Stripe, billing, planes y suscripciones realizada en rama `audit/BL-022-stripe-billing`, sin llamadas a Stripe, sin produccion y sin cambios funcionales. Queda documentada la arquitectura real, cobertura existente, riesgos y entorno seguro requerido para validar BL-022.
 - BL-033: Aislamiento tecnico BL-022B de checkout y webhook Stripe preparado con cliente inyectable, fake local, barreras anti-live, firma local de webhooks, idempotencia persistente y job CI con PostgreSQL efimero. No usa Stripe real, claves reales, produccion ni datos reales.
+- BL-034: Preparacion BL-022C de validacion Stripe sandbox manual, con modo `sandbox` separado de `mock`, guards anti-live, fixture E2E local, spec Playwright y workflow `Stripe Sandbox E2E` de ejecucion manual protegida. No ejecuta Stripe real por defecto y no cierra BL-022.
 
 ## Critico
 
-- BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. Debe permanecer abierta hasta validar checkout y webhook contra Stripe sandbox con claves test y datos E2E, manteniendo barreras anti-live, PostgreSQL aislado, cero cargos reales y trazabilidad completa.
+- BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. Debe permanecer abierta hasta ejecutar de forma repetible el workflow manual `Stripe Sandbox E2E` con environment `stripe-test`, claves `sk_test_`, PostgreSQL efimero, checkout success, checkout cancelado, webhook firmado, validacion DB y limpieza controlada.
 
 ## Importante
 

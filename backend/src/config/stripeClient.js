@@ -19,7 +19,11 @@ export async function getStripeClient() {
   }
 
   if (process.env.ALLOW_STRIPE_E2E === 'true') {
-    assertStripeTestIsolation({ stripeSecretKey: key, requireInjectedClient: true, injectedClient });
+    assertStripeTestIsolation({
+      stripeSecretKey: key,
+      requireInjectedClient: process.env.STRIPE_E2E_MODE === 'mock',
+      injectedClient,
+    });
   }
 
   if (!cachedClient || cachedKey !== key) {
