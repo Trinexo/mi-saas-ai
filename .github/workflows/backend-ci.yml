@@ -351,3 +351,185 @@ jobs:
           if [ -f /tmp/backend-roles-e2e.pid ]; then
             kill "$(cat /tmp/backend-roles-e2e.pid)" || true
           fi
+
+  browser-alumno-test-flow-e2e:
+    runs-on: ubuntu-latest
+    needs:
+      - test-backend
+      - build-frontend
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: plataforma_test_alumno_flow_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d plataforma_test_alumno_flow_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/plataforma_test_alumno_flow_e2e
+      JWT_SECRET: change_this_secret_in_ci
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: test
+      ALLOW_E2E_WRITES: true
+      E2E_DB_ISOLATED: true
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/plataforma_test_alumno_flow_e2e
+      E2E_API_BASE: http://127.0.0.1:3000/api
+      FRONTEND_URL: http://127.0.0.1:4173
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      PORT: 3000
+      VITE_API_URL: http://127.0.0.1:3000/api
+      ALUMNO_E2E_PASSWORD: alumno-e2e-2026
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply schema and migrations without seed
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
+          for f in $(ls database/migrations/*.sql | sort); do
+            echo "Applying migration: $f"
+            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
+          done
+
+      - name: Build frontend for isolated API
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start backend API
+        working-directory: backend
+        run: |
+          nohup npm run start > /tmp/backend-alumno-e2e.log 2>&1 &
+          echo $! > /tmp/backend-alumno-e2e.pid
+
+      - name: Start frontend preview
+        working-directory: frontend
+        run: |
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/frontend-alumno-e2e.log 2>&1 &
+          echo $! > /tmp/frontend-alumno-e2e.pid
+
+      - name: Wait for local services
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://127.0.0.1:3000/api/health >/dev/null && curl -sSf http://127.0.0.1:4173/login >/dev/null; then
+              echo "Local backend and frontend ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Local services failed to start"
+          echo "===== backend ====="
+          cat /tmp/backend-alumno-e2e.log || true
+          echo "===== frontend ====="
+          cat /tmp/frontend-alumno-e2e.log || true
+          exit 1
+
+      - name: Run alumno test flow first pass
+        id: alumno_flow_p1
+        working-directory: backend
+        env:
+          ALUMNO_E2E_RUN_ID: alumno_test_flow_${{ github.run_id }}_p1
+          ALUMNO_E2E_EMAIL: e2e_alumno_test_alumno_test_flow_${{ github.run_id }}_p1@test.local
+          ALUMNO_E2E_MANIFEST: /tmp/alumno-test-flow-${{ github.run_id }}-p1.json
+        run: |
+          node tests/e2e/alumno-test-flow-fixtures.mjs setup
+          node tests/e2e/alumno-test-flow-fixtures.mjs assert-initial
+          cd ../frontend
+          ALUMNO_TEST_FLOW_FIXTURES_READY=true npm run test:e2e:alumno-test-flow
+          cd ../backend
+          node tests/e2e/alumno-test-flow-fixtures.mjs assert-result
+          node tests/e2e/alumno-test-flow-fixtures.mjs assert-no-residues
+
+      - name: Run alumno test flow second pass
+        id: alumno_flow_p2
+        working-directory: backend
+        env:
+          ALUMNO_E2E_RUN_ID: alumno_test_flow_${{ github.run_id }}_p2
+          ALUMNO_E2E_EMAIL: e2e_alumno_test_alumno_test_flow_${{ github.run_id }}_p2@test.local
+          ALUMNO_E2E_MANIFEST: /tmp/alumno-test-flow-${{ github.run_id }}-p2.json
+        run: |
+          node tests/e2e/alumno-test-flow-fixtures.mjs setup
+          node tests/e2e/alumno-test-flow-fixtures.mjs assert-initial
+          cd ../frontend
+          ALUMNO_TEST_FLOW_FIXTURES_READY=true npm run test:e2e:alumno-test-flow
+          cd ../backend
+          node tests/e2e/alumno-test-flow-fixtures.mjs assert-result
+          node tests/e2e/alumno-test-flow-fixtures.mjs assert-no-residues
+
+      - name: Cleanup alumno test flow fixtures
+        if: always()
+        working-directory: backend
+        env:
+          ALUMNO_E2E_RUN_ID: alumno_test_flow_${{ github.run_id }}_p1
+          ALUMNO_E2E_EMAIL: e2e_alumno_test_alumno_test_flow_${{ github.run_id }}_p1@test.local
+          ALUMNO_E2E_MANIFEST: /tmp/alumno-test-flow-${{ github.run_id }}-p1.json
+        run: node tests/e2e/alumno-test-flow-fixtures.mjs cleanup
+
+      - name: Cleanup alumno test flow fixtures second pass
+        if: always()
+        working-directory: backend
+        env:
+          ALUMNO_E2E_RUN_ID: alumno_test_flow_${{ github.run_id }}_p2
+          ALUMNO_E2E_EMAIL: e2e_alumno_test_alumno_test_flow_${{ github.run_id }}_p2@test.local
+          ALUMNO_E2E_MANIFEST: /tmp/alumno-test-flow-${{ github.run_id }}-p2.json
+        run: node tests/e2e/alumno-test-flow-fixtures.mjs cleanup
+
+      - name: Dump local service logs on failure
+        if: failure()
+        run: |
+          echo "===== /tmp/backend-alumno-e2e.log ====="
+          cat /tmp/backend-alumno-e2e.log || true
+          echo "===== /tmp/frontend-alumno-e2e.log ====="
+          cat /tmp/frontend-alumno-e2e.log || true
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-alumno-test-flow-e2e-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+
+      - name: Stop local services
+        if: always()
+        run: |
+          if [ -f /tmp/frontend-alumno-e2e.pid ]; then
+            kill "$(cat /tmp/frontend-alumno-e2e.pid)" || true
+          fi
+          if [ -f /tmp/backend-alumno-e2e.pid ]; then
+            kill "$(cat /tmp/backend-alumno-e2e.pid)" || true
+          fi
