@@ -582,3 +582,32 @@ Se prepara en la rama `test/BL-022-stripe-sandbox` una validacion controlada de 
 ### Estado De BL-022
 
 BL-022 permanece abierta. Esta fase solo deja preparada la ejecucion segura; el cierre exige ejecutar y repetir el workflow sandbox con checks verdes, sin claves live, sin produccion, sin cargos reales, validando checkout success, cancelacion, webhook firmado, idempotencia ya cubierta por BL-022B y limpieza de fixtures.
+
+## Fase BL-006A: Flujo E2E De Test Del Alumno
+
+Fecha: 2026-07-21.
+
+### Alcance
+
+Se prepara en la rama `test/BL-006-flujo-test-alumno` una validacion funcional de navegador para el flujo completo de test del alumno sobre PostgreSQL efimero, backend local y frontend local.
+
+La fixture crea unicamente estructura academica y acceso: alumno E2E, oposicion, tema, bloque, 8 preguntas aprobadas con opciones y `accesos_oposicion` activo en modo `experto`. No crea tests, resultados, respuestas, progreso, datos Stripe, emails ni datos reales.
+
+El navegador crea el test mediante la pantalla real de `Crear test`, selecciona el tema fixture, genera un test normal de 5 preguntas, responde 3 correctas y 2 incorrectas, envia el test y valida resultado, revision, historial, progreso y logout.
+
+### Protecciones
+
+- `NODE_ENV=test`, `ALLOW_E2E_WRITES=true` y `E2E_DB_ISOLATED=true` obligatorios.
+- `DATABASE_URL` y `E2E_DATABASE_URL` deben apuntar a la misma base PostgreSQL local de test.
+- `PLAYWRIGHT_BASE_URL`, `FRONTEND_URL` y `E2E_API_BASE` deben ser locales; `E2E_API_BASE` debe estar bajo `/api`.
+- Bloqueo de hosts remotos o productivos conocidos: Railway, `rlwy`, Vercel, Supabase, Neon, Render, AWS/RDS y production.
+- Sin variables Stripe ni ejecucion de checkout.
+- Sin `database/seed.sql` en el job nuevo; la estructura funcional nace de la fixture aislada.
+- Limpieza por IDs exactos y comprobacion posterior de residuos.
+- Dos pasadas consecutivas en el mismo job con `runId` y manifest distintos.
+
+### Estado
+
+BL-006A queda preparada, no cerrada. Debe considerarse completada solo cuando la PR pase en CI con el nuevo job `browser-alumno-test-flow-e2e`, ademas de `test-backend`, `build-frontend`, `stripe-checkout-webhook-isolated` y `browser-roles-e2e`.
+
+BL-022 permanece abierta. La siguiente tarea funcional, una vez cerrado BL-006A, sera BL-006B: marcadas, repaso y repeticion.

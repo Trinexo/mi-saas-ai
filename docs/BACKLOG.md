@@ -22,12 +22,13 @@ Ultima consolidacion documental: 2026-07-15.
 ## Critico
 
 - BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. Debe permanecer abierta hasta ejecutar de forma repetible el workflow manual `Stripe Sandbox E2E` con environment `stripe-test`, claves `sk_test_`, PostgreSQL efimero, checkout success, checkout cancelado, webhook firmado, validacion DB y limpieza controlada.
+- BL-006A: Validar en CI el flujo completo de test del alumno mediante navegador y PostgreSQL efimero: fixture solo crea estructura academica y acceso, el navegador crea el test por la UI real, responde 5 preguntas, valida resultado, revision, historial, progreso, logout y limpieza por IDs exactos. Preparado en `test/BL-006-flujo-test-alumno`; no debe darse por cerrado hasta ver el job verde en PR.
 
 ## Importante
 
 - BL-004: Ampliar documentacion operativa de despliegue con pasos seguros para Railway/Vercel sin incluir secretos.
 - BL-005: Documentar endpoints principales de la API desde `backend/src/routes/index.js` y controladores reales.
-- BL-006: Ampliar cobertura frontend mas alla del build: rutas criticas, login, test flow, progreso, admin y profesor.
+- BL-006B: Ampliar cobertura funcional del alumno sobre preguntas marcadas, repaso y repeticion de tests, una vez cerrado BL-006A.
 - BL-007: Auditar permisos y roles en admin/profesor/alumno contra middleware y consultas SQL.
 - BL-017: Mantener optimizadas las consultas del dashboard profesor y progreso. Verificar planes SQL e indices antes de nuevas agregaciones.
 - BL-018: Proteger scripts SQL delicados. Ningun reimport, dump o script destructivo debe ejecutarse sin backup externo y aprobacion explicita.
