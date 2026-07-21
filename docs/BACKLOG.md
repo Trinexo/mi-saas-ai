@@ -18,11 +18,11 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-032: Auditoria tecnica BL-022A de Stripe, billing, planes y suscripciones realizada en rama `audit/BL-022-stripe-billing`, sin llamadas a Stripe, sin produccion y sin cambios funcionales. Queda documentada la arquitectura real, cobertura existente, riesgos y entorno seguro requerido para validar BL-022.
 - BL-033: Aislamiento tecnico BL-022B de checkout y webhook Stripe preparado con cliente inyectable, fake local, barreras anti-live, firma local de webhooks, idempotencia persistente y job CI con PostgreSQL efimero. No usa Stripe real, claves reales, produccion ni datos reales.
 - BL-034: Preparacion BL-022C de validacion Stripe sandbox manual, con modo `sandbox` separado de `mock`, guards anti-live, fixture E2E local, spec Playwright y workflow `Stripe Sandbox E2E` de ejecucion manual protegida. No ejecuta Stripe real por defecto y no cierra BL-022.
+- BL-006A: Validado en CI el flujo completo de test del alumno mediante navegador y PostgreSQL efimero. La fixture crea solo estructura academica y acceso; el navegador crea el test por la UI real, responde 5 preguntas, valida resultado, revision, historial, progreso, logout y limpieza por IDs exactos. Evidencia: PR #425 integrada, commit `39cfb529ebe334dad88c932b2f18f1481714f6bf`, Platform CI run `29851154654` con `browser-alumno-test-flow-e2e` verde en dos pasadas.
 
 ## Critico
 
 - BL-022: Verificar billing, planes y suscripciones con Stripe en modo seguro o entorno de pruebas, sin cargos reales. Debe permanecer abierta hasta ejecutar de forma repetible el workflow manual `Stripe Sandbox E2E` con environment `stripe-test`, claves `sk_test_`, PostgreSQL efimero, checkout success, checkout cancelado, webhook firmado, validacion DB y limpieza controlada.
-- BL-006A: Validar en CI el flujo completo de test del alumno mediante navegador y PostgreSQL efimero: fixture solo crea estructura academica y acceso, el navegador crea el test por la UI real, responde 5 preguntas, valida resultado, revision, historial, progreso, logout y limpieza por IDs exactos. Preparado en `test/BL-006-flujo-test-alumno`; no debe darse por cerrado hasta ver el job verde en PR.
 
 ## Importante
 

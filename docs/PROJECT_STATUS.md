@@ -606,8 +606,20 @@ El navegador crea el test mediante la pantalla real de `Crear test`, selecciona 
 - Limpieza por IDs exactos y comprobacion posterior de residuos.
 - Dos pasadas consecutivas en el mismo job con `runId` y manifest distintos.
 
-### Estado
+### Resultado
 
-BL-006A queda preparada, no cerrada. Debe considerarse completada solo cuando la PR pase en CI con el nuevo job `browser-alumno-test-flow-e2e`, ademas de `test-backend`, `build-frontend`, `stripe-checkout-webhook-isolated` y `browser-roles-e2e`.
+BL-006A queda cerrada tras integrar PR #425 mediante squash en `main`.
 
-BL-022 permanece abierta. La siguiente tarea funcional, una vez cerrado BL-006A, sera BL-006B: marcadas, repaso y repeticion.
+Evidencia:
+
+- Commit de `main`: `39cfb529ebe334dad88c932b2f18f1481714f6bf`.
+- Platform CI run `29851154654`: correcto.
+- `test-backend`: correcto.
+- `build-frontend`: correcto.
+- `stripe-checkout-webhook-isolated`: correcto.
+- `browser-roles-e2e`: correcto.
+- `browser-alumno-test-flow-e2e`: correcto.
+- El flujo alumno se ejecuto en dos pasadas consecutivas con manifest y `runId` independientes.
+- La limpieza posterior de fixtures fue correcta en ambas pasadas.
+
+BL-022 permanece abierta. No se crea etiqueta de baseline en esta fase. La siguiente tarea funcional prevista es BL-006B: marcadas, repaso y repeticion.
