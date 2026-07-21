@@ -7,6 +7,7 @@ import {
 
 const BASE_ENV = {
   NODE_ENV: 'test',
+  GITHUB_EVENT_NAME: 'workflow_dispatch',
   ALLOW_STRIPE_E2E: 'true',
   STRIPE_E2E_MODE: 'sandbox',
   STRIPE_SANDBOX_CONFIRMATION: 'I_CONFIRM_STRIPE_TEST_MODE',
@@ -81,6 +82,20 @@ test('Stripe sandbox: bloquea eventos livemode=true', withEnv({}, () => {
   assert.throws(
     () => assertStripeTestIsolation({ event: { ...validEvent(), livemode: true } }),
     /livemode=true/,
+  );
+}));
+
+test('Stripe sandbox: bloquea ejecucion automatica desde pull_request', withEnv({
+  GITHUB_EVENT_NAME: 'pull_request',
+}, () => {
+  assert.throws(
+    () => assertStripeTestIsolation({
+      webhookSecret: 'whsec_guard_only',
+      event: validEvent(),
+      userEmail: 'e2e_stripe_alumno_guard@test.local',
+      metadata: validMetadata(),
+    }),
+    /Stripe sandbox solo puede ejecutarse mediante workflow_dispatch/,
   );
 }));
 
