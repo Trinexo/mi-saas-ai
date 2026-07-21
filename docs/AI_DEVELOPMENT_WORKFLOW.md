@@ -224,7 +224,7 @@ Usar esta plantilla al cambiar de herramienta:
 **PR:** [no aplica, será creada posteriormente]
 **Merge:** [no aplica]
 **Etiquetas:** Ninguna
-**Producción utilizada:** [No / Verificada en ...] 
+**Producción utilizada:** [No / Verificada en ...]
 **Datos reales utilizados:** No
 ```
 
