@@ -1,0 +1,263 @@
+name: Stripe Sandbox E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_test_mode:
+        description: "Escribe I_CONFIRM_STRIPE_TEST_MODE para ejecutar Stripe test"
+        required: true
+        type: string
+      run_checkout_success:
+        description: "Ejecutar flujo checkout success"
+        required: true
+        default: true
+        type: boolean
+      run_checkout_cancel:
+        description: "Ejecutar flujo checkout cancel"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  stripe-sandbox-e2e:
+    name: Stripe sandbox checkout manual
+    runs-on: ubuntu-latest
+    environment: stripe-test
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: plataforma_test_stripe_sandbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d plataforma_test_stripe_sandbox"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/plataforma_test_stripe_sandbox
+      E2E_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/plataforma_test_stripe_sandbox
+      JWT_SECRET: stripe_sandbox_ci_secret
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: test
+      ALLOW_E2E_WRITES: true
+      E2E_DB_ISOLATED: true
+      ALLOW_STRIPE_E2E: true
+      STRIPE_E2E_MODE: sandbox
+      STRIPE_SANDBOX_CONFIRMATION: ${{ inputs.confirm_test_mode }}
+      STRIPE_E2E_RUN_ID: stripe_sandbox_${{ github.run_id }}_${{ github.run_attempt }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+      FRONTEND_URL: http://127.0.0.1:4173
+      E2E_API_BASE: http://127.0.0.1:3000/api
+      VITE_API_URL: http://127.0.0.1:3000/api
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      PORT: 3000
+      STRIPE_SANDBOX_PASSWORD: stripe-sandbox-2026
+      STRIPE_SANDBOX_FIXTURES_READY: true
+      RUN_CHECKOUT_SUCCESS: ${{ inputs.run_checkout_success }}
+      RUN_CHECKOUT_CANCEL: ${{ inputs.run_checkout_cancel }}
+
+    steps:
+      - name: Validate manual test-mode intent
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "::error::Este workflow solo puede ejecutarse manualmente"
+            exit 1
+          fi
+          if [ "${{ inputs.confirm_test_mode }}" != "I_CONFIRM_STRIPE_TEST_MODE" ]; then
+            echo "::error::Confirmacion incorrecta para Stripe test mode"
+            exit 1
+          fi
+          if [ -z "${STRIPE_SECRET_KEY:-}" ]; then
+            echo "::error::Falta el secret de entorno STRIPE_TEST_SECRET_KEY"
+            exit 1
+          fi
+          case "$STRIPE_SECRET_KEY" in
+            sk_test_*) ;;
+            sk_live_*)
+              echo "::error::Se ha bloqueado una clave Stripe live"
+              exit 1
+              ;;
+            *)
+              echo "::error::La clave Stripe debe ser sk_test_"
+              exit 1
+              ;;
+          esac
+          echo "::add-mask::$STRIPE_SECRET_KEY"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install PostgreSQL client and Stripe CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client curl gpg
+          curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | sudo gpg --dearmor -o /usr/share/keyrings/stripe.gpg
+          echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee /etc/apt/sources.list.d/stripe.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y stripe
+
+      - name: Apply schema, seed and migrations
+        run: |
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
+          for f in $(ls database/migrations/*.sql | sort); do
+            echo "Applying migration: $f"
+            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
+          done
+
+      - name: Create Stripe sandbox fixtures
+        id: fixtures
+        working-directory: backend
+        run: node tests/e2e/stripe-sandbox-fixtures.mjs setup
+
+      - name: Build frontend for isolated API
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Stripe CLI listener
+        run: |
+          stripe listen --api-key "$STRIPE_SECRET_KEY" --forward-to http://127.0.0.1:3000/api/billing/webhook > /tmp/stripe-sandbox-listener.log 2>&1 &
+          echo $! > /tmp/stripe-sandbox-listener.pid
+          for i in {1..30}; do
+            if grep -q "whsec_" /tmp/stripe-sandbox-listener.log; then
+              WEBHOOK_SECRET="$(grep -o 'whsec_[A-Za-z0-9_]*' /tmp/stripe-sandbox-listener.log | head -n 1)"
+              echo "::add-mask::$WEBHOOK_SECRET"
+              echo "STRIPE_WEBHOOK_SECRET=$WEBHOOK_SECRET" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::No se pudo obtener webhook secret temporal del Stripe CLI"
+          sed -E 's/(whsec_)[A-Za-z0-9_]+/\1***REDACTED***/g; s/(sk_(test|live)_)[A-Za-z0-9_]+/\1***REDACTED***/g' /tmp/stripe-sandbox-listener.log || true
+          exit 1
+
+      - name: Start backend API
+        working-directory: backend
+        run: |
+          nohup npm run start > /tmp/backend-stripe-sandbox.log 2>&1 &
+          echo $! > /tmp/backend-stripe-sandbox.pid
+
+      - name: Start frontend preview
+        working-directory: frontend
+        env:
+          STRIPE_SANDBOX_ALUMNO_EMAIL: ${{ steps.fixtures.outputs.alumno_email }}
+          STRIPE_SANDBOX_SUCCESS_OPOSICION_NAME: ${{ steps.fixtures.outputs.success_oposicion_name }}
+          STRIPE_SANDBOX_CANCEL_OPOSICION_NAME: ${{ steps.fixtures.outputs.cancel_oposicion_name }}
+        run: |
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/frontend-stripe-sandbox.log 2>&1 &
+          echo $! > /tmp/frontend-stripe-sandbox.pid
+
+      - name: Wait for local services
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://127.0.0.1:3000/api/health >/dev/null && curl -sSf http://127.0.0.1:4173/login >/dev/null; then
+              echo "Local backend and frontend ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Los servicios locales no arrancaron"
+          exit 1
+
+      - name: Run Stripe sandbox success checkout
+        if: ${{ inputs.run_checkout_success }}
+        working-directory: frontend
+        env:
+          STRIPE_SANDBOX_ALUMNO_EMAIL: ${{ steps.fixtures.outputs.alumno_email }}
+          STRIPE_SANDBOX_SUCCESS_OPOSICION_NAME: ${{ steps.fixtures.outputs.success_oposicion_name }}
+          STRIPE_SANDBOX_CANCEL_OPOSICION_NAME: ${{ steps.fixtures.outputs.cancel_oposicion_name }}
+          STRIPE_SANDBOX_FLOW: success
+          RUN_CHECKOUT_SUCCESS: true
+          RUN_CHECKOUT_CANCEL: false
+        run: npm run test:e2e:stripe-sandbox
+
+      - name: Validate success checkout in DB
+        if: ${{ inputs.run_checkout_success }}
+        working-directory: backend
+        run: node tests/e2e/stripe-sandbox-fixtures.mjs assert-success
+
+      - name: Run Stripe sandbox cancel checkout
+        if: ${{ inputs.run_checkout_cancel }}
+        working-directory: frontend
+        env:
+          STRIPE_SANDBOX_ALUMNO_EMAIL: ${{ steps.fixtures.outputs.alumno_email }}
+          STRIPE_SANDBOX_SUCCESS_OPOSICION_NAME: ${{ steps.fixtures.outputs.success_oposicion_name }}
+          STRIPE_SANDBOX_CANCEL_OPOSICION_NAME: ${{ steps.fixtures.outputs.cancel_oposicion_name }}
+          STRIPE_SANDBOX_FLOW: cancel
+          RUN_CHECKOUT_SUCCESS: false
+          RUN_CHECKOUT_CANCEL: true
+        run: npm run test:e2e:stripe-sandbox
+
+      - name: Validate cancel checkout in DB
+        if: ${{ inputs.run_checkout_cancel }}
+        working-directory: backend
+        run: node tests/e2e/stripe-sandbox-fixtures.mjs assert-cancel
+
+      - name: Cleanup Stripe sandbox fixtures
+        if: always()
+        working-directory: backend
+        run: node tests/e2e/stripe-sandbox-fixtures.mjs cleanup
+
+      - name: Dump sanitized local logs on failure
+        if: failure()
+        run: |
+          sanitize='s/(whsec_)[A-Za-z0-9_]+/\1***REDACTED***/g; s/(sk_(test|live)_)[A-Za-z0-9_]+/\1***REDACTED***/g'
+          echo "===== backend ====="
+          sed -E "$sanitize" /tmp/backend-stripe-sandbox.log || true
+          echo "===== frontend ====="
+          sed -E "$sanitize" /tmp/frontend-stripe-sandbox.log || true
+          echo "===== stripe listener ====="
+          sed -E "$sanitize" /tmp/stripe-sandbox-listener.log || true
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-stripe-sandbox-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+
+      - name: Stop local services
+        if: always()
+        run: |
+          if [ -f /tmp/frontend-stripe-sandbox.pid ]; then
+            kill "$(cat /tmp/frontend-stripe-sandbox.pid)" || true
+          fi
+          if [ -f /tmp/backend-stripe-sandbox.pid ]; then
+            kill "$(cat /tmp/backend-stripe-sandbox.pid)" || true
+          fi
+          if [ -f /tmp/stripe-sandbox-listener.pid ]; then
+            kill "$(cat /tmp/stripe-sandbox-listener.pid)" || true
+          fi

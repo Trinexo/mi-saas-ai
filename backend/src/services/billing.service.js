@@ -74,7 +74,15 @@ export function createBillingService({
 
       const price = assertValidPrice(oposicion);
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      assertStripeTestIsolation();
+      const metadata = {
+        userId: String(userId),
+        oposicionId: String(oposicionId),
+      };
+      if (process.env.ALLOW_STRIPE_E2E === 'true' && process.env.STRIPE_E2E_MODE === 'sandbox') {
+        metadata.runId = process.env.STRIPE_E2E_RUN_ID || '';
+        metadata.testPurpose = 'BL-022';
+      }
+      assertStripeTestIsolation({ userEmail, metadata });
       const stripe = await stripeClientProvider();
 
       const session = await stripe.checkout.sessions.create({
@@ -93,10 +101,7 @@ export function createBillingService({
             },
           },
         ],
-        metadata: {
-          userId: String(userId),
-          oposicionId: String(oposicionId),
-        },
+        metadata,
         success_url: `${frontendUrl}/mis-oposiciones?pago=ok&oposicion=${oposicionId}`,
         cancel_url: `${frontendUrl}/catalogo?pago=cancelado`,
       });
@@ -123,7 +128,7 @@ export function createBillingService({
         throw httpError(400, 'Firma del webhook invalida');
       }
 
-      assertStripeTestIsolation({ event });
+      assertStripeTestIsolation({ event, webhookSecret });
 
       if (event.type !== 'checkout.session.completed') {
         return { processed: false, ignored: true };
