@@ -498,3 +498,65 @@ BL-022 no debe cerrarse hasta demostrar separacion inequivoca test/produccion, a
 ### Siguiente Tarea Unica
 
 Implementar barreras de modo test y pruebas aisladas de Stripe para checkout/webhook antes de ejecutar cualquier flujo externo, manteniendo BL-022 abierta hasta que los criterios anteriores pasen de forma repetible.
+
+## Fase BL-022B: Aislamiento Tecnico Checkout/Webhook Stripe
+
+Fecha: 2026-07-20.
+
+### Alcance
+
+Se implementa en la rama `test/BL-022-checkout-webhook-aislado` el aislamiento tecnico de checkout y webhook Stripe sin usar Stripe real, sin claves reales, sin produccion y sin datos reales.
+
+BL-022 permanece abierta. Esta fase no implementa Customer Portal, cancelaciones reales, `invoice.*`, `payment_failed`, gestion completa de customers, productos/precios remotos ni pruebas contra Stripe sandbox.
+
+### Cambios Tecnicos
+
+- Cliente Stripe inyectable mediante `backend/src/config/stripeClient.js`.
+- `billing.service` expone una factory de servicio para tests y conserva el singleton publico usado por controladores.
+- Guardas de test Stripe en `backend/src/utils/stripe-test-guards.js`.
+- Fake Stripe controlado en tests, sin transporte de red.
+- Checkout probado con precio local de `oposiciones.precio_mensual_cents`, moneda EUR, metadata segura y `customer_email` autenticado.
+- Webhook mantiene firma real con `stripe.webhooks.constructEvent`.
+- Migracion `039_add_stripe_webhook_events.sql` para idempotencia persistente.
+- Procesamiento de `checkout.session.completed` transaccional: firma antes de escribir, registro de evento, acceso local, marcado `processed_at`, commit y email despues del commit.
+- Job CI `stripe-checkout-webhook-isolated` con PostgreSQL efimero y doble ejecucion de la suite aislada.
+
+### Barreras Implementadas
+
+- `NODE_ENV=test`.
+- `ALLOW_STRIPE_E2E=true`.
+- `STRIPE_E2E_MODE=mock`.
+- `E2E_DB_ISOLATED=true`.
+- `DATABASE_URL` PostgreSQL local con nombre test/e2e.
+- URLs locales para `FRONTEND_URL`, `E2E_API_BASE` y `VITE_API_URL`.
+- Bloqueo de `sk_live_`, `pk_live_`, eventos `livemode=true` y hosts remotos conocidos.
+- Bloqueo de red remota en la suite aislada, permitiendo solo localhost.
+
+### Cobertura Anadida
+
+- Checkout sin token: 401 y sin invocar Stripe.
+- Checkout valido: fake Stripe invocado una vez, precio local, EUR, line items, metadata y URLs locales.
+- Precio manipulado en body: ignorado.
+- Usuario ajeno en body: no usado; se usa identidad autenticada.
+- Oposicion inexistente y precio invalido: error controlado y cero llamadas a Stripe.
+- Error del fake Stripe: sin acceso local.
+- Clave live en harness E2E: bloqueada.
+- Webhook sin firma, firma incorrecta y payload alterado: 400 y cero escrituras.
+- Webhook valido: acceso creado/actualizado, evento registrado y un email.
+- Mismo `event.id`: respuesta idempotente sin extender acceso ni reenviar email.
+- Distinto `event.id` con mismo `session.id`: duplicado funcional sin segundo efecto.
+- Duplicados concurrentes: una sola escritura funcional.
+- Fallo transaccional simulado: rollback y reintento posterior correcto.
+- Evento desconocido: 2xx logico sin cambios funcionales.
+- Metadata invalida y `livemode=true`: rechazo sin acceso ni email.
+
+### Validacion Local
+
+- `node --check` correcto para los archivos nuevos/modificados principales.
+- Prueba especifica de checkout aislado: 8 tests pasados.
+- Suite backend completa: `npm.cmd test`, 384 tests pasados, 0 fallos.
+- La suite con PostgreSQL (`npm run test:stripe`) queda para CI porque esta maquina no dispone de `psql`, `pg_isready` ni Docker.
+
+### Siguiente Tarea Unica
+
+Validar checkout y webhook contra Stripe sandbox con claves test y datos E2E, manteniendo todas las barreras: sin claves live, sin produccion, sin cargos reales, PostgreSQL aislado, webhook firmado y limpieza controlada.
