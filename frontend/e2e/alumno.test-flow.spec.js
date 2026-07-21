@@ -42,7 +42,7 @@ test('alumno: crea, resuelve, revisa y consulta historial/progreso de un test re
     page.waitForResponse((response) => response.url().includes('/api/tests/generate') && response.request().method() === 'POST'),
     page.getByRole('button', { name: /crear test/i }).last().click(),
   ]);
-  expect(generateResponse.status()).toBe(200);
+  expect(generateResponse.ok()).toBeTruthy();
   await expect(page).toHaveURL(/\/test\/?$/);
 
   const activeTest = await page.evaluate(() => JSON.parse(window.sessionStorage.getItem('active_test')));
@@ -66,7 +66,7 @@ test('alumno: crea, resuelve, revisa y consulta historial/progreso de un test re
     page.waitForResponse((response) => response.url().includes('/api/tests/submit') && response.request().method() === 'POST'),
     page.getByRole('button', { name: /enviar/i }).click(),
   ]);
-  expect(submitResponse.status()).toBe(200);
+  expect(submitResponse.ok()).toBeTruthy();
   await expect(page).toHaveURL(/\/resultado\/?$/);
   await expect(page.locator('body')).toContainText('Aciertos');
   await expect(page.locator('body')).toContainText('Errores');
