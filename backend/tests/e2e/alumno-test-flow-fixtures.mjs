@@ -206,7 +206,7 @@ async function bumpSequence(client, tableName) {
   const { rows } = await client.query('SELECT pg_get_serial_sequence($1, $2) AS seq_name', [`public.${tableName}`, 'id']);
   const seqName = rows[0]?.seq_name;
   if (!seqName) return;
-  await client.query(`SELECT setval($1, GREATEST((SELECT COALESCE(MAX(id), 0) FROM public.${tableName}), 1000), true)`, [seqName]);
+  await client.query(`SELECT setval($1::regclass, GREATEST((SELECT COALESCE(MAX(id), 0) FROM public.${tableName}), 1000), true)`, [seqName]);
 }
 
 async function bumpE2ESequences(client) {
