@@ -623,3 +623,68 @@ Evidencia:
 - La limpieza posterior de fixtures fue correcta en ambas pasadas.
 
 BL-022 permanece abierta. No se crea etiqueta de baseline en esta fase. La siguiente tarea funcional prevista es BL-006B: marcadas, repaso y repeticion.
+
+## Fase BL-035: Integración Operativa VS Copilot–Codex
+
+Fecha: 2026-07-21.
+
+### Objetivo
+
+Se establece un protocolo común para trabajar alternativamente con VS Copilot y Codex y se ejecuta una prueba real de traspaso de una rama entre ambas herramientas.
+
+### Fase Copilot
+
+- Base: `7684f6ab58232dc47400cf92cbf525addeaac2fb`.
+- Rama: `docs/ai-copilot-codex-workflow`.
+- Commit Copilot: `2b889e51cd296b7aac89831358ef6f4edb9cd75a`.
+- Creación de `docs/AI_DEVELOPMENT_WORKFLOW.md`.
+- Enlace desde `AGENTS.md`.
+- Enlace e instrucción de traspaso desde `.github/copilot-instructions.md`.
+- Commit y push realizados.
+- Working tree limpio.
+- Sin PR, merge o tag en la entrega.
+
+### Recepción Por Codex
+
+- Se ejecutó `git fetch origin --prune --tags`.
+- Se recuperó la misma rama `docs/ai-copilot-codex-workflow`.
+- La rama local coincidía con `origin/docs/ai-copilot-codex-workflow`.
+- El working tree estaba limpio.
+- Se revisó el commit de Copilot `2b889e51cd296b7aac89831358ef6f4edb9cd75a`.
+- Se revisó el diff contra `main`.
+- Se comprendió el alcance exclusivamente documental del protocolo y de la prueba.
+- No se hizo amend ni reescritura del commit de Copilot.
+- Codex continúa mediante un segundo commit independiente.
+
+### Archivos Y Seguridad
+
+- Tarea exclusivamente documental.
+- Sin backend.
+- Sin frontend.
+- Sin workflows.
+- Sin base de datos.
+- Sin migraciones.
+- Sin secretos.
+- Sin producción.
+- Sin datos reales.
+- Sin operaciones Git destructivas.
+
+### Resultado
+
+La prueba técnica de traspaso Copilot–Codex queda validada cuando Codex:
+
+- recibe la rama exacta;
+- conserva el commit de Copilot;
+- añade un commit separado;
+- realiza push;
+- crea una PR contra `main`.
+
+La integración no queda formalmente cerrada hasta que la PR tenga checks verdes, se fusione mediante squash y `main` vuelva a sincronizarse.
+
+No se crea todavía la etiqueta. La etiqueta prevista tras la fusión es:
+
+```text
+baseline-copilot-codex-2026-07-21
+```
+
+BL-022 permanece abierta. Las tareas funcionales del backlog no quedan alteradas. BL-006B permanece pendiente.
