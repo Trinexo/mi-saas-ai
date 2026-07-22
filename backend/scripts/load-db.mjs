@@ -1,5 +1,7 @@
 /**
- * Script temporal para cargar schema + seed + migraciones en Railway.
+ * Script histórico para bootstrap manual con schema + seed + migraciones.
+ * No es el runner oficial de despliegue; usar migrate-official.mjs para
+ * aplicar únicamente database/migrations/.
  * Uso: node scripts/load-db.mjs
  * Eliminar después de usar.
  */

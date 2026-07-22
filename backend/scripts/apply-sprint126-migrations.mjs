@@ -1,5 +1,6 @@
 /**
- * Aplica las migraciones del catálogo raíz (database/migrations/) a Railway.
+ * Script histórico de compatibilidad para un sprint concreto.
+ * No es el runner oficial; el despliegue debe usar migrate-official.mjs.
  *
  * Solo aplica las migraciones 014–019 que son nuevas en el sprint 126.
  * Cada migración es idempotente (IF NOT EXISTS / IF EXISTS) salvo la 019 (rename).
