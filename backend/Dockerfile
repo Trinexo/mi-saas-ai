@@ -13,7 +13,9 @@ COPY backend ./backend
 COPY database ./database
 
 # No copiar .env (las variables se inyectan en runtime)
-RUN rm -f .env
+RUN rm -f .env \
+    && mkdir -p /app/backend/uploads \
+    && chown -R node:node /app/backend/uploads
 
 USER node
 
