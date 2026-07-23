@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test:e2e:roles": "playwright test --config=playwright.config.js e2e/roles.flows.spec.js",
     "test:e2e:stripe-sandbox": "playwright test --config=playwright.config.js e2e/stripe.sandbox.spec.js",
-    "test:e2e:alumno-test-flow": "playwright test --config=playwright.config.js e2e/alumno.test-flow.spec.js"
+    "test:e2e:alumno-test-flow": "playwright test --config=playwright.config.js e2e/alumno.test-flow.spec.js",
+    "test:e2e:guard": "node --test tests/alumnoTestFlowGuards.test.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
