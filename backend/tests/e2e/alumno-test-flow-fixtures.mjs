@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import bcrypt from 'bcryptjs';
 import pkg from 'pg';
+import { assertSafeEnvironment } from './alumno-test-flow-environment.mjs';
 
 const { Pool } = pkg;
 
@@ -14,8 +15,6 @@ const ALUMNO_EMAIL = process.env.ALUMNO_E2E_EMAIL || `e2e_alumno_test_${RUN_ID}@
 const MANIFEST_PATH = process.env.ALUMNO_E2E_MANIFEST || join(tmpdir(), `alumno-test-flow-${RUN_ID}.json`);
 const E2E_DATABASE_URL = process.env.E2E_DATABASE_URL || process.env.DATABASE_URL;
 const DATABASE_URL = process.env.DATABASE_URL;
-const LOCAL_DB_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
-const BLOCKED_HOST_PATTERNS = [/railway/i, /rlwy/i, /vercel/i, /supabase/i, /neon/i, /render/i, /amazonaws/i, /rds/i, /production/i];
 
 const marker = {
   alumnoNombre: `E2E Alumno Test Flow ${RUN_ID}`,
@@ -32,52 +31,6 @@ const pool = new Pool({ connectionString: E2E_DATABASE_URL, ssl: false });
 function redactUrl(value) {
   const parsed = new URL(value);
   return `${parsed.protocol}//${parsed.hostname}:${parsed.port}${parsed.pathname}`;
-}
-
-function assertLocalUrl(value, label, { requireApi = false } = {}) {
-  assert.ok(value, `${label} requerido`);
-  const parsed = new URL(value);
-  assert.ok(LOCAL_DB_HOSTS.has(parsed.hostname), `${label} debe apuntar a host local: ${parsed.hostname}`);
-  assert.equal(BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(parsed.hostname)), false, `${label} apunta a host remoto o productivo`);
-  if (requireApi) {
-    assert.ok(parsed.pathname.startsWith('/api'), `${label} debe estar bajo /api`);
-  }
-  return parsed;
-}
-
-function assertSameDbBase(left, right) {
-  const a = new URL(left);
-  const b = new URL(right);
-  assert.deepEqual(
-    [a.protocol, a.hostname, a.port, a.pathname],
-    [b.protocol, b.hostname, b.port, b.pathname],
-    'DATABASE_URL y E2E_DATABASE_URL deben apuntar a la misma base aislada',
-  );
-}
-
-function assertSafeEnvironment() {
-  assert.equal(process.env.NODE_ENV, 'test', 'Alumno test flow requiere NODE_ENV=test');
-  assert.equal(process.env.ALLOW_E2E_WRITES, 'true', 'Alumno test flow requiere ALLOW_E2E_WRITES=true');
-  assert.equal(process.env.E2E_DB_ISOLATED, 'true', 'Alumno test flow requiere E2E_DB_ISOLATED=true');
-  assert.ok(E2E_DATABASE_URL, 'Alumno test flow requiere E2E_DATABASE_URL');
-  assert.ok(DATABASE_URL, 'Alumno test flow requiere DATABASE_URL');
-  assertSameDbBase(E2E_DATABASE_URL, DATABASE_URL);
-
-  const dbUrl = assertLocalUrl(E2E_DATABASE_URL, 'E2E_DATABASE_URL');
-  assert.ok(
-    /(^|[_-])(test|ci|e2e)($|[_-])|plataforma_test/i.test(dbUrl.pathname.replace(/^\//, '')),
-    'Alumno test flow requiere nombre de base claramente de test',
-  );
-
-  if (process.env.E2E_API_BASE) assertLocalUrl(process.env.E2E_API_BASE, 'E2E_API_BASE', { requireApi: true });
-  if (process.env.PLAYWRIGHT_BASE_URL) assertLocalUrl(process.env.PLAYWRIGHT_BASE_URL, 'PLAYWRIGHT_BASE_URL');
-  if (process.env.FRONTEND_URL) assertLocalUrl(process.env.FRONTEND_URL, 'FRONTEND_URL');
-  assert.match(ALUMNO_EMAIL, /^e2e_alumno_test_[A-Za-z0-9_.+-]+@test\.local$/i);
-
-  for (const value of Object.values(process.env)) {
-    if (!value || typeof value !== 'string') continue;
-    assert.equal(BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(value)), false, 'Entorno E2E contiene referencia remota/productiva bloqueada');
-  }
 }
 
 async function query(sql, params = []) {
