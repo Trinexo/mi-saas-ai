@@ -8,9 +8,6 @@ RUN npm ci --omit=dev
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Crea usuario no-root por seguridad
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY backend ./backend
 COPY database ./database
@@ -18,7 +15,7 @@ COPY database ./database
 # No copiar .env (las variables se inyectan en runtime)
 RUN rm -f .env
 
-USER appuser
+USER node
 
 EXPOSE 3000
 
