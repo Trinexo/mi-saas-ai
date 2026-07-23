@@ -3,15 +3,17 @@
  * Uso: node scripts/migrate-users.mjs
  */
 import pg from 'pg';
+import { requiredEnv, requireConfirmation, sslForDatabaseUrl } from './legacy-script-config.mjs';
 
 const { Client } = pg;
 
-const LOCAL_URL  = 'postgres://postgres:postgres@localhost:5432/plataforma_test';
-const REMOTE_URL = 'postgresql://postgres:xaUbGIcQGmTrrRKmUSiVAmnrtNNqmcgE@monorail.proxy.rlwy.net:14080/railway';
+const LOCAL_URL  = requiredEnv('LOCAL_DB_URL');
+const REMOTE_URL = requiredEnv('RAILWAY_DB_URL');
 
 async function run() {
+  requireConfirmation('ALLOW_REMOTE_MIGRATION');
   const local  = new Client({ connectionString: LOCAL_URL });
-  const remote = new Client({ connectionString: REMOTE_URL, ssl: { rejectUnauthorized: false } });
+  const remote = new Client({ connectionString: REMOTE_URL, ssl: sslForDatabaseUrl(REMOTE_URL) });
 
   await local.connect();
   await remote.connect();

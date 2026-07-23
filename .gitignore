@@ -33,6 +33,7 @@ Thumbs.db
 # Local helper files
 .dev-pids.json
 backend/.ci-trigger
+backend/legacy-scripts.env
 
 # Volcados y registros locales de base de datos
 database/dump_*.sql

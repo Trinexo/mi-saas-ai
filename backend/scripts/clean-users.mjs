@@ -1,9 +1,12 @@
 import pg from 'pg';
+import { requiredEnv, requireConfirmation, sslForDatabaseUrl } from './legacy-script-config.mjs';
 const { Client } = pg;
 
+requireConfirmation('ALLOW_CLEAN_USERS');
+
 const c = new Client({
-  connectionString: 'postgresql://postgres:xaUbGIcQGmTrrRKmUSiVAmnrtNNqmcgE@monorail.proxy.rlwy.net:14080/railway',
-  ssl: { rejectUnauthorized: false }
+  connectionString: requiredEnv('RAILWAY_DB_URL'),
+  ssl: sslForDatabaseUrl(process.env.RAILWAY_DB_URL)
 });
 
 await c.connect();
