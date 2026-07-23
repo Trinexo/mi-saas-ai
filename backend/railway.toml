@@ -7,7 +7,7 @@ builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-preDeployCommand = "node backend/scripts/migrate-official.mjs"
+preDeployCommand = ["node backend/scripts/migrate-official.mjs"]
 startCommand = "node backend/src/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

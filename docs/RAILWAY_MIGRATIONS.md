@@ -12,37 +12,39 @@ Railway debe configurar el servicio con:
 - Custom Config Path: /backend/railway.toml
 - DATABASE_URL como única conexión de base de datos
 
-El preDeployCommand ejecuta node backend/scripts/migrate-official.mjs. El
-backend solo arranca después de que ese comando termine correctamente.
+El preDeployCommand ejecuta únicamente node backend/scripts/migrate-official.mjs.
+El backend solo arranca después de que ese comando termine correctamente.
 
 El runner:
 
-- aplica los archivos SQL numerados en orden;
+- aplica archivos SQL numerados en orden;
 - no carga schema.sql ni seeds;
-- registra nombre, checksum y estado en schema_migrations;
+- registra nombre, checksum y estado aplicado;
 - usa un bloqueo advisory de PostgreSQL;
-- detiene el despliegue ante errores;
-- no repite migraciones registradas;
+- ejecuta cada migración y su registro en una transacción;
 - rechaza cambios de checksum y estados incompletos.
 
 ## Baseline de una base existente
 
 Una base ya creada antes de este runner debe verificarse previamente. Para
-registrar una línea base conocida se puede ejecutar una única vez:
+registrar una línea base se ejecuta manualmente:
 
 ~~~text
-MIGRATIONS_BASELINE=039_add_stripe_webhook_events.sql
+npm run db:baseline -- --through=039_add_stripe_webhook_events.sql --dry-run
+npm run db:baseline -- --through=039_add_stripe_webhook_events.sql --confirm=BASELINE
 ~~~
 
-El valor debe corresponder a un archivo existente en database/migrations.
-Después de registrar la baseline debe eliminarse esa variable del entorno.
-La migración siguiente se ejecutará normalmente.
+El primer comando solo informa. El segundo requiere confirmación explícita,
+valida el esquema y registra checksums sin ejecutar SQL de migración.
+La baseline no debe ejecutarse desde pre-deploy ni start.
 
 No se debe usar baseline sobre una base vacía ni para ocultar una migración
-fallida.
+fallida. schema.sql representa la baseline
+038_accesos_ranking_publico.sql en el bootstrap local de Compose.
 
 ## Legacy
 
 backend/database/migrations queda como histórico temporal. No se deben crear
-allí nuevas migraciones. El script apply-backend-migrations.mjs conserva
-compatibilidad con procedimientos antiguos, pero delega al runner oficial.
+allí nuevas migraciones. apply-backend-migrations.mjs delega al runner oficial;
+los demás loaders históricos están bloqueados o requieren una confirmación
+local explícita.

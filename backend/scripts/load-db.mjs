@@ -1,104 +1,30 @@
 /**
- * Script histórico para bootstrap manual con schema + seed + migraciones.
- * No es el runner oficial de despliegue; usar migrate-official.mjs para
- * aplicar únicamente database/migrations/.
- * Uso: node scripts/load-db.mjs
- * Eliminar después de usar.
+ * Alias histórico de bootstrap local.
+ *
+ * No carga seeds ni permite operar sobre producción. Para migraciones
+ * normales debe usarse migrate-official.mjs.
  */
-import pg from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const { Client } = pg;
-
-const DB_URL = process.env.DATABASE_URL;
-if (!DB_URL) {
-  console.error('ERROR: Define DATABASE_URL como variable de entorno.');
+if (process.env.NODE_ENV === 'production' || process.env.ALLOW_LOCAL_DB_BOOTSTRAP !== 'true') {
+  console.error('load-db.mjs está deprecado; requiere ALLOW_LOCAL_DB_BOOTSTRAP=true fuera de producción');
   process.exit(1);
 }
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_DIR = path.resolve(__dirname, '../../database');
+const bootstrap = fileURLToPath(new URL('./bootstrap-schema-if-empty.mjs', import.meta.url));
+const runner = fileURLToPath(new URL('./migrate-official.mjs', import.meta.url));
 
-const FILES = [
-  path.join(DB_DIR, 'schema.sql'),
-  path.join(DB_DIR, 'seed.sql'),
-  ...fs.readdirSync(path.join(DB_DIR, 'migrations'))
-    .filter(f => f.endsWith('.sql'))
-    .sort()
-    .map(f => path.join(DB_DIR, 'migrations', f)),
-];
-
-function stripComments(sql) {
-  let result = '';
-  let inString = false;
-  let i = 0;
-  while (i < sql.length) {
-    if (!inString && sql[i] === "'") {
-      inString = true;
-      result += sql[i];
-    } else if (inString && sql[i] === "'" && sql[i + 1] === "'") {
-      result += "''"; i += 2; continue;
-    } else if (inString && sql[i] === "'") {
-      inString = false;
-      result += sql[i];
-    } else if (!inString && sql[i] === '-' && sql[i + 1] === '-') {
-      while (i < sql.length && sql[i] !== '\n') i++;
-      result += '\n'; continue;
-    } else {
-      result += sql[i];
-    }
-    i++;
+const child = spawn(process.execPath, [bootstrap], { stdio: 'inherit', env: process.env });
+child.on('exit', (code, signal) => {
+  if (signal || code !== 0) {
+    process.exitCode = 1;
+    return;
   }
-  return result;
-}
-
-async function applyFile(client, file) {
-  const raw = fs.readFileSync(file, 'utf-8');
-  const sql = stripComments(raw);
-  const statements = sql
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
-  let warnings = 0;
-  for (const stmt of statements) {
-    try {
-      await client.query(stmt);
-    } catch (err) {
-      if (
-        err.message.includes('already exists') ||
-        err.message.includes('duplicate') ||
-        err.message.includes('does not exist') && stmt.toUpperCase().includes('DROP')
-      ) {
-        warnings++;
-      } else {
-        throw err;
-      }
-    }
-  }
-  if (warnings > 0) return `(${warnings} sentencias omitidas — ya aplicadas)`;
-  return '';
-}
-
-async function run() {
-  const client = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
-  await client.connect();
-  console.log('Conectado a Railway PostgreSQL\n');
-
-  for (const file of FILES) {
-    const name = path.relative(DB_DIR, file);
-    try {
-      const note = await applyFile(client, file);
-      console.log(`✓ ${name} ${note}`);
-    } catch (err) {
-      console.error(`✗ ${name}: ${err.message}`);
-    }
-  }
-
-  await client.end();
-  console.log('\nBase de datos cargada correctamente.');
-}
-
-run().catch(err => { console.error(err); process.exit(1); });
+  const migration = spawn(process.execPath, [runner], { stdio: 'inherit', env: process.env });
+  migration.on('exit', (migrationCode, migrationSignal) => {
+    process.exitCode = migrationSignal ? 1 : (migrationCode ?? 1);
+  });
+  migration.on('error', () => { process.exitCode = 1; });
+});
+child.on('error', () => { process.exitCode = 1; });
