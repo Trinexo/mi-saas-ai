@@ -27,8 +27,12 @@ export async function discoverMigrations(directory = MIGRATIONS_DIR) {
   return names.filter((name) => /^\d+_.+\.sql$/.test(name)).sort();
 }
 
+export function normalizeSql(sql) {
+  return sql.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
 export function checksum(sql) {
-  return crypto.createHash('sha256').update(sql, 'utf8').digest('hex');
+  return crypto.createHash('sha256').update(normalizeSql(sql), 'utf8').digest('hex');
 }
 
 function sslConfig(url) {
