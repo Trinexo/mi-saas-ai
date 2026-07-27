@@ -108,7 +108,7 @@ export function buildPlan(rows, migrations, sqlByFilename) {
     const legacyChecksum = legacyCrlfChecksum(sql);
     canonicalChecksums.set(filename, canonicalChecksum);
 
-    let action = 'already-canonical';
+    let action = 'unchanged';
     if (row.checksum !== canonicalChecksum) {
       if (row.checksum !== legacyChecksum) {
         fail(`Checksum incompatible para ${filename}`);
@@ -116,6 +116,7 @@ export function buildPlan(rows, migrations, sqlByFilename) {
       action = 'update';
       updates.push({
         filename,
+        action: 'update',
         oldChecksum: row.checksum,
         newChecksum: canonicalChecksum,
       });
@@ -125,11 +126,44 @@ export function buildPlan(rows, migrations, sqlByFilename) {
       filename,
       action,
       storedChecksum: row.checksum,
+      legacyChecksum,
       canonicalChecksum,
     });
   }
 
   return { target, entries, updates, canonicalChecksums };
+}
+
+export function validatePlan(plan) {
+  const targetCount = plan.target.length;
+  const boundaryErrors = [
+    plan.target[0] !== '001_add_oposicion_preferida_to_usuarios.sql',
+    plan.target.at(-1) !== BASELINE_THROUGH,
+  ].filter(Boolean).length;
+  const invalidEntries = plan.entries.filter((entry) => {
+    if (!['update', 'unchanged'].includes(entry.action)) return true;
+    if (!targetCount || entry.filename === '039_add_stripe_webhook_events.sql') return true;
+    if (entry.action === 'update') {
+      return entry.storedChecksum !== entry.legacyChecksum
+        || entry.storedChecksum === entry.canonicalChecksum;
+    }
+    return entry.storedChecksum !== entry.canonicalChecksum;
+  });
+  const updateCount = plan.entries.filter((entry) => entry.action === 'update').length;
+  const unchangedCount = plan.entries.filter((entry) => entry.action === 'unchanged').length;
+  const invalidCount = invalidEntries.length + boundaryErrors;
+
+  if (targetCount !== BASELINE_COUNT
+    || plan.entries.length !== BASELINE_COUNT
+    || updateCount + unchangedCount !== BASELINE_COUNT
+    || plan.updates.length !== updateCount
+    || plan.updates.some((item) => item.action !== 'update')
+    || invalidCount > 0
+    || plan.target.includes('039_add_stripe_webhook_events.sql')) {
+    fail('Plan de reconciliación inválido; no se ejecutará ningún UPDATE');
+  }
+
+  return { targetCount, updateCount, unchangedCount, invalidCount };
 }
 
 export function verifyCanonicalRows(rows, target, canonicalChecksums) {
@@ -146,9 +180,12 @@ export function abbreviatedChecksum(value) {
 }
 
 export function dryRunReport(plan) {
+  const counts = validatePlan(plan);
   return {
     mode: 'dry-run',
-    targetCount: plan.target.length,
+    ...counts,
+    firstMigration: plan.target[0],
+    lastMigration: plan.target.at(-1),
     updates: plan.entries.map((entry) => ({
       filename: entry.filename,
       action: entry.action,
@@ -159,6 +196,7 @@ export function dryRunReport(plan) {
 }
 
 export async function applyPlan(client, plan) {
+  validatePlan(plan);
   await client.query('BEGIN');
   try {
     for (const item of plan.updates) {
