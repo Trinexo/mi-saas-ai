@@ -8,6 +8,19 @@ import {
   editarAccesoBodySchema,
   preparacionAccesoBodySchema,
 } from '../../src/schemas/accesoOposicion.schema.js';
+import { modoActivoDesdePreparacion } from '../../src/repositories/accesoOposicion.repository.js';
+
+test('sincronización legacy: experto se activa como experto', () => {
+  assert.equal(modoActivoDesdePreparacion('experto'), 'experto');
+});
+
+test('sincronización legacy: albacer se activa como guiado', () => {
+  assert.equal(modoActivoDesdePreparacion('albacer'), 'guiado');
+});
+
+test('sincronización legacy rechaza modos no soportados', () => {
+  assert.throws(() => modoActivoDesdePreparacion('modo_invalido'), /no soportado/);
+});
 
 test('accesoOposicionParamSchema normaliza oposicionId', () => {
   const parsed = accesoOposicionParamSchema.safeParse({ oposicionId: '7' });

@@ -149,10 +149,16 @@ async function setup() {
       [preguntaId],
     );
     await client.query('INSERT INTO profesores_oposiciones (user_id, oposicion_id) VALUES ($1, $2)', [profesorId, oposicionId]);
-    await client.query(
-      `INSERT INTO accesos_oposicion (usuario_id, oposicion_id, estado, tipo_alumno, modo_preparacion, notas)
-       VALUES ($1, $2, 'activo', 'libre', 'experto', 'Fixture funcional BL-021')`,
+    const { rows: accesoRows } = await client.query(
+      `INSERT INTO accesos_oposicion (usuario_id, oposicion_id, estado, tipo_alumno, modo_preparacion, modo_activo, notas)
+       VALUES ($1, $2, 'activo', 'libre', 'experto', 'experto', 'Fixture funcional BL-021')
+       RETURNING id`,
       [alumnoId, oposicionId],
+    );
+    await client.query(
+      `INSERT INTO acceso_oposicion_modelos (acceso_id, modelo)
+       VALUES ($1, 'experto')`,
+      [accesoRows[0].id],
     );
     await client.query(
       `INSERT INTO suscripciones (usuario_id, plan, estado, notas)

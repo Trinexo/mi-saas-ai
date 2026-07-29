@@ -1,5 +1,60 @@
 import pool from '../config/db.js';
 
+export function modoActivoDesdePreparacion(modoPreparacion) {
+  if (modoPreparacion === 'experto') return 'experto';
+  if (modoPreparacion === 'albacer') return 'guiado';
+  throw new Error(`Modo de preparación no soportado: ${modoPreparacion}`);
+}
+
+async function sincronizarModeloUnico(client, accesoId, modoActivo) {
+  const result = await client.query(
+    `SELECT modelo
+       FROM acceso_oposicion_modelos
+      WHERE acceso_id = $1
+      FOR UPDATE`,
+    [accesoId],
+  );
+
+  if (result.rowCount > 1) {
+    const error = new Error('No se puede sincronizar un acceso multi-modelo desde el flujo legacy');
+    error.code = 'LEGACY_MODE_MULTI_MODEL_CONFLICT';
+    throw error;
+  }
+
+  if (result.rowCount === 1) {
+    if (result.rows[0].modelo !== modoActivo) {
+      await client.query(
+        `UPDATE acceso_oposicion_modelos
+            SET modelo = $2
+          WHERE acceso_id = $1`,
+        [accesoId, modoActivo],
+      );
+    }
+    return;
+  }
+
+  await client.query(
+    `INSERT INTO acceso_oposicion_modelos (acceso_id, modelo)
+     VALUES ($1, $2)`,
+    [accesoId, modoActivo],
+  );
+}
+
+async function enTransaccion(callback) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export const accesoOposicionRepository = {
   /**
    * Devuelve los accesos activos del usuario incluyendo el nombre de la oposición.
@@ -36,19 +91,37 @@ export const accesoOposicionRepository = {
   },
 
   async updatePreparacion(userId, oposicionId, fields = {}) {
-    const result = await pool.query(
-      `UPDATE accesos_oposicion
-       SET modo_preparacion = COALESCE($3, modo_preparacion),
-           ranking_publico = COALESCE($4, ranking_publico),
-           actualizada_en = NOW()
-       WHERE usuario_id = $1
-         AND oposicion_id = $2
-         AND estado = 'activo'
-         AND (fecha_fin IS NULL OR fecha_fin > NOW())
-       RETURNING usuario_id, oposicion_id, tipo_alumno, modo_preparacion, ranking_publico`,
-      [userId, oposicionId, fields.modoPreparacion ?? null, fields.rankingPublico ?? null],
-    );
-    return result.rows[0] ?? null;
+    const modoActivo = fields.modoPreparacion == null
+      ? null
+      : modoActivoDesdePreparacion(fields.modoPreparacion);
+
+    return enTransaccion(async (client) => {
+      const current = await client.query(
+        `SELECT id, modo_preparacion, modo_activo
+           FROM accesos_oposicion
+          WHERE usuario_id = $1
+            AND oposicion_id = $2
+            AND estado = 'activo'
+            AND (fecha_fin IS NULL OR fecha_fin > NOW())
+          FOR UPDATE`,
+        [userId, oposicionId],
+      );
+      if (current.rowCount === 0) return null;
+
+      const result = await client.query(
+        `UPDATE accesos_oposicion
+         SET modo_preparacion = COALESCE($2, modo_preparacion),
+             modo_activo = COALESCE($4, modo_activo),
+             ranking_publico = COALESCE($3, ranking_publico),
+             actualizada_en = NOW()
+         WHERE id = $1
+         RETURNING id, usuario_id, oposicion_id, tipo_alumno, modo_preparacion, modo_activo, ranking_publico`,
+        [current.rows[0].id, fields.modoPreparacion ?? null, fields.rankingPublico ?? null, modoActivo],
+      );
+      const acceso = result.rows[0] ?? null;
+      if (acceso && modoActivo !== null) await sincronizarModeloUnico(client, acceso.id, acceso.modo_activo);
+      return acceso;
+    });
   },
 
   async updateModoPreparacion(userId, oposicionId, modoPreparacion) {
@@ -74,6 +147,13 @@ export const accesoOposicionRepository = {
   /**
    * Crea o reactiva un acceso a una oposición para un usuario.
    */
+  /**
+   * Crea o renueva un acceso legacy de un único modo.
+   *
+   * Si se recibe client, el caller debe haber abierto la transacción y debe
+   * mantenerla hasta que esta operación termine. Billing cumple ese contrato.
+   * Sin client, este método abre y cierra su propia transacción.
+   */
   async crearAcceso({
     userId,
     oposicionId,
@@ -81,55 +161,103 @@ export const accesoOposicionRepository = {
     precioPagado = null,
     notas = null,
     tipoAlumno = 'libre',
-    modoPreparacion = 'albacer',
-    client = pool,
+    modoPreparacion = null,
+    client = null,
   }) {
-    const result = await client.query(
-      `INSERT INTO accesos_oposicion
-         (usuario_id, oposicion_id, estado, fecha_fin, precio_pagado, notas, tipo_alumno, modo_preparacion)
-       VALUES ($1, $2, 'activo', $3, $4, $5, $6, $7)
-       ON CONFLICT (usuario_id, oposicion_id)
-       DO UPDATE SET
-         estado         = 'activo',
-         fecha_fin      = EXCLUDED.fecha_fin,
-         precio_pagado  = COALESCE(EXCLUDED.precio_pagado, accesos_oposicion.precio_pagado),
-         notas          = COALESCE(EXCLUDED.notas, accesos_oposicion.notas),
-         tipo_alumno    = EXCLUDED.tipo_alumno,
-         modo_preparacion = EXCLUDED.modo_preparacion,
-         actualizada_en = NOW()
-       RETURNING *`,
-      [userId, oposicionId, fechaFin, precioPagado, notas, tipoAlumno, modoPreparacion],
-    );
-    return result.rows[0];
+    const modoParaNuevoAcceso = modoPreparacion ?? 'albacer';
+    const execute = async (dbClient) => {
+      const current = await dbClient.query(
+        `SELECT *
+           FROM accesos_oposicion
+          WHERE usuario_id = $1 AND oposicion_id = $2
+          FOR UPDATE`,
+        [userId, oposicionId],
+      );
+
+      let acceso;
+      if (current.rowCount === 0) {
+        const result = await dbClient.query(
+          `INSERT INTO accesos_oposicion
+             (usuario_id, oposicion_id, estado, fecha_fin, precio_pagado, notas, tipo_alumno, modo_preparacion, modo_activo)
+           VALUES ($1, $2, 'activo', $3, $4, $5, $6, $7, $8)
+           RETURNING *`,
+          [userId, oposicionId, fechaFin ?? null, precioPagado ?? null, notas ?? null, tipoAlumno, modoParaNuevoAcceso, modoActivoDesdePreparacion(modoParaNuevoAcceso)],
+        );
+        acceso = result.rows[0];
+      } else {
+        const existing = current.rows[0];
+        if (existing.estado === 'revocado' || existing.estado === 'cancelado') {
+          const error = new Error(`No se puede reactivar un acceso ${existing.estado} desde el flujo legacy`);
+          error.code = 'ACCESS_STATE_REACTIVATION_FORBIDDEN';
+          throw error;
+        }
+        if (!['activo', 'expirado', 'pendiente_modo'].includes(existing.estado)) {
+          const error = new Error(`Estado de acceso no soportado para renovación: ${existing.estado}`);
+          error.code = 'ACCESS_STATE_TRANSITION_FORBIDDEN';
+          throw error;
+        }
+
+        const modoParaAcceso = modoPreparacion ?? existing.modo_preparacion;
+        const modoActivo = modoActivoDesdePreparacion(modoParaAcceso);
+
+        const result = await dbClient.query(
+          `UPDATE accesos_oposicion
+              SET estado           = CASE WHEN estado = 'expirado' OR estado = 'pendiente_modo' THEN 'activo' ELSE estado END,
+                  fecha_fin        = COALESCE($2, fecha_fin),
+                  precio_pagado    = COALESCE($3, precio_pagado),
+                  notas            = COALESCE($4, notas),
+                  tipo_alumno      = COALESCE($5, tipo_alumno),
+                  modo_preparacion = $6,
+                  modo_activo      = $7,
+                  actualizada_en   = NOW()
+            WHERE id = $1
+            RETURNING *`,
+          [existing.id, fechaFin, precioPagado, notas, tipoAlumno, modoParaAcceso, modoActivo],
+        );
+        acceso = result.rows[0];
+      }
+
+      await sincronizarModeloUnico(dbClient, acceso.id, acceso.modo_activo);
+      return acceso;
+    };
+
+    return client ? execute(client) : enTransaccion(execute);
   },
 
   /**
    * Actualiza los campos editables de un acceso (admin).
    */
   async updateAcceso(userId, oposicionId, { fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion }) {
-    const result = await pool.query(
-      `UPDATE accesos_oposicion
-       SET   fecha_fin      = $3,
-             precio_pagado  = $4,
-             notas          = $5,
-             estado         = $6,
-             tipo_alumno    = COALESCE($7, tipo_alumno),
-             modo_preparacion = COALESCE($8, modo_preparacion),
-             actualizada_en = NOW()
-       WHERE usuario_id = $1 AND oposicion_id = $2
-       RETURNING *`,
-      [
-        userId,
-        oposicionId,
-        fechaFin ?? null,
-        precioPagado ?? null,
-        notas ?? null,
-        estado,
-        tipoAlumno,
-        modoPreparacion,
-      ],
-    );
-    return result.rows[0] ?? null;
+    const modoActivo = modoPreparacion == null ? null : modoActivoDesdePreparacion(modoPreparacion);
+    return enTransaccion(async (client) => {
+      const current = await client.query(
+        `SELECT id
+           FROM accesos_oposicion
+          WHERE usuario_id = $1 AND oposicion_id = $2
+          FOR UPDATE`,
+        [userId, oposicionId],
+      );
+      if (current.rowCount === 0) return null;
+
+      if (modoActivo !== null) await sincronizarModeloUnico(client, current.rows[0].id, modoActivo);
+
+      const result = await client.query(
+        `UPDATE accesos_oposicion
+         SET   fecha_fin        = COALESCE($2, fecha_fin),
+               precio_pagado    = COALESCE($3, precio_pagado),
+               notas            = COALESCE($4, notas),
+               estado           = COALESCE($5, estado),
+               tipo_alumno      = COALESCE($6, tipo_alumno),
+               modo_preparacion = COALESCE($7, modo_preparacion),
+               modo_activo      = COALESCE($8, modo_activo),
+               actualizada_en   = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [current.rows[0].id, fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion, modoActivo],
+      );
+      const acceso = result.rows[0] ?? null;
+      return acceso;
+    });
   },
 
   /**
