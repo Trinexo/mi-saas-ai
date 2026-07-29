@@ -255,12 +255,18 @@ async function setup() {
     }
 
     const { rows: accesoRows } = await client.query(
-      `INSERT INTO accesos_oposicion (usuario_id, oposicion_id, estado, tipo_alumno, modo_preparacion, notas)
-       VALUES ($1, $2, 'activo', 'libre', 'experto', 'Fixture E2E BL-006A')
+      `INSERT INTO accesos_oposicion (usuario_id, oposicion_id, estado, tipo_alumno, modo_preparacion, modo_activo, notas)
+       VALUES ($1, $2, 'activo', 'libre', 'experto', 'experto', 'Fixture E2E BL-006A')
        RETURNING id`,
       [alumnoId, oposicionId],
     );
     const accesoId = Number(accesoRows[0].id);
+
+    await client.query(
+      `INSERT INTO acceso_oposicion_modelos (acceso_id, modelo)
+       VALUES ($1, 'experto')`,
+      [accesoId],
+    );
 
     await client.query('COMMIT');
 

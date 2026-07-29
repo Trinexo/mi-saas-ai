@@ -274,6 +274,18 @@ test('fallo despues de registrar evento hace rollback y permite reintento correc
   assert.equal(retry.processed, true);
   assert.equal(await countRows('stripe_webhook_events', 'event_id = $1 AND processed_at IS NOT NULL', [eventId]), 1);
   assert.equal(await countRows('accesos_oposicion', 'stripe_session_id = $1', [sessionId]), 1);
+  assert.equal(
+    await countRows('accesos_oposicion', 'stripe_session_id = $1 AND modo_preparacion = $2 AND modo_activo = $3', [sessionId, 'albacer', 'guiado']),
+    1,
+  );
+  assert.equal(
+    await countRows('acceso_oposicion_modelos', 'acceso_id = (SELECT id FROM accesos_oposicion WHERE stripe_session_id = $1) AND modelo = $2', [sessionId, 'guiado']),
+    1,
+  );
+  assert.equal(
+    await countRows('acceso_oposicion_modelos', 'acceso_id = (SELECT id FROM accesos_oposicion WHERE stripe_session_id = $1)', [sessionId]),
+    1,
+  );
   assert.equal(emailCalls.length, 1);
 });
 

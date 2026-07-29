@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS accesos_oposicion (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
-  estado TEXT NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo', 'expirado', 'cancelado')),
+  estado TEXT NOT NULL DEFAULT 'activo',
   fecha_inicio TIMESTAMP NOT NULL DEFAULT NOW(),
   fecha_fin TIMESTAMP,
   precio_pagado NUMERIC(8,2),
@@ -131,10 +131,64 @@ CREATE TABLE IF NOT EXISTS accesos_oposicion (
     CHECK (tipo_alumno IN ('libre', 'albacer')),
   modo_preparacion TEXT NOT NULL DEFAULT 'albacer'
     CHECK (modo_preparacion IN ('experto', 'albacer')),
+  modo_activo TEXT,
   ranking_publico BOOLEAN NOT NULL DEFAULT FALSE,
   creada_en TIMESTAMP NOT NULL DEFAULT NOW(),
   actualizada_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_accesos_oposicion_estado_fase1
+    CHECK (estado IN ('pendiente_modo', 'activo', 'expirado', 'revocado', 'cancelado')),
+  CONSTRAINT chk_accesos_oposicion_modo_activo
+    CHECK (modo_activo IS NULL OR modo_activo IN ('experto', 'guiado')),
+  CONSTRAINT chk_accesos_oposicion_activo_modo
+    CHECK (estado <> 'activo' OR modo_activo IS NOT NULL),
   UNIQUE(usuario_id, oposicion_id)
+);
+
+CREATE TABLE IF NOT EXISTS acceso_oposicion_modelos (
+  id BIGSERIAL,
+  acceso_id BIGINT NOT NULL,
+  modelo TEXT NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT pk_acceso_oposicion_modelos PRIMARY KEY (id),
+  CONSTRAINT fk_acceso_oposicion_modelos_acceso
+    FOREIGN KEY (acceso_id)
+    REFERENCES accesos_oposicion(id)
+    ON DELETE CASCADE,
+  CONSTRAINT chk_acceso_oposicion_modelos_modelo
+    CHECK (modelo IN ('experto', 'guiado')),
+  CONSTRAINT uq_acceso_oposicion_modelos_acceso_modelo
+    UNIQUE (acceso_id, modelo)
+);
+
+CREATE TABLE IF NOT EXISTS accesos_oposicion_historial (
+  id BIGSERIAL,
+  acceso_id BIGINT NOT NULL,
+  tipo_evento TEXT NOT NULL,
+  estado_anterior TEXT,
+  estado_nuevo TEXT,
+  modo_activo_anterior TEXT,
+  modo_activo_nuevo TEXT,
+  modelos_anteriores JSONB,
+  modelos_nuevos JSONB,
+  actor_usuario_id BIGINT,
+  motivo TEXT,
+  metadata JSONB,
+  creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT pk_accesos_oposicion_historial PRIMARY KEY (id),
+  CONSTRAINT fk_accesos_oposicion_historial_acceso
+    FOREIGN KEY (acceso_id)
+    REFERENCES accesos_oposicion(id)
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_accesos_oposicion_historial_actor
+    FOREIGN KEY (actor_usuario_id)
+    REFERENCES usuarios(id)
+    ON DELETE RESTRICT,
+  CONSTRAINT chk_accesos_oposicion_historial_tipo_evento
+    CHECK (tipo_evento IN (
+      'migracion_legacy', 'creado', 'modelos_actualizados',
+      'modo_activo_cambiado', 'vigencia_actualizada', 'expirado',
+      'renovado', 'revocado', 'cancelado', 'reactivado'
+    ))
 );
 
 CREATE TABLE IF NOT EXISTS profesores_oposiciones (
@@ -178,6 +232,23 @@ CREATE INDEX IF NOT EXISTS idx_respuestas_usuario_pregunta ON respuestas_usuario
 CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_usuario ON accesos_oposicion(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_oposicion ON accesos_oposicion(oposicion_id);
 CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_activo ON accesos_oposicion(usuario_id, estado) WHERE estado = 'activo';
+CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_historial_acceso_fecha
+  ON accesos_oposicion_historial(acceso_id, creado_en DESC, id DESC);
+
+CREATE OR REPLACE FUNCTION public.fn_prevent_accesos_oposicion_historial_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  RAISE EXCEPTION 'accesos_oposicion_historial es inmutable';
+END;
+$function$;
+
+CREATE TRIGGER trg_accesos_oposicion_historial_immutable
+  BEFORE UPDATE OR DELETE ON public.accesos_oposicion_historial
+  FOR EACH ROW
+  EXECUTE FUNCTION public.fn_prevent_accesos_oposicion_historial_mutation();
+
 CREATE INDEX IF NOT EXISTS idx_profesores_oposiciones_user_id ON profesores_oposiciones(user_id);
 CREATE INDEX IF NOT EXISTS idx_profesores_oposiciones_oposicion_id ON profesores_oposiciones(oposicion_id);
 CREATE INDEX IF NOT EXISTS idx_reportes_estado ON reportes_preguntas(estado);
