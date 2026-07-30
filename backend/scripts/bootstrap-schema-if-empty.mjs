@@ -13,7 +13,7 @@ import { checksum, discoverMigrations, LOCK_KEY, MIGRATIONS_DIR } from './migrat
 const { Client } = pg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.resolve(__dirname, '../../database/schema.sql');
-const SCHEMA_BASELINE = '038_accesos_ranking_publico.sql';
+const SCHEMA_BASELINE = '030_change_dificultad_to_text.sql';
 const url = process.env.DATABASE_URL;
 
 if (!url) {
