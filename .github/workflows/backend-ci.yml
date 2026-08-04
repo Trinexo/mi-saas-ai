@@ -61,6 +61,18 @@ jobs:
             psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
           done
 
+      - name: Run access repositories PostgreSQL tests
+        working-directory: backend
+        env:
+          MIGRATION_040_REPOSITORY_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+          MIGRATION_040_REPOSITORY_TEST_CONFIRM: ISOLATED
+          MIGRATION_040_REPOSITORY_TEST_ISOLATED: true
+        run: |
+          node --test \
+            tests/integration/acceso-oposicion-modelos-repository-postgres.test.js \
+            tests/integration/acceso-oposicion-historial-repository-postgres.test.js \
+            tests/integration/acceso-oposicion-repository-postgres.test.js
+
       - name: Start backend API
         working-directory: backend
         run: |
