@@ -57,6 +57,44 @@ async function enTransaccion(callback) {
 
 export const accesoOposicionRepository = {
   /**
+   * Lee en una sola sentencia la existencia de usuario/oposición, el acceso
+   * correspondiente y sus modelos canónicos. Los timestamps se convierten a
+   * texto para que node-postgres no aplique la zona horaria local del proceso.
+   */
+  async obtenerLecturaContexto(usuarioId, oposicionId, client = pool) {
+    const result = await client.query(
+      `SELECT u.id IS NOT NULL AS usuario_existe,
+              o.id IS NOT NULL AS oposicion_existe,
+              u.id AS usuario_id,
+              o.id AS oposicion_id,
+              ao.id AS acceso_id,
+              ao.estado,
+              ao.modo_activo,
+              ao.modo_preparacion,
+              ao.fecha_inicio::TEXT AS fecha_inicio,
+              ao.fecha_fin::TEXT AS fecha_fin,
+              COALESCE(
+                ARRAY_AGG(aom.modelo ORDER BY
+                  CASE aom.modelo WHEN 'experto' THEN 1 WHEN 'guiado' THEN 2 ELSE 3 END,
+                  aom.id
+                ) FILTER (WHERE aom.modelo IS NOT NULL),
+                ARRAY[]::TEXT[]
+              ) AS modelos
+         FROM (SELECT $1::BIGINT AS usuario_id, $2::BIGINT AS oposicion_id) requested
+         LEFT JOIN usuarios u ON u.id = requested.usuario_id
+         LEFT JOIN oposiciones o ON o.id = requested.oposicion_id
+         LEFT JOIN accesos_oposicion ao
+           ON ao.usuario_id = requested.usuario_id
+          AND ao.oposicion_id = requested.oposicion_id
+         LEFT JOIN acceso_oposicion_modelos aom ON aom.acceso_id = ao.id
+        GROUP BY u.id, o.id, ao.id, ao.estado, ao.modo_activo,
+                 ao.modo_preparacion, ao.fecha_inicio, ao.fecha_fin`,
+      [usuarioId, oposicionId],
+    );
+    return result.rows;
+  },
+
+  /**
    * Devuelve los accesos activos del usuario incluyendo el nombre de la oposición.
    */
   async getAccesosActivos(userId) {

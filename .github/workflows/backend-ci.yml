@@ -71,7 +71,8 @@ jobs:
           node --test \
             tests/integration/acceso-oposicion-modelos-repository-postgres.test.js \
             tests/integration/acceso-oposicion-historial-repository-postgres.test.js \
-            tests/integration/acceso-oposicion-repository-postgres.test.js
+            tests/integration/acceso-oposicion-repository-postgres.test.js \
+            tests/integration/access-context-service-postgres.test.js
 
       - name: Start backend API
         working-directory: backend
