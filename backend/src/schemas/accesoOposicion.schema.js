@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const MAX_POSTGRES_BIGINT = 9223372036854775807n;
+
 const booleanLikeSchema = z.preprocess(
   (value) => {
     if (value === undefined) return undefined;
@@ -13,6 +15,15 @@ const booleanLikeSchema = z.preprocess(
 
 export const accesoOposicionParamSchema = z.object({
   oposicionId: z.coerce.number().int().positive(),
+});
+
+export const accessContextParamSchema = z.object({
+  oposicionId: z.string()
+    .regex(/^[1-9]\d*$/, 'oposicionId debe ser un entero decimal positivo')
+    .refine(
+      (value) => !/^[1-9]\d*$/.test(value) || BigInt(value) <= MAX_POSTGRES_BIGINT,
+      'oposicionId excede BIGINT',
+    ),
 });
 
 export const accesoUsuarioOposicionParamsSchema = z.object({
