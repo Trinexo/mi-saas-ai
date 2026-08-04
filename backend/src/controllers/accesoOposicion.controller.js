@@ -1,6 +1,23 @@
 import { ok, created } from '../utils/response.js';
 import { accesoOposicionService } from '../services/accesoOposicion.service.js';
+import { accessContextService } from '../services/accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
+
+function mapearErrorContexto(error) {
+  switch (error?.code) {
+    case 'ACCESS_CONTEXT_INVALID_IDENTIFIER':
+      return new ApiError(400, 'Parámetros inválidos');
+    case 'ACCESS_CONTEXT_INVALID_PRINCIPAL':
+    case 'ACCESS_CONTEXT_USER_NOT_FOUND':
+      return new ApiError(401, 'Contexto de autenticación inválido');
+    case 'ACCESS_CONTEXT_OPPOSITION_NOT_FOUND':
+      return new ApiError(404, 'Oposición no encontrada');
+    case 'ACCESS_CONTEXT_INCONSISTENT':
+      return new ApiError(500, 'No se pudo resolver el contexto');
+    default:
+      return new ApiError(500, 'No se pudo resolver el contexto');
+  }
+}
 
 /**
  * GET /accesos/mis-oposiciones
@@ -12,6 +29,26 @@ export const getMisAccesos = async (req, res, next) => {
     return ok(res, accesos, 'Accesos activos');
   } catch (e) {
     return next(e);
+  }
+};
+
+/**
+ * GET /api/v1/accesos/contexto/:oposicionId
+ * Devuelve el contexto canónico del alumno autenticado.
+ */
+export const getContextoAcceso = async (req, res, next) => {
+  try {
+    const contexto = await accessContextService.obtenerContextoUsuario({
+      usuarioId: req.user.userId,
+      oposicionId: req.params.oposicionId,
+      principal: {
+        tipo: 'alumno',
+        usuarioId: req.user.userId,
+      },
+    });
+    return ok(res, contexto, 'Contexto de acceso');
+  } catch (error) {
+    return next(mapearErrorContexto(error));
   }
 };
 

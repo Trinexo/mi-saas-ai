@@ -268,10 +268,15 @@ test('eliminarModelo serializa dos eliminaciones concurrentes', options, async (
     const firstResult = await repository.eliminarModelo(fixture.accesoId, 'experto', firstClient);
     assert.equal(firstResult.cambiado, true);
 
-    const secondAttempt = repository.eliminarModelo(fixture.accesoId, 'guiado', secondClient);
+    const secondAttempt = repository.eliminarModelo(fixture.accesoId, 'guiado', secondClient).then(
+      (value) => ({ status: 'fulfilled', value }),
+      (reason) => ({ status: 'rejected', reason }),
+    );
     await new Promise((resolve) => setTimeout(resolve, 100));
     await firstClient.query('COMMIT');
-    await assert.rejects(secondAttempt, /sin modelos/);
+    const secondOutcome = await secondAttempt;
+    assert.equal(secondOutcome.status, 'rejected');
+    assert.match(secondOutcome.reason.message, /sin modelos/);
     await secondClient.query('ROLLBACK');
 
     const remaining = await pool.query(
