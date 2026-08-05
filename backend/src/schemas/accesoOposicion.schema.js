@@ -26,6 +26,16 @@ export const accessContextParamSchema = z.object({
     ),
 });
 
+export const accessModeParamSchema = z.object({
+  accesoId: z.string()
+    .regex(/^[1-9]\d*$/, 'accesoId debe ser un entero decimal positivo')
+    .refine((value) => BigInt(value) <= MAX_POSTGRES_BIGINT, 'accesoId excede BIGINT'),
+});
+
+export const accessModeBodySchema = z.object({
+  modo: z.enum(['experto', 'guiado']),
+});
+
 export const accesoUsuarioOposicionParamsSchema = z.object({
   userId: z.coerce.number().int().positive(),
   oposicionId: z.coerce.number().int().positive(),
