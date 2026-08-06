@@ -74,6 +74,7 @@ jobs:
             tests/integration/acceso-oposicion-repository-postgres.test.js \
             tests/integration/access-context-service-postgres.test.js \
             tests/integration/access-mode-service-postgres.test.js \
+            tests/integration/access-admin-lifecycle-postgres.test.js \
             tests/integration/access-admin-service-postgres.test.js
 
       - name: Start backend API
