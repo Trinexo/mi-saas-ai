@@ -2,6 +2,7 @@ import { ok, created } from '../utils/response.js';
 import { accesoOposicionService } from '../services/accesoOposicion.service.js';
 import { accessContextService } from '../services/accessContext.service.js';
 import { accessModeService } from '../services/accessMode.service.js';
+import { accessAdminService } from '../services/accessAdmin.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 function mapearErrorContexto(error) {
@@ -35,6 +36,35 @@ function mapearErrorModo(error) {
     default:
       return new ApiError(500, 'No se pudo actualizar el modo activo');
   }
+}
+
+function mapearErrorAdministracion(error) {
+  switch (error?.code) {
+    case 'ACCESS_ADMIN_INVALID_IDENTIFIER':
+    case 'ACCESS_ADMIN_INVALID_MOTIVE':
+    case 'ACCESS_ADMIN_INVALID_DATE':
+    case 'ACCESS_ADMIN_INVALID_TYPE':
+      return new ApiError(400, 'Parámetros inválidos');
+    case 'ACCESS_ADMIN_INVALID_PRINCIPAL':
+      return new ApiError(403, 'No autorizado para este recurso');
+    case 'ACCESS_ADMIN_USER_NOT_FOUND':
+    case 'ACCESS_ADMIN_OPPOSITION_NOT_FOUND':
+    case 'ACCESS_ADMIN_NOT_FOUND':
+      return new ApiError(404, 'Recurso no encontrado');
+    case 'ACCESS_ADMIN_DUPLICATE':
+    case 'ACCESS_ADMIN_CONFLICT':
+    case 'ACCESS_ADMIN_STATE':
+      return new ApiError(409, 'La operación no es válida para el estado actual');
+    case 'ACCESS_ADMIN_INVALID_MODE':
+    case 'ACCESS_ADMIN_INVALID_MODELS':
+      return new ApiError(422, 'Modelos o modo inválidos');
+    default:
+      return new ApiError(500, 'No se pudo actualizar el acceso');
+  }
+}
+
+function principalAdmin(req) {
+  return { tipo: 'administrador', usuarioId: req.user.userId };
 }
 
 /**
@@ -237,5 +267,58 @@ export const getAccesosStats = async (req, res, next) => {
     return ok(res, stats, 'Stats de accesos');
   } catch (e) {
     return next(e);
+  }
+};
+
+export const crearAccesoAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.crearAcceso({
+      ...req.body,
+      actorUsuarioId: req.user.userId,
+      principal: principalAdmin(req),
+    });
+    return created(res, data, 'Acceso creado');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const modificarModelosAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.modificarModelos({
+      ...req.body,
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Modelos actualizados');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const modificarVigenciaAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.modificarVigencia({
+      ...req.body,
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Vigencia actualizada');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const listarHistorialAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.listarHistorial({
+      accesoId: req.params.accesoId,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Historial del acceso');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
   }
 };

@@ -2,6 +2,15 @@ import { z } from 'zod';
 
 const MAX_POSTGRES_BIGINT = 9223372036854775807n;
 
+const bigintIdSchema = z.string()
+  .regex(/^[1-9]\d*$/, 'Debe ser un entero decimal positivo')
+  .refine((value) => !/^[1-9]\d*$/.test(value) || BigInt(value) <= MAX_POSTGRES_BIGINT, 'Excede BIGINT');
+
+const fechaSchema = z.string().trim().min(1);
+const motivoSchema = z.string().trim().min(1).max(1000);
+const modelosSchema = z.array(z.enum(['experto', 'guiado'])).min(1).max(2)
+  .refine((modelos) => new Set(modelos).size === modelos.length, 'No puede haber modelos duplicados');
+
 const booleanLikeSchema = z.preprocess(
   (value) => {
     if (value === undefined) return undefined;
@@ -79,3 +88,34 @@ export const preparacionAccesoBodySchema = z.object({
     || body.ranking_publico != null,
   { message: 'modoPreparacion o rankingPublico es requerido' },
 );
+
+export const adminAccesoIdParamSchema = z.object({ accesoId: bigintIdSchema });
+
+export const adminCrearAccesoBodySchema = z.object({
+  usuarioId: bigintIdSchema,
+  oposicionId: bigintIdSchema,
+  modelos: modelosSchema,
+  modoActivo: z.enum(['experto', 'guiado']).optional(),
+  vigencia: z.object({
+    fechaInicio: fechaSchema,
+    fechaFin: fechaSchema.nullable(),
+  }),
+  tipoAlumno: z.enum(['libre', 'albacer']).optional().default('libre'),
+  precioPagado: z.number().nonnegative().nullable().optional().default(null),
+  notas: z.string().nullable().optional().default(null),
+  motivo: motivoSchema,
+});
+
+export const adminModelosBodySchema = z.object({
+  modelos: modelosSchema,
+  modoActivo: z.enum(['experto', 'guiado']).nullable().optional(),
+  motivo: motivoSchema,
+});
+
+export const adminVigenciaBodySchema = z.object({
+  fechaInicio: fechaSchema.optional(),
+  fechaFin: fechaSchema.nullable().optional(),
+  motivo: motivoSchema,
+}).refine((body) => body.fechaInicio !== undefined || body.fechaFin !== undefined, {
+  message: 'Debe indicarse al menos una fecha',
+});
