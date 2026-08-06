@@ -94,6 +94,19 @@ export const accesoOposicionRepository = {
     return result.rows;
   },
 
+  async obtenerParaCambioModo(accesoId, client = pool) {
+    const result = await client.query(
+      `SELECT id, usuario_id, oposicion_id, estado, modo_activo,
+              modo_preparacion, fecha_inicio::TEXT AS fecha_inicio,
+              fecha_fin::TEXT AS fecha_fin, precio_pagado, notas
+         FROM accesos_oposicion
+        WHERE id = $1
+        FOR UPDATE`,
+      [accesoId],
+    );
+    return result.rows[0] ?? null;
+  },
+
   /**
    * Devuelve los accesos activos del usuario incluyendo el nombre de la oposición.
    */

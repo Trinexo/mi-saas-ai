@@ -269,29 +269,53 @@ test('repository conserva campos comerciales y vigencia al renovar sin nuevos va
 
 test('fallo al insertar modelo revierte también el acceso', testOptions, async () => {
   const fixture = await createFixture('rollback-model');
+  let otherFixture;
   const functionName = `fn_${marker.replaceAll('-', '_')}_fail_model`;
   const triggerName = `trg_${marker.replaceAll('-', '_')}_fail_model`;
+  let targetAccess;
   try {
+    otherFixture = await createFixture('rollback-model-other');
+    const targetResult = await pool.query(
+      `INSERT INTO accesos_oposicion
+        (usuario_id, oposicion_id, estado, modo_preparacion, modo_activo)
+       VALUES ($1, $2, 'activo', 'experto', 'experto')
+       RETURNING id, estado, modo_preparacion, modo_activo, precio_pagado, notas, fecha_inicio, fecha_fin`,
+      [fixture.userId, fixture.oposicionId],
+    );
+    targetAccess = targetResult.rows[0];
+    const targetAccessId = BigInt(targetAccess.id).toString();
     await pool.query(`
       CREATE OR REPLACE FUNCTION ${functionName}()
       RETURNS trigger LANGUAGE plpgsql AS $$
       BEGIN
-        RAISE EXCEPTION 'fallo de modelo simulado';
+        IF NEW.acceso_id = TG_ARGV[0]::BIGINT THEN
+          RAISE EXCEPTION 'fallo de modelo simulado';
+        END IF;
+        RETURN NEW;
       END;
       $$`);
     await pool.query(`
       CREATE TRIGGER ${triggerName}
       BEFORE INSERT ON acceso_oposicion_modelos
-      FOR EACH ROW EXECUTE FUNCTION ${functionName}()`);
+      FOR EACH ROW EXECUTE FUNCTION ${functionName}('${targetAccessId}')`);
+
+    const otherAccess = await accesoOposicionRepository.crearAcceso({
+      ...otherFixture,
+      modoPreparacion: 'experto',
+    });
+    assert.deepEqual(await getModels(otherAccess.id), ['experto']);
+
     await assert.rejects(
       () => accesoOposicionRepository.crearAcceso({ ...fixture, modoPreparacion: 'experto' }),
       /fallo de modelo simulado/,
     );
-    assert.equal(await getAccess(fixture.userId, fixture.oposicionId), null);
+    assert.deepEqual(await getAccess(fixture.userId, fixture.oposicionId), targetAccess);
+    assert.deepEqual(await getModels(targetAccess.id), []);
   } finally {
     await pool.query(`DROP TRIGGER IF EXISTS ${triggerName} ON acceso_oposicion_modelos`);
     await pool.query(`DROP FUNCTION IF EXISTS ${functionName}()`);
     await cleanupFixture(fixture);
+    if (otherFixture) await cleanupFixture(otherFixture);
   }
 });
 

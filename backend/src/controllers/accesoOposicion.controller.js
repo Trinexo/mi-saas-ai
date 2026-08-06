@@ -1,6 +1,7 @@
 import { ok, created } from '../utils/response.js';
 import { accesoOposicionService } from '../services/accesoOposicion.service.js';
 import { accessContextService } from '../services/accessContext.service.js';
+import { accessModeService } from '../services/accessMode.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 function mapearErrorContexto(error) {
@@ -16,6 +17,23 @@ function mapearErrorContexto(error) {
       return new ApiError(500, 'No se pudo resolver el contexto');
     default:
       return new ApiError(500, 'No se pudo resolver el contexto');
+  }
+}
+
+function mapearErrorModo(error) {
+  switch (error?.code) {
+    case 'ACCESS_MODE_INVALID_IDENTIFIER':
+      return new ApiError(400, 'Parámetros inválidos');
+    case 'ACCESS_MODE_INVALID_MODE':
+      return new ApiError(422, 'Modo inválido');
+    case 'ACCESS_MODE_FORBIDDEN':
+      return new ApiError(403, 'Acceso no disponible');
+    case 'ACCESS_MODE_NOT_INCLUDED':
+    case 'ACCESS_MODE_STATE_FORBIDDEN':
+      return new ApiError(409, 'No se puede cambiar el modo en el estado actual');
+    case 'ACCESS_MODE_INCONSISTENT':
+    default:
+      return new ApiError(500, 'No se pudo actualizar el modo activo');
   }
 }
 
@@ -49,6 +67,24 @@ export const getContextoAcceso = async (req, res, next) => {
     return ok(res, contexto, 'Contexto de acceso');
   } catch (error) {
     return next(mapearErrorContexto(error));
+  }
+};
+
+/**
+ * PATCH /api/v1/accesos/:accesoId/modo-activo
+ * Cambia el modo canónico del acceso del alumno autenticado.
+ */
+export const changeModoActivo = async (req, res, next) => {
+  try {
+    const contexto = await accessModeService.cambiarModoActivo({
+      accesoId: req.params.accesoId,
+      usuarioId: req.user.userId,
+      actorUsuarioId: req.user.userId,
+      modo: req.body.modo,
+    });
+    return ok(res, contexto, 'Modo activo actualizado');
+  } catch (error) {
+    return next(mapearErrorModo(error));
   }
 };
 
