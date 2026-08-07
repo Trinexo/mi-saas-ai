@@ -91,7 +91,7 @@ export function createAccessModeService({
   clock = () => new Date(),
 } = {}) {
   return {
-    async cambiarModoActivo({ accesoId, usuarioId, modo, actorUsuarioId = usuarioId } = {}) {
+    async cambiarModoActivo({ accesoId, usuarioId, modo, actorUsuarioId = usuarioId, rankingPublico } = {}) {
       const normalizedAccesoId = normalizarId(accesoId, 'accesoId');
       const normalizedUsuarioId = normalizarId(usuarioId, 'usuarioId');
       const normalizedActorId = normalizarId(actorUsuarioId, 'actorUsuarioId');
@@ -127,6 +127,12 @@ export function createAccessModeService({
         }
 
         if (acceso.estado === 'activo' && acceso.modo_activo === requestedMode) {
+          if (rankingPublico !== undefined && rankingPublico !== null) {
+            await client.query(
+              'UPDATE accesos_oposicion SET ranking_publico = $2, actualizada_en = NOW() WHERE id = $1',
+              [normalizedAccesoId, rankingPublico],
+            );
+          }
           const result = await context.obtenerContextoUsuario({
             usuarioId: normalizedUsuarioId,
             oposicionId: acceso.oposicion_id,
@@ -151,9 +157,10 @@ export function createAccessModeService({
               SET estado = $2,
                   modo_activo = $3,
                   modo_preparacion = $4,
+                  ranking_publico = COALESCE($5, ranking_publico),
                   actualizada_en = NOW()
             WHERE id = $1`,
-          [normalizedAccesoId, nuevoEstado, requestedMode, nuevoAcceso.modo_preparacion],
+          [normalizedAccesoId, nuevoEstado, requestedMode, nuevoAcceso.modo_preparacion, rankingPublico ?? null],
         );
         await historialRepository.insertarEvento({
           accesoId: normalizedAccesoId,
@@ -164,6 +171,41 @@ export function createAccessModeService({
           motivo: null,
           metadata: null,
         }, client);
+        const result = await context.obtenerContextoUsuario({
+          usuarioId: normalizedUsuarioId,
+          oposicionId: acceso.oposicion_id,
+          principal: { tipo: 'alumno', usuarioId: normalizedUsuarioId },
+        });
+        await client.query('COMMIT');
+        transactionStarted = false;
+        return result;
+      } catch (error) {
+        if (transactionStarted) await client.query('ROLLBACK').catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async actualizarRankingPublico({ accesoId, usuarioId, rankingPublico } = {}) {
+      const normalizedAccesoId = normalizarId(accesoId, 'accesoId');
+      const normalizedUsuarioId = normalizarId(usuarioId, 'usuarioId');
+      const client = await db.connect();
+      let transactionStarted = false;
+      try {
+        await client.query('BEGIN');
+        transactionStarted = true;
+        const context = contextoService ?? createAccessContextService({ db: client, clock });
+        const acceso = await accesoRepository.obtenerParaCambioModo(normalizedAccesoId, client);
+        if (!acceso || BigInt(acceso.usuario_id) !== BigInt(normalizedUsuarioId)) {
+          throw errorConCodigo('ACCESS_MODE_FORBIDDEN', 'Acceso no disponible');
+        }
+        const modelosRows = await modelosRepository.listarPorAcceso(normalizedAccesoId, client);
+        validarCoherencia(acceso, modelosRows.map((row) => row.modelo), new Date(clock()));
+        await client.query(
+          'UPDATE accesos_oposicion SET ranking_publico = $2, actualizada_en = NOW() WHERE id = $1',
+          [normalizedAccesoId, rankingPublico],
+        );
         const result = await context.obtenerContextoUsuario({
           usuarioId: normalizedUsuarioId,
           oposicionId: acceso.oposicion_id,

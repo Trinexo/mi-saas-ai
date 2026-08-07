@@ -3,6 +3,7 @@ import { accesoOposicionService } from '../services/accesoOposicion.service.js';
 import { accessContextService } from '../services/accessContext.service.js';
 import { accessModeService } from '../services/accessMode.service.js';
 import { accessAdminService } from '../services/accessAdmin.service.js';
+import { accessLegacyAdapter } from '../services/accessLegacyAdapter.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 function mapearErrorContexto(error) {
@@ -32,6 +33,10 @@ function mapearErrorModo(error) {
     case 'ACCESS_MODE_NOT_INCLUDED':
     case 'ACCESS_MODE_STATE_FORBIDDEN':
       return new ApiError(409, 'No se puede cambiar el modo en el estado actual');
+    case 'ACCESS_LEGACY_ACCESS_UNAVAILABLE':
+      return new ApiError(404, 'Acceso activo no encontrado');
+    case 'ACCESS_LEGACY_INVALID_UPDATE':
+      return new ApiError(400, 'Parámetros inválidos');
     case 'ACCESS_MODE_INCONSISTENT':
     default:
       return new ApiError(500, 'No se pudo actualizar el modo activo');
@@ -62,6 +67,10 @@ function mapearErrorAdministracion(error) {
     case 'ACCESS_ADMIN_INVALID_MODE':
     case 'ACCESS_ADMIN_INVALID_MODELS':
       return new ApiError(422, 'Modelos o modo inválidos');
+    case 'ACCESS_LEGACY_INVALID_UPDATE':
+      return new ApiError(400, 'Parámetros inválidos');
+    case 'ACCESS_LEGACY_AMBIGUOUS':
+      return new ApiError(409, 'La operación legacy no es válida para el estado actual');
     default:
       return new ApiError(500, 'No se pudo actualizar el acceso');
   }
@@ -161,13 +170,15 @@ export const updatePreparacionAcceso = async (req, res, next) => {
     const modo = modoPreparacion ?? modo_preparacion;
     const hasRankingPublico = rankingPublico !== undefined || ranking_publico !== undefined;
 
-    const acceso = await accesoOposicionService.updatePreparacion(req.user.userId, oposicionId, {
-      modoPreparacion: modo ?? null,
-      rankingPublico: hasRankingPublico ? rankingPublico ?? ranking_publico : null,
+    const acceso = await accessLegacyAdapter.actualizarPreparacion({
+      usuarioId: req.user.userId,
+      oposicionId,
+      modoPreparacion: modo,
+      rankingPublico: hasRankingPublico ? rankingPublico ?? ranking_publico : undefined,
     });
     return ok(res, acceso, 'Preparacion actualizada');
   } catch (e) {
-    return next(e);
+    return next(mapearErrorModo(e));
   }
 };
 
@@ -205,21 +216,24 @@ export const asignarAcceso = async (req, res, next) => {
       notas = null,
       tipoAlumno = 'libre',
       modoPreparacion = 'albacer',
+      motivo,
     } = req.body;
     const usuario = await accesoOposicionService.getUserByEmail(email.trim());
     if (!usuario) return next(new ApiError(404, `No existe ningún usuario con el email: ${email}`));
-    const acceso = await accesoOposicionService.asignarAcceso({
-      userId: usuario.id,
+    const acceso = await accessLegacyAdapter.asignar({
+      usuarioId: usuario.id,
       oposicionId,
       fechaFin,
       precioPagado,
       notas,
       tipoAlumno,
       modoPreparacion,
+      actorUsuarioId: req.user.userId,
+      motivo,
     });
     return created(res, { ...acceso, usuario_nombre: usuario.nombre, usuario_email: usuario.email }, 'Acceso asignado');
   } catch (e) {
-    return next(e);
+    return next(mapearErrorAdministracion(e));
   }
 };
 
@@ -230,11 +244,16 @@ export const asignarAcceso = async (req, res, next) => {
 export const cancelarAcceso = async (req, res, next) => {
   try {
     const { userId, oposicionId } = req.params;
-    const result = await accesoOposicionService.cancelarAcceso(userId, oposicionId);
+    const result = await accessLegacyAdapter.cancelar({
+      usuarioId: userId,
+      oposicionId,
+      actorUsuarioId: req.user.userId,
+      motivo: req.body?.motivo ?? req.query?.motivo,
+    });
     if (!result) return next(new ApiError(404, 'Acceso no encontrado'));
     return ok(res, result, 'Acceso cancelado');
   } catch (e) {
-    return next(e);
+    return next(mapearErrorAdministracion(e));
   }
 };
 
@@ -246,19 +265,16 @@ export const cancelarAcceso = async (req, res, next) => {
 export const editarAcceso = async (req, res, next) => {
   try {
     const { userId, oposicionId } = req.params;
-    const { fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion } = req.body;
-    const result = await accesoOposicionService.updateAcceso(userId, oposicionId, {
-      fechaFin: fechaFin ?? null,
-      precioPagado: precioPagado ?? null,
-      notas: notas ?? null,
-      estado: estado ?? 'activo',
-      tipoAlumno: tipoAlumno ?? null,
-      modoPreparacion: modoPreparacion ?? null,
+    const result = await accessLegacyAdapter.actualizar({
+      usuarioId: userId,
+      oposicionId,
+      payload: req.body ?? {},
+      actorUsuarioId: req.user.userId,
     });
     if (!result) return next(new ApiError(404, 'Acceso no encontrado'));
     return ok(res, result, 'Acceso actualizado');
   } catch (e) {
-    return next(e);
+    return next(mapearErrorAdministracion(e));
   }
 };
 

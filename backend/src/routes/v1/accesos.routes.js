@@ -27,7 +27,7 @@ const router = Router();
 router.get('/mis-oposiciones', requireAuth, getMisAccesos);
 router.get('/check/:oposicionId', requireAuth, validate(accesoOposicionParamSchema, 'params'), checkAcceso);
 router.get('/oposicion/:oposicionId/preparacion', requireAuth, validate(accesoOposicionParamSchema, 'params'), getPreparacionAcceso);
-router.patch('/oposicion/:oposicionId/preparacion', requireAuth, validate(accesoOposicionParamSchema, 'params'), validate(preparacionAccesoBodySchema, 'body'), updatePreparacionAcceso);
+router.patch('/oposicion/:oposicionId/preparacion', requireAuth, requireRole('alumno'), validate(accesoOposicionParamSchema, 'params'), validate(preparacionAccesoBodySchema, 'body'), updatePreparacionAcceso);
 
 // --- Rutas admin ---
 router.get('/', requireAuth, requireRole('admin'), validate(accesosListQuerySchema, 'query'), listAccesos);
