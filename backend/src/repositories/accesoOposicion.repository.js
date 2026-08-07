@@ -142,6 +142,8 @@ export const accesoOposicionRepository = {
   },
 
   async updatePreparacion(userId, oposicionId, fields = {}) {
+    // Compatibilidad interna temporal: las rutas HTTP legacy deben usar
+    // accessLegacyAdapter y AccessModeService para dejar historial.
     const modoActivo = fields.modoPreparacion == null
       ? null
       : modoActivoDesdePreparacion(fields.modoPreparacion);
@@ -215,6 +217,8 @@ export const accesoOposicionRepository = {
     modoPreparacion = null,
     client = null,
   }) {
+    // Compatibilidad interna temporal. Billing aún consume este escritor;
+    // las rutas HTTP administrativas delegan en AccessAdminService.
     const modoParaNuevoAcceso = modoPreparacion ?? 'albacer';
     const execute = async (dbClient) => {
       const current = await dbClient.query(
@@ -279,6 +283,8 @@ export const accesoOposicionRepository = {
    * Actualiza los campos editables de un acceso (admin).
    */
   async updateAcceso(userId, oposicionId, { fechaFin, precioPagado, notas, estado, tipoAlumno, modoPreparacion }) {
+    // Compatibilidad interna temporal: no usar desde nuevas rutas HTTP;
+    // conserva el contrato histórico de callers no migrados.
     const modoActivo = modoPreparacion == null ? null : modoActivoDesdePreparacion(modoPreparacion);
     return enTransaccion(async (client) => {
       const current = await client.query(
@@ -315,6 +321,8 @@ export const accesoOposicionRepository = {
    * Cancela el acceso de un usuario a una oposición.
    */
   async cancelarAcceso(userId, oposicionId) {
+    // Compatibilidad interna temporal. Las rutas HTTP deben delegar en
+    // AccessAdminService para conservar actor, motivo e historial.
     const result = await pool.query(
       `UPDATE accesos_oposicion
        SET estado = 'cancelado', actualizada_en = NOW()

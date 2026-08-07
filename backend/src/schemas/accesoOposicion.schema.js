@@ -65,15 +65,17 @@ export const asignarAccesoBodySchema = z.object({
   notas: z.string().nullable().optional(),
   tipoAlumno: z.enum(['libre', 'albacer']).optional().default('libre'),
   modoPreparacion: z.enum(['experto', 'albacer']).optional().default('albacer'),
+  motivo: motivoSchema.optional(),
 });
 
 export const editarAccesoBodySchema = z.object({
   fechaFin: z.string().trim().min(1).nullable().optional(),
   precioPagado: z.coerce.number().nonnegative().nullable().optional(),
   notas: z.string().nullable().optional(),
-  estado: z.enum(['activo', 'cancelado', 'expirado']).optional(),
+  estado: z.enum(['activo', 'cancelado', 'revocado', 'expirado']).optional(),
   tipoAlumno: z.enum(['libre', 'albacer']).optional(),
   modoPreparacion: z.enum(['experto', 'albacer']).optional(),
+  motivo: motivoSchema.optional(),
 });
 
 export const preparacionAccesoBodySchema = z.object({
