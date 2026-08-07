@@ -126,6 +126,20 @@ function validarMetadata(metadata, { obligatoria = false } = {}) {
   return metadata;
 }
 
+function esMetadataStripeSistema(metadata, tipoEvento) {
+  const operacionEsperada = tipoEvento === 'acceso_creado'
+    ? 'concesion'
+    : tipoEvento === 'renovado' ? 'renovacion' : null;
+  if (!operacionEsperada || metadata === null || typeof metadata !== 'object' || Array.isArray(metadata)) return false;
+  const keys = Object.keys(metadata).sort();
+  if (keys.join('|') !== 'operacion|origen|stripeEventId|tipoActor') return false;
+  return metadata.tipoActor === 'sistema'
+    && metadata.origen === 'stripe'
+    && typeof metadata.stripeEventId === 'string'
+    && metadata.stripeEventId.trim() !== ''
+    && metadata.operacion === operacionEsperada;
+}
+
 function validarEvento({ accesoId, tipoEvento, anterior, nuevo, actorUsuarioId, motivo, metadata }) {
   validarId(accesoId, 'accesoId');
   if (!EVENTOS_CANONICOS.has(tipoEvento)) {
@@ -152,11 +166,21 @@ function validarEvento({ accesoId, tipoEvento, anterior, nuevo, actorUsuarioId, 
     return;
   }
 
-  if (actorUsuarioId !== null && actorUsuarioId !== undefined) {
-    validarId(actorUsuarioId, 'actorUsuarioId');
-  } else {
-    throw new TypeError('El evento requiere actorUsuarioId');
+  if (actorUsuarioId === null || actorUsuarioId === undefined) {
+    if (!esMetadataStripeSistema(metadata, tipoEvento)) {
+      throw new TypeError('El evento requiere actorUsuarioId');
+    }
+    validarMetadata(metadata, { obligatoria: true });
+    if (motivo !== null && motivo !== undefined) {
+      throw new TypeError('Los eventos Stripe de sistema no admiten motivo humano');
+    }
+    return;
   }
+
+  if (metadata?.tipoActor === 'sistema' && metadata?.origen === 'stripe') {
+    throw new TypeError('Los eventos Stripe de sistema requieren actorUsuarioId null');
+  }
+  validarId(actorUsuarioId, 'actorUsuarioId');
 
   const motivoObligatorio = EVENTOS_ADMINISTRATIVOS.has(tipoEvento);
   if (motivoObligatorio || (tipoEvento === 'modo_activo_cambiado' && motivo !== undefined && motivo !== null)) {
@@ -167,8 +191,9 @@ function validarEvento({ accesoId, tipoEvento, anterior, nuevo, actorUsuarioId, 
   validarMetadata(metadata);
 }
 
-function normalizarMotivo(tipoEvento, motivo) {
+function normalizarMotivo(tipoEvento, motivo, metadata = null) {
   if (motivo === undefined || motivo === null) {
+    if (esMetadataStripeSistema(metadata, tipoEvento)) return null;
     if (EVENTOS_ADMINISTRATIVOS.has(tipoEvento)) {
       throw new TypeError('El evento requiere un motivo no vacío');
     }
@@ -261,7 +286,7 @@ export const accesoOposicionHistorialRepository = {
     const nuevo = snapshotToColumns(evento.nuevo ?? null);
     const metadata = buildMetadata(evento.metadata ?? null, evento.anterior, evento.nuevo);
     const tipoPersistido = ESCRITURA_EVENTOS[evento.tipoEvento] ?? evento.tipoEvento;
-    const motivo = normalizarMotivo(evento.tipoEvento, evento.motivo);
+    const motivo = normalizarMotivo(evento.tipoEvento, evento.motivo, evento.metadata ?? null);
     const result = await client.query(
       `INSERT INTO accesos_oposicion_historial
         (acceso_id, tipo_evento, estado_anterior, estado_nuevo,

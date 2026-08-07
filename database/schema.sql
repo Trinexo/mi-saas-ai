@@ -249,6 +249,53 @@ CREATE TRIGGER trg_accesos_oposicion_historial_immutable
   FOR EACH ROW
   EXECUTE FUNCTION public.fn_prevent_accesos_oposicion_historial_mutation();
 
+CREATE OR REPLACE FUNCTION public.fn_validate_access_history_system_actor()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+  is_stripe_system BOOLEAN;
+  stripe_operation TEXT;
+BEGIN
+  is_stripe_system := NEW.metadata IS NOT NULL
+    AND NEW.metadata->>'tipoActor' = 'sistema'
+    AND NEW.metadata->>'origen' = 'stripe'
+    AND (jsonb_object_length(NEW.metadata) = 4
+      OR (jsonb_object_length(NEW.metadata) = 5 AND NEW.metadata ? 'vigencia'))
+    AND btrim(COALESCE(NEW.metadata->>'stripeEventId', '')) <> ''
+    AND NEW.metadata->>'operacion' IN ('concesion', 'renovacion');
+  stripe_operation := NEW.metadata->>'operacion';
+
+  IF is_stripe_system THEN
+    IF NEW.actor_usuario_id IS NOT NULL THEN
+      RAISE EXCEPTION 'Los eventos Stripe de sistema requieren actor_usuario_id NULL';
+    END IF;
+    IF (NEW.tipo_evento = 'creado' AND stripe_operation <> 'concesion')
+       OR (NEW.tipo_evento = 'renovado' AND stripe_operation <> 'renovacion') THEN
+      RAISE EXCEPTION 'Operación Stripe incompatible con tipo_evento';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NEW.actor_usuario_id IS NULL
+     AND NOT (
+       (NEW.tipo_evento = 'expirado' AND NEW.metadata IS NOT NULL AND NEW.metadata->>'origen' = 'sistema')
+       OR (NEW.tipo_evento = 'migracion_legacy'
+        AND NEW.metadata IS NOT NULL
+        AND ((NEW.metadata->>'origin' = 'system' AND NEW.metadata->>'process' = 'migration_040')
+          OR NEW.metadata->>'origen' = 'baseline'))
+     ) THEN
+    RAISE EXCEPTION 'actor_usuario_id NULL solo está permitido para eventos de sistema autorizados';
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER trg_validate_access_history_system_actor
+  BEFORE INSERT OR UPDATE ON public.accesos_oposicion_historial
+  FOR EACH ROW
+  EXECUTE FUNCTION public.fn_validate_access_history_system_actor();
+
 CREATE INDEX IF NOT EXISTS idx_profesores_oposiciones_user_id ON profesores_oposiciones(user_id);
 CREATE INDEX IF NOT EXISTS idx_profesores_oposiciones_oposicion_id ON profesores_oposiciones(oposicion_id);
 CREATE INDEX IF NOT EXISTS idx_reportes_estado ON reportes_preguntas(estado);
