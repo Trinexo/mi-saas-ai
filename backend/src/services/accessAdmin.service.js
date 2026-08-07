@@ -8,6 +8,7 @@ const MAX_BIGINT = 9223372036854775807n;
 const MODOS = Object.freeze(['experto', 'guiado']);
 const ESTADOS_MODELOS = new Set(['activo', 'pendiente_modo', 'expirado']);
 const ESTADOS_VIGENCIA = new Set(['activo', 'pendiente_modo']);
+const ESTADOS_CICLO = new Set(['activo', 'pendiente_modo', 'expirado']);
 
 function errorConCodigo(code, message, status = null) {
   const error = new Error(message);
@@ -66,6 +67,72 @@ function fecha(value, nombre, { permitirNull = false } = {}) {
 function validarOrden(inicio, fin) {
   if (fin !== null && fin.getTime() < inicio.getTime()) {
     throw errorConCodigo('ACCESS_ADMIN_INVALID_DATE', 'fechaFin no puede ser anterior a fechaInicio', 422);
+  }
+}
+
+function esVigente(inicio, fin, referencia) {
+  return inicio.getTime() <= referencia.getTime()
+    && (fin === null || fin.getTime() > referencia.getTime());
+}
+
+function fechasAcceso(access) {
+  return {
+    inicio: new Date(access.fecha_inicio),
+    fin: access.fecha_fin === null ? null : new Date(access.fecha_fin),
+  };
+}
+
+function estadoEfectivo(access, referencia) {
+  const { fin } = fechasAcceso(access);
+  return access.estado === 'activo' && fin !== null && fin.getTime() <= referencia.getTime()
+    ? 'expirado'
+    : access.estado;
+}
+
+function compararFechas(access, inicio, fin) {
+  const actuales = fechasAcceso(access);
+  return actuales.inicio.getTime() === inicio.getTime()
+    && (actuales.fin === null ? fin === null : fin !== null && actuales.fin.getTime() === fin.getTime());
+}
+
+function validarVigenciaOperativa(inicio, fin, referencia) {
+  validarOrden(inicio, fin);
+  if (!esVigente(inicio, fin, referencia)) {
+    throw errorConCodigo('ACCESS_ADMIN_INVALID_VALIDITY', 'La vigencia debe estar activa', 422);
+  }
+}
+
+function resolverModelosYModo(currentModels, currentMode, requestedModels, requestedMode) {
+  const modelos = requestedModels === undefined ? [...currentModels] : normalizarModelos(requestedModels);
+  if (modelos.length === 0) throw errorConCodigo('ACCESS_ADMIN_INVALID_MODELS', 'El acceso requiere modelos', 422);
+  const modo = requestedMode === undefined
+    ? (modelos.includes(currentMode) ? currentMode : modelos.length === 1 ? modelos[0] : null)
+    : requestedMode === null
+      ? (modelos.length === 1 ? modelos[0] : null)
+      : validarModo(requestedMode, modelos);
+  const estado = modo === null && modelos.length > 1 ? 'pendiente_modo' : 'activo';
+  return { modelos, modo, estado, legacy: modoLegacy(modo ?? modelos[0]) };
+}
+
+function validarAccesoCoherente(access, modelos) {
+  if (!Array.isArray(modelos) || modelos.length === 0 || modelos.some((modelo) => !MODOS.includes(modelo))) {
+    throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Acceso sin modelos canónicos', 500);
+  }
+  if (access.modo_activo !== null && !modelos.includes(access.modo_activo)) {
+    throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Modo activo no incluido', 500);
+  }
+  if (access.estado === 'activo' && access.modo_activo === null) {
+    throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Activo sin modo activo', 500);
+  }
+  if (access.estado === 'pendiente_modo' && (modelos.length < 2 || access.modo_activo !== null)) {
+    throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Pendiente de modo incoherente', 500);
+  }
+  const legacy = access.modo_preparacion === 'albacer' ? 'guiado' : access.modo_preparacion;
+  if (!['experto', 'guiado'].includes(legacy) || !modelos.includes(legacy)) {
+    throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Legacy incoherente', 500);
+  }
+  if (modelos.length === 1 && access.modo_activo !== legacy) {
+    throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Modo legacy discrepante', 500);
   }
 }
 
@@ -168,6 +235,42 @@ export function createAccessAdminService({
     } catch (error) {
       throw mapearErrorDb(error);
     }
+  };
+
+  const cambiarEstadoCiclo = async ({ accesoId, estadoDestino, tipoEvento, actorUsuarioId, motivo, principal }) => {
+    const id = validarId(accesoId, 'accesoId');
+    return mutate({ actorUsuarioId, principal, motivo, callback: async ({ client, actor, reason }) => {
+      const access = await leerAcceso(client, id, { forUpdate: true });
+      if (!access) throw errorConCodigo('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
+      if (access.estado === estadoDestino) return contextoFinal({ client, contextService: context, acceso: access, principal });
+      const effective = estadoEfectivo(access, new Date(clock()));
+      if (!ESTADOS_CICLO.has(effective)) throw errorConCodigo('ACCESS_ADMIN_STATE', 'Estado no modificable', 409);
+      if (effective === 'cancelado' || effective === 'revocado') {
+        throw errorConCodigo('ACCESS_ADMIN_STATE', 'Transición incompatible', 409);
+      }
+      const currentModels = await leerModelos(client, id, modelosRepository);
+      validarAccesoCoherente(access, currentModels);
+      const updated = await client.query(
+        `UPDATE accesos_oposicion
+            SET estado = $2, actualizada_en = NOW()
+          WHERE id = $1
+          RETURNING id, usuario_id, oposicion_id, estado, modo_preparacion, modo_activo,
+                    fecha_inicio::TEXT AS fecha_inicio, fecha_fin::TEXT AS fecha_fin,
+                    tipo_alumno, precio_pagado, notas, ranking_publico, creada_en, actualizada_en`,
+        [id, estadoDestino],
+      );
+      const next = mapearAcceso(updated.rows[0]);
+      await historialRepository.insertarEvento({
+        accesoId: id,
+        tipoEvento,
+        anterior: snapshot(access, currentModels),
+        nuevo: snapshot(next, currentModels),
+        actorUsuarioId: actor,
+        motivo: reason,
+        metadata: null,
+      }, client);
+      return contextoFinal({ client, contextService: context, acceso: next, principal });
+    }});
   };
 
   return {
@@ -304,6 +407,131 @@ export function createAccessAdminService({
           return contextoFinal({ client, contextService: context, acceso: next, principal });
         }
         return contextoFinal({ client, contextService: context, acceso: access, principal });
+      }});
+    },
+
+    async renovarAcceso({ accesoId, fechaInicio, fechaFin, modelos, modoActivo, actorUsuarioId, motivo, principal }) {
+      const id = validarId(accesoId, 'accesoId');
+      return mutate({ actorUsuarioId, principal, motivo, callback: async ({ client, actor, reason }) => {
+        const access = await leerAcceso(client, id, { forUpdate: true });
+        if (!access) throw errorConCodigo('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
+        const currentModels = await leerModelos(client, id, modelosRepository);
+        validarAccesoCoherente(access, currentModels);
+        const reference = new Date(clock());
+        const effective = estadoEfectivo(access, reference);
+        if (!ESTADOS_CICLO.has(effective)) throw errorConCodigo('ACCESS_ADMIN_STATE', 'Estado no renovable', 409);
+
+        const currentDates = fechasAcceso(access);
+        let start;
+        let end;
+        if (effective === 'expirado') {
+          if (fechaInicio === undefined || fechaFin === undefined) {
+            throw errorConCodigo('ACCESS_ADMIN_INVALID_VALIDITY', 'La renovación requiere una vigencia válida', 422);
+          }
+          start = fecha(fechaInicio, 'fechaInicio');
+          end = fecha(fechaFin, 'fechaFin', { permitirNull: true });
+          validarVigenciaOperativa(start, end, reference);
+        } else {
+          start = fechaInicio === undefined ? currentDates.inicio : fecha(fechaInicio, 'fechaInicio');
+          end = fechaFin === undefined ? currentDates.fin : fecha(fechaFin, 'fechaFin', { permitirNull: true });
+          validarVigenciaOperativa(start, end, reference);
+        }
+
+        const resolved = resolverModelosYModo(currentModels, access.modo_activo, modelos, modoActivo);
+        const unchanged = access.estado === resolved.estado
+          && access.modo_activo === resolved.modo
+          && access.modo_preparacion === resolved.legacy
+          && compararFechas(access, start, end)
+          && JSON.stringify(currentModels) === JSON.stringify(resolved.modelos);
+        if (unchanged) return contextoFinal({ client, contextService: context, acceso: access, principal });
+
+        if (JSON.stringify(currentModels) !== JSON.stringify(resolved.modelos)) {
+          await modelosRepository.reemplazarModelos(id, resolved.modelos, client);
+        }
+        const updated = await client.query(
+          `UPDATE accesos_oposicion
+              SET estado = $2, fecha_inicio = $3, fecha_fin = $4,
+                  modo_activo = $5, modo_preparacion = $6, actualizada_en = NOW()
+            WHERE id = $1
+            RETURNING id, usuario_id, oposicion_id, estado, modo_preparacion, modo_activo,
+                      fecha_inicio::TEXT AS fecha_inicio, fecha_fin::TEXT AS fecha_fin,
+                      tipo_alumno, precio_pagado, notas, ranking_publico, creada_en, actualizada_en`,
+          [id, resolved.estado, start.toISOString(), end ? end.toISOString() : null, resolved.modo, resolved.legacy],
+        );
+        const next = mapearAcceso(updated.rows[0]);
+        await historialRepository.insertarEvento({
+          accesoId: id,
+          tipoEvento: 'renovado',
+          anterior: snapshot(access, currentModels),
+          nuevo: snapshot(next, resolved.modelos),
+          actorUsuarioId: actor,
+          motivo: reason,
+          metadata: null,
+        }, client);
+        return contextoFinal({ client, contextService: context, acceso: next, principal });
+      }});
+    },
+
+    async revocarAcceso({ accesoId, actorUsuarioId, motivo, principal }) {
+      return cambiarEstadoCiclo({ accesoId, estadoDestino: 'revocado', tipoEvento: 'revocado', actorUsuarioId, motivo, principal });
+    },
+
+    async cancelarAcceso({ accesoId, actorUsuarioId, motivo, principal }) {
+      return cambiarEstadoCiclo({ accesoId, estadoDestino: 'cancelado', tipoEvento: 'cancelado', actorUsuarioId, motivo, principal });
+    },
+
+    async reactivarAcceso({ accesoId, fechaInicio, fechaFin, modelos, modoActivo, actorUsuarioId, motivo, principal }) {
+      const id = validarId(accesoId, 'accesoId');
+      return mutate({ actorUsuarioId, principal, motivo, callback: async ({ client, actor, reason }) => {
+        const access = await leerAcceso(client, id, { forUpdate: true });
+        if (!access) throw errorConCodigo('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
+        if (!['revocado', 'cancelado'].includes(access.estado)) {
+          throw errorConCodigo('ACCESS_ADMIN_STATE', 'Solo se pueden reactivar estados terminales', 409);
+        }
+        const currentModels = await leerModelos(client, id, modelosRepository);
+        validarAccesoCoherente(access, currentModels);
+        const reference = new Date(clock());
+        const existingDates = fechasAcceso(access);
+        const hasNewDates = fechaInicio !== undefined || fechaFin !== undefined;
+        let start = fechaInicio === undefined ? existingDates.inicio : fecha(fechaInicio, 'fechaInicio');
+        let end = fechaFin === undefined ? existingDates.fin : fecha(fechaFin, 'fechaFin', { permitirNull: true });
+        if (!esVigente(start, end, reference)) {
+          if (!hasNewDates || fechaInicio === undefined || fechaFin === undefined) {
+            throw errorConCodigo('ACCESS_ADMIN_INVALID_VALIDITY', 'La reactivación requiere una vigencia válida', 422);
+          }
+          start = fecha(fechaInicio, 'fechaInicio');
+          end = fecha(fechaFin, 'fechaFin', { permitirNull: true });
+          validarVigenciaOperativa(start, end, reference);
+        } else {
+          validarVigenciaOperativa(start, end, reference);
+        }
+        const resolved = resolverModelosYModo(currentModels, access.modo_activo, modelos, modoActivo);
+        if (currentModels.length === 0) throw errorConCodigo('ACCESS_ADMIN_INVALID_MODELS', 'El acceso requiere modelos', 422);
+        if (!resolved.modelos.length) throw errorConCodigo('ACCESS_ADMIN_INVALID_MODELS', 'El acceso requiere modelos', 422);
+        const updated = await client.query(
+          `UPDATE accesos_oposicion
+              SET estado = $2, fecha_inicio = $3, fecha_fin = $4,
+                  modo_activo = $5, modo_preparacion = $6, actualizada_en = NOW()
+            WHERE id = $1
+            RETURNING id, usuario_id, oposicion_id, estado, modo_preparacion, modo_activo,
+                      fecha_inicio::TEXT AS fecha_inicio, fecha_fin::TEXT AS fecha_fin,
+                      tipo_alumno, precio_pagado, notas, ranking_publico, creada_en, actualizada_en`,
+          [id, resolved.estado, start.toISOString(), end ? end.toISOString() : null, resolved.modo, resolved.legacy],
+        );
+        const next = mapearAcceso(updated.rows[0]);
+        if (JSON.stringify(currentModels) !== JSON.stringify(resolved.modelos)) {
+          await modelosRepository.reemplazarModelos(id, resolved.modelos, client);
+        }
+        await historialRepository.insertarEvento({
+          accesoId: id,
+          tipoEvento: 'reactivado',
+          anterior: snapshot(access, currentModels),
+          nuevo: snapshot(next, resolved.modelos),
+          actorUsuarioId: actor,
+          motivo: reason,
+          metadata: null,
+        }, client);
+        return contextoFinal({ client, contextService: context, acceso: next, principal });
       }});
     },
 

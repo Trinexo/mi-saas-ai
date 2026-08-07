@@ -79,9 +79,9 @@ test('history route has the exact administrative URL and validates IDs', async (
   assert.equal(response.status, 400);
 });
 
-test('PR6 mutation routes are not exposed by the PR5 router', async () => {
+test('PR6 mutation routes están montadas y validan el motivo', async () => {
   for (const path of ['/api/v1/admin/accesos/1/renovar', '/api/v1/admin/accesos/1/revocar', '/api/v1/admin/accesos/1/cancelar', '/api/v1/admin/accesos/1/reactivar']) {
-    const response = await request(path, { role: 'admin', method: 'POST', body: { motivo: 'no' } });
-    assert.equal(response.status, 404);
+    const response = await request(path, { role: 'admin', method: 'POST', body: {} });
+    assert.equal(response.status, 400);
   }
 });

@@ -40,6 +40,10 @@ function mapearErrorModo(error) {
 
 function mapearErrorAdministracion(error) {
   switch (error?.code) {
+    case 'ACCESS_ADMIN_INVALID_VALIDITY':
+      return new ApiError(422, 'Vigencia invÃ¡lida');
+    case 'ACCESS_ADMIN_INCONSISTENT':
+      return new ApiError(500, 'No se pudo actualizar el acceso');
     case 'ACCESS_ADMIN_INVALID_IDENTIFIER':
     case 'ACCESS_ADMIN_INVALID_MOTIVE':
     case 'ACCESS_ADMIN_INVALID_DATE':
@@ -318,6 +322,62 @@ export const listarHistorialAdministrativo = async (req, res, next) => {
       principal: principalAdmin(req),
     });
     return ok(res, data, 'Historial del acceso');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const renovarAccesoAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.renovarAcceso({
+      ...req.body,
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Acceso renovado');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const revocarAccesoAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.revocarAcceso({
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      motivo: req.body.motivo,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Acceso revocado');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const cancelarAccesoAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.cancelarAcceso({
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      motivo: req.body.motivo,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Acceso cancelado');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
+export const reactivarAccesoAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.reactivarAcceso({
+      ...req.body,
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Acceso reactivado');
   } catch (error) {
     return next(mapearErrorAdministracion(error));
   }

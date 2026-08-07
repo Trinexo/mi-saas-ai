@@ -38,7 +38,16 @@ function harness({ access = accessBase(), duplicate = false, models = ['experto'
         return { rows: [current], rowCount: 1 };
       }
       if (normalized.startsWith('UPDATE accesos_oposicion')) {
-        if (normalized.includes('SET fecha_inicio')) {
+        if (normalized.includes('SET estado = $2, fecha_inicio')) {
+          current = {
+            ...current,
+            estado: params[1],
+            fecha_inicio: params[2],
+            fecha_fin: params[3],
+            modo_activo: params[4],
+            modo_preparacion: params[5],
+          };
+        } else if (normalized.includes('SET fecha_inicio')) {
           current = { ...current, fecha_inicio: '2030-01-01 00:00:00', fecha_fin: params[2] };
         } else {
           current = { ...current, estado: params[1], modo_activo: params[2], modo_preparacion: params[3] };
@@ -154,4 +163,59 @@ test('revierte si falla la escritura del historial', async () => {
     vigencia: { fechaInicio: '2026-01-01', fechaFin: null },
   }), /fallo controlado/);
   assert.equal(h.committed, false);
+});
+
+test('renueva un expirado con nueva vigencia y un único evento', async () => {
+  const h = harness({ access: { ...accessBase(), estado: 'expirado', fecha_fin: '2025-01-01 00:00:00' } });
+  await h.service.renovarAcceso({ ...common, accesoId: accessBase().id, fechaInicio: '2026-01-01', fechaFin: '2027-01-01' });
+  assert.equal(h.history.length, 1);
+  assert.equal(h.history[0].tipoEvento, 'renovado');
+});
+
+test('renovación idéntica de activo vigente no actualiza ni registra historial', async () => {
+  const h = harness({ models: ['experto'] });
+  await h.service.renovarAcceso({ ...common, accesoId: accessBase().id });
+  assert.equal(h.history.length, 0);
+});
+
+test('renovar estados terminales y reactivar estados no terminales son conflictos', async () => {
+  for (const estado of ['revocado', 'cancelado']) {
+    await assert.rejects(
+      () => harness({ access: { ...accessBase(), estado } }).service.renovarAcceso({ ...common, accesoId: accessBase().id, fechaInicio: '2026-01-01', fechaFin: null }),
+      (error) => error.code === 'ACCESS_ADMIN_STATE',
+    );
+  }
+  await assert.rejects(
+    () => harness().service.reactivarAcceso({ ...common, accesoId: accessBase().id }),
+    (error) => error.code === 'ACCESS_ADMIN_STATE',
+  );
+});
+
+test('revocar y cancelar son idempotentes y registran un solo evento', async () => {
+  const revoked = harness();
+  await revoked.service.revocarAcceso({ ...common, accesoId: accessBase().id });
+  await revoked.service.revocarAcceso({ ...common, accesoId: accessBase().id });
+  assert.equal(revoked.history.length, 1);
+  assert.equal(revoked.history[0].tipoEvento, 'revocado');
+
+  const cancelled = harness();
+  await cancelled.service.cancelarAcceso({ ...common, accesoId: accessBase().id });
+  await cancelled.service.cancelarAcceso({ ...common, accesoId: accessBase().id });
+  assert.equal(cancelled.history.length, 1);
+  assert.equal(cancelled.history[0].tipoEvento, 'cancelado');
+});
+
+test('reactiva un acceso terminal y sincroniza el legacy', async () => {
+  const h = harness({ access: { ...accessBase(), estado: 'revocado', modo_activo: 'guiado', modo_preparacion: 'albacer' }, models: ['guiado'] });
+  await h.service.reactivarAcceso({ ...common, accesoId: accessBase().id });
+  assert.equal(h.history.length, 1);
+  assert.equal(h.history[0].tipoEvento, 'reactivado');
+  assert.equal(h.history[0].nuevo.modoActivo, 'guiado');
+});
+
+test('revocación y reactivación conservan los campos comerciales', async () => {
+  const h = harness({ access: { ...accessBase(), precio_pagado: 19.5, notas: 'conservar' } });
+  await h.service.revocarAcceso({ ...common, accesoId: accessBase().id });
+  assert.equal(h.history[0].anterior.vigencia.fechaFin, accessBase().fecha_fin);
+  assert.equal(h.history[0].nuevo.vigencia.fechaInicio, accessBase().fecha_inicio);
 });

@@ -119,3 +119,18 @@ export const adminVigenciaBodySchema = z.object({
 }).refine((body) => body.fechaInicio !== undefined || body.fechaFin !== undefined, {
   message: 'Debe indicarse al menos una fecha',
 });
+
+const adminLifecycleVigenciaSchema = z.object({
+  fechaInicio: fechaSchema.optional(),
+  fechaFin: fechaSchema.nullable().optional(),
+});
+
+export const adminMotivoBodySchema = z.object({ motivo: motivoSchema });
+
+export const adminRenovarBodySchema = adminLifecycleVigenciaSchema.extend({
+  modelos: modelosSchema.optional(),
+  modoActivo: z.enum(['experto', 'guiado']).nullable().optional(),
+  motivo: motivoSchema,
+});
+
+export const adminReactivarBodySchema = adminRenovarBodySchema;
