@@ -44,6 +44,10 @@ function normalizarId(value, nombre) {
     : Number(validado);
 }
 
+export function normalizarIdentificador(value, nombre = 'id') {
+  return normalizarId(value, nombre);
+}
+
 function normalizarPrincipal(principal, usuarioId) {
   const value = principal ?? { tipo: 'alumno', usuarioId };
   if (!value || typeof value !== 'object' || Array.isArray(value)
@@ -220,6 +224,35 @@ function construirContexto(row, principal, usuarioId, oposicionId, clock) {
 }
 
 export function createAccessContextService({ db = pool, accesoRepository = accesoOposicionRepository, clock = () => new Date() } = {}) {
+  const resolverContextosUsuario = async ({ usuarioId, principal } = {}) => {
+    const normalizedUsuarioId = normalizarId(usuarioId, 'usuarioId');
+    const normalizedPrincipal = normalizarPrincipal(principal, normalizedUsuarioId);
+    let rows;
+    try {
+      rows = await accesoRepository.obtenerLecturasContextoUsuario(normalizedUsuarioId, db);
+    } catch (error) {
+      if (error.code?.startsWith('ACCESS_CONTEXT_')) throw error;
+      throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'No se pudo leer el contexto');
+    }
+    if (!Array.isArray(rows)) {
+      throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'Lectura ambigua de accesos');
+    }
+    return rows.map((row) => {
+      if (row.usuario_id !== undefined && BigInt(row.usuario_id) !== BigInt(normalizedUsuarioId)) {
+        throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'Lectura de usuario incorrecta');
+      }
+      const normalizedOposicionId = normalizarId(row.oposicion_id, 'oposicion_id');
+      return {
+        contexto: construirContexto(row, normalizedPrincipal, normalizedUsuarioId, normalizedOposicionId, clock),
+        legacy: {
+          nombre: row.nombre ?? null,
+          tipo_alumno: row.tipo_alumno ?? null,
+          ranking_publico: row.ranking_publico ?? false,
+        },
+      };
+    });
+  };
+
   return {
     async obtenerContextoUsuario({ usuarioId, oposicionId, principal } = {}) {
       const normalizedUsuarioId = normalizarId(usuarioId, 'usuarioId');
@@ -248,6 +281,15 @@ export function createAccessContextService({ db = pool, accesoRepository = acces
       }
       if (row.acceso_id === null) return dtoSinAcceso(normalizedUsuarioId, normalizedOposicionId);
       return construirContexto(row, normalizedPrincipal, normalizedUsuarioId, normalizedOposicionId, clock);
+    },
+
+    async obtenerContextosUsuario({ usuarioId, principal } = {}) {
+      const resolved = await resolverContextosUsuario({ usuarioId, principal });
+      return resolved.map(({ contexto }) => contexto);
+    },
+
+    async obtenerContextosUsuarioConLegacy({ usuarioId, principal } = {}) {
+      return resolverContextosUsuario({ usuarioId, principal });
     },
   };
 }

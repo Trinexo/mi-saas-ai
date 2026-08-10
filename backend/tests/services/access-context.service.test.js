@@ -15,6 +15,60 @@ const base = (overrides = {}) => ({
   modelos: ['experto'],
   ...overrides,
 });
+
+test('resuelve varios contextos del usuario en una sola lectura bulk', async () => {
+  let queries = 0;
+  const rows = [
+    base({
+      oposicion_id: '10',
+      acceso_id: '9223372036854775807',
+      fecha_inicio: '2026-08-01 00:00:00',
+      fecha_fin: '2026-08-10 00:00:00',
+    }),
+    base({
+      oposicion_id: '11',
+      acceso_id: '12',
+      estado: 'activo',
+      modo_activo: 'guiado',
+      modo_preparacion: 'albacer',
+      modelos: ['guiado'],
+      fecha_fin: '2026-08-03 00:00:00',
+    }),
+  ];
+  const result = await createAccessContextService({
+    accesoRepository: {
+      async obtenerLecturasContextoUsuario() {
+        queries += 1;
+        return rows;
+      },
+    },
+    clock: () => NOW,
+  }).obtenerContextosUsuario({ usuarioId: '7' });
+
+  assert.equal(queries, 1);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].acceso_id, '9223372036854775807');
+  assert.equal(result[0].permisos.puede_acceder_contenido, true);
+  assert.equal(result[1].estado_efectivo, 'expirado');
+  assert.equal(result[1].permisos.puede_acceder_contenido, false);
+});
+
+test('el bulk falla cerrado ante una incoherencia y no mezcla usuarios', async () => {
+  const serviceWithRows = (rows) => createAccessContextService({
+    accesoRepository: { obtenerLecturasContextoUsuario: async () => rows },
+    clock: () => NOW,
+  });
+  await assert.rejects(
+    () => serviceWithRows([base({ usuario_id: '8', oposicion_id: '10', modo_activo: 'guiado' })])
+      .obtenerContextosUsuario({ usuarioId: '7' }),
+    { code: 'ACCESS_CONTEXT_INCONSISTENT' },
+  );
+  await assert.rejects(
+    () => serviceWithRows([base({ oposicion_id: '10', modelos: ['experto'], modo_activo: null })])
+      .obtenerContextosUsuario({ usuarioId: '7' }),
+    { code: 'ACCESS_CONTEXT_INCONSISTENT' },
+  );
+});
 function service(row) {
   return createAccessContextService({
     accesoRepository: { obtenerLecturaContexto: async () => [row] },

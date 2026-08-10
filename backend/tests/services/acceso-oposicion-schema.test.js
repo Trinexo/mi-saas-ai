@@ -25,8 +25,13 @@ test('sincronización legacy rechaza modos no soportados', () => {
 test('accesoOposicionParamSchema normaliza oposicionId', () => {
   const parsed = accesoOposicionParamSchema.safeParse({ oposicionId: '7' });
   assert.equal(parsed.success, true);
-  assert.equal(parsed.data.oposicionId, 7);
+  assert.equal(parsed.data.oposicionId, '7');
   assert.equal(accesoOposicionParamSchema.safeParse({ oposicionId: '0' }).success, false);
+  assert.equal(
+    accesoOposicionParamSchema.safeParse({ oposicionId: '9223372036854775807' }).data.oposicionId,
+    '9223372036854775807',
+  );
+  assert.equal(accesoOposicionParamSchema.safeParse({ oposicionId: '9223372036854775808' }).success, false);
 });
 
 test('accesoUsuarioOposicionParamsSchema normaliza userId y oposicionId', () => {

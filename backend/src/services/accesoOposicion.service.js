@@ -1,4 +1,5 @@
 import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { accessContextService } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 const MODOS_PREPARACION = ['experto', 'albacer'];
@@ -18,13 +19,36 @@ const assertTipoAlumno = (tipo) => {
 
 export const accesoOposicionService = {
   async getMisAccesos(userId) {
-    return accesoOposicionRepository.getAccesosActivos(userId);
+    const contextos = await accessContextService.obtenerContextosUsuarioConLegacy({ usuarioId: userId });
+    return contextos
+      .filter(({ contexto }) => contexto.permisos.puede_acceder_contenido)
+      .map(({ contexto, legacy }) => {
+        return {
+          oposicion_id: contexto.oposicion_id,
+          nombre: legacy?.nombre ?? null,
+          fecha_fin: contexto.vigencia.fecha_fin,
+          tipo_alumno: legacy?.tipo_alumno ?? null,
+          modo_preparacion: contexto.modo_activo === 'guiado' ? 'albacer' : 'experto',
+          ranking_publico: legacy?.ranking_publico ?? false,
+        };
+      });
   },
 
   async getPreparacion(userId, oposicionId) {
-    const acceso = await accesoOposicionRepository.getPreparacion(userId, oposicionId);
+    const contexto = await accessContextService.obtenerContextoUsuario({ usuarioId: userId, oposicionId });
+    if (!contexto.permisos.puede_acceder_contenido) {
+      throw new ApiError(404, 'Acceso activo no encontrado para esta oposicion');
+    }
+    const acceso = await accesoOposicionRepository.obtenerDatosLegacyAcceso(userId, contexto.oposicion_id);
     if (!acceso) throw new ApiError(404, 'Acceso activo no encontrado para esta oposicion');
-    return acceso;
+    return {
+      usuario_id: contexto.usuario_id,
+      oposicion_id: contexto.oposicion_id,
+      nombre: acceso.nombre,
+      tipo_alumno: acceso.tipo_alumno,
+      modo_preparacion: contexto.modo_activo === 'guiado' ? 'albacer' : 'experto',
+      ranking_publico: acceso.ranking_publico,
+    };
   },
 
   async updateModoPreparacion(userId, oposicionId, modoPreparacion) {
