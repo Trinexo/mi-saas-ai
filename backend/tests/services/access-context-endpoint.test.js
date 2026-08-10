@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import test, { after, before } from 'node:test';
+import express from 'express';
 import jwt from 'jsonwebtoken';
 import app from '../../src/app.js';
 import { accessContextService } from '../../src/services/accessContext.service.js';
+import { accesoOposicionService } from '../../src/services/accesoOposicion.service.js';
+import { requireAccesoOposicion } from '../../src/middleware/acceso.middleware.js';
 
 const TEST_SECRET = 'access-context-endpoint-test-secret';
 const TEST_USER_ID = 42;
@@ -49,6 +52,8 @@ const dtoActivo = {
 let originalSecret;
 let server;
 let baseUrl;
+let middlewareServer;
+let middlewareBaseUrl;
 
 before(async () => {
   originalSecret = process.env.JWT_SECRET;
@@ -56,12 +61,30 @@ before(async () => {
   server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+  const middlewareApp = express();
+  middlewareApp.get('/protected/:oposicionId',
+    (req, _res, next) => {
+      req.user = { userId: TEST_USER_ID, role: 'alumno' };
+      next();
+    },
+    requireAccesoOposicion('strict'),
+    (_req, res) => res.json({ success: true }),
+  );
+  middlewareApp.use((error, _req, res, _next) => res.status(error.status ?? 500).json({
+    success: false,
+    message: error.message,
+  }));
+  middlewareServer = http.createServer(middlewareApp);
+  await new Promise((resolve) => middlewareServer.listen(0, '127.0.0.1', resolve));
+  middlewareBaseUrl = `http://127.0.0.1:${middlewareServer.address().port}`;
 });
 
 after(async () => {
   if (originalSecret === undefined) delete process.env.JWT_SECRET;
   else process.env.JWT_SECRET = originalSecret;
   await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  await new Promise((resolve, reject) => middlewareServer.close((error) => (error ? reject(error) : resolve())));
 });
 
 function token({ userId = TEST_USER_ID, role = 'alumno' } = {}) {
@@ -71,6 +94,11 @@ function token({ userId = TEST_USER_ID, role = 'alumno' } = {}) {
 async function request(path, { authToken } = {}) {
   const headers = authToken ? { authorization: `Bearer ${authToken}` } : {};
   const response = await fetch(`${baseUrl}${path}`, { headers });
+  return { status: response.status, body: await response.json() };
+}
+
+async function requestMiddleware(path) {
+  const response = await fetch(`${middlewareBaseUrl}${path}`);
   return { status: response.status, body: await response.json() };
 }
 
@@ -194,5 +222,76 @@ test('no invoca mutaciones ni historial', options, async () => {
   }, async () => request(`/api/v1/accesos/contexto/${TEST_OPOSICION_ID}`, { authToken: token() }));
   assert.equal(calls.length, 1);
   assert.deepEqual(Object.keys(calls[0]).sort(), ['oposicionId', 'principal', 'usuarioId']);
+});
+
+test('mis-oposiciones conserva el DTO legacy', options, async () => {
+  const original = accesoOposicionService.getMisAccesos;
+  const legacy = [{
+    oposicion_id: '7',
+    nombre: 'Oposicion',
+    fecha_fin: null,
+    tipo_alumno: 'libre',
+    modo_preparacion: 'albacer',
+    ranking_publico: false,
+  }];
+  accesoOposicionService.getMisAccesos = async (userId) => {
+    assert.equal(userId, TEST_USER_ID);
+    return legacy;
+  };
+  try {
+    const response = await request('/api/accesos/mis-oposiciones', { authToken: token() });
+    assert.equal(response.status, 200);
+    assert.deepEqual(response.body.data, legacy);
+  } finally {
+    accesoOposicionService.getMisAccesos = original;
+  }
+});
+
+test('check y preparación legacy delegan en lecturas canónicas', options, async () => {
+  const originalContext = accessContextService.obtenerContextoUsuario;
+  const originalPreparation = accesoOposicionService.getPreparacion;
+  const calls = [];
+  accessContextService.obtenerContextoUsuario = async (args) => {
+    calls.push(args);
+    return { permisos: { puede_acceder_contenido: true } };
+  };
+  accesoOposicionService.getPreparacion = async (userId, oposicionId) => ({
+    usuario_id: userId,
+    oposicion_id: oposicionId,
+    nombre: 'Oposicion',
+    tipo_alumno: 'libre',
+    modo_preparacion: 'experto',
+    ranking_publico: false,
+  });
+  try {
+    const check = await request('/api/accesos/check/7', { authToken: token() });
+    const preparation = await request('/api/accesos/oposicion/7/preparacion', { authToken: token() });
+    assert.equal(check.status, 200);
+    assert.equal(check.body.data.tieneAcceso, true);
+    assert.equal(preparation.status, 200);
+    assert.equal(preparation.body.data.modo_preparacion, 'experto');
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].principal, { tipo: 'alumno', usuarioId: TEST_USER_ID });
+  } finally {
+    accessContextService.obtenerContextoUsuario = originalContext;
+    accesoOposicionService.getPreparacion = originalPreparation;
+  }
+});
+
+test('requireAccesoOposicion usa contexto canónico', options, async () => {
+  const original = accessContextService.obtenerContextoUsuario;
+  let call;
+  accessContextService.obtenerContextoUsuario = async (args) => {
+    call = args;
+    return { permisos: { puede_acceder_contenido: false } };
+  };
+  try {
+    const response = await requestMiddleware('/protected/7');
+    assert.equal(response.status, 403);
+    assert.equal(response.body.success, false);
+    assert.deepEqual(call.principal, { tipo: 'alumno', usuarioId: TEST_USER_ID });
+  } finally {
+    accessContextService.obtenerContextoUsuario = original;
+  }
 });
 

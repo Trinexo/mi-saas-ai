@@ -138,9 +138,20 @@ export const changeModoActivo = async (req, res, next) => {
 export const checkAcceso = async (req, res, next) => {
   try {
     const { oposicionId } = req.params;
-    const tiene = await accesoOposicionService.tieneAcceso(req.user.userId, oposicionId);
+    const contexto = await accessContextService.obtenerContextoUsuario({
+      usuarioId: req.user.userId,
+      oposicionId,
+      principal: { tipo: 'alumno', usuarioId: req.user.userId },
+    });
+    const tiene = contexto.permisos.puede_acceder_contenido;
     return ok(res, { tieneAcceso: tiene, oposicionId });
   } catch (e) {
+    if (e?.code?.startsWith('ACCESS_CONTEXT_')) {
+      if (e.code === 'ACCESS_CONTEXT_INVALID_IDENTIFIER') return next(new ApiError(400, 'Parámetros inválidos'));
+      if (e.code === 'ACCESS_CONTEXT_OPPOSITION_NOT_FOUND') return next(new ApiError(404, 'Oposición no encontrada'));
+      if (e.code === 'ACCESS_CONTEXT_USER_NOT_FOUND') return next(new ApiError(401, 'Contexto de autenticación inválido'));
+      if (e.code === 'ACCESS_CONTEXT_INCONSISTENT') return next(new ApiError(500, 'No se pudo resolver el acceso'));
+    }
     return next(e);
   }
 };
@@ -155,6 +166,16 @@ export const getPreparacionAcceso = async (req, res, next) => {
     const acceso = await accesoOposicionService.getPreparacion(req.user.userId, oposicionId);
     return ok(res, acceso, 'Preparacion de oposicion');
   } catch (e) {
+    if (e?.code === 'ACCESS_CONTEXT_INVALID_IDENTIFIER') {
+      return next(new ApiError(400, 'Parámetros inválidos'));
+    }
+    if (e?.code === 'ACCESS_CONTEXT_USER_NOT_FOUND'
+      || e?.code === 'ACCESS_CONTEXT_OPPOSITION_NOT_FOUND') {
+      return next(new ApiError(404, 'Acceso activo no encontrado para esta oposición'));
+    }
+    if (e?.code === 'ACCESS_CONTEXT_INCONSISTENT') {
+      return next(new ApiError(500, 'No se pudo resolver el acceso'));
+    }
     return next(e);
   }
 };

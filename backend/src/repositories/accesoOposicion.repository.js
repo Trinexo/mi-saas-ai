@@ -94,6 +94,63 @@ export const accesoOposicionRepository = {
     return result.rows;
   },
 
+  async obtenerLecturasContextoUsuario(usuarioId, client = pool) {
+    const result = await client.query(
+      `SELECT ao.usuario_id,
+              ao.oposicion_id,
+              ao.id AS acceso_id,
+              ao.estado,
+              ao.modo_activo,
+              ao.modo_preparacion,
+              ao.fecha_inicio::TEXT AS fecha_inicio,
+              ao.fecha_fin::TEXT AS fecha_fin,
+              o.nombre,
+              ao.tipo_alumno,
+              ao.ranking_publico,
+              COALESCE(
+                ARRAY_AGG(aom.modelo ORDER BY
+                  CASE aom.modelo WHEN 'experto' THEN 1 WHEN 'guiado' THEN 2 ELSE 3 END,
+                  aom.id
+                ) FILTER (WHERE aom.modelo IS NOT NULL),
+                ARRAY[]::TEXT[]
+              ) AS modelos
+         FROM accesos_oposicion ao
+         JOIN oposiciones o ON o.id = ao.oposicion_id
+         LEFT JOIN acceso_oposicion_modelos aom ON aom.acceso_id = ao.id
+        WHERE ao.usuario_id = $1
+        GROUP BY ao.usuario_id, ao.oposicion_id, ao.id, ao.estado,
+                 ao.modo_activo, ao.modo_preparacion, ao.fecha_inicio, ao.fecha_fin,
+                 o.nombre, ao.tipo_alumno, ao.ranking_publico
+        ORDER BY ao.fecha_inicio DESC, ao.id DESC` ,
+      [usuarioId],
+    );
+    return result.rows;
+  },
+
+  async obtenerDatosLegacyAcceso(usuarioId, oposicionId) {
+    const result = await pool.query(
+      `SELECT ao.usuario_id, ao.oposicion_id, o.nombre,
+              ao.tipo_alumno, ao.ranking_publico
+         FROM accesos_oposicion ao
+         JOIN oposiciones o ON o.id = ao.oposicion_id
+        WHERE ao.usuario_id = $1 AND ao.oposicion_id = $2
+        LIMIT 1`,
+      [usuarioId, oposicionId],
+    );
+    return result.rows[0] ?? null;
+  },
+
+  async obtenerDatosLegacyAccesos(usuarioId) {
+    const result = await pool.query(
+      `SELECT ao.oposicion_id, o.nombre, ao.tipo_alumno, ao.ranking_publico
+         FROM accesos_oposicion ao
+         JOIN oposiciones o ON o.id = ao.oposicion_id
+        WHERE ao.usuario_id = $1`,
+      [usuarioId],
+    );
+    return result.rows;
+  },
+
   async obtenerParaCambioModo(accesoId, client = pool) {
     const result = await client.query(
       `SELECT id, usuario_id, oposicion_id, estado, modo_activo,

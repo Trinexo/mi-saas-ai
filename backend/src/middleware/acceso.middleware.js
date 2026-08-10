@@ -1,5 +1,6 @@
 import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
 import { profesorAccessRepository } from '../repositories/profesorAccess.repository.js';
+import { accessContextService, normalizarIdentificador } from '../services/accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 /**
@@ -53,7 +54,12 @@ export const requireAccesoOposicion = (mode = 'strict') => async (req, res, next
       // Sin oposición concreta: modo demo permitido siempre
       return next();
     }
-    const oposicionId = Number(rawId);
+    let oposicionId;
+    try {
+      oposicionId = normalizarIdentificador(rawId, 'oposicionId');
+    } catch (error) {
+      return next(new ApiError(400, 'oposicionId inválido'));
+    }
     if (req.user.role === 'profesor') {
       const asignada = await profesorAccessRepository.hasAssignedOposicion(req.user.userId, oposicionId);
       if (!asignada) {
@@ -69,7 +75,27 @@ export const requireAccesoOposicion = (mode = 'strict') => async (req, res, next
       return next();
     }
 
-    const tiene = await accesoOposicionRepository.tieneAcceso(req.user.userId, oposicionId);
+    let contexto;
+    try {
+      contexto = await accessContextService.obtenerContextoUsuario({
+        usuarioId: req.user.userId,
+        oposicionId,
+        principal: { tipo: 'alumno', usuarioId: req.user.userId },
+      });
+    } catch (error) {
+      if (error?.code === 'ACCESS_CONTEXT_INVALID_IDENTIFIER') {
+        return next(new ApiError(400, 'oposicionId inválido'));
+      }
+      if (mode === 'demo' && error?.code !== 'ACCESS_CONTEXT_INCONSISTENT') {
+        req.user.modoDemo = true;
+        return next();
+      }
+      if (error?.code?.startsWith('ACCESS_CONTEXT_')) {
+        return next(new ApiError(403, 'No tienes acceso a esta oposición'));
+      }
+      return next(error);
+    }
+    const tiene = contexto.permisos.puede_acceder_contenido;
     if (!tiene) {
       if (mode === 'demo') {
         // Marca como demo, el servicio limitará las preguntas

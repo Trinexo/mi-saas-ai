@@ -6,6 +6,8 @@ const bigintIdSchema = z.string()
   .regex(/^[1-9]\d*$/, 'Debe ser un entero decimal positivo')
   .refine((value) => !/^[1-9]\d*$/.test(value) || BigInt(value) <= MAX_POSTGRES_BIGINT, 'Excede BIGINT');
 
+const legacyOposicionIdSchema = bigintIdSchema;
+
 const fechaSchema = z.string().trim().min(1);
 const motivoSchema = z.string().trim().min(1).max(1000);
 const modelosSchema = z.array(z.enum(['experto', 'guiado'])).min(1).max(2)
@@ -23,16 +25,11 @@ const booleanLikeSchema = z.preprocess(
 );
 
 export const accesoOposicionParamSchema = z.object({
-  oposicionId: z.coerce.number().int().positive(),
+  oposicionId: legacyOposicionIdSchema,
 });
 
 export const accessContextParamSchema = z.object({
-  oposicionId: z.string()
-    .regex(/^[1-9]\d*$/, 'oposicionId debe ser un entero decimal positivo')
-    .refine(
-      (value) => !/^[1-9]\d*$/.test(value) || BigInt(value) <= MAX_POSTGRES_BIGINT,
-      'oposicionId excede BIGINT',
-    ),
+  oposicionId: legacyOposicionIdSchema,
 });
 
 export const accessModeParamSchema = z.object({
