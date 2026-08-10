@@ -1,5 +1,4 @@
 import { billingRepository as defaultBillingRepository } from '../repositories/billing.repository.js';
-import { accesoOposicionRepository as defaultAccesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
 import { settingsService as defaultSettingsService } from './settings.service.js';
 import { emailService as defaultEmailService } from './email.service.js';
 import { authRepository as defaultAuthRepository } from '../repositories/auth.repository.js';
@@ -7,17 +6,17 @@ import { catalogRepository as defaultCatalogRepository } from '../repositories/c
 import { getStripeClient } from '../config/stripeClient.js';
 import { assertStripeTestIsolation } from '../utils/stripe-test-guards.js';
 import { ApiError } from '../utils/api-error.js';
+import { accessBillingService as defaultAccessBillingService } from './accessBilling.service.js';
 
 function httpError(status, message) {
   return new ApiError(status, message);
 }
 
-function parsePositiveInt(value, label) {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
+function parsePositiveBigint(value, label) {
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value) || BigInt(value) > 9223372036854775807n) {
     throw httpError(400, `${label} invalido`);
   }
-  return parsed;
+  return value;
 }
 
 function getEventCreatedAt(event) {
@@ -37,7 +36,6 @@ function assertValidPrice(oposicion) {
 
 export function createBillingService({
   billingRepository = defaultBillingRepository,
-  accesoOposicionRepository = defaultAccesoOposicionRepository,
   settingsService = defaultSettingsService,
   emailService = defaultEmailService,
   authRepository = defaultAuthRepository,
@@ -45,6 +43,7 @@ export function createBillingService({
   stripeClientProvider = getStripeClient,
   awaitEmailsForTests = false,
   afterWebhookEventRegistered = null,
+  accessBillingService = defaultAccessBillingService,
 } = {}) {
   async function sendAccessConfirmationEmail({ userId, oposicionId, fechaFin }) {
     const [user, oposiciones] = await Promise.all([
@@ -158,18 +157,24 @@ export function createBillingService({
           await afterWebhookEventRegistered({ event, session, client });
         }
 
-        const userId = parsePositiveInt(session.metadata?.userId, 'userId');
-        const oposicionId = parsePositiveInt(session.metadata?.oposicionId, 'oposicionId');
+        const userId = parsePositiveBigint(session.metadata?.userId, 'userId');
+        const oposicionId = parsePositiveBigint(session.metadata?.oposicionId, 'oposicionId');
 
+        const fechaInicio = new Date();
         const fechaFin = new Date();
         fechaFin.setDate(fechaFin.getDate() + 30);
 
-        await accesoOposicionRepository.crearAcceso({
-          userId,
+        await accessBillingService.grantOrRenewAccessFromBilling({
+          usuarioId: userId,
           oposicionId,
+          fechaInicio,
           fechaFin,
           precioPagado: session.amount_total ? session.amount_total / 100 : null,
           notas: `Stripe session ${session.id}`,
+          tipoAlumno: 'libre',
+          modelos: ['guiado'],
+          modoActivo: 'guiado',
+          stripeEventId: eventId,
           client,
         });
 

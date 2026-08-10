@@ -115,10 +115,69 @@ async function getAccess(userId, oposicionId) {
 async function cleanup() {
   if (!globalThis.__stripeFixture) return;
   const { user, oposicion } = globalThis.__stripeFixture;
-  await pool.query('DELETE FROM stripe_webhook_events WHERE event_id LIKE $1 OR object_id LIKE $1', [`${RUN_ID}%`]);
-  await pool.query('DELETE FROM accesos_oposicion WHERE usuario_id = $1 OR oposicion_id = $2', [user.id, oposicion.id]);
-  await pool.query('DELETE FROM oposiciones WHERE id = $1', [oposicion.id]);
-  await pool.query('DELETE FROM usuarios WHERE id = $1', [user.id]);
+  assert.equal(process.env.NODE_ENV, 'test');
+  assert.equal(process.env.ALLOW_E2E_WRITES, 'true');
+  assert.equal(process.env.E2E_DB_ISOLATED, 'true');
+  assertStripeTestIsolation({ stripeSecretKey: SECRET_KEY });
+
+  const client = await pool.connect();
+  let triggerDisabled = false;
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'ALTER TABLE accesos_oposicion_historial DISABLE TRIGGER trg_accesos_oposicion_historial_immutable',
+    );
+    triggerDisabled = true;
+
+    await client.query('DELETE FROM stripe_webhook_events WHERE event_id LIKE $1 OR object_id LIKE $1', [`${RUN_ID}%`]);
+    await client.query(
+      `DELETE FROM accesos_oposicion_historial
+       WHERE acceso_id IN (
+         SELECT id
+         FROM accesos_oposicion
+         WHERE usuario_id = $1 OR oposicion_id = $2
+       )`,
+      [user.id, oposicion.id],
+    );
+    await client.query('DELETE FROM accesos_oposicion WHERE usuario_id = $1 OR oposicion_id = $2', [user.id, oposicion.id]);
+    await client.query('DELETE FROM oposiciones WHERE id = $1', [oposicion.id]);
+    await client.query('DELETE FROM usuarios WHERE id = $1', [user.id]);
+
+    await client.query(
+      'ALTER TABLE accesos_oposicion_historial ENABLE TRIGGER trg_accesos_oposicion_historial_immutable',
+    );
+    await client.query('COMMIT');
+    triggerDisabled = false;
+  } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // La conexión puede haber quedado en estado abortado; se libera igualmente.
+    }
+    throw error;
+  } finally {
+    if (triggerDisabled) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // Se intenta recuperar la conexión antes de devolverla al pool.
+      }
+      try {
+        await client.query('BEGIN');
+        await client.query(
+          'ALTER TABLE accesos_oposicion_historial ENABLE TRIGGER trg_accesos_oposicion_historial_immutable',
+        );
+        await client.query('COMMIT');
+      } catch {
+        try {
+          await client.query('ROLLBACK');
+        } catch {
+          // No ocultar el error original del cleanup.
+        }
+      }
+    }
+    client.release();
+  }
 }
 
 test.before(async () => {
