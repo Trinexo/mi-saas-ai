@@ -2,9 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import pool from '../../src/config/db.js';
 import { widgetEngagementFocoSesionRepository } from '../../src/repositories/widgetEngagementFocoSesion.repository.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
 
 test('getFocoHoy devuelve respuesta neutra en Modo Albacer', async () => {
   const originalQuery = pool.query;
+  const originalContext = accessContextService.obtenerContextoUsuario;
+  accessContextService.obtenerContextoUsuario = async () => ({
+    tiene_acceso: true,
+    oposicion_id: 21,
+    modo_activo: 'guiado',
+    permisos: { puede_acceder_contenido: true },
+  });
   pool.query = async () => {
     throw new Error('No debe consultar foco libre en Modo Albacer');
   };
@@ -21,11 +29,19 @@ test('getFocoHoy devuelve respuesta neutra en Modo Albacer', async () => {
     assert.equal(result.numeroPreguntas, 0);
   } finally {
     pool.query = originalQuery;
+    accessContextService.obtenerContextoUsuario = originalContext;
   }
 });
 
 test('getFocoHoy filtra consultas por oposicion activa en Modo Experto', async () => {
   const originalQuery = pool.query;
+  const originalContext = accessContextService.obtenerContextoUsuario;
+  accessContextService.obtenerContextoUsuario = async () => ({
+    tiene_acceso: true,
+    oposicion_id: 21,
+    modo_activo: 'experto',
+    permisos: { puede_acceder_contenido: true },
+  });
   const calls = [];
 
   pool.query = async (sql, params) => {
@@ -54,5 +70,6 @@ test('getFocoHoy filtra consultas por oposicion activa en Modo Experto', async (
     assert.match(calls[1].sql, /te\.oposicion_id = \$3/);
   } finally {
     pool.query = originalQuery;
+    accessContextService.obtenerContextoUsuario = originalContext;
   }
 });

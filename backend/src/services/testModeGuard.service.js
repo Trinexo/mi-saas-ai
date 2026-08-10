@@ -1,13 +1,16 @@
 import pool from '../config/db.js';
-import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { accessContextService, normalizarIdentificador } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 const uniquePositiveIds = (values) => (
-  Array.from(new Set(
-    values
-      .map(Number)
-      .filter((value) => Number.isInteger(value) && value > 0),
-  ))
+  Array.from(new Map(values.flatMap((value) => {
+    try {
+      const normalized = normalizarIdentificador(value, 'oposicionId');
+      return [[String(normalized), normalized]];
+    } catch {
+      return [];
+    }
+  })).values())
 );
 
 export const testModeGuardService = {
@@ -47,17 +50,25 @@ export const testModeGuardService = {
 
   async getModoPreparacion(userId, oposicionId) {
     if (!oposicionId) return null;
-    const acceso = await accesoOposicionRepository.getPreparacion(userId, Number(oposicionId));
-    return acceso?.modo_preparacion ?? null;
+    const contexto = await accessContextService.obtenerContextoUsuario({
+      usuarioId: userId,
+      oposicionId,
+      principal: { tipo: 'alumno', usuarioId: userId },
+    });
+    if (contexto.modo_activo === 'guiado' && contexto.permisos.puede_usar_guiado) return 'albacer';
+    if (contexto.modo_activo === 'experto' && contexto.permisos.puede_usar_experto) return 'experto';
+    return null;
   },
 
   async assertAlumnoCanGenerateFreeTest(user, payload = {}) {
     if (!user || ['admin', 'profesor'].includes(user.role)) return;
 
     const oposicionIds = await this.resolveOposicionIdsForGenerate(payload);
+    const contextos = await accessContextService.obtenerContextosUsuario({ usuarioId: user.userId });
+    const byOposicion = new Map(contextos.map((contexto) => [String(contexto.oposicion_id), contexto]));
     for (const oposicionId of oposicionIds) {
-      const modoPreparacion = await this.getModoPreparacion(user.userId, oposicionId);
-      if (modoPreparacion === 'albacer') {
+      const contexto = byOposicion.get(String(oposicionId));
+      if (contexto?.modo_activo === 'guiado' && contexto.permisos.puede_usar_guiado) {
         throw new ApiError(
           403,
           'Esta oposicion esta en Modo Albacer. Inicia los tests desde el modulo Albacer, no desde el generador libre.',

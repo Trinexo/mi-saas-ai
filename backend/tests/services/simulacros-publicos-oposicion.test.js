@@ -4,23 +4,26 @@ import { simulacrosPublicosService } from '../../src/services/simulacrosPublicos
 import { simulacrosPublicosRepository } from '../../src/repositories/simulacrosPublicos.repository.js';
 import { accesoOposicionRepository } from '../../src/repositories/accesoOposicion.repository.js';
 import pool from '../../src/config/db.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
 
 const originalGetAccesosActivos = accesoOposicionRepository.getAccesosActivos;
 const originalGetPublicados = simulacrosPublicosRepository.getPublicados;
 const originalQuery = pool.query;
+const originalContextos = accessContextService.obtenerContextosUsuario;
 
 afterEach(() => {
   accesoOposicionRepository.getAccesosActivos = originalGetAccesosActivos;
   simulacrosPublicosRepository.getPublicados = originalGetPublicados;
   pool.query = originalQuery;
+  accessContextService.obtenerContextosUsuario = originalContextos;
 });
 
 describe('simulacrosPublicosService.getPublicados', () => {
   it('filtra por oposicion activa cuando se recibe oposicion_id', async () => {
     let receivedIds = null;
-    accesoOposicionRepository.getAccesosActivos = async () => [
-      { oposicion_id: 10, tipo_alumno: 'albacer' },
-      { oposicion_id: 20, tipo_alumno: 'albacer' },
+    accessContextService.obtenerContextosUsuario = async () => [
+      { oposicion_id: 10, modo_activo: 'guiado', permisos: { puede_acceder_contenido: true } },
+      { oposicion_id: 20, modo_activo: 'guiado', permisos: { puede_acceder_contenido: true } },
     ];
     simulacrosPublicosRepository.getPublicados = async (oposicionIds) => {
       receivedIds = oposicionIds;
@@ -34,7 +37,7 @@ describe('simulacrosPublicosService.getPublicados', () => {
 
   it('devuelve lista vacia si la oposicion solicitada no esta activa para el usuario', async () => {
     let receivedIds = null;
-    accesoOposicionRepository.getAccesosActivos = async () => [{ oposicion_id: 10, tipo_alumno: 'albacer' }];
+    accessContextService.obtenerContextosUsuario = async () => [{ oposicion_id: 10, modo_activo: 'guiado', permisos: { puede_acceder_contenido: true } }];
     simulacrosPublicosRepository.getPublicados = async (oposicionIds) => {
       receivedIds = oposicionIds;
       return [];
@@ -47,9 +50,9 @@ describe('simulacrosPublicosService.getPublicados', () => {
 
   it('excluye simulacros sugeridos para accesos de alumno libre', async () => {
     let receivedIds = null;
-    accesoOposicionRepository.getAccesosActivos = async () => [
-      { oposicion_id: 10, tipo_alumno: 'libre' },
-      { oposicion_id: 20, tipo_alumno: 'albacer' },
+    accessContextService.obtenerContextosUsuario = async () => [
+      { oposicion_id: 10, modo_activo: 'experto', permisos: { puede_acceder_contenido: true } },
+      { oposicion_id: 20, modo_activo: 'guiado', permisos: { puede_acceder_contenido: true } },
     ];
     simulacrosPublicosRepository.getPublicados = async (oposicionIds) => {
       receivedIds = oposicionIds;

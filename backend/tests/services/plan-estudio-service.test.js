@@ -7,6 +7,7 @@ import { adminTestsRepository } from '../../src/repositories/adminTests.reposito
 import { adminSimulacrosRepository } from '../../src/repositories/adminSimulacros.repository.js';
 import { testRepository } from '../../src/repositories/test.repository.js';
 import { testService } from '../../src/services/test.service.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
 
 const originals = {
   tieneAcceso: accesoOposicionRepository.tieneAcceso,
@@ -17,6 +18,7 @@ const originals = {
   getSimulacro: adminSimulacrosRepository.getSimulacro,
   setPlanificacion: testRepository.setPlanificacion,
   generate: testService.generate,
+  context: accessContextService.obtenerContextoUsuario,
 };
 
 afterEach(() => {
@@ -28,11 +30,22 @@ afterEach(() => {
   adminSimulacrosRepository.getSimulacro = originals.getSimulacro;
   testRepository.setPlanificacion = originals.setPlanificacion;
   testService.generate = originals.generate;
+  accessContextService.obtenerContextoUsuario = originals.context;
+});
+
+const contextFor = (modo = 'experto') => ({
+  tiene_acceso: true,
+  modo_activo: modo,
+  permisos: { puede_acceder_contenido: true },
 });
 
 describe('planEstudioService', () => {
   it('list rechaza oposiciones sin acceso del alumno', async () => {
-    accesoOposicionRepository.getPreparacion = async () => null;
+    accessContextService.obtenerContextoUsuario = async () => ({
+      tiene_acceso: false,
+      modo_activo: null,
+      permisos: { puede_acceder_contenido: false },
+    });
 
     await assert.rejects(
       () => planEstudioService.list(7, { oposicion_id: 22 }),
@@ -41,7 +54,7 @@ describe('planEstudioService', () => {
   });
 
   it('list devuelve actividades solo si el alumno tiene acceso', async () => {
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'experto' });
+    accessContextService.obtenerContextoUsuario = async () => contextFor();
     profesorWorkspacePlanificacionRepository.listForAlumno = async ({ userId, oposicionId }) => {
       assert.equal(userId, 7);
       assert.equal(oposicionId, 22);
@@ -54,7 +67,7 @@ describe('planEstudioService', () => {
   });
 
   it('list bloquea el plan legacy en Modo Albacer', async () => {
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+    accessContextService.obtenerContextoUsuario = async () => contextFor('guiado');
 
     await assert.rejects(
       () => planEstudioService.list(7, { oposicion_id: 22 }),
@@ -63,7 +76,7 @@ describe('planEstudioService', () => {
   });
 
   it('empezar rechaza actividades no disponibles', async () => {
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'experto' });
+    accessContextService.obtenerContextoUsuario = async () => contextFor();
     profesorWorkspacePlanificacionRepository.getForAlumno = async () => ({
       id: 9,
       oposicion_id: 22,

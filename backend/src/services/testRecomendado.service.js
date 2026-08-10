@@ -1,22 +1,25 @@
 ﻿import { testRecomendadoRepository } from '../repositories/testRecomendado.repository.js';
-import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { accessContextService, normalizarIdentificador } from './accessContext.service.js';
 import { PLAN_LIMITS } from '../config/plans.config.js';
 
 export const testRecomendadoService = {
   async getSugerencia(userId, plan = 'free', options = {}) {
     const limits = PLAN_LIMITS[plan];
-    const requestedOposicionId = options?.oposicionId ? Number(options.oposicionId) : null;
+    const requestedOposicionId = options?.oposicionId == null
+      ? null
+      : normalizarIdentificador(options.oposicionId, 'oposicionId');
 
-    const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const accesoActivo = requestedOposicionId
-      ? await accesoOposicionRepository.getPreparacion(userId, requestedOposicionId)
-      : accesos[0];
-    const oposicionId = accesoActivo ? Number(accesoActivo.oposicion_id) : null;
-    const oposicionNombre = accesoActivo?.nombre ?? await testRecomendadoRepository.getNombreOposicion(oposicionId);
+    const accesos = (await accessContextService.obtenerContextosUsuario({ usuarioId: userId }))
+      .filter((contexto) => contexto.permisos.puede_acceder_contenido);
+    const accesoActivo = requestedOposicionId == null
+      ? accesos[0]
+      : accesos.find((contexto) => BigInt(contexto.oposicion_id) === BigInt(requestedOposicionId));
+    const oposicionId = accesoActivo?.oposicion_id ?? null;
+    const oposicionNombre = await testRecomendadoRepository.getNombreOposicion(oposicionId);
 
     const s = (campos) => ({ oposicionNombre, ...campos });
 
-    if (requestedOposicionId && !accesoActivo) {
+    if (requestedOposicionId !== null && !accesoActivo) {
       return s({
         modo: 'adaptativo', bloqueId: null, oposicionId: null,
         numeroPreguntas: 10, dificultad: 'mixto',
@@ -24,7 +27,7 @@ export const testRecomendadoService = {
       });
     }
 
-    if (accesoActivo?.modo_preparacion === 'albacer') {
+    if (accesoActivo?.modo_activo === 'guiado') {
       return s({
         modo: 'albacer', bloqueId: null, oposicionId,
         numeroPreguntas: 0, dificultad: 'mixto',

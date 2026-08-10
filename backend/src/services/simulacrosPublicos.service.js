@@ -1,17 +1,20 @@
 import { simulacrosPublicosRepository } from '../repositories/simulacrosPublicos.repository.js';
-import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { accessContextService, normalizarIdentificador } from './accessContext.service.js';
 import { testGenerationGeneratePersistenceService } from './testGenerationGeneratePersistence.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const simulacrosPublicosService = {
   async getPublicados(userId, requestedOposicionId = null) {
-    const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
+    const accesos = await accessContextService.obtenerContextosUsuario({ usuarioId: userId });
     const activeIds = accesos
-      .filter((acceso) => acceso.tipo_alumno === 'albacer')
-      .map((acceso) => Number(acceso.oposicion_id));
-    const oposicionIds = requestedOposicionId
-      ? activeIds.filter((id) => id === Number(requestedOposicionId))
-      : activeIds;
+      .filter((acceso) => acceso.permisos.puede_acceder_contenido && acceso.modo_activo === 'guiado')
+      .map((acceso) => acceso.oposicion_id);
+    const requestedId = requestedOposicionId == null
+      ? null
+      : normalizarIdentificador(requestedOposicionId, 'oposicionId');
+    const oposicionIds = requestedId == null
+      ? activeIds
+      : activeIds.filter((id) => BigInt(id) === BigInt(requestedId));
     return simulacrosPublicosRepository.getPublicados(oposicionIds);
   },
 
@@ -22,10 +25,12 @@ export const simulacrosPublicosService = {
       throw new ApiError(422, 'Este simulacro no tiene preguntas asignadas todavia');
     }
 
-    const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const acceso = accesos.find((item) => Number(item.oposicion_id) === Number(data.simulacro.oposicion_id));
-    if (!acceso) throw new ApiError(403, 'No tienes acceso a la oposicion de este simulacro');
-    if (acceso.tipo_alumno !== 'albacer') {
+    const contexto = await accessContextService.obtenerContextoUsuario({
+      usuarioId: userId,
+      oposicionId: data.simulacro.oposicion_id,
+      principal: { tipo: 'alumno', usuarioId: userId },
+    });
+    if (!contexto.permisos.puede_acceder_contenido || contexto.modo_activo !== 'guiado') {
       throw new ApiError(403, 'Este simulacro esta disponible solo para alumnos Albacer');
     }
 

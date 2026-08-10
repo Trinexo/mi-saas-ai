@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { testRecomendadoService } from '../../src/services/testRecomendado.service.js';
 import { testRecomendadoRepository } from '../../src/repositories/testRecomendado.repository.js';
 import { accesoOposicionRepository } from '../../src/repositories/accesoOposicion.repository.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
 
 const snapshot = (...targets) => targets.map((target) => ({ target, values: { ...target } }));
 const restore = (snaps) => {
@@ -10,14 +11,14 @@ const restore = (snaps) => {
 };
 
 test('testRecomendadoService devuelve sugerencia neutra si la oposicion activa esta en Modo Albacer', async () => {
-  const snaps = snapshot(testRecomendadoRepository, accesoOposicionRepository);
+  const snaps = snapshot(testRecomendadoRepository, accesoOposicionRepository, accessContextService);
 
-  accesoOposicionRepository.getAccesosActivos = async () => [];
-  accesoOposicionRepository.getPreparacion = async (_userId, oposicionId) => ({
-    oposicion_id: oposicionId,
-    nombre: 'Policia Nacional',
-    modo_preparacion: 'albacer',
-  });
+  accessContextService.obtenerContextosUsuario = async () => [{
+    oposicion_id: 21,
+    modo_activo: 'guiado',
+    permisos: { puede_acceder_contenido: true },
+  }];
+  testRecomendadoRepository.getNombreOposicion = async () => 'Policia Nacional';
   testRecomendadoRepository.bloquesRecientesPracticados = async () => {
     throw new Error('No debe consultar recomendaciones libres en Albacer');
   };
@@ -35,17 +36,15 @@ test('testRecomendadoService devuelve sugerencia neutra si la oposicion activa e
 });
 
 test('testRecomendadoService limita la recomendacion a la oposicion activa en Modo Experto', async () => {
-  const snaps = snapshot(testRecomendadoRepository, accesoOposicionRepository);
+  const snaps = snapshot(testRecomendadoRepository, accesoOposicionRepository, accessContextService);
   const calls = [];
 
-  accesoOposicionRepository.getAccesosActivos = async () => [
-    { oposicion_id: 99, nombre: 'Otra oposicion', modo_preparacion: 'experto' },
-  ];
-  accesoOposicionRepository.getPreparacion = async (_userId, oposicionId) => ({
-    oposicion_id: oposicionId,
-    nombre: 'Auxiliar Administrativo',
-    modo_preparacion: 'experto',
-  });
+  accessContextService.obtenerContextosUsuario = async () => [{
+    oposicion_id: 21,
+    modo_activo: 'experto',
+    permisos: { puede_acceder_contenido: true },
+  }];
+  testRecomendadoRepository.getNombreOposicion = async () => 'Auxiliar Administrativo';
   testRecomendadoRepository.bloquesRecientesPracticados = async (_userId, _horas, oposicionId) => {
     calls.push(['recientes', oposicionId]);
     return [4];

@@ -1,25 +1,29 @@
 import { profesorWorkspacePlanificacionRepository } from '../repositories/profesorWorkspacePlanificacion.repository.js';
-import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
 import { adminTestsRepository } from '../repositories/adminTests.repository.js';
 import { adminSimulacrosRepository } from '../repositories/adminSimulacros.repository.js';
 import { testRepository } from '../repositories/test.repository.js';
 import { testService } from './test.service.js';
+import { accessContextService } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 const toNumber = (value) => (value == null ? null : Number(value));
 const secondsFromMinutes = (value) => (value ? Number(value) * 60 : null);
 
 const assertLegacyPlanAllowed = async (userId, oposicionId) => {
-  const acceso = await accesoOposicionRepository.getPreparacion(userId, oposicionId);
-  if (!acceso) throw new ApiError(403, 'No tienes acceso a esa oposicion');
-  if (acceso.modo_preparacion === 'albacer') {
+  const contexto = await accessContextService.obtenerContextoUsuario({
+    usuarioId: userId,
+    oposicionId,
+    principal: { tipo: 'alumno', usuarioId: userId },
+  });
+  if (!contexto.permisos.puede_acceder_contenido) throw new ApiError(403, 'No tienes acceso a esa oposicion');
+  if (contexto.modo_activo === 'guiado') {
     throw new ApiError(
       410,
       'El Plan de estudio legacy esta desactivado en Modo Albacer. Usa los modulos Albacer.',
-      { code: 'LEGACY_PLAN_DISABLED_IN_ALBACER', oposicionId: Number(oposicionId) },
+      { code: 'LEGACY_PLAN_DISABLED_IN_ALBACER', oposicionId },
     );
   }
-  return acceso;
+  return contexto;
 };
 
 function buildEqualTemasMix(temaIds) {
