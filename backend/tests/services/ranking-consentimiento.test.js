@@ -4,9 +4,12 @@ import pool from '../../src/config/db.js';
 import { rankingRepository } from '../../src/repositories/ranking.repository.js';
 import { rankingService } from '../../src/services/ranking.service.js';
 import { accesoOposicionRepository } from '../../src/repositories/accesoOposicion.repository.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
 
 const originalQuery = pool.query;
 const originalGetPreparacion = accesoOposicionRepository.getPreparacion;
+const originalContext = accessContextService.obtenerContextoUsuario;
+const originalLegacy = accesoOposicionRepository.obtenerDatosLegacyAcceso;
 const originalGetUserScore = rankingRepository.getUserScore;
 const originalGetTopByOposicion = rankingRepository.getTopByOposicion;
 const originalCountParticipantes = rankingRepository.countParticipantes;
@@ -14,6 +17,8 @@ const originalCountParticipantes = rankingRepository.countParticipantes;
 afterEach(() => {
   pool.query = originalQuery;
   accesoOposicionRepository.getPreparacion = originalGetPreparacion;
+  accessContextService.obtenerContextoUsuario = originalContext;
+  accesoOposicionRepository.obtenerDatosLegacyAcceso = originalLegacy;
   rankingRepository.getUserScore = originalGetUserScore;
   rankingRepository.getTopByOposicion = originalGetTopByOposicion;
   rankingRepository.countParticipantes = originalCountParticipantes;
@@ -49,7 +54,11 @@ describe('rankingRepository consentimiento publico', () => {
 
 describe('rankingService modo preparacion', () => {
   it('bloquea el ranking si la oposicion activa esta en Modo Albacer', async () => {
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+    accessContextService.obtenerContextoUsuario = async () => ({
+      tiene_acceso: true,
+      modo_activo: 'guiado',
+      permisos: { puede_acceder_contenido: true, puede_usar_experto: false },
+    });
     rankingRepository.getUserScore = async () => {
       throw new Error('No debe calcular ranking Albacer');
     };

@@ -40,7 +40,6 @@ export const albacerAlumnoRepository = {
        FROM accesos_oposicion
        WHERE usuario_id = $1
          AND oposicion_id = $2
-         AND estado = 'activo'
        LIMIT 1`,
       [userId, oposicionId],
     );
@@ -120,7 +119,6 @@ export const albacerAlumnoRepository = {
        JOIN accesos_oposicion ao
          ON ao.oposicion_id = m.oposicion_id
         AND ao.usuario_id = $1
-        AND ao.estado = 'activo'
        WHERE m.id = $2
          AND m.estado = 'publicado'
        LIMIT 1`,
@@ -137,8 +135,7 @@ export const albacerAlumnoRepository = {
        JOIN accesos_oposicion ao
          ON ao.oposicion_id = m.oposicion_id
         AND ao.usuario_id = $1
-        AND ao.estado = 'activo'
-       WHERE mi.id = $2
+      WHERE mi.id = $2
          AND m.estado = 'publicado'
        LIMIT 1`,
       [userId, itemId],
@@ -154,8 +151,7 @@ export const albacerAlumnoRepository = {
        JOIN accesos_oposicion ao
          ON ao.oposicion_id = m.oposicion_id
         AND ao.usuario_id = $1
-        AND ao.estado = 'activo'
-       WHERE mi.modulo_id = $2
+      WHERE mi.modulo_id = $2
          AND mi.tipo = 'simulacro_final'
          AND m.estado = 'publicado'
        ORDER BY mi.orden, mi.id

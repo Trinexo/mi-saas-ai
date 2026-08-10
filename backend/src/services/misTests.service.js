@@ -1,24 +1,28 @@
 import { misTestsRepository } from '../repositories/misTests.repository.js';
-import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
 import { testGenerationGeneratePersistenceService } from './testGenerationGeneratePersistence.service.js';
+import { accessContextService, normalizarIdentificador } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const misTestsService = {
   async getPublicados(userId, plan = 'free', requestedOposicionId = null) {
-    const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const filteredAccesos = requestedOposicionId
-      ? accesos.filter((acceso) => Number(acceso.oposicion_id) === Number(requestedOposicionId))
-      : accesos;
+    const accesos = await accessContextService.obtenerContextosUsuario({ usuarioId: userId });
+    const utilizables = accesos.filter((contexto) => contexto.permisos.puede_acceder_contenido);
+    const requestedId = requestedOposicionId == null
+      ? null
+      : normalizarIdentificador(requestedOposicionId, 'oposicionId');
+    const filteredAccesos = requestedId == null
+      ? utilizables
+      : utilizables.filter((acceso) => BigInt(acceso.oposicion_id) === BigInt(requestedId));
 
     const albacerOposicionIds = filteredAccesos
-      .filter((acceso) => acceso.tipo_alumno === 'albacer')
-      .map((acceso) => Number(acceso.oposicion_id));
+      .filter((acceso) => acceso.modo_activo === 'guiado')
+      .map((acceso) => acceso.oposicion_id);
 
     if (albacerOposicionIds.length > 0) {
       return misTestsRepository.getPublicados(albacerOposicionIds, plan, false);
     }
 
-    const oposicionIds = filteredAccesos.map((acceso) => Number(acceso.oposicion_id));
+    const oposicionIds = filteredAccesos.map((acceso) => acceso.oposicion_id);
     return misTestsRepository.getPublicados(oposicionIds, plan, true);
   },
 
@@ -29,10 +33,15 @@ export const misTestsService = {
       throw new ApiError(422, 'Este test no tiene preguntas asignadas todavia');
     }
 
-    const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const acceso = accesos.find((item) => Number(item.oposicion_id) === Number(data.test.oposicion_id));
-    if (!acceso) throw new ApiError(403, 'No tienes acceso a la oposicion de este test');
-    if (acceso.tipo_alumno !== 'albacer' && !data.test.es_demo) {
+    const contexto = await accessContextService.obtenerContextoUsuario({
+      usuarioId: userId,
+      oposicionId: data.test.oposicion_id,
+      principal: { tipo: 'alumno', usuarioId: userId },
+    });
+    if (!contexto.permisos.puede_acceder_contenido) {
+      throw new ApiError(403, 'No tienes acceso a la oposicion de este test');
+    }
+    if (contexto.modo_activo !== 'guiado' && !data.test.es_demo) {
       throw new ApiError(403, 'Este test esta disponible solo para alumnos Albacer');
     }
 

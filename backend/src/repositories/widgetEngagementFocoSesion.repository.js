@@ -1,33 +1,43 @@
 import pool from '../config/db.js';
+import { accessContextService, normalizarIdentificador } from '../services/accessContext.service.js';
 import { resolveWidgetModeOptions, widgetModeSql } from './widgetStatsModeFilter.js';
 
 export const widgetEngagementFocoSesionRepository = {
   async getFocoHoy(userId, oposicionId = null, options = {}) {
     const { modoPreparacion = 'experto' } = resolveWidgetModeOptions(options);
+    const requestedOposicionId = oposicionId == null
+      ? null
+      : normalizarIdentificador(oposicionId, 'oposicionId');
+    const contextos = requestedOposicionId == null
+      ? await accessContextService.obtenerContextosUsuario({ usuarioId: userId })
+      : [await accessContextService.obtenerContextoUsuario({
+        usuarioId: userId,
+        oposicionId: requestedOposicionId,
+        principal: { tipo: 'alumno', usuarioId: userId },
+      })];
+    const acceso = contextos.find((contexto) => contexto.permisos.puede_acceder_contenido);
 
-    if (modoPreparacion === 'albacer') {
+    if (acceso?.modo_activo === 'guiado') {
       return {
         modo: 'albacer',
         bloqueId: null,
-        oposicionId: oposicionId ? Number(oposicionId) : null,
+        oposicionId: acceso.oposicion_id,
         numeroPreguntas: 0,
         motivo: 'Continua tu preparacion desde los modulos Albacer de esta oposicion.',
       };
     }
 
-    let resolvedOposicionId = oposicionId ? Number(oposicionId) : null;
-    if (!resolvedOposicionId) {
-      const oposicionResult = await pool.query(
-        `SELECT oposicion_id FROM accesos_oposicion
-         WHERE usuario_id = $1 AND estado = 'activo'
-           AND (fecha_fin IS NULL OR fecha_fin > NOW())
-         ORDER BY fecha_inicio DESC LIMIT 1`,
-        [userId],
-      );
-      resolvedOposicionId = oposicionResult.rows[0]?.oposicion_id
-        ? Number(oposicionResult.rows[0].oposicion_id)
-        : null;
+    if (!acceso) {
+      return {
+        modo: 'adaptativo',
+        bloqueId: null,
+        oposicionId: requestedOposicionId,
+        numeroPreguntas: 0,
+        motivo: 'Accede al catalogo para empezar tu primera oposicion.',
+      };
     }
+
+    const resolvedOposicionId = acceso?.oposicion_id ?? null;
 
     const pendientesResult = await pool.query(
       `SELECT p.bloque_id,

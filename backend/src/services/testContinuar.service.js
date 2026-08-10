@@ -1,15 +1,20 @@
 import pool from '../config/db.js';
 import { testSessionDetailConfigRepository } from '../repositories/testSessionDetailConfig.repository.js';
-import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { accessContextService, normalizarIdentificador } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 export const testContinuarService = {
   async getContinuar(userId, requestedOposicionId = null) {
-    const accesos = await accesoOposicionRepository.getAccesosActivos(userId);
-    const activeIds = accesos.map((acceso) => Number(acceso.oposicion_id));
-    const oposicionId = requestedOposicionId ? Number(requestedOposicionId) : activeIds[0] ?? null;
+    const contextos = await accessContextService.obtenerContextosUsuario({ usuarioId: userId });
+    const activeIds = contextos
+      .filter((contexto) => contexto.permisos.puede_acceder_contenido)
+      .map((contexto) => contexto.oposicion_id);
+    const requestedId = requestedOposicionId == null
+      ? null
+      : normalizarIdentificador(requestedOposicionId, 'oposicionId');
+    const oposicionId = requestedId ?? activeIds[0] ?? null;
 
-    if (requestedOposicionId && !activeIds.includes(oposicionId)) {
+    if (requestedId !== null && !activeIds.some((id) => BigInt(id) === BigInt(requestedId))) {
       throw new ApiError(403, 'No tienes acceso a esta oposicion');
     }
 

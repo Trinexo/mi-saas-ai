@@ -2,12 +2,25 @@ import { albacerAlumnoRepository } from '../repositories/albacerAlumno.repositor
 import { adminTestsRepository } from '../repositories/adminTests.repository.js';
 import { adminSimulacrosRepository } from '../repositories/adminSimulacros.repository.js';
 import { testRepository } from '../repositories/test.repository.js';
+import { accessContextService } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
 const toNumber = (value) => (value == null ? null : Number(value));
 const secondsFromMinutes = (value) => (value ? Number(value) * 60 : null);
 
 const isSuperado = (modulo) => modulo.progreso?.estado === 'superado';
+
+async function assertAccesoGuiado(userId, oposicionId) {
+  const contexto = await accessContextService.obtenerContextoUsuario({
+    usuarioId: userId,
+    oposicionId,
+    principal: { tipo: 'alumno', usuarioId: userId },
+  });
+  if (!contexto.permisos.puede_acceder_contenido || !contexto.permisos.puede_usar_guiado) {
+    throw new ApiError(403, 'No tienes acceso activo a esta oposicion');
+  }
+  return contexto;
+}
 
 function addAvailability(modulos) {
   let previousAreCompleted = true;
@@ -65,6 +78,7 @@ function buildSimulacroScoringSnapshot(simulacro) {
 export const albacerAlumnoService = {
   async getEstado(userId, oposicionId) {
     if (!oposicionId) throw new ApiError(400, 'oposicion_id es requerido');
+    const contexto = await assertAccesoGuiado(userId, oposicionId);
     const acceso = await albacerAlumnoRepository.getAcceso(userId, oposicionId);
     if (!acceso) throw new ApiError(403, 'No tienes acceso activo a esta oposicion');
 
@@ -75,7 +89,7 @@ export const albacerAlumnoService = {
     }
 
     return {
-      oposicion_id: Number(oposicionId),
+      oposicion_id: contexto.oposicion_id,
       tipo_alumno: acceso.tipo_alumno,
       modo_preparacion: acceso.modo_preparacion,
       total_modulos: modulos.length,
@@ -87,6 +101,7 @@ export const albacerAlumnoService = {
 
   async listModulos(userId, oposicionId) {
     if (!oposicionId) throw new ApiError(400, 'oposicion_id es requerido');
+    await assertAccesoGuiado(userId, oposicionId);
     const acceso = await albacerAlumnoRepository.getAcceso(userId, oposicionId);
     if (!acceso) throw new ApiError(403, 'No tienes acceso activo a esta oposicion');
 
@@ -102,6 +117,7 @@ export const albacerAlumnoService = {
   async empezarItem(userId, itemId) {
     const item = await albacerAlumnoRepository.getItemForAlumno(userId, itemId);
     if (!item) throw new ApiError(404, 'Actividad Albacer no encontrada');
+    await assertAccesoGuiado(userId, item.oposicion_id);
 
     await this.assertModuloDisponible(userId, item.modulo_id);
 
@@ -113,6 +129,7 @@ export const albacerAlumnoService = {
   async empezarSimulacroFinalByModulo(userId, moduloId) {
     const item = await albacerAlumnoRepository.getFinalItemForAlumno(userId, moduloId);
     if (!item) throw new ApiError(404, 'Este modulo no tiene simulacro final publicado');
+    await assertAccesoGuiado(userId, item.oposicion_id);
     await this.assertModuloDisponible(userId, item.modulo_id);
     return this.empezarSimulacroFinal(userId, item);
   },
@@ -120,6 +137,7 @@ export const albacerAlumnoService = {
   async assertModuloDisponible(userId, moduloId) {
     const modulo = await albacerAlumnoRepository.getModuloForAlumno(userId, moduloId);
     if (!modulo) throw new ApiError(404, 'Modulo Albacer no encontrado');
+    await assertAccesoGuiado(userId, modulo.oposicion_id);
 
     const modulos = addAvailability(await albacerAlumnoRepository.listModulos(userId, modulo.oposicion_id));
     const resolved = modulos.find((candidate) => Number(candidate.id) === Number(moduloId));

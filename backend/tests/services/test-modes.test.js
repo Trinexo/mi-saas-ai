@@ -9,6 +9,7 @@ import { testRepository } from '../../src/repositories/test.repository.js';
 import { accesoOposicionRepository } from '../../src/repositories/accesoOposicion.repository.js';
 import { testService } from '../../src/services/test.service.js';
 import { testModeGuardService } from '../../src/services/testModeGuard.service.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
 import pool from '../../src/config/db.js';
 
 // ── generateTestSchema — nuevos modos ────────────────────────────────────────
@@ -39,10 +40,14 @@ describe('generateTestSchema — modo simulacro', () => {
 describe('testModeGuardService - demo Albacer', () => {
   it('bloquea generate-demo si el alumno ya tiene esa oposicion en Modo Albacer', async () => {
     const orig = {
-      getPreparacion: accesoOposicionRepository.getPreparacion,
+      contextos: accessContextService.obtenerContextosUsuario,
     };
 
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+    accessContextService.obtenerContextosUsuario = async () => [{
+      acceso_id: '1', usuario_id: '7', oposicion_id: 21, estado: 'activo',
+      modo_activo: 'guiado', modelos_disponibles: ['guiado'],
+      permisos: { puede_acceder_contenido: true, puede_usar_guiado: true },
+    }];
 
     try {
       await assert.rejects(
@@ -55,16 +60,16 @@ describe('testModeGuardService - demo Albacer', () => {
           && error.details?.oposicionId === 21,
       );
     } finally {
-      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+      accessContextService.obtenerContextosUsuario = orig.contextos;
     }
   });
 
   it('permite generate-demo si el alumno no tiene acceso activo en esa oposicion', async () => {
     const orig = {
-      getPreparacion: accesoOposicionRepository.getPreparacion,
+      contextos: accessContextService.obtenerContextosUsuario,
     };
 
-    accesoOposicionRepository.getPreparacion = async () => null;
+    accessContextService.obtenerContextosUsuario = async () => [];
 
     try {
       await assert.doesNotReject(
@@ -74,7 +79,7 @@ describe('testModeGuardService - demo Albacer', () => {
         ),
       );
     } finally {
-      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+      accessContextService.obtenerContextosUsuario = orig.contextos;
     }
   });
 });
@@ -300,11 +305,15 @@ describe('testModeGuardService — refuerzo Albacer', () => {
   it('bloquea generate-refuerzo si el tema pertenece a una oposición en Modo Albacer', async () => {
     const orig = {
       query: pool.query,
-      getPreparacion: accesoOposicionRepository.getPreparacion,
+      contextos: accessContextService.obtenerContextosUsuario,
     };
 
     pool.query = async () => ({ rows: [{ oposicion_id: 14 }] });
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+    accessContextService.obtenerContextosUsuario = async () => [{
+      acceso_id: '1', usuario_id: '7', oposicion_id: 14, estado: 'activo',
+      modo_activo: 'guiado', modelos_disponibles: ['guiado'],
+      permisos: { puede_acceder_contenido: true, puede_usar_guiado: true },
+    }];
 
     try {
       await assert.rejects(
@@ -318,7 +327,7 @@ describe('testModeGuardService — refuerzo Albacer', () => {
       );
     } finally {
       Object.assign(pool, { query: orig.query });
-      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+      accessContextService.obtenerContextosUsuario = orig.contextos;
     }
   });
 });
@@ -327,7 +336,7 @@ describe('testModeGuardService — repaso por bloque Albacer', () => {
   it('bloquea generate si el bloque pertenece a una oposición en Modo Albacer', async () => {
     const orig = {
       query: pool.query,
-      getPreparacion: accesoOposicionRepository.getPreparacion,
+      contextos: accessContextService.obtenerContextosUsuario,
     };
 
     pool.query = async (sql) => (
@@ -335,7 +344,11 @@ describe('testModeGuardService — repaso por bloque Albacer', () => {
         ? { rows: [{ oposicion_id: 21 }] }
         : { rows: [] }
     );
-    accesoOposicionRepository.getPreparacion = async () => ({ modo_preparacion: 'albacer' });
+    accessContextService.obtenerContextosUsuario = async () => [{
+      acceso_id: '1', usuario_id: '7', oposicion_id: 21, estado: 'activo',
+      modo_activo: 'guiado', modelos_disponibles: ['guiado'],
+      permisos: { puede_acceder_contenido: true, puede_usar_guiado: true },
+    }];
 
     try {
       await assert.rejects(
@@ -349,7 +362,7 @@ describe('testModeGuardService — repaso por bloque Albacer', () => {
       );
     } finally {
       Object.assign(pool, { query: orig.query });
-      accesoOposicionRepository.getPreparacion = orig.getPreparacion;
+      accessContextService.obtenerContextosUsuario = orig.contextos;
     }
   });
 });
