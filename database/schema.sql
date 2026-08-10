@@ -260,8 +260,8 @@ BEGIN
   is_stripe_system := NEW.metadata IS NOT NULL
     AND NEW.metadata->>'tipoActor' = 'sistema'
     AND NEW.metadata->>'origen' = 'stripe'
-    AND (jsonb_object_length(NEW.metadata) = 4
-      OR (jsonb_object_length(NEW.metadata) = 5 AND NEW.metadata ? 'vigencia'))
+    AND ((SELECT COUNT(*) FROM jsonb_object_keys(NEW.metadata)) = 4
+      OR ((SELECT COUNT(*) FROM jsonb_object_keys(NEW.metadata)) = 5 AND NEW.metadata ? 'vigencia'))
     AND btrim(COALESCE(NEW.metadata->>'stripeEventId', '')) <> ''
     AND NEW.metadata->>'operacion' IN ('concesion', 'renovacion');
   stripe_operation := NEW.metadata->>'operacion';
