@@ -266,7 +266,7 @@ export function createAccessContextService({ db = pool, accesoRepository = acces
   };
 
   return {
-    async obtenerContextoUsuario({ usuarioId, oposicionId, principal } = {}) {
+    async obtenerContextoUsuario({ usuarioId, oposicionId, principal, client = db } = {}) {
       const normalizedUsuarioId = normalizarId(usuarioId, 'usuarioId');
       const normalizedOposicionId = normalizarId(oposicionId, 'oposicionId');
       const normalizedPrincipal = normalizarPrincipal(principal, normalizedUsuarioId);
@@ -275,7 +275,7 @@ export function createAccessContextService({ db = pool, accesoRepository = acces
         rows = await accesoRepository.obtenerLecturaContexto(
           normalizedUsuarioId,
           normalizedOposicionId,
-          db,
+          client,
         );
       } catch (error) {
         if (error.code?.startsWith('ACCESS_CONTEXT_')) throw error;

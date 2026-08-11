@@ -8,6 +8,7 @@ const EVENTOS_ADMINISTRATIVOS = new Set([
   'revocado',
   'cancelado',
   'reactivado',
+  'datos_comerciales_modificados',
 ]);
 const EVENTOS_CANONICOS = new Set([
   ...EVENTOS_ADMINISTRATIVOS,
@@ -126,6 +127,47 @@ function validarMetadata(metadata, { obligatoria = false } = {}) {
   return metadata;
 }
 
+function validarMetadataComercial(metadata) {
+  validarMetadata(metadata, { obligatoria: true });
+  validarObjeto(metadata, 'metadata', { permitirNull: false });
+  const campos = ['precioPagado', 'notas', 'tipoAlumno'];
+  if (!Array.isArray(metadata.camposModificados)
+    || metadata.camposModificados.length === 0
+    || metadata.camposModificados.some((campo, index) => campo !== campos[index])) {
+    throw new TypeError('metadata.camposModificados no es canónico');
+  }
+  const expected = new Set(metadata.camposModificados);
+  for (const section of ['anterior', 'nuevo']) {
+    validarObjeto(metadata[section], `metadata.${section}`, { permitirNull: false });
+    const keys = Object.keys(metadata[section]);
+    if (keys.length !== expected.size || keys.some((key) => !expected.has(key))) {
+      throw new TypeError(`metadata.${section} no coincide con camposModificados`);
+    }
+  }
+  if (Object.keys(metadata).some((key) => !['camposModificados', 'anterior', 'nuevo'].includes(key))) {
+    throw new TypeError('metadata comercial contiene claves desconocidas');
+  }
+  const anterior = metadata.anterior;
+  const nuevo = metadata.nuevo;
+  for (const campo of metadata.camposModificados) {
+    const values = [anterior[campo], nuevo[campo]];
+    if (campo === 'precioPagado') {
+      for (const value of values) {
+        if (value !== null && !(typeof value === 'number' && Number.isFinite(value) && value >= 0)
+          && !(typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value))) {
+          throw new TypeError('metadata.precioPagado no es válido');
+        }
+      }
+    } else if (campo === 'notas') {
+      if (values.some((value) => value !== null && typeof value !== 'string')) {
+        throw new TypeError('metadata.notas no es válido');
+      }
+    } else if (values.some((value) => !['libre', 'albacer'].includes(value))) {
+      throw new TypeError('metadata.tipoAlumno no es válido');
+    }
+  }
+}
+
 function esMetadataStripeSistema(metadata, tipoEvento) {
   const operacionEsperada = tipoEvento === 'acceso_creado'
     ? 'concesion'
@@ -163,6 +205,18 @@ function validarEvento({ accesoId, tipoEvento, anterior, nuevo, actorUsuarioId, 
       throw new TypeError('expirado requiere metadata con origen sistema');
     }
     validarMetadata(metadata, { obligatoria: true });
+    return;
+  }
+
+  if (tipoEvento === 'datos_comerciales_modificados') {
+    if (actorUsuarioId === null || actorUsuarioId === undefined) {
+      throw new TypeError('El evento requiere actorUsuarioId');
+    }
+    validarId(actorUsuarioId, 'actorUsuarioId');
+    if (typeof motivo !== 'string' || motivo.trim() === '') {
+      throw new TypeError('El evento requiere un motivo no vacío');
+    }
+    validarMetadataComercial(metadata);
     return;
   }
 

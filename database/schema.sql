@@ -187,7 +187,8 @@ CREATE TABLE IF NOT EXISTS accesos_oposicion_historial (
     CHECK (tipo_evento IN (
       'migracion_legacy', 'creado', 'modelos_actualizados',
       'modo_activo_cambiado', 'vigencia_actualizada', 'expirado',
-      'renovado', 'revocado', 'cancelado', 'reactivado'
+      'renovado', 'revocado', 'cancelado', 'reactivado',
+      'datos_comerciales_modificados'
     ))
 );
 

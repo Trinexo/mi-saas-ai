@@ -31,6 +31,7 @@ function harness(row = base()) {
     async reactivarAcceso(input) { calls.push(['reactivar', input]); return { ok: true }; },
     async modificarModelos(input) { calls.push(['modelos', input]); return { ok: true }; },
     async modificarVigencia(input) { calls.push(['vigencia', input]); return { ok: true }; },
+    async actualizarAccesoLegacy(input) { calls.push(['legacy', input]); return { ok: true }; },
   };
   const context = {
     async obtenerContextoUsuario(input) { calls.push(['contexto', input]); return { ok: true }; },
@@ -83,9 +84,8 @@ test('update legacy traduce estados y modelos a operaciones canónicas', async (
   assert.equal(model.calls[0][0], 'modelos');
   assert.deepEqual(model.calls[0][1].modelos, ['guiado']);
 
-  const ambiguous = harness();
-  await assert.rejects(
-    () => ambiguous.adapter.actualizar({ usuarioId: '7', oposicionId: '9', payload: { estado: 'cancelado', notas: 'x' }, actorUsuarioId: '3' }),
-    (error) => error.code === 'ACCESS_LEGACY_AMBIGUOUS',
-  );
+  const mixed = harness();
+  await mixed.adapter.actualizar({ usuarioId: '7', oposicionId: '9', payload: { estado: 'cancelado', notas: 'x' }, actorUsuarioId: '3' });
+  assert.equal(mixed.calls[0][0], 'legacy');
+  assert.equal(mixed.calls[0][1].motivo, 'Compatibilidad legacy: actualización administrativa');
 });

@@ -119,6 +119,17 @@ export const adminVigenciaBodySchema = z.object({
   message: 'Debe indicarse al menos una fecha',
 });
 
+export const adminDatosComercialesBodySchema = z.object({
+  precioPagado: z.number().nonnegative().nullable().optional(),
+  notas: z.string().nullable().optional(),
+  tipoAlumno: z.enum(['libre', 'albacer']).optional(),
+  motivo: motivoSchema,
+}).refine((body) => body.precioPagado !== undefined
+  || body.notas !== undefined
+  || body.tipoAlumno !== undefined, {
+  message: 'Debe indicarse al menos un campo comercial',
+});
+
 const adminLifecycleVigenciaSchema = z.object({
   fechaInicio: fechaSchema.optional(),
   fechaFin: fechaSchema.nullable().optional(),

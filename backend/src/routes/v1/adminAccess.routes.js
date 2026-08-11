@@ -5,6 +5,7 @@ import {
   crearAccesoAdministrativo,
   modificarModelosAdministrativo,
   modificarVigenciaAdministrativo,
+  modificarDatosComercialesAdministrativo,
   listarHistorialAdministrativo,
   renovarAccesoAdministrativo,
   revocarAccesoAdministrativo,
@@ -16,6 +17,7 @@ import {
   adminCrearAccesoBodySchema,
   adminModelosBodySchema,
   adminVigenciaBodySchema,
+  adminDatosComercialesBodySchema,
   adminMotivoBodySchema,
   adminRenovarBodySchema,
   adminReactivarBodySchema,
@@ -27,6 +29,7 @@ const adminOnly = [requireAuth, requireRole('admin')];
 router.post('/', ...adminOnly, validate(adminCrearAccesoBodySchema, 'body'), crearAccesoAdministrativo);
 router.patch('/:accesoId/modelos', ...adminOnly, validate(adminAccesoIdParamSchema, 'params'), validate(adminModelosBodySchema, 'body'), modificarModelosAdministrativo);
 router.patch('/:accesoId/vigencia', ...adminOnly, validate(adminAccesoIdParamSchema, 'params'), validate(adminVigenciaBodySchema, 'body'), modificarVigenciaAdministrativo);
+router.patch('/:accesoId/datos-comerciales', ...adminOnly, validate(adminAccesoIdParamSchema, 'params'), validate(adminDatosComercialesBodySchema, 'body'), modificarDatosComercialesAdministrativo);
 router.get('/:accesoId/historial', ...adminOnly, validate(adminAccesoIdParamSchema, 'params'), listarHistorialAdministrativo);
 router.post('/:accesoId/renovar', ...adminOnly, validate(adminAccesoIdParamSchema, 'params'), validate(adminRenovarBodySchema, 'body'), renovarAccesoAdministrativo);
 router.post('/:accesoId/revocar', ...adminOnly, validate(adminAccesoIdParamSchema, 'params'), validate(adminMotivoBodySchema, 'body'), revocarAccesoAdministrativo);

@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
 import { accessAdminService } from './accessAdmin.service.js';
-import { accessContextService, createAccessContextService } from './accessContext.service.js';
+import { accessContextService } from './accessContext.service.js';
 import { accessModeService } from './accessMode.service.js';
 
 const DEFAULT_MOTIVES = Object.freeze({
@@ -102,40 +102,6 @@ export function createAccessLegacyAdapter({
     });
   }
 
-  async function actualizarComerciales({ accessId, precioPagado, notas, tipoAlumno, actorUsuarioId }) {
-    const client = await db.connect();
-    try {
-      await client.query('BEGIN');
-      const current = await client.query(
-        'SELECT id, usuario_id, oposicion_id FROM accesos_oposicion WHERE id = $1 FOR UPDATE',
-        [accessId],
-      );
-      if (current.rowCount === 0) throw legacyError('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
-      const updated = await client.query(
-        `UPDATE accesos_oposicion
-            SET precio_pagado = COALESCE($2, precio_pagado),
-                notas = COALESCE($3, notas),
-                tipo_alumno = COALESCE($4, tipo_alumno),
-                actualizada_en = NOW()
-          WHERE id = $1
-          RETURNING usuario_id, oposicion_id`,
-        [accessId, precioPagado ?? null, notas ?? null, tipoAlumno ?? null],
-      );
-      const result = await createAccessContextService({ db: client }).obtenerContextoUsuario({
-        usuarioId: updated.rows[0].usuario_id,
-        oposicionId: updated.rows[0].oposicion_id,
-        principal: principalAdmin(actorUsuarioId),
-      });
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK').catch(() => {});
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
   async function actualizar({ usuarioId, oposicionId, payload, actorUsuarioId }) {
     const access = await resolveAccess(usuarioId, oposicionId);
     if (!access) return null;
@@ -148,12 +114,20 @@ export function createAccessLegacyAdapter({
     const categories = [hasState, hasMode, hasValidity, hasCommercial].filter(Boolean).length;
 
     if (categories === 0) throw legacyError('ACCESS_LEGACY_INVALID_UPDATE', 'No hay cambios legacy', 400);
-    if (hasCommercial && categories > 1) {
+    if (hasCommercial && categories > 1 && typeof adminService.actualizarAccesoLegacy !== 'function') {
       throw legacyError('ACCESS_LEGACY_AMBIGUOUS', 'La actualización legacy no es atómica', 409);
     }
     const principal = principalAdmin(actorUsuarioId);
 
-    if (hasCommercial) return actualizarComerciales({ accessId: access.acceso_id, ...payload, actorUsuarioId });
+    if (hasCommercial || categories > 1) {
+      return adminService.actualizarAccesoLegacy({
+        accesoId: access.acceso_id,
+        payload,
+        actorUsuarioId,
+        motivo,
+        principal,
+      });
+    }
     if (hasMode) {
       const canonical = modoCanonico(payload.modoPreparacion);
       return adminService.modificarModelos({
