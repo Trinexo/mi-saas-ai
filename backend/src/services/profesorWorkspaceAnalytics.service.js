@@ -155,11 +155,12 @@ export const profesorWorkspaceAnalyticsService = {
     const oposiciones = await this.canonicalizeOposiciones(userId, rawOposiciones);
     const oposicion = oposiciones.find((item) => BigInt(item.id) === BigInt(oposicionId));
     if (!oposicion) throw new ApiError(404, 'Oposicion no encontrada');
+    const alumnosCanonicos = await this.canonicalizeAlumnos(userId, alumnos.items);
     return {
       oposicion: this.normalizeOposicion(oposicion),
       temario,
       problematicas,
-      alumnos: alumnos.items.map(this.normalizeAlumno),
+      alumnos: alumnosCanonicos.slice(0, 5).map((row) => this.normalizeAlumno(row)),
       simulacros,
     };
   },
@@ -190,6 +191,40 @@ export const profesorWorkspaceAnalyticsService = {
     return normalized;
   },
 
+  async canonicalizeAlumnos(userId, rows = []) {
+    const candidateIds = rows.map((row) => row.id);
+    const oppositionIds = [...new Set(rows.flatMap((row) => row.acceso_oposicion_ids ?? [])
+      .map((id) => String(normalizarIdentificador(id, 'oposicionId'))))];
+    const contexts = new Map();
+    for (const candidateOposicionId of oppositionIds) {
+      const normalizedOposicionId = normalizarIdentificador(candidateOposicionId, 'oposicionId');
+      const contextsForOpposition = await accessContextService.obtenerContextosUsuariosOposicion({
+        usuarioIds: candidateIds,
+        oposicionId: normalizedOposicionId,
+        principal: { tipo: 'profesor', usuarioId: userId },
+      });
+      contextsForOpposition.forEach((contexto) => contexts.set(
+        `${String(contexto.usuario_id)}:${String(contexto.oposicion_id)}`,
+        contexto,
+      ));
+    }
+    return rows
+      .map((row) => {
+        const visibles = (row.acceso_oposicion_ids ?? []).filter((id) => {
+          const contexto = contexts.get(`${String(row.id)}:${String(id)}`);
+          return contextoEsOperativo(contexto, { permitirPendiente: true });
+        });
+        if (visibles.length === 0) return null;
+        return {
+          ...row,
+          oposiciones: row.oposiciones.filter((oposicion) => visibles.some(
+            (id) => String(oposicion.id) === String(id),
+          )),
+        };
+      })
+      .filter(Boolean);
+  },
+
   async alumnos(userId, query = {}) {
     const oposicionId = query.oposicion_id ?? null;
     await this.assertOposicion(userId, oposicionId);
@@ -201,32 +236,8 @@ export const profesorWorkspaceAnalyticsService = {
       limit: null,
       offset: null,
     });
-    const candidateIds = result.items.map((row) => row.id);
-    const oppositionIds = [...new Set(result.items.flatMap((row) => row.acceso_oposicion_ids ?? [])
-      .map((id) => String(normalizarIdentificador(id, 'oposicionId'))))];
-    const contexts = new Map();
-    for (const candidateOposicionId of oppositionIds) {
-      const normalizedOposicionId = normalizarIdentificador(candidateOposicionId, 'oposicionId');
-      const rows = await accessContextService.obtenerContextosUsuariosOposicion({
-        usuarioIds: candidateIds,
-        oposicionId: normalizedOposicionId,
-        principal: { tipo: 'profesor', usuarioId: userId },
-      });
-      rows.forEach((contexto) => contexts.set(`${String(contexto.usuario_id)}:${String(contexto.oposicion_id)}`, contexto));
-    }
-    const items = result.items
-      .map((row) => {
-        const visibles = (row.acceso_oposicion_ids ?? []).filter((id) => {
-          const contexto = contexts.get(`${String(row.id)}:${String(id)}`);
-          return contextoEsOperativo(contexto, { permitirPendiente: true });
-        });
-        if (visibles.length === 0) return null;
-        return {
-          ...this.normalizeAlumno(row),
-          oposiciones: row.oposiciones.filter((oposicion) => visibles.some((id) => String(oposicion.id) === String(id))),
-        };
-      })
-      .filter(Boolean)
+    const items = (await this.canonicalizeAlumnos(userId, result.items))
+      .map((row) => this.normalizeAlumno(row))
       .sort((a, b) => b.rankingScore - a.rankingScore);
     const total = items.length;
     return {
@@ -269,11 +280,13 @@ export const profesorWorkspaceAnalyticsService = {
     const filteredOposiciones = oposicionId
       ? oposiciones.filter((item) => BigInt(item.id) === BigInt(oposicionId))
       : oposiciones;
+    const alumnosCanonicos = await this.canonicalizeAlumnos(userId, alumnos.items);
     return {
       evolucion,
       rendimientoPorOposicion: filteredOposiciones.map((row) => this.normalizeOposicion(row)),
       rendimientoPorTema: temario,
-      rankingAlumnos: alumnos.items.map(this.normalizeAlumno).sort((a, b) => b.rankingScore - a.rankingScore),
+      rankingAlumnos: alumnosCanonicos.map((row) => this.normalizeAlumno(row))
+        .sort((a, b) => b.rankingScore - a.rankingScore),
       preguntasProblematicas: problematicas,
       distribucionDificultad: dificultad,
     };

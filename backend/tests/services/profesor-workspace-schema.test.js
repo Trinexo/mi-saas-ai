@@ -13,6 +13,8 @@ import {
   contextoEsOperativo,
   createAccessContextService,
 } from '../../src/services/accessContext.service.js';
+import { accessContextService } from '../../src/services/accessContext.service.js';
+import { profesorWorkspaceAnalyticsService } from '../../src/services/profesorWorkspaceAnalytics.service.js';
 
 const NOW = new Date('2026-08-11T12:00:00.000Z');
 
@@ -193,4 +195,43 @@ test('los esquemas de workspace conservan BIGINT grande sin pérdida', () => {
   const parsed = workspaceListQuerySchema.parse({ oposicion_id: maxBigInt });
   assert.equal(parsed.oposicion_id, maxBigInt);
   assert.equal(workspaceListQuerySchema.safeParse({ oposicion_id: aboveMax }).success, false);
+});
+
+test('la canonización bulk del workspace excluye accesos no operativos sin N+1', async () => {
+  const original = accessContextService.obtenerContextosUsuariosOposicion;
+  const calls = [];
+  accessContextService.obtenerContextosUsuariosOposicion = async ({ usuarioIds, oposicionId }) => {
+    calls.push({ usuarioIds, oposicionId });
+    return [
+      { usuario_id: 1, oposicion_id: 10, estado_efectivo: 'activo', tiene_acceso: true, vigencia: { esta_vigente: true } },
+      { usuario_id: 2, oposicion_id: 10, estado_efectivo: 'pendiente_modo', tiene_acceso: true, vigencia: { fecha_inicio: '2026-08-01T00:00:00.000Z', fecha_fin: '2026-09-01T00:00:00.000Z' } },
+      { usuario_id: 3, oposicion_id: 10, estado_efectivo: 'expirado', tiene_acceso: true, vigencia: { esta_vigente: false } },
+      { usuario_id: 4, oposicion_id: 10, estado_efectivo: 'revocado', tiene_acceso: true, vigencia: { esta_vigente: false } },
+      { usuario_id: 5, oposicion_id: 10, estado_efectivo: 'cancelado', tiene_acceso: true, vigencia: { esta_vigente: false } },
+      { usuario_id: 6, oposicion_id: 10, estado_efectivo: 'activo', tiene_acceso: true, vigencia: { esta_vigente: false } },
+    ];
+  };
+  const rows = [1, 2, 3, 4, 5, 6].map((id) => ({
+    id,
+    acceso_oposicion_ids: [10],
+    oposiciones: [{ id: 10, nombre: 'Oposición' }],
+  }));
+
+  try {
+    const visible = await profesorWorkspaceAnalyticsService.canonicalizeAlumnos(99, rows);
+    assert.deepEqual(visible.map((row) => row.id), [1, 2]);
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0], { usuarioIds: [1, 2, 3, 4, 5, 6], oposicionId: 10 });
+  } finally {
+    accessContextService.obtenerContextosUsuariosOposicion = original;
+  }
+});
+
+test('detalle y estadísticas reutilizan la canonización de alumnos', () => {
+  const servicePath = fileURLToPath(new URL('../../src/services/profesorWorkspaceAnalytics.service.js', import.meta.url));
+  const source = readFileSync(servicePath, 'utf8');
+  const detail = source.slice(source.indexOf('async oposicionDetalle'), source.indexOf('async temario'));
+  const stats = source.slice(source.indexOf('async estadisticas'), source.indexOf('async preguntasProblematicas'));
+  assert.match(detail, /canonicalizeAlumnos\(userId, alumnos\.items\)/);
+  assert.match(stats, /canonicalizeAlumnos\(userId, alumnos\.items\)/);
 });
