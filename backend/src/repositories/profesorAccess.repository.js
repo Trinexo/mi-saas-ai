@@ -1,12 +1,19 @@
 import pool from '../config/db.js';
 
+const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+const publicId = (value) => {
+  if (value == null) return null;
+  const bigint = BigInt(value);
+  return bigint <= MAX_SAFE_BIGINT ? Number(bigint) : bigint.toString();
+};
+
 export const profesorAccessRepository = {
   async listAssignedOposicionIds(userId) {
     const result = await pool.query(
       'SELECT oposicion_id FROM profesores_oposiciones WHERE user_id = $1',
       [userId],
     );
-    return result.rows.map((row) => Number(row.oposicion_id));
+    return result.rows.map((row) => publicId(row.oposicion_id));
   },
 
   async hasAssignedOposicion(userId, oposicionId) {
@@ -47,7 +54,7 @@ export const profesorAccessRepository = {
       'SELECT oposicion_id FROM temas WHERE id = $1',
       [temaId],
     );
-    return result.rows[0]?.oposicion_id ? Number(result.rows[0].oposicion_id) : null;
+    return result.rows[0]?.oposicion_id ? publicId(result.rows[0].oposicion_id) : null;
   },
 
   async hasAssignedPregunta(userId, preguntaId) {
@@ -88,20 +95,21 @@ export const profesorAccessRepository = {
   },
 
   async canAccessAlumno(userId, alumnoId, oposicionId = null) {
-    const params = [userId, alumnoId, oposicionId ?? null];
-    const result = await pool.query(
-      `SELECT 1
-       FROM accesos_oposicion ao
-       JOIN profesores_oposiciones po ON po.oposicion_id = ao.oposicion_id
-       WHERE po.user_id = $1
-         AND ao.usuario_id = $2
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
-         AND ($3::bigint IS NULL OR ao.oposicion_id = $3)
-       LIMIT 1`,
-      params,
-    );
-    return result.rows.length > 0;
+    const { accessContextService, contextoEsOperativo } = await import('../services/accessContext.service.js');
+    const oposiciones = oposicionId == null
+      ? await this.listAssignedOposicionIds(userId)
+      : [oposicionId];
+    for (const assignedOposicionId of oposiciones) {
+      const assigned = await this.hasAssignedOposicion(userId, assignedOposicionId);
+      if (!assigned) continue;
+      const [contexto] = await accessContextService.obtenerContextosUsuariosOposicion({
+        usuarioIds: [alumnoId],
+        oposicionId: assignedOposicionId,
+        principal: { tipo: 'profesor', usuarioId: userId },
+      });
+      if (contextoEsOperativo(contexto, { permitirPendiente: true })) return true;
+    }
+    return false;
   },
 
   async resolveDeprecatedBloqueId(bloqueId) {
@@ -124,6 +132,6 @@ export const profesorAccessRepository = {
        WHERE p.id = ANY($1::bigint[])`,
       [preguntaIds],
     );
-    return result.rows.map((row) => Number(row.oposicion_id));
+    return result.rows.map((row) => publicId(row.oposicion_id));
   },
 };

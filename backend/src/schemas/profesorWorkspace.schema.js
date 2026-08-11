@@ -1,6 +1,18 @@
 import { z } from 'zod';
 
-const id = z.coerce.number().int().positive();
+const MAX_BIGINT = 9223372036854775807n;
+const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+const id = z.union([
+  z.number().int().safe().positive(),
+  z.string().regex(/^[1-9]\d*$/),
+]).transform((value, ctx) => {
+  const bigint = typeof value === 'number' ? BigInt(value) : BigInt(value);
+  if (bigint > MAX_BIGINT) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Identificador fuera de rango BIGINT' });
+    return z.NEVER;
+  }
+  return bigint <= MAX_SAFE_BIGINT ? Number(bigint) : bigint.toString();
+});
 const optionalDate = z.string().datetime().optional().nullable();
 
 export const workspaceListQuerySchema = z.object({
