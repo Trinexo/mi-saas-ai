@@ -5,6 +5,13 @@ const questionAssignedJoin = `
   JOIN oposiciones o ON o.id = te.oposicion_id
 `;
 
+const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
+const publicId = (value) => {
+  if (value == null) return null;
+  const bigint = BigInt(value);
+  return bigint <= MAX_SAFE_BIGINT ? Number(bigint) : bigint.toString();
+};
+
 export const profesorWorkspaceAnalyticsRepository = {
   async listOposiciones(userId) {
     const result = await pool.query(
@@ -40,7 +47,9 @@ export const profesorWorkspaceAnalyticsRepository = {
          GROUP BY s.oposicion_id
        ),
        alumnos_count AS (
-         SELECT ao.oposicion_id, COUNT(DISTINCT ao.usuario_id)::int AS alumnos_activos
+         SELECT ao.oposicion_id,
+                COUNT(DISTINCT ao.usuario_id)::int AS alumnos_activos,
+                ARRAY_AGG(DISTINCT ao.usuario_id) AS alumnos_ids
          FROM accesos_oposicion ao
          JOIN assigned a ON a.id = ao.oposicion_id
          WHERE ao.estado = 'activo'
@@ -76,6 +85,7 @@ export const profesorWorkspaceAnalyticsRepository = {
          a.categoria,
          a.estado,
          COALESCE(al.alumnos_activos, 0)::int AS alumnos_activos,
+         COALESCE(al.alumnos_ids, ARRAY[]::BIGINT[]) AS alumnos_ids,
          COALESCE(tc.total_temas, 0)::int AS total_temas,
          COALESCE(pc.total_preguntas, 0)::int AS total_preguntas,
          COALESCE(pl.total_plantillas_test, 0)::int AS total_plantillas_test,
@@ -150,6 +160,9 @@ export const profesorWorkspaceAnalyticsRepository = {
        )
        SELECT
          (SELECT total FROM alumnos) AS alumnos_activos,
+         (SELECT COALESCE(ARRAY_AGG(DISTINCT ao.usuario_id), ARRAY[]::BIGINT[])
+            FROM accesos_oposicion ao
+            JOIN assigned a ON a.oposicion_id = ao.oposicion_id) AS alumnos_ids,
          (SELECT total FROM tests_hoy) AS tests_realizados_hoy,
          (SELECT total FROM media) AS media_aciertos,
          (SELECT total FROM simulacros) AS simulacros_completados,
@@ -388,10 +401,11 @@ export const profesorWorkspaceAnalyticsRepository = {
            / NULLIF(SUM(rt.aciertos + rt.errores + rt.blancos), 0)
          ), 0)::int AS media_aciertos,
          COALESCE(
-           json_agg(DISTINCT jsonb_build_object('id', o.id, 'nombre', o.nombre))
-           FILTER (WHERE o.id IS NOT NULL),
-           '[]'
-         ) AS oposiciones
+            json_agg(DISTINCT jsonb_build_object('id', o.id, 'nombre', o.nombre))
+            FILTER (WHERE o.id IS NOT NULL),
+            '[]'
+         ) AS oposiciones,
+         ARRAY_AGG(DISTINCT ao.oposicion_id) AS acceso_oposicion_ids
        FROM usuarios u
        JOIN accesos_oposicion ao ON ao.usuario_id = u.id
        JOIN oposiciones o ON o.id = ao.oposicion_id
@@ -399,29 +413,13 @@ export const profesorWorkspaceAnalyticsRepository = {
        LEFT JOIN tests t ON t.usuario_id = u.id AND t.oposicion_id = o.id
        LEFT JOIN resultados_test rt ON rt.test_id = t.id
        WHERE po.user_id = $1
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
          AND ($2::bigint IS NULL OR o.id = $2)
          AND ($3::text IS NULL OR u.nombre ILIKE $3 OR u.email ILIKE $3)
        GROUP BY u.id
-       ORDER BY ultima_actividad DESC NULLS LAST, u.nombre ASC
-       LIMIT $4 OFFSET $5`,
-      args,
+       ORDER BY ultima_actividad DESC NULLS LAST, u.nombre ASC`,
+      args.slice(0, 3),
     );
-    const count = await pool.query(
-      `SELECT COUNT(DISTINCT u.id)::int AS total
-       FROM usuarios u
-       JOIN accesos_oposicion ao ON ao.usuario_id = u.id
-       JOIN oposiciones o ON o.id = ao.oposicion_id
-       JOIN profesores_oposiciones po ON po.oposicion_id = o.id
-       WHERE po.user_id = $1
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
-         AND ($2::bigint IS NULL OR o.id = $2)
-         AND ($3::text IS NULL OR u.nombre ILIKE $3 OR u.email ILIKE $3)`,
-      [userId, oposicionId, q ? `%${q}%` : null],
-    );
-    return { items: rows.rows, total: count.rows[0].total };
+    return { items: rows.rows, total: rows.rowCount };
   },
 
   async getAlumnoDetalle(userId, alumnoId, oposicionId = null) {
@@ -442,8 +440,6 @@ export const profesorWorkspaceAnalyticsRepository = {
        LEFT JOIN resultados_test rt ON rt.test_id = t.id
        WHERE po.user_id = $1
          AND u.id = $2
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
          AND ($3::bigint IS NULL OR ao.oposicion_id = $3)
        GROUP BY u.id`,
       [userId, alumnoId, oposicionId],
@@ -485,7 +481,7 @@ export const profesorWorkspaceAnalyticsRepository = {
     return result.rows.map((row) => ({
       temaId: Number(row.tema_id),
       temaNombre: row.tema_nombre,
-      oposicionId: Number(row.oposicion_id),
+      oposicionId: publicId(row.oposicion_id),
       oposicionNombre: row.oposicion_nombre,
       totalPreguntas: Number(row.total_preguntas ?? 0),
       intentos: Number(row.intentos ?? 0),
@@ -520,7 +516,7 @@ export const profesorWorkspaceAnalyticsRepository = {
       [userId, alumnoId, oposicionId, limit],
     );
     return result.rows.map((row) => ({
-      id: Number(row.id),
+      id: publicId(row.id),
       tipoTest: row.tipo_test,
       fecha: row.fecha,
       oposicionNombre: row.oposicion_nombre,

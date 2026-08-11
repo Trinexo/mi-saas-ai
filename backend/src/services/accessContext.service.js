@@ -48,6 +48,18 @@ export function normalizarIdentificador(value, nombre = 'id') {
   return normalizarId(value, nombre);
 }
 
+export function contextoEsOperativo(contexto, { permitirPendiente = false } = {}) {
+  if (!contexto || !contexto.tiene_acceso) return false;
+  if (contexto.estado_efectivo === 'activo') return contexto.vigencia?.esta_vigente === true;
+  if (permitirPendiente && contexto.estado_efectivo === 'pendiente_modo') {
+    const inicio = contexto.vigencia?.fecha_inicio ? new Date(contexto.vigencia.fecha_inicio).getTime() : NaN;
+    const fin = contexto.vigencia?.fecha_fin ? new Date(contexto.vigencia.fecha_fin).getTime() : Infinity;
+    const ahora = Date.now();
+    return Number.isFinite(inicio) && inicio <= ahora && fin > ahora;
+  }
+  return false;
+}
+
 function normalizarPrincipal(principal, usuarioId) {
   const value = principal ?? { tipo: 'alumno', usuarioId };
   if (!value || typeof value !== 'object' || Array.isArray(value)
@@ -286,6 +298,38 @@ export function createAccessContextService({ db = pool, accesoRepository = acces
     async obtenerContextosUsuario({ usuarioId, principal } = {}) {
       const resolved = await resolverContextosUsuario({ usuarioId, principal });
       return resolved.map(({ contexto }) => contexto);
+    },
+
+    async obtenerContextosUsuariosOposicion({ usuarioIds, oposicionId, principal } = {}) {
+      if (!Array.isArray(usuarioIds) || usuarioIds.length === 0) return [];
+      const normalizedOposicionId = normalizarId(oposicionId, 'oposicionId');
+      const normalizedUserIds = [...new Map(usuarioIds.map((id) => {
+        const normalized = normalizarId(id, 'usuarioId');
+        return [String(normalized), normalized];
+      })).values()];
+      const normalizedPrincipal = principal ?? { tipo: 'profesor' };
+      const validPrincipal = normalizarPrincipal(normalizedPrincipal, normalizedUserIds[0]);
+      let rows;
+      try {
+        rows = await accesoRepository.obtenerLecturasContextosUsuariosOposicion(
+          normalizedUserIds,
+          normalizedOposicionId,
+          db,
+        );
+      } catch (error) {
+        if (error.code?.startsWith('ACCESS_CONTEXT_')) throw error;
+        throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'No se pudo leer el contexto');
+      }
+      if (!Array.isArray(rows) || rows.length !== normalizedUserIds.length) {
+        throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'Lectura ambigua de accesos');
+      }
+      return rows.map((row) => {
+        const usuarioId = normalizarId(row.usuario_id, 'usuarioId');
+        if (!row.usuario_existe) throw errorConCodigo('ACCESS_CONTEXT_USER_NOT_FOUND', 'Usuario no encontrado');
+        if (!row.oposicion_existe) throw errorConCodigo('ACCESS_CONTEXT_OPPOSITION_NOT_FOUND', 'OposiciÃ³n no encontrada');
+        if (row.acceso_id === null) return dtoSinAcceso(usuarioId, normalizedOposicionId);
+        return construirContexto(row, validPrincipal, usuarioId, normalizedOposicionId, clock);
+      });
     },
 
     async obtenerContextosUsuarioConLegacy({ usuarioId, principal } = {}) {

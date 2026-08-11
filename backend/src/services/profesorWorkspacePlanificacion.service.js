@@ -1,9 +1,13 @@
 import { profesorWorkspacePlanificacionRepository } from '../repositories/profesorWorkspacePlanificacion.repository.js';
 import { profesorAccessRepository } from '../repositories/profesorAccess.repository.js';
 import { notificacionesRepository } from '../repositories/notificaciones.repository.js';
+import { normalizarIdentificador } from './accessContext.service.js';
 import { ApiError } from '../utils/api-error.js';
 
-const uniqNumbers = (items = []) => [...new Set(items.map(Number).filter(Boolean))];
+const uniqIds = (items = []) => [...new Map(items.map((value) => {
+  const normalized = normalizarIdentificador(value, 'id');
+  return [String(normalized), normalized];
+})).values()];
 
 const shouldNotify = (planificacion, previous = null) => {
   if (!planificacion.notificar_alumnos || planificacion.notificada_en) return false;
@@ -33,8 +37,8 @@ export const profesorWorkspacePlanificacionService = {
     const page = Number(query.page ?? 1);
     const pageSize = Number(query.page_size ?? 20);
     const { items, total } = await profesorWorkspacePlanificacionRepository.listResultados({
-      planificacionId: Number(id),
-      oposicionId: Number(item.oposicion_id),
+      planificacionId: normalizarIdentificador(id, 'planificacionId'),
+      oposicionId: normalizarIdentificador(item.oposicion_id, 'oposicionId'),
       limit: pageSize,
       offset: (page - 1) * pageSize,
     });
@@ -45,7 +49,7 @@ export const profesorWorkspacePlanificacionService = {
         const completados = Number(row.completados || 0);
         const intentos = Number(row.intentos || 0);
         return {
-          alumnoId: Number(row.alumno_id),
+          alumnoId: normalizarIdentificador(row.alumno_id, 'alumnoId'),
           alumnoNombre: row.alumno_nombre,
           alumnoEmail: row.alumno_email,
           estado: completados > 0 ? 'completado' : intentos > 0 ? 'iniciado' : 'pendiente',
@@ -54,7 +58,7 @@ export const profesorWorkspacePlanificacionService = {
           notaMedia: row.nota_media == null ? null : Number(row.nota_media),
           mejorNota: row.mejor_nota == null ? null : Number(row.mejor_nota),
           ultimaActividad: row.ultima_actividad,
-          ultimoTestId: row.ultimo_test_id ? Number(row.ultimo_test_id) : null,
+          ultimoTestId: row.ultimo_test_id ? normalizarIdentificador(row.ultimo_test_id, 'testId') : null,
           ultimoEstado: row.ultimo_estado,
           ultimaNota: row.ultima_nota == null ? null : Number(row.ultima_nota),
           ultimosAciertos: row.ultimos_aciertos == null ? null : Number(row.ultimos_aciertos),
@@ -75,8 +79,8 @@ export const profesorWorkspacePlanificacionService = {
   async enviarRecordatorio(userId, id) {
     const item = await this.get(userId, id);
     const alumnoIds = await profesorWorkspacePlanificacionRepository.listAlumnoIdsPendientes(
-      Number(id),
-      Number(item.oposicion_id),
+      normalizarIdentificador(id, 'planificacionId'),
+      normalizarIdentificador(item.oposicion_id, 'oposicionId'),
     );
 
     if (alumnoIds.length === 0) {
@@ -91,8 +95,8 @@ export const profesorWorkspacePlanificacionService = {
       titulo,
       mensaje,
       datosExtra: {
-        planificacionId: Number(item.id),
-        oposicionId: Number(item.oposicion_id),
+        planificacionId: normalizarIdentificador(item.id, 'planificacionId'),
+        oposicionId: normalizarIdentificador(item.oposicion_id, 'oposicionId'),
         oposicionNombre: item.oposicion_nombre,
         tipo: item.tipo,
       },
@@ -111,7 +115,7 @@ export const profesorWorkspacePlanificacionService = {
         plantillaTestId: payload.plantilla_test_id,
       });
       if (!dependency) throw new ApiError(404, 'Plantilla de test no encontrada');
-      if (Number(dependency.oposicion_id) !== Number(payload.oposicion_id)) {
+      if (BigInt(dependency.oposicion_id) !== BigInt(payload.oposicion_id)) {
         throw new ApiError(400, 'La plantilla de test no pertenece a la oposicion indicada');
       }
     }
@@ -122,16 +126,16 @@ export const profesorWorkspacePlanificacionService = {
         simulacroId: payload.simulacro_id,
       });
       if (!dependency) throw new ApiError(404, 'Simulacro no encontrado');
-      if (Number(dependency.creado_por) !== Number(userId)) {
+      if (BigInt(dependency.creado_por) !== BigInt(userId)) {
         throw new ApiError(403, 'Solo puedes planificar simulacros creados por ti');
       }
-      if (Number(dependency.oposicion_id) !== Number(payload.oposicion_id)) {
+      if (BigInt(dependency.oposicion_id) !== BigInt(payload.oposicion_id)) {
         throw new ApiError(400, 'El simulacro no pertenece a la oposicion indicada');
       }
     }
 
     if (payload.tipo === 'tema_recomendado') {
-      const temaIds = uniqNumbers(payload.tema_ids);
+      const temaIds = uniqIds(payload.tema_ids);
       const total = await profesorWorkspacePlanificacionRepository.countTemasInOposicion(payload.oposicion_id, temaIds);
       if (total !== temaIds.length) {
         throw new ApiError(400, 'Todos los temas deben pertenecer a la oposicion indicada');
@@ -147,7 +151,7 @@ export const profesorWorkspacePlanificacionService = {
       creado_por_rol: role,
     });
     if (payload.tipo === 'tema_recomendado') {
-      await profesorWorkspacePlanificacionRepository.replaceTemas(created.id, uniqNumbers(payload.tema_ids));
+      await profesorWorkspacePlanificacionRepository.replaceTemas(created.id, uniqIds(payload.tema_ids));
     }
 
     const full = await this.get(userId, created.id);
@@ -160,9 +164,9 @@ export const profesorWorkspacePlanificacionService = {
     const merged = { ...previous, ...payload };
     await this.validatePayload(userId, {
       ...merged,
-      oposicion_id: Number(merged.oposicion_id),
-      simulacro_id: merged.simulacro_id ? Number(merged.simulacro_id) : null,
-      plantilla_test_id: merged.plantilla_test_id ? Number(merged.plantilla_test_id) : null,
+      oposicion_id: normalizarIdentificador(merged.oposicion_id, 'oposicionId'),
+      simulacro_id: merged.simulacro_id ? normalizarIdentificador(merged.simulacro_id, 'simulacroId') : null,
+      plantilla_test_id: merged.plantilla_test_id ? normalizarIdentificador(merged.plantilla_test_id, 'plantillaTestId') : null,
       tema_ids: payload.tema_ids ?? previous.temas?.map((tema) => tema.id) ?? [],
     });
 
@@ -170,7 +174,7 @@ export const profesorWorkspacePlanificacionService = {
     if (payload.tipo && payload.tipo !== 'tema_recomendado') {
       await profesorWorkspacePlanificacionRepository.replaceTemas(id, []);
     } else if (payload.tipo === 'tema_recomendado' || payload.tema_ids) {
-      await profesorWorkspacePlanificacionRepository.replaceTemas(id, uniqNumbers(payload.tema_ids ?? []));
+      await profesorWorkspacePlanificacionRepository.replaceTemas(id, uniqIds(payload.tema_ids ?? []));
     }
 
     const full = await this.get(userId, id);
@@ -181,7 +185,7 @@ export const profesorWorkspacePlanificacionService = {
   async archive(userId, id) {
     await this.get(userId, id);
     await profesorWorkspacePlanificacionRepository.archive(id);
-    return { id: Number(id), estado: 'archivada' };
+    return { id: normalizarIdentificador(id, 'planificacionId'), estado: 'archivada' };
   },
 
   async notifyAlumnos(planificacion) {

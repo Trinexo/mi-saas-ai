@@ -248,15 +248,19 @@ export const profesorWorkspacePlanificacionRepository = {
   },
 
   async listActiveAlumnoIds(oposicionId) {
+    const { accessContextService, contextoEsOperativo } = await import('../services/accessContext.service.js');
     const result = await pool.query(
       `SELECT usuario_id
        FROM accesos_oposicion
-       WHERE oposicion_id = $1
-         AND estado = 'activo'
-         AND (fecha_fin IS NULL OR fecha_fin > NOW())`,
+       WHERE oposicion_id = $1`,
       [oposicionId],
     );
-    return result.rows.map((row) => Number(row.usuario_id));
+    const contexts = await accessContextService.obtenerContextosUsuariosOposicion({
+      usuarioIds: result.rows.map((row) => row.usuario_id),
+      oposicionId,
+      principal: { tipo: 'profesor' },
+    });
+    return contexts.filter((contexto) => contextoEsOperativo(contexto)).map((contexto) => contexto.usuario_id);
   },
 
   async markNotificada(id) {
@@ -304,8 +308,6 @@ export const profesorWorkspacePlanificacionRepository = {
          LIMIT 1
        ) last_tx ON TRUE
        WHERE ao.oposicion_id = $2
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
        GROUP BY
          u.id, u.nombre, u.email,
          last_tx.id, last_tx.estado, last_tx.nota, last_tx.aciertos,
@@ -322,8 +324,7 @@ export const profesorWorkspacePlanificacionRepository = {
       `SELECT COUNT(*)::int AS total
        FROM accesos_oposicion ao
        WHERE ao.oposicion_id = $1
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())`,
+        `,
       [oposicionId],
     );
 
@@ -331,12 +332,11 @@ export const profesorWorkspacePlanificacionRepository = {
   },
 
   async listAlumnoIdsPendientes(planificacionId, oposicionId) {
+    const { accessContextService, contextoEsOperativo } = await import('../services/accessContext.service.js');
     const result = await pool.query(
       `SELECT ao.usuario_id
        FROM accesos_oposicion ao
        WHERE ao.oposicion_id = $2
-         AND ao.estado = 'activo'
-         AND (ao.fecha_fin IS NULL OR ao.fecha_fin > NOW())
          AND NOT EXISTS (
            SELECT 1
            FROM tests tx
@@ -346,7 +346,12 @@ export const profesorWorkspacePlanificacionRepository = {
          )`,
       [planificacionId, oposicionId],
     );
-    return result.rows.map((row) => Number(row.usuario_id));
+    const contexts = await accessContextService.obtenerContextosUsuariosOposicion({
+      usuarioIds: result.rows.map((row) => row.usuario_id),
+      oposicionId,
+      principal: { tipo: 'profesor' },
+    });
+    return contexts.filter((contexto) => contextoEsOperativo(contexto)).map((contexto) => contexto.usuario_id);
   },
 
   async listForAlumno({ userId, oposicionId }) {

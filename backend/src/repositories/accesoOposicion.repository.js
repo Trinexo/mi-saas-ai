@@ -127,6 +127,40 @@ export const accesoOposicionRepository = {
     return result.rows;
   },
 
+  async obtenerLecturasContextosUsuariosOposicion(usuarioIds, oposicionId, client = pool) {
+    const result = await client.query(
+      `SELECT requested.usuario_id,
+              u.id IS NOT NULL AS usuario_existe,
+              o.id IS NOT NULL AS oposicion_existe,
+              o.id AS oposicion_id,
+              ao.id AS acceso_id,
+              ao.estado,
+              ao.modo_activo,
+              ao.modo_preparacion,
+              ao.fecha_inicio::TEXT AS fecha_inicio,
+              ao.fecha_fin::TEXT AS fecha_fin,
+              COALESCE(
+                ARRAY_AGG(aom.modelo ORDER BY
+                  CASE aom.modelo WHEN 'experto' THEN 1 WHEN 'guiado' THEN 2 ELSE 3 END,
+                  aom.id
+                ) FILTER (WHERE aom.modelo IS NOT NULL),
+                ARRAY[]::TEXT[]
+              ) AS modelos
+         FROM UNNEST($1::BIGINT[]) AS requested(usuario_id)
+         LEFT JOIN usuarios u ON u.id = requested.usuario_id
+         LEFT JOIN oposiciones o ON o.id = $2::BIGINT
+         LEFT JOIN accesos_oposicion ao
+           ON ao.usuario_id = requested.usuario_id
+          AND ao.oposicion_id = $2::BIGINT
+         LEFT JOIN acceso_oposicion_modelos aom ON aom.acceso_id = ao.id
+        GROUP BY requested.usuario_id, u.id, o.id, ao.id, ao.estado,
+                 ao.modo_activo, ao.modo_preparacion, ao.fecha_inicio, ao.fecha_fin
+        ORDER BY requested.usuario_id` ,
+      [usuarioIds, oposicionId],
+    );
+    return result.rows;
+  },
+
   async obtenerDatosLegacyAcceso(usuarioId, oposicionId) {
     const result = await pool.query(
       `SELECT ao.usuario_id, ao.oposicion_id, o.nombre,
