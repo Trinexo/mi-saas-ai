@@ -352,6 +352,20 @@ export const modificarVigenciaAdministrativo = async (req, res, next) => {
   }
 };
 
+export const modificarDatosComercialesAdministrativo = async (req, res, next) => {
+  try {
+    const data = await accessAdminService.modificarDatosComerciales({
+      ...req.body,
+      accesoId: req.params.accesoId,
+      actorUsuarioId: req.user.userId,
+      principal: principalAdmin(req),
+    });
+    return ok(res, data, 'Datos comerciales actualizados');
+  } catch (error) {
+    return next(mapearErrorAdministracion(error));
+  }
+};
+
 export const listarHistorialAdministrativo = async (req, res, next) => {
   try {
     const data = await accessAdminService.listarHistorial({

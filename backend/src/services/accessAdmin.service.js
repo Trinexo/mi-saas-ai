@@ -45,6 +45,12 @@ function modoLegacy(modoActivo) {
   return modoActivo === 'guiado' ? 'albacer' : 'experto';
 }
 
+function modoCanonico(modoPreparacion) {
+  if (modoPreparacion === 'experto') return { modelo: 'experto', modoActivo: 'experto' };
+  if (modoPreparacion === 'albacer') return { modelo: 'guiado', modoActivo: 'guiado' };
+  throw errorConCodigo('ACCESS_ADMIN_INVALID_MODE', 'Modo legacy inválido', 422);
+}
+
 function validarModo(modoActivo, modelos) {
   if (modoActivo !== undefined && modoActivo !== null && !modelos.includes(modoActivo)) {
     throw errorConCodigo('ACCESS_ADMIN_INVALID_MODE', 'El modo activo debe estar incluido', 422);
@@ -182,7 +188,41 @@ async function contextoFinal({ client, contextService, acceso, principal }) {
     usuarioId: acceso.usuario_id,
     oposicionId: acceso.oposicion_id,
     principal,
+    client,
   });
+}
+
+function valoresComerciales(access, payload) {
+  const candidates = [
+    ['precioPagado', 'precio_pagado'],
+    ['notas', 'notas'],
+    ['tipoAlumno', 'tipo_alumno'],
+  ];
+  const changed = [];
+  for (const [input, column] of candidates) {
+    if (payload[input] === undefined) continue;
+    const before = access[column];
+    const after = payload[input];
+    const equal = input === 'precioPagado'
+      ? (before === null && after === null)
+        || (before !== null && after !== null && Number(before) === Number(after))
+      : before === after;
+    if (!equal) changed.push({ input, column, before, after });
+  }
+  return changed;
+}
+
+function metadataComercial(changes) {
+  const order = ['precioPagado', 'notas', 'tipoAlumno'];
+  const ordered = order.filter((field) => changes.some((change) => change.input === field));
+  const anterior = {};
+  const nuevo = {};
+  for (const field of ordered) {
+    const change = changes.find((item) => item.input === field);
+    anterior[field] = change.before;
+    nuevo[field] = change.after;
+  }
+  return { camposModificados: ordered, anterior, nuevo };
 }
 
 async function enTransaccion(db, callback) {
@@ -369,6 +409,140 @@ export function createAccessAdminService({
           return contextoFinal({ client, contextService: context, acceso: next, principal });
         }
         return contextoFinal({ client, contextService: context, acceso: access, principal });
+      }});
+    },
+
+    async modificarDatosComerciales({ accesoId, precioPagado, notas, tipoAlumno, actorUsuarioId, motivo, principal }) {
+      const id = validarId(accesoId, 'accesoId');
+      if (tipoAlumno !== undefined && !['libre', 'albacer'].includes(tipoAlumno)) {
+        throw errorConCodigo('ACCESS_ADMIN_INVALID_TYPE', 'tipoAlumno inválido', 400);
+      }
+      if (precioPagado !== undefined && precioPagado !== null
+        && (typeof precioPagado !== 'number' || !Number.isFinite(precioPagado) || precioPagado < 0)) {
+        throw errorConCodigo('ACCESS_ADMIN_INVALID_COMMERCIAL_DATA', 'precioPagado inválido', 422);
+      }
+      if (notas !== undefined && notas !== null && typeof notas !== 'string') {
+        throw errorConCodigo('ACCESS_ADMIN_INVALID_COMMERCIAL_DATA', 'notas inválidas', 422);
+      }
+      return mutate({ actorUsuarioId, principal, motivo, callback: async ({ client, actor, reason }) => {
+        const access = await leerAcceso(client, id, { forUpdate: true });
+        if (!access) throw errorConCodigo('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
+        const currentModels = await leerModelos(client, id, modelosRepository);
+        validarAccesoCoherente(access, currentModels);
+        const changes = valoresComerciales(access, { precioPagado, notas, tipoAlumno });
+        if (changes.length === 0) return contextoFinal({ client, contextService: context, acceso: access, principal });
+        const sets = [];
+        const params = [id];
+        for (const change of changes) {
+          params.push(change.after);
+          sets.push(`${change.column} = $${params.length}`);
+        }
+        const updated = await client.query(
+          `UPDATE accesos_oposicion SET ${sets.join(', ')}, actualizada_en = NOW()
+             WHERE id = $1
+             RETURNING id, usuario_id, oposicion_id, estado, modo_preparacion, modo_activo,
+                       fecha_inicio::TEXT AS fecha_inicio, fecha_fin::TEXT AS fecha_fin,
+                       tipo_alumno, precio_pagado, notas, ranking_publico, creada_en, actualizada_en`,
+          params,
+        );
+        const next = mapearAcceso(updated.rows[0]);
+        await historialRepository.insertarEvento({
+          accesoId: id,
+          tipoEvento: 'datos_comerciales_modificados',
+          anterior: snapshot(access, currentModels),
+          nuevo: snapshot(next, currentModels),
+          actorUsuarioId: actor,
+          motivo: reason,
+          metadata: metadataComercial(changes),
+        }, client);
+        return contextoFinal({ client, contextService: context, acceso: next, principal });
+      }});
+    },
+
+    async actualizarAccesoLegacy({ accesoId, payload, actorUsuarioId, principal, motivo }) {
+      const id = validarId(accesoId, 'accesoId');
+      return mutate({ actorUsuarioId, principal, motivo, callback: async ({ client, actor, reason }) => {
+        const access = await leerAcceso(client, id, { forUpdate: true });
+        if (!access) throw errorConCodigo('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
+        const currentModels = await leerModelos(client, id, modelosRepository);
+        validarAccesoCoherente(access, currentModels);
+        const commercialChanges = valoresComerciales(access, payload);
+        const currentEffective = estadoEfectivo(access, new Date(clock()));
+        let nextModels = currentModels;
+        let nextMode = access.modo_activo;
+        let nextLegacy = access.modo_preparacion;
+        let modeChanged = false;
+        if (payload.modoPreparacion !== undefined) {
+          const resolved = modoCanonico(payload.modoPreparacion);
+          nextModels = [resolved.modelo];
+          nextMode = resolved.modoActivo;
+          nextLegacy = payload.modoPreparacion;
+          modeChanged = JSON.stringify(nextModels) !== JSON.stringify(currentModels)
+            || nextMode !== access.modo_activo || nextLegacy !== access.modo_preparacion;
+        }
+        let start = fechasAcceso(access).inicio;
+        let end = fechasAcceso(access).fin;
+        const validityChanged = payload.fechaInicio !== undefined || payload.fechaFin !== undefined;
+        if (payload.fechaInicio !== undefined) start = fecha(payload.fechaInicio, 'fechaInicio');
+        if (payload.fechaFin !== undefined) end = fecha(payload.fechaFin, 'fechaFin', { permitirNull: true });
+        if (validityChanged) validarOrden(start, end);
+
+        let nextState = access.estado;
+        let lifecycleEvent = null;
+        if (payload.estado !== undefined) {
+          if (payload.estado === 'cancelado' || payload.estado === 'revocado') {
+            if (currentEffective === 'cancelado' || currentEffective === 'revocado') {
+              if (payload.estado !== currentEffective) throw errorConCodigo('ACCESS_ADMIN_STATE', 'Transición incompatible', 409);
+            } else {
+              nextState = payload.estado;
+              lifecycleEvent = payload.estado;
+            }
+          } else if (payload.estado === 'activo') {
+            if (currentEffective === 'expirado') {
+              validarVigenciaOperativa(start, end, new Date(clock()));
+              nextState = 'activo';
+              lifecycleEvent = 'renovado';
+            } else if (currentEffective === 'revocado' || currentEffective === 'cancelado') {
+              validarVigenciaOperativa(start, end, new Date(clock()));
+              nextState = 'activo';
+              lifecycleEvent = 'reactivado';
+            } else if (currentEffective !== 'activo') {
+              throw errorConCodigo('ACCESS_ADMIN_STATE', 'Transición incompatible', 409);
+            }
+          } else if (payload.estado !== access.estado) {
+            throw errorConCodigo('ACCESS_ADMIN_STATE', 'Transición incompatible', 409);
+          }
+        }
+        if (modeChanged && nextModels.length === 1) nextState = nextState === 'expirado' ? 'expirado' : 'activo';
+        const dateChanged = start.getTime() !== new Date(access.fecha_inicio).getTime()
+          || (end === null ? access.fecha_fin !== null : access.fecha_fin === null || end.getTime() !== new Date(access.fecha_fin).getTime());
+        const stateChanged = nextState !== access.estado;
+        const anyChange = commercialChanges.length > 0 || modeChanged || dateChanged || stateChanged;
+        if (!anyChange) return contextoFinal({ client, contextService: context, acceso: access, principal });
+
+        const sets = [];
+        const params = [id];
+        const assign = (column, value) => { params.push(value); sets.push(`${column} = $${params.length}`); };
+        for (const change of commercialChanges) assign(change.column, change.after);
+        if (dateChanged) { assign('fecha_inicio', start.toISOString()); assign('fecha_fin', end ? end.toISOString() : null); }
+        if (modeChanged) { assign('modo_preparacion', nextLegacy); assign('modo_activo', nextMode); }
+        if (stateChanged) assign('estado', nextState);
+        const updated = await client.query(
+          `UPDATE accesos_oposicion SET ${sets.join(', ')}, actualizada_en = NOW()
+             WHERE id = $1
+             RETURNING id, usuario_id, oposicion_id, estado, modo_preparacion, modo_activo,
+                       fecha_inicio::TEXT AS fecha_inicio, fecha_fin::TEXT AS fecha_fin,
+                       tipo_alumno, precio_pagado, notas, ranking_publico, creada_en, actualizada_en`,
+          params,
+        );
+        const next = mapearAcceso(updated.rows[0]);
+        const before = snapshot(access, currentModels);
+        const after = snapshot(next, nextModels);
+        if (commercialChanges.length > 0) await historialRepository.insertarEvento({ accesoId: id, tipoEvento: 'datos_comerciales_modificados', anterior: before, nuevo: after, actorUsuarioId: actor, motivo: reason, metadata: metadataComercial(commercialChanges) }, client);
+        if (modeChanged) await historialRepository.insertarEvento({ accesoId: id, tipoEvento: 'modelos_modificados', anterior: before, nuevo: after, actorUsuarioId: actor, motivo: reason, metadata: null }, client);
+        if (dateChanged && lifecycleEvent !== 'renovado' && lifecycleEvent !== 'reactivado') await historialRepository.insertarEvento({ accesoId: id, tipoEvento: 'vigencia_modificada', anterior: before, nuevo: after, actorUsuarioId: actor, motivo: reason, metadata: null }, client);
+        if (lifecycleEvent) await historialRepository.insertarEvento({ accesoId: id, tipoEvento: lifecycleEvent === 'revocado' ? 'revocado' : lifecycleEvent === 'cancelado' ? 'cancelado' : lifecycleEvent, anterior: before, nuevo: after, actorUsuarioId: actor, motivo: reason, metadata: null }, client);
+        return contextoFinal({ client, contextService: context, acceso: next, principal });
       }});
     },
 
