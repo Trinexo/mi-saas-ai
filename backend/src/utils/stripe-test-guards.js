@@ -94,6 +94,8 @@ function assertPositiveMetadataId(metadata, key) {
 export function assertStripeSandboxMetadata(metadata = {}) {
   if (process.env.ALLOW_STRIPE_E2E !== 'true' || process.env.STRIPE_E2E_MODE !== 'sandbox') return;
 
+  metadata ??= {};
+
   assertPositiveMetadataId(metadata, 'userId');
   assertPositiveMetadataId(metadata, 'oposicionId');
   if (metadata.runId !== undefined && !/^stripe_sandbox_[A-Za-z0-9_-]+$/.test(String(metadata.runId))) {
@@ -135,7 +137,7 @@ function assertSandboxMode({
   }
 
   assertStripeSandboxEmail(userEmail);
-  assertStripeSandboxMetadata(metadata);
+  assertStripeSandboxMetadata(metadata ?? {});
 
   const eventSession = event?.data?.object;
   if (eventSession?.metadata) {
