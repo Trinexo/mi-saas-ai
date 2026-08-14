@@ -104,7 +104,7 @@ async function countRows(table, where, params) {
 
 async function getAccess(userId, oposicionId) {
   const result = await pool.query(
-    `SELECT id, fecha_fin, stripe_session_id, precio_pagado
+    `SELECT id, estado, modo_activo, modo_preparacion, fecha_fin, stripe_session_id, precio_pagado
      FROM accesos_oposicion
      WHERE usuario_id = $1 AND oposicion_id = $2`,
     [userId, oposicionId],
@@ -232,6 +232,10 @@ test('webhook valido crea acceso, registra evento y envia un unico email', async
     assert.ok(access);
     assert.equal(access.stripe_session_id, sessionId);
     assert.equal(Number(access.precio_pagado), 29);
+    assert.equal(access.estado, 'pendiente_modo');
+    assert.equal(access.modo_activo, null);
+    assert.equal(access.modo_preparacion, 'experto');
+    assert.equal(await countRows('acceso_oposicion_modelos', 'acceso_id = $1', [access.id]), 2);
     assert.equal(await countRows('stripe_webhook_events', 'event_id = $1 AND processed_at IS NOT NULL', [eventId]), 1);
     assert.equal(emailCalls.length, 1);
     assert.deepEqual(network.blockedHosts, []);
@@ -334,16 +338,16 @@ test('fallo despues de registrar evento hace rollback y permite reintento correc
   assert.equal(await countRows('stripe_webhook_events', 'event_id = $1 AND processed_at IS NOT NULL', [eventId]), 1);
   assert.equal(await countRows('accesos_oposicion', 'stripe_session_id = $1', [sessionId]), 1);
   assert.equal(
-    await countRows('accesos_oposicion', 'stripe_session_id = $1 AND modo_preparacion = $2 AND modo_activo = $3', [sessionId, 'albacer', 'guiado']),
+    await countRows('accesos_oposicion', 'stripe_session_id = $1 AND estado = $2 AND modo_activo IS NULL', [sessionId, 'pendiente_modo']),
     1,
   );
   assert.equal(
-    await countRows('acceso_oposicion_modelos', 'acceso_id = (SELECT id FROM accesos_oposicion WHERE stripe_session_id = $1) AND modelo = $2', [sessionId, 'guiado']),
-    1,
+    await countRows('acceso_oposicion_modelos', 'acceso_id = (SELECT id FROM accesos_oposicion WHERE stripe_session_id = $1) AND modelo IN ($2, $3)', [sessionId, 'guiado', 'experto']),
+    2,
   );
   assert.equal(
     await countRows('acceso_oposicion_modelos', 'acceso_id = (SELECT id FROM accesos_oposicion WHERE stripe_session_id = $1)', [sessionId]),
-    1,
+    2,
   );
   assert.equal(emailCalls.length, 1);
 });

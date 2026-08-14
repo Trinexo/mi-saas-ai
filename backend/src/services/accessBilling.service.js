@@ -82,7 +82,6 @@ export function createAccessBillingService({ modelosRepository = accesoOposicion
       const start = fecha(fechaInicio, 'fechaInicio');
       const end = fecha(fechaFin, 'fechaFin');
       if (end.getTime() <= start.getTime()) throw errorConCodigo('ACCESS_BILLING_INVALID_VALIDITY', 'fechaFin inválida');
-      const resolved = normalizarModelos(modelos, modoActivo);
       const now = new Date(clock());
       if (Number.isNaN(now.getTime()) || end.getTime() <= now.getTime()) {
         throw errorConCodigo('ACCESS_BILLING_INVALID_VALIDITY', 'La vigencia debe ser futura');
@@ -118,6 +117,19 @@ export function createAccessBillingService({ modelosRepository = accesoOposicion
       const currentModels = existingAccess
         ? (await modelosRepository.listarPorAcceso(existingAccess.id, client)).map((row) => row.modelo)
         : [];
+      // El webhook usa ambos modelos para una concesión nueva. En una
+      // renovación, conservar la elección canónica existente evita devolver
+      // accidentalmente un acceso ya elegido a pendiente_modo.
+      const conservarEleccion = existingAccess
+        && Array.isArray(modelos)
+        && modelos.length === 2
+        && modelos.includes('experto')
+        && modelos.includes('guiado')
+        && modoActivo === null;
+      const resolved = normalizarModelos(
+        conservarEleccion ? currentModels : modelos,
+        conservarEleccion ? existingAccess.modo_activo : modoActivo,
+      );
       const effectiveExpired = existingAccess
         && existingAccess.estado === 'activo'
         && existingAccess.fecha_fin !== null

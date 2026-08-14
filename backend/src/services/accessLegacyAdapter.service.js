@@ -53,7 +53,8 @@ export function createAccessLegacyAdapter({
 
   async function actualizarPreparacion({ usuarioId, oposicionId, modoPreparacion, rankingPublico }) {
     const access = await resolveAccess(usuarioId, oposicionId);
-    if (!access || estadoEfectivo(access, clock()) !== 'activo') {
+    const effectiveState = access ? estadoEfectivo(access, clock()) : null;
+    if (!access || !['activo', 'pendiente_modo'].includes(effectiveState)) {
       throw legacyError('ACCESS_LEGACY_ACCESS_UNAVAILABLE', 'Acceso no disponible', 404);
     }
 
