@@ -172,8 +172,8 @@ export function createBillingService({
           precioPagado: session.amount_total ? session.amount_total / 100 : null,
           notas: `Stripe session ${session.id}`,
           tipoAlumno: 'libre',
-          modelos: ['guiado'],
-          modoActivo: 'guiado',
+          modelos: ['experto', 'guiado'],
+          modoActivo: null,
           stripeEventId: eventId,
           client,
         });

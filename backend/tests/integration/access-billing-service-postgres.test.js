@@ -63,6 +63,11 @@ const args = (fixture, client, eventId = `${marker}_evt`) => ({
   client,
 });
 
+const argsWith = (fixture, client, eventId, overrides = {}) => ({
+  ...args(fixture, client, eventId),
+  ...overrides,
+});
+
 test('PR8 crea acceso y evento Stripe persistido sin actor', options, async () => withTransaction('create', async (client, fixture) => {
   const result = await service().grantOrRenewAccessFromBilling(args(fixture, client, `${marker}_create`));
   const event = await client.query(
@@ -76,6 +81,26 @@ test('PR8 crea acceso y evento Stripe persistido sin actor', options, async () =
   assert.equal(event.rows[0].metadata.tipoActor, 'sistema');
   assert.equal(event.rows[0].metadata.origen, 'stripe');
   assert.equal(event.rows[0].metadata.operacion, 'concesion');
+}));
+
+test('PR8 conserva la eleccion al renovar con ambos modelos solicitados por Stripe', options, async () => withTransaction('renew-choice', async (client, fixture) => {
+  const access = await client.query(
+    `INSERT INTO accesos_oposicion
+      (usuario_id, oposicion_id, estado, fecha_inicio, fecha_fin, modo_preparacion, modo_activo)
+     VALUES ($1, $2, 'activo', '2026-01-01', '2026-01-15', 'albacer', 'guiado') RETURNING id`,
+    [fixture.userId, fixture.oposicionId],
+  );
+  await client.query('INSERT INTO acceso_oposicion_modelos (acceso_id, modelo) VALUES ($1, $2)', [access.rows[0].id, 'guiado']);
+  const result = await service().grantOrRenewAccessFromBilling(argsWith(fixture, client, `${marker}_renew-choice`, {
+    modelos: ['experto', 'guiado'],
+    modoActivo: null,
+  }));
+  const row = await client.query('SELECT estado, modo_activo, modo_preparacion FROM accesos_oposicion WHERE id = $1', [result.accesoId]);
+  const models = await client.query('SELECT modelo FROM acceso_oposicion_modelos WHERE acceso_id = $1 ORDER BY modelo', [result.accesoId]);
+  assert.equal(row.rows[0].estado, 'activo');
+  assert.equal(row.rows[0].modo_activo, 'guiado');
+  assert.equal(row.rows[0].modo_preparacion, 'albacer');
+  assert.deepEqual(models.rows.map((item) => item.modelo), ['guiado']);
 }));
 
 test('PR8 repite el mismo stripeEventId sin duplicar historial', options, async () => withTransaction('idempotent', async (client, fixture) => {

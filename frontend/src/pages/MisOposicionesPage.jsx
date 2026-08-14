@@ -19,14 +19,16 @@ function Spinner() {
 
 // Tarjeta para un curso comprado sin actividad aún
 function AccesoSinActividadCard({ curso, onPracticar, onModoChange, savingMode }) {
-  const { nombre, fechaFin, modoPreparacion, tipoAlumno } = curso;
+  const { nombre, fechaFin, modoPreparacion, tipoAlumno, pendienteModo } = curso;
   return (
     <div style={{ background: '#fff', borderRadius: 14, padding: '22px 28px', boxShadow: '0 1px 4px rgba(0,0,0,.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: '1.2rem' }}>📋</span>
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>{nombre}</h3>
-          <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>✓ Acceso activo</span>
+          <span style={{ background: pendienteModo ? '#fef3c7' : '#dcfce7', color: pendienteModo ? '#92400e' : '#166534', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>
+            {pendienteModo ? 'Selecciona tu modo' : '✓ Acceso activo'}
+          </span>
         </div>
         <p style={{ margin: '6px 0 0', fontSize: '0.82rem', color: '#9ca3af' }}>
           {fechaFin ? `Acceso hasta ${new Date(fechaFin).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}` : 'Acceso sin fecha de expiración'}
@@ -43,9 +45,10 @@ function AccesoSinActividadCard({ curso, onPracticar, onModoChange, savingMode }
       </div>
       <button
         onClick={onPracticar}
-        style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', flexShrink: 0 }}
+        disabled={pendienteModo}
+        style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: pendienteModo ? '#cbd5e1' : '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: pendienteModo ? 'not-allowed' : 'pointer', flexShrink: 0 }}
       >
-        Entrar al curso
+        {pendienteModo ? 'Elige un modo para entrar' : 'Entrar al curso'}
       </button>
     </div>
   );
@@ -65,22 +68,23 @@ function ModoPreparacionControls({ modo, tipoAlumno, saving, onChange }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
       <span style={{ background: modo === 'albacer' ? '#ede9fe' : '#e0f2fe', color: modo === 'albacer' ? '#5b21b6' : '#075985', fontSize: '0.7rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>
-        {MODO_LABELS[modo] ?? 'Modo Albacer'}
+        {MODO_LABELS[modo] ?? 'Selecciona un modo'}
       </span>
       <span style={{ background: tipoAlumno === 'albacer' ? '#dcfce7' : '#f3f4f6', color: tipoAlumno === 'albacer' ? '#166534' : '#4b5563', fontSize: '0.7rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>
         {TIPO_ALUMNO_LABELS[tipoAlumno] ?? 'Alumno libre'}
       </span>
       <select
-        value={modo ?? 'albacer'}
+        value={modo ?? ''}
         disabled={saving}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) => {
           e.stopPropagation();
-          onChange(e.target.value);
+          if (e.target.value) onChange(e.target.value);
         }}
         style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid #ddd6fe', background: '#fff', color: '#4c1d95', fontWeight: 700, fontSize: '0.76rem', cursor: saving ? 'not-allowed' : 'pointer' }}
         title="Cambia la experiencia activa sin mezclar historiales"
       >
+        {modo === null && <option value="" disabled>Selecciona un modo</option>}
         <option value="albacer">Modo Albacer</option>
         <option value="experto">Modo Experto</option>
       </select>
@@ -133,7 +137,8 @@ export default function MisOposicionesPage() {
     oposicionId: Number(a.oposicion_id),
     nombre: nombreMap[a.oposicion_id] ?? `Oposición ${a.oposicion_id}`,
     fechaFin: a.fecha_fin,
-    modoPreparacion: a.modo_preparacion ?? 'albacer',
+    modoPreparacion: a.modo_preparacion ?? null,
+    pendienteModo: a.estado_efectivo === 'pendiente_modo',
     tipoAlumno: a.tipo_alumno ?? 'libre',
     stats: statsMap[Number(a.oposicion_id)] ?? null,
   }));
@@ -238,7 +243,7 @@ export default function MisOposicionesPage() {
       {cursosComprados.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
           {cursosComprados.map((c) =>
-            c.stats ? (
+            c.stats && !c.pendienteModo ? (
               <div key={c.oposicionId} style={{ position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 1 }}>
                   <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.7rem', fontWeight: 700, padding: '2px 9px', borderRadius: 999 }}>✓ Acceso activo</span>

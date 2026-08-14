@@ -21,14 +21,29 @@ export const accesoOposicionService = {
   async getMisAccesos(userId) {
     const contextos = await accessContextService.obtenerContextosUsuarioConLegacy({ usuarioId: userId });
     return contextos
-      .filter(({ contexto }) => contexto.permisos.puede_acceder_contenido)
+      .filter(({ contexto }) => {
+        if (contexto.permisos.puede_acceder_contenido) return true;
+        if (contexto.estado_efectivo !== 'pendiente_modo') return false;
+        const inicio = new Date(contexto.vigencia.fecha_inicio).getTime();
+        const fin = contexto.vigencia.fecha_fin === null
+          ? Infinity
+          : new Date(contexto.vigencia.fecha_fin).getTime();
+        const ahora = Date.now();
+        return Number.isFinite(inicio) && inicio <= ahora && fin > ahora;
+      })
       .map(({ contexto, legacy }) => {
         return {
           oposicion_id: contexto.oposicion_id,
           nombre: legacy?.nombre ?? null,
           fecha_fin: contexto.vigencia.fecha_fin,
           tipo_alumno: legacy?.tipo_alumno ?? null,
-          modo_preparacion: contexto.modo_activo === 'guiado' ? 'albacer' : 'experto',
+          estado: contexto.estado,
+          estado_efectivo: contexto.estado_efectivo,
+          modo_activo: contexto.modo_activo,
+          modelos_disponibles: contexto.modelos_disponibles,
+          modo_preparacion: contexto.modo_activo === null
+            ? null
+            : (contexto.modo_activo === 'guiado' ? 'albacer' : 'experto'),
           ranking_publico: legacy?.ranking_publico ?? false,
         };
       });
