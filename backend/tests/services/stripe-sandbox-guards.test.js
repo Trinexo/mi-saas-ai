@@ -4,6 +4,11 @@ import {
   assertStripeSandboxMetadata,
   assertStripeTestIsolation,
 } from '../../src/utils/stripe-test-guards.js';
+import {
+  getStripeClient,
+  resetStripeClientForTests,
+  setStripeClientForTests,
+} from '../../src/config/stripeClient.js';
 
 const BASE_ENV = {
   NODE_ENV: 'test',
@@ -65,6 +70,32 @@ test('Stripe sandbox: acepta entorno local aislado con claves test y metadata id
     userEmail: 'e2e_stripe_alumno_guard@test.local',
     metadata: validMetadata(),
   }));
+}));
+
+test('Stripe sandbox: metadata ausente o null no produce TypeError', withEnv({}, () => {
+  assert.doesNotThrow(() => assertStripeTestIsolation({ metadata: null }));
+  assert.doesNotThrow(() => assertStripeTestIsolation({ metadata: undefined }));
+  assert.doesNotThrow(() => assertStripeTestIsolation({
+    webhookSecret: 'whsec_guard_only',
+    metadata: validMetadata(),
+  }));
+  assert.throws(
+    () => assertStripeTestIsolation({
+      webhookSecret: 'not-a-webhook-secret',
+      metadata: validMetadata(),
+    }),
+    /webhook secret whsec_/,
+  );
+}));
+
+test('Stripe sandbox: getStripeClient permite cliente inyectado sin metadata', withEnv({}, async () => {
+  const injectedClient = { checkout: { sessions: { create: async () => ({}) } } };
+  setStripeClientForTests(injectedClient);
+  try {
+    assert.equal(await getStripeClient(), injectedClient);
+  } finally {
+    resetStripeClientForTests();
+  }
 }));
 
 test('Stripe sandbox: bloquea claves live sin imprimir valores secretos', withEnv({}, () => {
