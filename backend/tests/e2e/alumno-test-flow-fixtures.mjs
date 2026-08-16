@@ -167,7 +167,7 @@ async function bumpE2ESequences(client) {
     'usuarios',
     'oposiciones',
     'temas',
-    'bloques',
+    'colecciones',
     'preguntas',
     'opciones_respuesta',
     'accesos_oposicion',
