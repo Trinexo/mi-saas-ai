@@ -32,6 +32,22 @@ test('admin preguntas query: rechaza nivel_dificultad inválido', () => {
   assert.equal(capturedError.message, 'Query inválida');
 });
 
+test('admin preguntas query: acepta únicamente estados editoriales del MVP', () => {
+  const middleware = validate(listPreguntasQuerySchema, 'query');
+  const req = { query: { estado: 'revision' } };
+  let nextCalled = false;
+  middleware(req, {}, () => { nextCalled = true; });
+  assert.equal(nextCalled, true);
+  assert.equal(req.query.estado, 'revision');
+
+  for (const estado of ['pendiente', 'rechazada', 'otro']) {
+    const invalid = { query: { estado } };
+    let error;
+    middleware(invalid, {}, (nextError) => { error = nextError; });
+    assert.ok(error instanceof ApiError);
+  }
+});
+
 test('admin preguntas query: acepta y normaliza filtros válidos', () => {
   const middleware = validate(listPreguntasQuerySchema, 'query');
   const req = {

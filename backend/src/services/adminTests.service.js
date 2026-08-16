@@ -48,6 +48,8 @@ export const adminTestsService = {
   },
 
   async assertPreguntasAllowed(preguntaIds, oposicionId, allowedIds) {
+    const nonApprovedIds = await profesorAccessRepository.getNonApprovedPreguntaIds(preguntaIds);
+    if (nonApprovedIds.length > 0) throw new ApiError(400, 'Solo se pueden añadir preguntas aprobadas');
     if (!allowedIds) return;
     this.assertOposicionAllowed(oposicionId, allowedIds);
     const preguntaOposicionIds = await profesorAccessRepository.getPreguntaOposicionIds(preguntaIds);

@@ -53,6 +53,7 @@ export default function ProfesorPreguntasPage() {
         explicacion: data.explicacion || '',
         referenciaNormativa: data.referencia_normativa || '',
         nivelDificultad: data.nivel_dificultad || 'media',
+        estado: data.estado || 'aprobada',
         opciones: data.opciones?.map((o) => ({ texto: o.texto, correcta: o.correcta })) ?? EMPTY_EDIT.opciones,
       });
       setEditingId(p.id);
@@ -174,16 +175,22 @@ export default function ProfesorPreguntasPage() {
             <option value="media">Media</option>
             <option value="dificil">Difícil</option>
           </Select>
+          <Select value={filters.estado ?? ''} onChange={(e) => updateFilter('estado', e.target.value)}>
+            <option value="">Todos los estados</option>
+            <option value="aprobada">Aprobada</option>
+            <option value="revision">En revisión</option>
+            <option value="cancelada">Cancelada</option>
+          </Select>
         </div>
 
         {error && <div style={{ padding: 12, background: '#fef2f2', color: '#dc2626', borderRadius: 8, marginBottom: 12 }}>{error}</div>}
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={TH}>Pregunta</th><th style={TH}>Oposición</th><th style={TH}>Tema</th><th style={TH}>Dificultad</th><th style={TH}>Intentos</th><th style={TH}>Aciertos</th><th style={TH}>Reportes</th><th style={TH}>Revisión</th><th style={TH}></th></tr></thead>
+            <thead><tr><th style={TH}>Pregunta</th><th style={TH}>Oposición</th><th style={TH}>Tema</th><th style={TH}>Dificultad</th><th style={TH}>Estado</th><th style={TH}>Intentos</th><th style={TH}>Aciertos</th><th style={TH}>Reportes</th><th style={TH}>Revisión</th><th style={TH}></th></tr></thead>
             <tbody>
-              {loading && <tr><td colSpan={8} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Cargando...</td></tr>}
-              {!loading && preguntas.length === 0 && <tr><td colSpan={8} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Sin resultados</td></tr>}
+              {loading && <tr><td colSpan={10} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Cargando...</td></tr>}
+              {!loading && preguntas.length === 0 && <tr><td colSpan={10} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Sin resultados</td></tr>}
               {!loading && preguntas.map((p, index) => {
                 const problematica = problematicasById.get(Number(p.id));
                 const intentos = Number(p.intentos ?? 0);
@@ -199,6 +206,7 @@ export default function ProfesorPreguntasPage() {
                         {({ facil: 'Fácil', media: 'Media', dificil: 'Difícil' })[p.nivel_dificultad] ?? p.nivel_dificultad ?? '-'}
                       </Badge>
                     </td>
+                    <td style={TD}>{({ aprobada: 'Aprobada', revision: 'En revisión', cancelada: 'Cancelada' }[p.estado] ?? p.estado ?? '-')}</td>
                     <td style={TD}>{intentos || '-'}</td>
                     <td style={{ ...TD, minWidth: 130 }}>{intentos > 0 ? <Progress value={aciertos} color={P} /> : '-'}</td>
                     <td style={TD}>{reportes}</td>

@@ -134,4 +134,16 @@ export const profesorAccessRepository = {
     );
     return result.rows.map((row) => publicId(row.oposicion_id));
   },
+
+  async getNonApprovedPreguntaIds(preguntaIds) {
+    if (!preguntaIds?.length) return [];
+    const result = await pool.query(
+      `SELECT id
+       FROM preguntas
+       WHERE id = ANY($1::bigint[])
+         AND estado <> 'aprobada'`,
+      [preguntaIds],
+    );
+    return result.rows.map((row) => publicId(row.id));
+  },
 };

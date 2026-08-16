@@ -240,7 +240,8 @@ export const albacerModulosRepository = {
       `SELECT p.id
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
-       WHERE t.oposicion_id = $1
+       WHERE p.estado = 'aprobada'
+         AND t.oposicion_id = $1
          AND ($2::bigint[] IS NULL OR p.tema_id = ANY($2::bigint[]))
          AND ($3::text IS NULL OR p.nivel_dificultad = $3)
          AND (COALESCE(array_length($4::bigint[], 1), 0) = 0 OR p.id <> ALL($4::bigint[]))

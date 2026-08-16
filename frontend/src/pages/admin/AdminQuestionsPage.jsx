@@ -14,6 +14,7 @@ const EMPTY_FORM = {
   explicacion: '',
   referenciaNormativa: '',
   nivelDificultad: 'media',
+  estado: 'aprobada',
   imagenUrl: null,
   audioUrl: null,
   opciones: [
@@ -60,6 +61,7 @@ export default function AdminQuestionsPage() {
     oposicionId: '',
     temaId: '',
     nivelDificultad: '',
+    estado: '',
     page: 1,
     pageSize: 10,
   });
@@ -131,6 +133,7 @@ export default function AdminQuestionsPage() {
     oposicion_id: filters.oposicionId,
     tema_id: filters.temaId,
     nivel_dificultad: filters.nivelDificultad,
+    estado: filters.estado,
     page: filters.page,
     page_size: filters.pageSize,
   });
@@ -208,6 +211,7 @@ export default function AdminQuestionsPage() {
         explicacion: pregunta.explicacion || '',
         referenciaNormativa: pregunta.referencia_normativa || '',
         nivelDificultad: pregunta.nivel_dificultad,
+        estado: pregunta.estado || 'aprobada',
         imagenUrl: pregunta.imagen_url || null,
         audioUrl: pregunta.audio_url || null,
         opciones: pregunta.opciones.map((opt) => ({ texto: opt.texto, correcta: opt.correcta })),
@@ -389,12 +393,18 @@ export default function AdminQuestionsPage() {
             <option value="media">Media</option>
             <option value="dificil">Difícil</option>
           </select>
+          <select value={filters.estado} onChange={(e) => setFilters((prev) => ({ ...prev, estado: e.target.value, page: 1 }))} style={SELECT_STYLE}>
+            <option value="">— Estado —</option>
+            <option value="aprobada">Aprobada</option>
+            <option value="revision">En revisión</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               type="button"
               style={BTN_OUTLINE}
               onClick={() => {
-                setFilters((prev) => ({ ...prev, oposicionId: '', temaId: '', nivelDificultad: '', page: 1 }));
+                setFilters((prev) => ({ ...prev, oposicionId: '', temaId: '', nivelDificultad: '', estado: '', page: 1 }));
                 setCatTemas([]);
               }}
             >
@@ -419,13 +429,14 @@ export default function AdminQuestionsPage() {
                 <th style={TH}>Enunciado</th>
                 <th className="col-hide-mobile" style={TH}>Tema</th>
                 <th style={{ ...TH, textAlign: 'center', width: 100 }}>Dificultad</th>
+                <th style={{ ...TH, textAlign: 'center', width: 120 }}>Estado</th>
                 <th style={{ ...TH, textAlign: 'center', width: 130 }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {data.items.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ ...TD, textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>
+                  <td colSpan={6} style={{ ...TD, textAlign: 'center', color: '#9ca3af', padding: '2rem' }}>
                     Sin resultados
                   </td>
                 </tr>
@@ -448,6 +459,9 @@ export default function AdminQuestionsPage() {
                     }}>
                     {DIFICULTAD[item.nivel_dificultad]?.label ?? item.nivel_dificultad ?? '—'}
                     </span>
+                  </td>
+                  <td style={{ ...TD, textAlign: 'center' }}>
+                    {{ aprobada: 'Aprobada', revision: 'En revisión', cancelada: 'Cancelada' }[item.estado] ?? item.estado}
                   </td>
                   <td style={{ ...TD, textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
@@ -626,6 +640,14 @@ export default function AdminQuestionsPage() {
                 {[1, 2, 3, 4, 5].map((n) => (
                   <option key={n} value={n}>{n}</option>
                 ))}
+              </select>
+            </label>
+            <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              Estado editorial
+              <select value={form.estado || 'aprobada'} onChange={(e) => setForm({ ...form, estado: e.target.value })} style={SELECT_STYLE}>
+                <option value="aprobada">Aprobada</option>
+                <option value="revision">En revisión</option>
+                <option value="cancelada">Cancelada</option>
               </select>
             </label>
           </div>

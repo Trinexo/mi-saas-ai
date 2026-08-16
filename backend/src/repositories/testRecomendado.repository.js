@@ -41,7 +41,8 @@ export const testRecomendadoRepository = {
        JOIN preguntas p ON p.id = re.pregunta_id
        JOIN bloques bl ON bl.id = p.bloque_id
        JOIN temas t ON t.id = bl.tema_id
-       WHERE re.usuario_id = $1 AND re.proxima_revision <= NOW()
+       WHERE p.estado = 'aprobada'
+         AND re.usuario_id = $1 AND re.proxima_revision <= NOW()
        ${oposicionFilter}
        GROUP BY p.bloque_id, bl.nombre
        ORDER BY pendientes DESC
@@ -83,7 +84,8 @@ export const testRecomendadoRepository = {
        JOIN temas t ON t.id = bl.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
        JOIN preguntas p ON p.bloque_id = pu.bloque_id
-       WHERE pu.usuario_id = $1
+       WHERE p.estado = 'aprobada'
+         AND pu.usuario_id = $1
          AND pu.preguntas_vistas >= 5
          ${oposicionFilter}
          ${excludeFilter}

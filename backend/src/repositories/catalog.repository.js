@@ -7,7 +7,7 @@ export const catalogRepository = {
        FROM oposiciones o
        WHERE ($1::boolean = TRUE OR EXISTS (
          SELECT 1 FROM temas t
-         JOIN preguntas p ON p.tema_id = t.id
+         JOIN preguntas p ON p.tema_id = t.id AND p.estado = 'aprobada'
          WHERE t.oposicion_id = o.id
        ))
        ORDER BY o.nombre ASC`,
@@ -52,7 +52,8 @@ export const catalogRepository = {
               json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
        FROM preguntas p
        JOIN opciones_respuesta o ON o.pregunta_id = p.id
-       WHERE p.bloque_id = $1
+       WHERE p.estado = 'aprobada'
+         AND p.bloque_id = $1
        GROUP BY p.id
        ORDER BY p.id ASC
        LIMIT $2 OFFSET $3`,
@@ -62,7 +63,7 @@ export const catalogRepository = {
   },
 
   async countPreguntas(bloqueId) {
-    const result = await pool.query('SELECT COUNT(*)::int AS total FROM preguntas WHERE bloque_id = $1', [bloqueId]);
+    const result = await pool.query("SELECT COUNT(*)::int AS total FROM preguntas WHERE estado = 'aprobada' AND bloque_id = $1", [bloqueId]);
     return result.rows[0].total;
   },
 };

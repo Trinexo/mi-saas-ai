@@ -68,6 +68,7 @@ const misPreguntasQuerySchema = z.object({
   tema_id: z.coerce.number().int().positive().optional(),
   tema_ids: z.string().optional(),
   nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional(),
+  estado: z.enum(['aprobada', 'revision', 'cancelada']).optional(),
   q: z.string().optional(),
 });
 

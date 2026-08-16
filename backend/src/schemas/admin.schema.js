@@ -17,6 +17,8 @@ const basePreguntaSchema = {
   audioUrl: z.string().optional().nullable(),
 };
 
+const estadoPreguntaSchema = z.enum(['aprobada', 'revision', 'cancelada']);
+
 export const createPreguntaSchema = z.object(basePreguntaSchema).refine(
   (payload) => payload.opciones.filter((o) => o.correcta).length === 1,
   {
@@ -25,7 +27,10 @@ export const createPreguntaSchema = z.object(basePreguntaSchema).refine(
   },
 );
 
-export const updatePreguntaSchema = createPreguntaSchema;
+export const updatePreguntaSchema = z.object({ ...basePreguntaSchema, estado: estadoPreguntaSchema.optional() }).refine(
+  (payload) => payload.opciones.filter((o) => o.correcta).length === 1,
+  { message: 'Debe existir una única opción correcta', path: ['opciones'] },
+);
 
 export const importPreguntasCsvSchema = z.object({
   csv: z.string().min(1),
@@ -55,7 +60,7 @@ export const listPreguntasQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   page_size: z.coerce.number().int().min(1).max(100).optional().default(20),
   q: z.string().max(200).optional(),
-  estado: z.enum(['pendiente', 'aprobada', 'rechazada']).optional(),
+  estado: estadoPreguntaSchema.optional(),
   oposicion_id: z.coerce.number().int().positive().optional(),
   materia_id: z.coerce.number().int().positive().optional(),
   tema_id: z.coerce.number().int().positive().optional(),

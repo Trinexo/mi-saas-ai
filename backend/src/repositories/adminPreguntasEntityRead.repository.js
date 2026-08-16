@@ -9,7 +9,7 @@ export const adminPreguntasEntityReadRepository = {
   async getFullPreguntaById(preguntaId) {
     const pregResult = await pool.query(
       `SELECT p.id, p.tema_id, p.bloque_id, p.enunciado, p.explicacion,
-              p.referencia_normativa, p.nivel_dificultad,
+              p.referencia_normativa, p.nivel_dificultad, p.estado,
               p.imagen_url, p.audio_url, p.fecha_actualizacion,
               t.oposicion_id
        FROM preguntas p

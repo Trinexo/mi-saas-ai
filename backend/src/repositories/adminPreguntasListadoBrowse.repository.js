@@ -29,7 +29,8 @@ const buildWhere = (filters, args) => {
     where.push(`p.nivel_dificultad = $${args.length}`);
   }
   if (filters.estado) {
-    // p.estado no existe en la tabla preguntas — filtro omitido
+    args.push(filters.estado);
+    where.push(`p.estado = $${args.length}`);
   }
   if (filters.q) {
     args.push(`%${filters.q}%`);
@@ -46,7 +47,7 @@ export const adminPreguntasListadoBrowseRepository = {
     args.push(limit, offset);
 
     const result = await pool.query(
-      `SELECT p.id, p.tema_id, p.enunciado, p.nivel_dificultad,
+      `SELECT p.id, p.tema_id, p.enunciado, p.nivel_dificultad, p.estado,
               t.nombre  AS tema_nombre,
               o.nombre  AS oposicion_nombre
        FROM preguntas p
