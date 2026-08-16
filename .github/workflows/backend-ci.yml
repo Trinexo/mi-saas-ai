@@ -53,13 +53,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Apply schema and seed
+        env:
+          ALLOW_LOCAL_DB_BOOTSTRAP: true
+          BOOTSTRAP_CONFIRM: BASELINE_042
+          BOOTSTRAP_LOAD_SEED: true
         run: |
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
-          for f in $(ls database/migrations/*.sql | sort); do
-            echo "Applying migration: $f"
-            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
-          done
+          node backend/scripts/bootstrap-schema-if-empty.mjs
+          node backend/scripts/migrate-official.mjs
 
       - name: Run access repositories PostgreSQL tests
         working-directory: backend
@@ -198,13 +198,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Apply schema and migrations
+        env:
+          ALLOW_LOCAL_DB_BOOTSTRAP: true
+          BOOTSTRAP_CONFIRM: BASELINE_042
+          BOOTSTRAP_LOAD_SEED: true
         run: |
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
-          for f in $(ls database/migrations/*.sql | sort); do
-            echo "Applying migration: $f"
-            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
-          done
+          node backend/scripts/bootstrap-schema-if-empty.mjs
+          node backend/scripts/migrate-official.mjs
 
       - name: Run isolated Stripe checkout and webhook first pass
         working-directory: backend
@@ -280,13 +280,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Apply schema and seed
+        env:
+          ALLOW_LOCAL_DB_BOOTSTRAP: true
+          BOOTSTRAP_CONFIRM: BASELINE_042
+          BOOTSTRAP_LOAD_SEED: true
         run: |
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/seed.sql
-          for f in $(ls database/migrations/*.sql | sort); do
-            echo "Applying migration: $f"
-            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
-          done
+          node backend/scripts/bootstrap-schema-if-empty.mjs
+          node backend/scripts/migrate-official.mjs
 
       - name: Create role E2E fixtures
         working-directory: backend
@@ -430,12 +430,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Apply schema and migrations without seed
+        env:
+          ALLOW_LOCAL_DB_BOOTSTRAP: true
+          BOOTSTRAP_CONFIRM: BASELINE_042
+          BOOTSTRAP_LOAD_SEED: false
         run: |
-          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f database/schema.sql
-          for f in $(ls database/migrations/*.sql | sort); do
-            echo "Applying migration: $f"
-            psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f "$f"
-          done
+          node backend/scripts/bootstrap-schema-if-empty.mjs
+          node backend/scripts/migrate-official.mjs
 
       - name: Build frontend for isolated API
         working-directory: frontend

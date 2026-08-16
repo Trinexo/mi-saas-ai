@@ -131,7 +131,7 @@ Fecha: 2026-07-16.
 - Framework navegador encontrado: ninguno. No hay Playwright, Cypress ni Selenium configurados.
 - Smoke E2E existente: `backend/tests/smoke/e2e-smoke.test.js`, basado en `node --test` y llamadas HTTP a la API.
 - El smoke existente no es solo lectura: registra un usuario, genera tests, envia resultados y, si el admin seed existe, crea/edita/elimina una pregunta.
-- CI existente: `.github/workflows/backend-ci.yml` levanta PostgreSQL local, aplica `database/schema.sql`, `database/seed.sql` y migraciones, arranca backend y ejecuta `npm run test:ci`.
+- CI existente: `.github/workflows/backend-ci.yml` levanta PostgreSQL local, inicializa el snapshot 042 mediante `bootstrap-schema-if-empty.mjs`, carga opcionalmente `database/seed.sql`, ejecuta el runner oficial, arranca backend y ejecuta `npm run test:ci`.
 - Produccion no debe usarse para pruebas de escritura.
 
 ### Protecciones Anadidas
@@ -280,7 +280,7 @@ El marcador de seguridad de `backend/tests/smoke/e2e-smoke.test.js` insertaba en
 - El marcador E2E crea ahora un `slug` unico derivado del `runId`.
 - El marcador E2E usa `nivel_dificultad='media'`, alineado con `database/migrations/030_change_dificultad_to_text.sql`.
 - El smoke imprime etapas claras de inicio, comprobacion de aislamiento, marcador DB/API, limpieza y verificacion de residuos.
-- El workflow de CI usa `psql -v ON_ERROR_STOP=1` al cargar schema, seed y migraciones para no continuar despues de errores SQL.
+- El workflow de CI inicializa el snapshot 042 con `bootstrap-schema-if-empty.mjs` y ejecuta después `migrate-official.mjs`; el runner falla ante cualquier error SQL.
 
 ### Iteracion CI Posterior
 

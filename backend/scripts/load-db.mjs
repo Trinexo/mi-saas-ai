@@ -8,7 +8,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 if (process.env.NODE_ENV === 'production' || process.env.ALLOW_LOCAL_DB_BOOTSTRAP !== 'true') {
-  console.error('load-db.mjs está deprecado; requiere ALLOW_LOCAL_DB_BOOTSTRAP=true fuera de producción');
+  console.error('load-db.mjs requiere ALLOW_LOCAL_DB_BOOTSTRAP=true y una DATABASE_URL local');
   process.exit(1);
 }
 

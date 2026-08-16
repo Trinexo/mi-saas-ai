@@ -39,3 +39,8 @@ backend/legacy-scripts.env
 database/dump_*.sql
 database/import-log.txt
 database/railway-reimport.sql
+
+# Backups locales no versionables
+*.backup
+*.dump
+*.sql.backup

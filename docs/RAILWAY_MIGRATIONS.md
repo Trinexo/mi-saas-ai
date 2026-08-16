@@ -1,50 +1,66 @@
-# Migraciones oficiales en Railway
+# Migraciones y baseline oficial PostgreSQL
 
-La única fuente oficial de migraciones generales es:
+La fuente única de migraciones históricas es:
 
-~~~text
+```text
 database/migrations
-~~~
+```
 
-Railway debe configurar el servicio con:
+La baseline estructural vigente del proyecto es:
 
-- Root Directory: /
-- Custom Config Path: /backend/railway.toml
-- DATABASE_URL como única conexión de base de datos
+```text
+042_commercial_access_history.sql
+```
 
-El preDeployCommand ejecuta únicamente node backend/scripts/migrate-official.mjs.
-El backend solo arranca después de que ese comando termine correctamente.
+## Base nueva
 
-El runner:
+Para una base local vacía se usa el bootstrap del snapshot 042:
 
-- aplica archivos SQL numerados en orden;
-- no carga schema.sql ni seeds;
-- registra nombre, checksum y estado aplicado;
-- usa un bloqueo advisory de PostgreSQL;
-- ejecuta cada migración y su registro en una transacción;
-- rechaza cambios de checksum y estados incompletos.
+```text
+$env:ALLOW_LOCAL_DB_BOOTSTRAP = 'true'
+$env:BOOTSTRAP_CONFIRM = 'BASELINE_042'
+$env:BOOTSTRAP_LOAD_SEED = 'true'       # opcional para desarrollo/CI
+npm.cmd --prefix backend run db:bootstrap
+npm.cmd --prefix backend run db:migrate
+```
 
-## Baseline de una base existente
+El bootstrap:
 
-Una base ya creada antes de este runner debe verificarse previamente. Para
-registrar una línea base se ejecuta manualmente:
+- exige una URL PostgreSQL local;
+- exige confirmación explícita;
+- carga `database/schema.sql` sin datos funcionales;
+- carga `database/seed.sql` solo si se solicita expresamente;
+- registra checksums de todas las migraciones 001–042 con `source=schema`;
+- no reejecuta las migraciones ya incorporadas en el snapshot.
 
-~~~text
-npm run db:baseline -- --through=039_add_stripe_webhook_events.sql --dry-run
-npm run db:baseline -- --through=039_add_stripe_webhook_events.sql --confirm=BASELINE
-~~~
+El runner queda preparado para aplicar futuras migraciones 043 y posteriores.
 
-El primer comando solo informa. El segundo requiere confirmación explícita,
-valida el esquema y registra checksums sin ejecutar SQL de migración.
-La baseline no debe ejecutarse desde pre-deploy ni start.
+`schema.sql` y `seed.sql` son responsabilidades separadas: el seed contiene
+solo datos demo/CI y nunca debe cargarse automáticamente en producción.
 
-No se debe usar baseline sobre una base vacía ni para ocultar una migración
-fallida. schema.sql representa la baseline
-038_accesos_ranking_publico.sql en el bootstrap local de Compose.
+En Windows, cuando se use `psql`, debe establecerse explícitamente:
 
-## Legacy
+```powershell
+$env:PGCLIENTENCODING = 'UTF8'
+```
 
-backend/database/migrations queda como histórico temporal. No se deben crear
-allí nuevas migraciones. apply-backend-migrations.mjs delega al runner oficial;
-los demás loaders históricos están bloqueados o requieren una confirmación
-local explícita.
+## Base histórica existente
+
+`baseline-migrations.mjs` es una herramienta conservadora para una base ya
+existente y auditada. No crea tablas ni ejecuta migraciones. No debe usarse
+sobre una base vacía ni para ocultar una migración fallida.
+
+La herramienta `reconcile-baseline-checksums.mjs` conserva únicamente el flujo
+histórico de baseline 038 y no forma parte del bootstrap vigente.
+
+## Railway
+
+Railway ejecuta únicamente:
+
+```text
+node backend/scripts/migrate-official.mjs
+```
+
+El pre-deploy no carga `schema.sql`, `seed.sql` ni ejecuta un reset. La base de
+Railway debe existir previamente y conservar un registro coherente de
+`schema_migrations`.
