@@ -23,7 +23,8 @@ export const profesorWorkspaceSeleccionRepository = {
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
-       WHERE o.id = $1
+       WHERE p.estado = 'aprobada'
+         AND o.id = $1
          AND t.id = $2
          AND ($3::text IS NULL OR p.nivel_dificultad = $3)
          AND NOT (p.id = ANY($4::bigint[]))
@@ -43,7 +44,8 @@ export const profesorWorkspaceSeleccionRepository = {
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
        JOIN oposiciones o ON o.id = t.oposicion_id
-       WHERE o.id = $1
+       WHERE p.estado = 'aprobada'
+         AND o.id = $1
          AND ($2::text IS NULL OR p.nivel_dificultad = $2)
          AND NOT (p.id = ANY($3::bigint[]))
          AND NOT (t.id = ANY($4::bigint[]))
@@ -60,7 +62,8 @@ export const profesorWorkspaceSeleccionRepository = {
       `SELECT COUNT(*)::int AS total
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
-       WHERE t.oposicion_id = $1
+       WHERE p.estado = 'aprobada'
+         AND t.oposicion_id = $1
          AND t.id = $2
          AND ($3::text IS NULL OR p.nivel_dificultad = $3)
          AND NOT (p.id = ANY($4::bigint[]))`,

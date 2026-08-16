@@ -411,7 +411,8 @@ export const adminTestsRepository = {
       `SELECT p.id
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
-       WHERE t.oposicion_id = $1
+       WHERE p.estado = 'aprobada'
+         AND t.oposicion_id = $1
        ORDER BY t.id ASC, p.id ASC
        LIMIT 10`,
       [oposicionId],

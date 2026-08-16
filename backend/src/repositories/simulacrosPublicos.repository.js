@@ -64,6 +64,7 @@ export const simulacrosPublicosRepository = {
        JOIN simulacros_preguntas sp ON sp.bloque_id = sb.id
        JOIN preguntas p             ON p.id = sp.pregunta_id
        JOIN opciones_respuesta po   ON po.pregunta_id = p.id
+       AND p.estado = 'aprobada'
        WHERE sb.simulacro_id = $1
        GROUP BY p.id, sb.orden, sp.orden
        ORDER BY sb.orden, sp.orden`,

@@ -9,7 +9,8 @@ export const repasoRepository = {
          FROM repeticion_espaciada re
          JOIN preguntas p ON p.id = re.pregunta_id
          JOIN temas t ON t.id = p.tema_id
-         WHERE re.usuario_id = $1
+         WHERE p.estado = 'aprobada'
+           AND re.usuario_id = $1
            AND re.proxima_revision <= NOW()
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)`,
         [userId, oposicionId || null],
@@ -19,7 +20,8 @@ export const repasoRepository = {
          FROM repeticion_espaciada re
          JOIN preguntas p ON p.id = re.pregunta_id
          JOIN temas t ON t.id = p.tema_id
-         WHERE re.usuario_id = $1
+         WHERE p.estado = 'aprobada'
+           AND re.usuario_id = $1
            AND re.proxima_revision <= NOW()
            AND ($2::bigint IS NULL OR t.oposicion_id = $2)
          GROUP BY p.bloque_id
@@ -37,7 +39,8 @@ export const repasoRepository = {
          JOIN preguntas p ON p.id = re.pregunta_id
          JOIN bloques bl ON bl.id = p.bloque_id
          JOIN temas t ON t.id = bl.tema_id
-         WHERE re.usuario_id = $1
+         WHERE p.estado = 'aprobada'
+           AND re.usuario_id = $1
            AND re.proxima_revision <= NOW()
            AND ($3::bigint IS NULL OR t.oposicion_id = $3)
          ORDER BY re.proxima_revision ASC

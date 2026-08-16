@@ -3,15 +3,16 @@ import pool from '../config/db.js';
 export const adminPreguntasEntityWriteRepository = {
   async createPregunta(client, payload) {
     const result = await client.query(
-      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad, imagen_url, audio_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id`,
+      `INSERT INTO preguntas (tema_id, enunciado, explicacion, referencia_normativa, nivel_dificultad, estado, imagen_url, audio_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, estado`,
       [
         payload.temaId,
         payload.enunciado,
         payload.explicacion,
         payload.referenciaNormativa ?? null,
         payload.nivelDificultad,
+        payload.estado ?? 'aprobada',
         payload.imagenUrl ?? null,
         payload.audioUrl ?? null,
       ],
@@ -59,6 +60,7 @@ export const adminPreguntasEntityWriteRepository = {
            explicacion = $4,
            referencia_normativa = $5,
            nivel_dificultad = $6,
+           estado = COALESCE($9, estado),
            imagen_url = COALESCE($7, imagen_url),
            audio_url = COALESCE($8, audio_url),
            fecha_actualizacion = NOW()
@@ -72,6 +74,7 @@ export const adminPreguntasEntityWriteRepository = {
         payload.nivelDificultad,
         payload.imagenUrl ?? null,
         payload.audioUrl ?? null,
+        payload.estado ?? null,
       ],
     );
   },

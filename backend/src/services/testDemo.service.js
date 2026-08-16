@@ -8,7 +8,8 @@ const SELECT_BY_IDS_SQL = `
          json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE p.id = ANY($1::bigint[])
+  WHERE p.estado = 'aprobada'
+    AND p.id = ANY($1::bigint[])
   GROUP BY p.id
 `;
 

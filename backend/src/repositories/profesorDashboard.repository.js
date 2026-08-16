@@ -65,7 +65,10 @@ export const profesorDashboardRepository = {
       args.push(nivelDificultad);
       conditions.push(`p.nivel_dificultad = $${args.length}`);
     }
-    // p.estado no existe en la tabla preguntas — filtro eliminado
+    if (estado) {
+      args.push(estado);
+      conditions.push(`p.estado = $${args.length}`);
+    }
 
     const where = conditions.join(' AND ');
     const offset = (page - 1) * pageSize;
@@ -73,7 +76,7 @@ export const profesorDashboardRepository = {
     args.push(pageSize, offset);
 
     const result = await pool.query(
-      `SELECT p.id, p.tema_id, p.enunciado, p.nivel_dificultad, a.fecha AS creado_en,
+      `SELECT p.id, p.tema_id, p.enunciado, p.nivel_dificultad, p.estado, a.fecha AS creado_en,
               t.nombre AS tema_nombre, o.nombre AS oposicion_nombre,
               COALESCE(ru_s.intentos, 0) AS intentos,
               COALESCE(ru_s.aciertos, 0) AS aciertos,

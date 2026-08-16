@@ -6,7 +6,7 @@ const SELECT_SIMULACRO_QUESTIONS_SQL = `
   FROM preguntas p
   JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE t.oposicion_id = $1
+  WHERE p.estado = 'aprobada' AND t.oposicion_id = $1
   GROUP BY p.id
   ORDER BY RANDOM()
   LIMIT $2
@@ -19,7 +19,8 @@ const SELECT_MARCADAS_QUESTIONS_SQL = `
   JOIN preguntas p ON p.id = pm.pregunta_id
   JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE pm.usuario_id = $1
+  WHERE p.estado = 'aprobada'
+    AND pm.usuario_id = $1
     AND t.oposicion_id = $3
   GROUP BY p.id
   ORDER BY RANDOM()
@@ -33,7 +34,8 @@ const SELECT_DUE_QUESTIONS_SQL = `
   JOIN preguntas p ON p.id = re.pregunta_id
   JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE re.usuario_id = $1
+  WHERE p.estado = 'aprobada'
+    AND re.usuario_id = $1
     AND re.proxima_revision <= NOW()
     AND ($3::bigint IS NULL OR p.tema_id = $3)
     AND ($4::bigint IS NULL OR p.bloque_id = $4)
@@ -60,7 +62,8 @@ const SELECT_REFUERZO_QUESTIONS_SQL = `
   JOIN preguntas p ON p.id = f.pregunta_id
   JOIN temas t ON t.id = p.tema_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
-  WHERE ($3::bigint IS NULL OR p.tema_id = $3)
+  WHERE p.estado = 'aprobada'
+    AND ($3::bigint IS NULL OR p.tema_id = $3)
     AND ($4::bigint IS NULL OR t.oposicion_id = $4)
   GROUP BY p.id, f.cnt
   ORDER BY f.cnt DESC, RANDOM()
