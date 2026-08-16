@@ -126,6 +126,9 @@ La carpeta `database/` contiene:
 
 - `schema.sql` y `seed.sql`.
 - Migraciones numeradas en `database/migrations/`.
+- Baseline estructural vigente: `042_commercial_access_history.sql`.
+- Para una base nueva se usa `db:bootstrap` con confirmación local explícita;
+  `db:baseline` queda reservado para bases existentes auditadas.
 - Scripts seguros de mantenimiento versionados.
 - Dumps y scripts de reimportacion ignorados por `.gitignore` cuando corresponda.
 

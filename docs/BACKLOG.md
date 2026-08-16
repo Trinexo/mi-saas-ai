@@ -9,7 +9,7 @@ Ultima consolidacion documental: 2026-07-15.
 - BL-027: Smoke E2E reforzado con verificacion de DB local aislada, marcador DB/API, identificador unico, limpieza por IDs exactos y bloqueo de emails en `NODE_ENV=test`.
 - BL-028: Corregido `database/seed.sql` para usar `opciones_respuesta.correcta`, alineado con `database/schema.sql` y repositorios. CI queda preparado para dos ejecuciones visibles del smoke sobre PostgreSQL efimero.
 - BL-029: Cubierto `email.service.js` con prueba de regresion: en `NODE_ENV=test` no crea transporter ni lee SMTP; fuera de `NODE_ENV=test` conserva el flujo de envio.
-- BL-030: Diagnosticado el fallo inicial del smoke E2E en CI: el marcador insertaba `oposiciones` sin `slug` despues de la migracion `032` y `preguntas.nivel_dificultad=1` despues de la migracion `030`. Corregido el marcador y endurecida la carga SQL del workflow con `ON_ERROR_STOP`.
+- BL-030: Diagnosticado el fallo inicial del smoke E2E en CI: el marcador insertaba `oposiciones` sin `slug` después de la migración `032` y `preguntas.nivel_dificultad=1` después de la migración `030`. El bootstrap CI actual parte del snapshot estructural 042 y carga el seed antes del runner oficial.
 - BL-020: Verificacion E2E segura validada en CI sobre PostgreSQL efimero en run de PR `29581036429`; pasaron tests unitarios backend, smoke first pass y smoke second pass, con comprobacion de residuos integrada.
 - BL-026: Validada la limpieza automatica del smoke E2E en dos ejecuciones consecutivas del mismo job de CI mediante `assertNoResidues()`.
 - BL-031: Validacion tecnica local de roles y permisos: `requireAuth`, `requireRole`, bloqueos HTTP cruzados en Express y guards frontend admin/profesor/alumno cubiertos por `backend/tests/services/roles-permisos-flujos.test.js`.

@@ -13,13 +13,40 @@ import { checksum, discoverMigrations, LOCK_KEY, MIGRATIONS_DIR } from './migrat
 const { Client } = pg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const schemaPath = path.resolve(__dirname, '../../database/schema.sql');
-const SCHEMA_BASELINE = '030_change_dificultad_to_text.sql';
+const SCHEMA_BASELINE = '042_commercial_access_history.sql';
+const BOOTSTRAP_CONFIRMATION = 'BASELINE_042';
 const url = process.env.DATABASE_URL;
+
+function assertSafeBootstrapUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error('DATABASE_URL no es una URL válida para bootstrap local');
+  }
+  if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
+    throw new Error('El bootstrap 042 solo admite PostgreSQL');
+  }
+  if (!['localhost', '127.0.0.1', '::1'].includes(parsed.hostname.toLowerCase())) {
+    throw new Error('El bootstrap 042 solo admite hosts PostgreSQL locales');
+  }
+  const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ''));
+  if (!databaseName || !/(test|dev|ci|e2e|local)/i.test(databaseName)) {
+    throw new Error('La base del bootstrap 042 debe tener nombre local de desarrollo o test');
+  }
+  if (process.env.ALLOW_LOCAL_DB_BOOTSTRAP !== 'true') {
+    throw new Error('El bootstrap local exige ALLOW_LOCAL_DB_BOOTSTRAP=true');
+  }
+  if (process.env.BOOTSTRAP_CONFIRM !== BOOTSTRAP_CONFIRMATION) {
+    throw new Error(`El bootstrap local exige BOOTSTRAP_CONFIRM=${BOOTSTRAP_CONFIRMATION}`);
+  }
+}
 
 if (!url) {
   console.error('DATABASE_URL es obligatoria para el bootstrap del esquema');
   process.exit(1);
 }
+assertSafeBootstrapUrl(url);
 
 const client = new Client({
   connectionString: url,
@@ -50,9 +77,16 @@ try {
     console.log('Esquema existente: no se carga schema.sql');
   } else {
     await client.query(await fs.readFile(schemaPath, 'utf8'));
+    if (process.env.BOOTSTRAP_LOAD_SEED === 'true') {
+      const seedPath = path.resolve(__dirname, '../../database/seed.sql');
+      await client.query(await fs.readFile(seedPath, 'utf8'));
+    }
     const migrations = await discoverMigrations(MIGRATIONS_DIR);
     const baselineIndex = migrations.indexOf(SCHEMA_BASELINE);
     if (baselineIndex < 0) throw new Error('No existe la baseline del schema.sql: ' + SCHEMA_BASELINE);
+    if (baselineIndex !== migrations.length - 1) {
+      throw new Error('La baseline 042 no es la última migración disponible');
+    }
     await client.query(
       "CREATE TABLE IF NOT EXISTS schema_migrations (" +
         "filename TEXT PRIMARY KEY, checksum TEXT NOT NULL, " +

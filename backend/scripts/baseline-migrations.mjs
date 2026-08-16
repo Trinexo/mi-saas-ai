@@ -11,6 +11,9 @@ import pg from 'pg';
 import { checksum, discoverMigrations, LOCK_KEY, MIGRATIONS_DIR } from './migrate-official.mjs';
 
 const { Client } = pg;
+
+// Esta herramienta es solo para bases existentes ya auditadas; no es el
+// bootstrap de una base nueva. El bootstrap nuevo usa el snapshot 042.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const url = process.env.DATABASE_URL;
 const args = process.argv.slice(2);

@@ -13,6 +13,9 @@ import {
 
 const { Client } = pg;
 const __filename = fileURLToPath(import.meta.url);
+
+// Herramienta histórica para instalaciones que usaban la baseline 038.
+// El bootstrap vigente utiliza el snapshot estructural 042.
 export const BASELINE_COUNT = 36;
 export const BASELINE_THROUGH = '038_accesos_ranking_publico.sql';
 export const RECONCILE_CONFIRMATION = 'RECONCILE_BASELINE_CHECKSUMS';

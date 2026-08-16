@@ -74,7 +74,7 @@ Elementos observados:
 
 - `schema.sql`
 - `seed.sql`
-- `migrations/001...038`
+- `migrations/001...042`
 - scripts de mantenimiento versionados;
 - dumps y reimports ignorados tras la fase de proteccion.
 

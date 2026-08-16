@@ -1,3 +1,6 @@
+-- Snapshot estructural oficial posterior a 042_commercial_access_history.sql.
+-- Los datos demo/CI viven exclusivamente en database/seed.sql.
+
 CREATE TABLE IF NOT EXISTS usuarios (
   id BIGSERIAL PRIMARY KEY,
   nombre TEXT NOT NULL,
@@ -6,14 +9,21 @@ CREATE TABLE IF NOT EXISTS usuarios (
   role TEXT NOT NULL DEFAULT 'alumno',
   oposicion_preferida_id BIGINT,
   objetivo_diario_preguntas INT NOT NULL DEFAULT 10,
+  deleted_at TIMESTAMPTZ DEFAULT NULL,
   fecha_registro TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_usuarios_not_deleted
+  ON usuarios(id) WHERE deleted_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS oposiciones (
   id BIGSERIAL PRIMARY KEY,
   nombre TEXT NOT NULL,
   descripcion TEXT,
   categoria TEXT,
+  precio_mensual_cents INT NOT NULL DEFAULT 2900,
+  tiempo_limite_minutos INT CHECK (tiempo_limite_minutos > 0 AND tiempo_limite_minutos <= 600),
+  slug VARCHAR(200) NOT NULL,
   estado TEXT NOT NULL DEFAULT 'activa'
     CHECK (estado IN ('activa', 'borrador', 'inactiva'))
 );
@@ -21,12 +31,6 @@ CREATE TABLE IF NOT EXISTS oposiciones (
 CREATE TABLE IF NOT EXISTS temas (
   id BIGSERIAL PRIMARY KEY,
   oposicion_id BIGINT NOT NULL REFERENCES oposiciones(id) ON DELETE CASCADE,
-  nombre TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS bloques (
-  id BIGSERIAL PRIMARY KEY,
-  tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE CASCADE,
   nombre TEXT NOT NULL
 );
 
@@ -39,14 +43,21 @@ CREATE TABLE IF NOT EXISTS colecciones (
   publica BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+CREATE VIEW bloques AS
+SELECT id, tema_id, nombre, descripcion, creado_por, publica
+FROM colecciones;
+
 CREATE TABLE IF NOT EXISTS preguntas (
   id BIGSERIAL PRIMARY KEY,
   tema_id BIGINT NOT NULL REFERENCES temas(id) ON DELETE RESTRICT,
-  bloque_id BIGINT REFERENCES bloques(id) ON DELETE SET NULL,
+  bloque_id BIGINT REFERENCES colecciones(id) ON DELETE SET NULL,
   enunciado TEXT NOT NULL,
   explicacion TEXT NOT NULL,
   referencia_normativa TEXT,
-  nivel_dificultad SMALLINT NOT NULL,
+  nivel_dificultad VARCHAR(10) NOT NULL
+    CHECK (nivel_dificultad IN ('facil', 'media', 'dificil')),
+  estado TEXT NOT NULL DEFAULT 'aprobada'
+    CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
   fecha_actualizacion TIMESTAMP NOT NULL DEFAULT NOW(),
   es_oficial BOOLEAN NOT NULL DEFAULT FALSE,
   puntos NUMERIC(5,2) NOT NULL DEFAULT 1.00,
@@ -75,7 +86,7 @@ CREATE TABLE IF NOT EXISTS tests (
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   planificacion_id BIGINT,
   tema_id BIGINT REFERENCES temas(id),
-  bloque_id BIGINT REFERENCES bloques(id),
+  bloque_id BIGINT REFERENCES colecciones(id),
   oposicion_id BIGINT REFERENCES oposiciones(id),
   modo_preparacion TEXT NOT NULL DEFAULT 'experto'
     CHECK (modo_preparacion IN ('experto', 'albacer')),
@@ -127,6 +138,7 @@ CREATE TABLE IF NOT EXISTS accesos_oposicion (
   fecha_fin TIMESTAMP,
   precio_pagado NUMERIC(8,2),
   notas TEXT,
+  stripe_session_id TEXT,
   tipo_alumno TEXT NOT NULL DEFAULT 'libre'
     CHECK (tipo_alumno IN ('libre', 'albacer')),
   modo_preparacion TEXT NOT NULL DEFAULT 'albacer'
@@ -204,7 +216,7 @@ CREATE TABLE IF NOT EXISTS progreso_usuario (
   id BIGSERIAL PRIMARY KEY,
   usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   tema_id BIGINT REFERENCES temas(id) ON DELETE CASCADE,
-  bloque_id BIGINT REFERENCES bloques(id) ON DELETE CASCADE,
+  bloque_id BIGINT REFERENCES colecciones(id) ON DELETE CASCADE,
   preguntas_vistas INTEGER NOT NULL DEFAULT 0,
   aciertos INTEGER NOT NULL DEFAULT 0,
   errores INTEGER NOT NULL DEFAULT 0,
@@ -223,7 +235,9 @@ CREATE TABLE IF NOT EXISTS reportes_preguntas (
 
 CREATE INDEX IF NOT EXISTS idx_preguntas_bloque_id ON preguntas(bloque_id);
 CREATE INDEX IF NOT EXISTS idx_preguntas_tema_id ON preguntas(tema_id);
-CREATE INDEX IF NOT EXISTS idx_preguntas_nivel_dificultad ON preguntas(nivel_dificultad);
+CREATE INDEX IF NOT EXISTS idx_preguntas_estado ON preguntas(estado);
+CREATE INDEX IF NOT EXISTS idx_preguntas_nivel_dificultad
+  ON preguntas(nivel_dificultad) WHERE nivel_dificultad IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_preguntas_es_oficial ON preguntas(es_oficial);
 CREATE INDEX IF NOT EXISTS idx_oposiciones_estado ON oposiciones(estado);
 CREATE INDEX IF NOT EXISTS idx_oposiciones_categoria ON oposiciones(categoria);
@@ -449,7 +463,7 @@ CREATE TABLE IF NOT EXISTS admin_tests (
   tema_id               BIGINT REFERENCES temas(id) ON DELETE SET NULL,
   estado                TEXT NOT NULL DEFAULT 'borrador'
                           CHECK (estado IN ('borrador', 'publicado', 'archivado')),
-  nivel_dificultad      SMALLINT CHECK (nivel_dificultad BETWEEN 1 AND 5),
+  nivel_dificultad      VARCHAR(10) CHECK (nivel_dificultad IN ('facil', 'media', 'dificil')),
   duracion_minutos      SMALLINT,
   mezclar_preguntas     BOOLEAN NOT NULL DEFAULT TRUE,
   mostrar_resultados    BOOLEAN NOT NULL DEFAULT TRUE,
@@ -701,3 +715,71 @@ CREATE TABLE IF NOT EXISTS actividad_global (
 CREATE INDEX IF NOT EXISTS idx_actividad_fecha   ON actividad_global(fecha DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_actividad_tipo    ON actividad_global(tipo);
 CREATE INDEX IF NOT EXISTS idx_actividad_usuario ON actividad_global(usuario_id);
+
+-- Objetos estructurales incorporados por las migraciones 004, 008, 009, 011 y 039.
+-- Los datos de configuración y los datos demo permanecen en seed.sql o en el entorno.
+CREATE TABLE IF NOT EXISTS suscripciones (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'elite')),
+  estado TEXT NOT NULL DEFAULT 'activa' CHECK (estado IN ('activa', 'cancelada', 'expirada')),
+  fecha_inicio TIMESTAMP NOT NULL DEFAULT NOW(),
+  fecha_fin TIMESTAMP,
+  stripe_subscription_id TEXT,
+  notas TEXT,
+  creada_en TIMESTAMP NOT NULL DEFAULT NOW(),
+  actualizada_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_suscripciones_usuario ON suscripciones(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_suscripciones_activa
+  ON suscripciones(usuario_id, estado) WHERE estado = 'activa';
+CREATE INDEX IF NOT EXISTS idx_suscripciones_fecha_fin
+  ON suscripciones(fecha_fin) WHERE fecha_fin IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_suscripciones_stripe
+  ON suscripciones(stripe_subscription_id) WHERE stripe_subscription_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  usado_en TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_token_hash ON password_resets(token_hash);
+CREATE INDEX IF NOT EXISTS idx_password_resets_usuario ON password_resets(usuario_id);
+
+CREATE TABLE IF NOT EXISTS preguntas_marcadas (
+  id BIGSERIAL PRIMARY KEY,
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  pregunta_id BIGINT NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+  fecha_marcado TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (usuario_id, pregunta_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_marcadas_usuario ON preguntas_marcadas(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_marcadas_pregunta ON preguntas_marcadas(pregunta_id);
+
+CREATE TABLE IF NOT EXISTS configuracion_sistema (
+  clave VARCHAR(100) PRIMARY KEY,
+  valor TEXT,
+  es_secreto BOOLEAN NOT NULL DEFAULT FALSE,
+  descripcion VARCHAR(255),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  object_id TEXT,
+  livemode BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL,
+  processed_at TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_stripe_webhook_events_type_object
+  ON stripe_webhook_events(event_type, object_id)
+  WHERE object_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_processed_at
+  ON stripe_webhook_events(processed_at);
