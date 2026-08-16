@@ -84,9 +84,8 @@ try {
     const migrations = await discoverMigrations(MIGRATIONS_DIR);
     const baselineIndex = migrations.indexOf(SCHEMA_BASELINE);
     if (baselineIndex < 0) throw new Error('No existe la baseline del schema.sql: ' + SCHEMA_BASELINE);
-    if (baselineIndex !== migrations.length - 1) {
-      throw new Error('La baseline 042 no es la última migración disponible');
-    }
+    // schema.sql representa 042. Las migraciones posteriores quedan
+    // pendientes para que migrate-official.mjs las aplique como runner.
     await client.query(
       "CREATE TABLE IF NOT EXISTS schema_migrations (" +
         "filename TEXT PRIMARY KEY, checksum TEXT NOT NULL, " +

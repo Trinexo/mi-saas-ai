@@ -147,8 +147,16 @@ test('bootstrap snapshot 042 reconstruye una base limpia e idempotente', {
       }
       const registry = await client.query('SELECT filename, checksum, status, source FROM schema_migrations ORDER BY filename');
       assert.deepEqual(registry.rows.map((row) => row.filename), migrations);
-      assert.ok(registry.rows.every((row) => row.status === 'applied' && row.source === 'schema'));
-      for (const row of registry.rows) assert.equal(row.checksum, expected.get(row.filename));
+      const baselineIndex = migrations.indexOf('042_commercial_access_history.sql');
+      for (const [index, row] of registry.rows.entries()) {
+        assert.equal(row.status, 'applied');
+        assert.equal(row.source, index <= baselineIndex ? 'schema' : 'runner');
+        assert.equal(row.checksum, expected.get(row.filename));
+      }
+      const baselineRow = registry.rows.find((row) => row.filename === '042_commercial_access_history.sql');
+      assert.equal(baselineRow?.source, 'schema');
+      const postBaselineRows = registry.rows.filter((row) => migrations.indexOf(row.filename) > baselineIndex);
+      assert.ok(postBaselineRows.every((row) => row.source === 'runner'));
 
       const objects = await client.query(`
         SELECT name, to_regclass('public.' || name) IS NOT NULL AS present
