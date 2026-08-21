@@ -442,7 +442,7 @@ export default function AdminUsersPage() {
                     <span style={{ ...(PLAN_BADGE[planNormalizado] ?? PLAN_BADGE.free), padding: '2px 8px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 600 }}>
   {planNormalizado}
 </span>
-                    </span>
+                  
                   </td>
                   <td style={{ ...TD, fontSize: '0.8rem', color: '#6b7280' }}>
                     {u.fechaRegistro ? new Date(u.fechaRegistro).toLocaleDateString() : '—'}
