@@ -40,23 +40,23 @@ function addAvailability(modulos) {
     let previousMandatoryPassed = true;
     const items = (modulo.items ?? []).map((item) => {
       const progreso = item.progreso ?? {};
-      const individuallyPassed = item.tipo === 'test' && item.obligatorio && progreso.superado === true;
+      const itemPassed = item.tipo === 'test' && (progreso.superado === true || moduloSuperado);
       let estado = 'locked';
 
       if (moduloDisponible) {
         if (item.tipo === 'simulacro_final') {
           estado = moduloSuperado ? 'passed' : 'available';
+        } else if (itemPassed) {
+          estado = 'passed';
         } else if (!item.obligatorio) {
           estado = 'available';
-        } else if (individuallyPassed) {
-          estado = 'passed';
         } else if (moduloSuperado || previousMandatoryPassed) {
           estado = progreso.iniciado_en || Number(progreso.intentos ?? 0) > 0 ? 'in_progress' : 'available';
         }
       }
 
       if (item.tipo === 'test' && item.obligatorio) {
-        previousMandatoryPassed = individuallyPassed;
+        previousMandatoryPassed = itemPassed;
       }
 
       return {
@@ -68,6 +68,9 @@ function addAvailability(modulos) {
         intentos: Number(progreso.intentos ?? 0),
         mejor_nota: progreso.mejor_nota ?? null,
         ultima_nota: progreso.ultima_nota ?? null,
+        superado_por: itemPassed
+          ? (Number(progreso.mejor_nota ?? -Infinity) >= 5 ? 'intento' : 'simulacro_final')
+          : null,
       };
     });
 

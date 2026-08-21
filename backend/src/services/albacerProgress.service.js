@@ -56,6 +56,13 @@ export const albacerProgressService = {
       superado,
     });
 
+    const itemsCompletados = superado
+      ? await albacerProgressRepository.completeModuleItemsFromFinal(
+        userId,
+        Number(context.albacer_modulo_id),
+      )
+      : [];
+
     const siguienteModuloId = superado
       ? await albacerProgressRepository.unlockNextModulo(userId, Number(context.albacer_modulo_id))
       : null;
@@ -71,6 +78,7 @@ export const albacerProgressService = {
       superado,
       mejorNota: progreso?.mejor_nota == null ? notaFinal : Number(progreso.mejor_nota),
       mejorPorcentaje: progreso?.mejor_porcentaje == null ? porcentaje : Number(progreso.mejor_porcentaje),
+      itemsCompletados,
       siguienteModuloId,
     };
   },

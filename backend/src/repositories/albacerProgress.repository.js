@@ -139,6 +139,24 @@ export const albacerProgressRepository = {
     return result.rows?.[0] ?? null;
   },
 
+  async completeModuleItemsFromFinal(userId, moduloId) {
+    const result = await pool.query(
+      `INSERT INTO albacer_item_progreso (usuario_id, item_id, superado, superado_en)
+       SELECT $1, mi.id, TRUE, NOW()
+       FROM albacer_modulo_items mi
+       WHERE mi.modulo_id = $2
+         AND mi.tipo = 'test'
+       ON CONFLICT (usuario_id, item_id)
+       DO UPDATE SET
+         superado = TRUE,
+         superado_en = COALESCE(albacer_item_progreso.superado_en, EXCLUDED.superado_en),
+         actualizado_en = NOW()
+       RETURNING item_id`,
+      [userId, moduloId],
+    );
+    return result.rows.map((row) => Number(row.item_id));
+  },
+
   async unlockNextModulo(userId, moduloId) {
     const result = await pool.query(
       `WITH current_modulo AS (

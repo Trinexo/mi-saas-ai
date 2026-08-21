@@ -56,7 +56,7 @@ La fase 3 es exclusivamente documental. No debe alterar codigo, dependencias, mi
 
 Los tests de modulo con `obligatorio = true` se superan con nota mayor o igual a 5, de forma acumulativa y sin que un intento posterior suspendido revierta la superacion. El backend deriva su disponibilidad: el primero esta disponible, los siguientes requieren que el obligatorio anterior este superado y el simulacro final permanece disponible desde el inicio del modulo.
 
-El simulacro final sigue siendo la unica actividad que supera el modulo. Superarlo desbloquea los tests obligatorios pendientes, pero no los marca como superados individualmente. Los items no obligatorios no participan en la secuencia ni en el progreso obligatorio.
+El simulacro final sigue siendo la unica actividad que supera el modulo. Superarlo completa visualmente todos los tests del modulo y desbloquea el siguiente modulo, sin crear intentos, resultados ni notas ficticias. Los items no obligatorios no participan en la secuencia previa al simulacro.
 
 ## Contradicciones Resueltas Provisionalmente
 
