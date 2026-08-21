@@ -238,7 +238,7 @@ export default function AdminQuestionsPage() {
       }
       if (temaId) {
         const bls = await catalogApi.getBloques(temaId).catch(() => []);
-        setFormBloques(bls);
+        setCatBloques(bls);
       }
       setForm({
         temaId: String(pregunta.tema_id),

@@ -1027,7 +1027,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
 
   const loadOposiciones = useCallback(async () => {
     const payload = isAdmin
-      ? await adminApi.listOposicionesConStats(token, { page_size: 200 })
+      ? await adminApi.listOposicionesConStats(token, { page_size: 100 })
       : await profesorApi.getWorkspaceOposiciones(token);
     const items = normalizeOposiciones(payload);
     setOposiciones(items);
