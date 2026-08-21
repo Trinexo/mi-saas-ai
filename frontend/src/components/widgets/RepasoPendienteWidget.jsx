@@ -96,7 +96,7 @@ export default function RepasoPendienteWidget() {
           Repaso inteligente basado en tus fallos a lo largo del tiempo.
         </p>
         <button
-          onClick={() => navigate('/planes')}
+          onClick={() => navigate('/catalogo')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', color: OL, border: `1.5px solid ${O}`, borderRadius: 10, padding: '9px 20px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
         >
           Desbloquear con Pro
