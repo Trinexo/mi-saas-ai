@@ -8,7 +8,7 @@ import { Button, Header, P, PageShell, Panel, Progress, Select } from './Profeso
 const TH = { textAlign: 'left', padding: '10px 12px', fontSize: '.72rem', fontWeight: 900, color: '#64748b', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', textTransform: 'uppercase' };
 const TD = { padding: '10px 12px', fontSize: '.82rem', color: '#0f172a', borderBottom: '1px solid #f1f5f9' };
 const INPUT = { width: '100%', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: '.85rem', boxSizing: 'border-box' };
-const EMPTY_EDIT = { enunciado: '', explicacion: '', referenciaNormativa: '', nivelDificultad: 'media', opciones: [{texto:'',correcta:true},{texto:'',correcta:false},{texto:'',correcta:false},{texto:'',correcta:false}] };
+const EMPTY_EDIT = { enunciado: '', explicacion: '', referenciaNormativa: '', nivelDificultad: 'media', estado: 'aprobada', opciones: [{texto:'',correcta:true},{texto:'',correcta:false},{texto:'',correcta:false},{texto:'',correcta:false}] };
 
 export default function ProfesorPreguntasPage() {
   const { token } = useAuth();
@@ -288,6 +288,14 @@ export default function ProfesorPreguntasPage() {
                   <option value="facil">Fácil</option>
                   <option value="media">Media</option>
                   <option value="dificil">Difícil</option>
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '.85rem', fontWeight: 600 }}>
+                Estado editorial
+                <select value={editForm.estado} onChange={(e) => setEditForm((f) => ({ ...f, estado: e.target.value }))} style={{ ...INPUT, width: 150 }}>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="revision">En revisión</option>
+                  <option value="cancelada">Cancelada</option>
                 </select>
               </label>
             </div>
