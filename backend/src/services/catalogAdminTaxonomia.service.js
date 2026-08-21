@@ -30,8 +30,49 @@ export const catalogAdminTaxonomiaService = {
   },
 
   async deleteTema(id) {
-    const result = await catalogAdminRepository.deleteTema(id);
-    if (!result) throw new ApiError(404, 'Tema no encontrado');
+    const dependencies = await catalogAdminRepository.getTemaDeleteDependencies(id);
+    const preguntas = Number(dependencies.preguntas ?? 0);
+    const colecciones = Number(dependencies.colecciones ?? 0);
+    const otrasDependencias = [
+      ['admin_tests', 'tests administrativos'],
+      ['admin_tests_temas', 'relaciones de tests administrativos'],
+      ['albacer_modulo_temas', 'módulos Albacer'],
+      ['planificacion_academica_temas', 'planificaciones académicas'],
+      ['progreso_usuario', 'registros de progreso'],
+      ['simulacros_configuracion_temas', 'configuraciones de simulacros'],
+      ['tests', 'tests'],
+    ];
+
+    if (preguntas > 0) {
+      throw new ApiError(409, `No se puede eliminar este tema porque tiene ${preguntas} ${preguntas === 1 ? 'pregunta asociada' : 'preguntas asociadas'}. Reasigna o elimina las preguntas antes de eliminarlo.`);
+    }
+    if (colecciones > 0) {
+      throw new ApiError(409, `No se puede eliminar este tema porque tiene ${colecciones} ${colecciones === 1 ? 'colección asociada' : 'colecciones asociadas'}. Elimina las colecciones antes de eliminarlo.`);
+    }
+
+    const dependencia = otrasDependencias
+      .map(([key, label]) => ({ count: Number(dependencies[key] ?? 0), label }))
+      .find(({ count }) => count > 0);
+    if (dependencia) {
+      throw new ApiError(409, `No se puede eliminar este tema porque tiene ${dependencia.count} ${dependencia.label} asociadas. Elimina las dependencias antes de eliminarlo.`);
+    }
+
+    let result;
+    try {
+      result = await catalogAdminRepository.deleteTema(id);
+    } catch (error) {
+      if (error?.code === '23503') {
+        throw new ApiError(409, 'No se puede eliminar este tema porque tiene contenido asociado. Reasigna o elimina las dependencias antes de eliminarlo.');
+      }
+      throw error;
+    }
+    if (!result) {
+      const remaining = await catalogAdminRepository.getTemaDeleteDependencies(id);
+      if (Object.values(remaining).some((count) => Number(count ?? 0) > 0)) {
+        throw new ApiError(409, 'No se puede eliminar este tema porque tiene contenido asociado. Reasigna o elimina las dependencias antes de eliminarlo.');
+      }
+      throw new ApiError(404, 'Tema no encontrado');
+    }
     return result;
   },
 

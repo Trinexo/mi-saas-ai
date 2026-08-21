@@ -212,8 +212,49 @@ export const catalogAdminRepository = {
     return r.rows;
   },
 
+  async getTemaDeleteDependencies(id) {
+    const r = await pool.query(
+      `SELECT
+         (SELECT COUNT(*)::int FROM preguntas WHERE tema_id = $1) AS preguntas,
+         (SELECT COUNT(*)::int FROM colecciones WHERE tema_id = $1) AS colecciones,
+         (SELECT COUNT(*)::int FROM admin_tests WHERE tema_id = $1) AS admin_tests,
+         (SELECT COUNT(*)::int FROM admin_tests_temas WHERE tema_id = $1) AS admin_tests_temas,
+         (SELECT COUNT(*)::int FROM albacer_modulo_temas WHERE tema_id = $1) AS albacer_modulo_temas,
+         (SELECT COUNT(*)::int FROM planificacion_academica_temas WHERE tema_id = $1) AS planificacion_academica_temas,
+         (SELECT COUNT(*)::int FROM progreso_usuario WHERE tema_id = $1) AS progreso_usuario,
+         (SELECT COUNT(*)::int FROM simulacros_configuracion_temas WHERE tema_id = $1) AS simulacros_configuracion_temas,
+         (SELECT COUNT(*)::int FROM tests WHERE tema_id = $1) AS tests`,
+      [id],
+    );
+    return r.rows[0] ?? {
+      preguntas: 0,
+      colecciones: 0,
+      admin_tests: 0,
+      admin_tests_temas: 0,
+      albacer_modulo_temas: 0,
+      planificacion_academica_temas: 0,
+      progreso_usuario: 0,
+      simulacros_configuracion_temas: 0,
+      tests: 0,
+    };
+  },
+
   async deleteTema(id) {
-    const r = await pool.query('DELETE FROM temas WHERE id = $1 RETURNING id', [id]);
+    const r = await pool.query(
+      `DELETE FROM temas
+       WHERE id = $1
+         AND NOT EXISTS (SELECT 1 FROM preguntas WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM colecciones WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM admin_tests WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM admin_tests_temas WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM albacer_modulo_temas WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM planificacion_academica_temas WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM progreso_usuario WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM simulacros_configuracion_temas WHERE tema_id = $1)
+         AND NOT EXISTS (SELECT 1 FROM tests WHERE tema_id = $1)
+       RETURNING id`,
+      [id],
+    );
     return r.rows[0] ?? null;
   },
 
