@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import DashboardWidget from '../components/DashboardWidget.jsx';
 import PasswordFormSection from '../components/profile/PasswordFormSection';
@@ -21,7 +20,6 @@ const PLAN_BADGE = {
 
 export default function ProfilePage() {
   const { token, user, refreshUser } = useAuth();
-  const navigate = useNavigate();
   const role = user?.role || 'user';
   const badge = ROLE_BADGE[role] || { label: role, bg: '#f3f4f6', color: '#374151' };
   const inicial = (user?.nombre || user?.email || '?')[0].toUpperCase();
@@ -65,37 +63,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Banner de upgrade si el plan es free */}
-      {planActual === 'free' && (
-        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e40af' }}>Actualiza a Pro</div>
-            <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 2 }}>Simulacros, repetición espaciada e historial completo por 9,99€/mes</div>
-          </div>
-          <button
-            onClick={() => navigate('/planes')}
-            style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 7, padding: '8px 16px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}
-          >
-            Ver planes →
-          </button>
-        </div>
-      )}
-
-      {/* Banner de upgrade si el plan es pro → invitar a Elite */}
-      {planActual === 'pro' && (
-        <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 10, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#92400e' }}>🏆 Actualiza a Elite</div>
-            <div style={{ fontSize: '0.8rem', color: '#b45309', marginTop: 2 }}>Analíticas avanzadas, aprendizaje adaptativo y soporte prioritario por 19,99€/mes</div>
-          </div>
-          <button
-            onClick={() => navigate('/planes')}
-            style={{ background: '#b45309', color: '#fff', border: 'none', borderRadius: 7, padding: '8px 16px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}
-          >
-            Ver plan Elite →
-          </button>
-        </div>
-      )}
 
       {/* Resumen de actividad */}
       <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,.07)', marginBottom: 16 }}>
