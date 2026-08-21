@@ -5,7 +5,6 @@ import { catalogApi } from '../services/catalogApi';
 import { billingApi } from '../services/billingApi';
 import { testApi } from '../services/testApi';
 import { useUserAccesos } from '../hooks/useUserAccesos';
-import { useUserPlan } from '../hooks/useUserPlan';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 
 const CARD = {
@@ -23,7 +22,6 @@ export default function CatalogoPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { accesos, tieneAcceso, loading: loadingAccesos } = useUserAccesos();
-  const { plan } = useUserPlan();
   const { setOposicionActiva } = useOposicionActiva();
   const [oposiciones, setOposiciones] = useState([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);
@@ -93,9 +91,6 @@ export default function CatalogoPage() {
           Compra acceso al banco de preguntas de la oposición que quieres preparar. Con cualquier curso obtienes acceso completo a sus preguntas; las funcionalidades avanzadas (simulacros, repaso espaciado, refuerzo).
         </p>
       </div>
-  
-      </div>
-
       {/* Grid de oposiciones */}
       {oposiciones.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
