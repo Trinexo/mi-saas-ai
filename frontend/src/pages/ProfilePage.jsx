@@ -15,7 +15,6 @@ const ROLE_BADGE = {
 const PLAN_BADGE = {
   free:  { label: 'Gratuito', bg: '#f3f4f6', color: '#6b7280' },
   pro:   { label: 'Pro',      bg: '#eff6ff', color: '#1d4ed8' },
-  elite: { label: 'Elite',    bg: '#fef9c3', color: '#92400e' },
 };
 
 export default function ProfilePage() {
@@ -33,7 +32,8 @@ export default function ProfilePage() {
       .catch(() => setPlanActual('free'));
   }, [token]);
 
-  const planBadge = PLAN_BADGE[planActual] ?? PLAN_BADGE.free;
+  const planNormalizado = planActual === 'elite' ? 'pro' : planActual;
+const planBadge = PLAN_BADGE[planNormalizado] ?? PLAN_BADGE.free;
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
