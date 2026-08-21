@@ -52,10 +52,10 @@ export default function ConfigurarTestPage() {
             <div style={{ fontSize: '0.82rem', color: '#b45309', marginTop: 2 }}>Para crear tests personalizados necesitas comprar acceso a una oposición.</div>
           </div>
           <button
-            onClick={() => navigate('/planes')}
+            onClick={() => navigate('/catalogo')}
             style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#d97706', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0 }}
           >
-            Ver planes →
+            Ver oposiciones →
           </button>
         </div>
       )}
