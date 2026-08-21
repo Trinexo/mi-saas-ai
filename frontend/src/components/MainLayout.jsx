@@ -279,19 +279,7 @@ function Shell() {
                 {planBadge.label}
               </span>
             )}
-            {!isStaff && (
-              <Link
-                to="/planes"
-                style={{
-                  fontSize: '0.7rem', fontWeight: 600, color: '#6b7280',
-                  textDecoration: 'none', marginLeft: 'auto',
-                  padding: '3px 8px', borderRadius: 6,
-                  border: '1px solid rgba(255,255,255,.1)',
-                }}
-              >
-                Planes
-              </Link>
-            )}
+            
             {canUseNotifications && (
               <Link
                 to={notificationsPath}
