@@ -66,7 +66,6 @@ export const profesorSimulacrosRepository = {
   async getMisSimulacros(userId, { oposicionId, estado, q, scope, limit, offset }) {
     const args = [userId];
     const conds = [
-      's.creado_por = $1',
       `EXISTS (
         SELECT 1 FROM profesores_oposiciones po
         WHERE po.user_id = $1 AND po.oposicion_id = s.oposicion_id
@@ -97,14 +96,17 @@ export const profesorSimulacrosRepository = {
               s.tiempo_limite_segundos, s.puntuacion_maxima,
               s.fecha_publicacion, s.fecha_creacion,
               o.nombre AS oposicion_nombre, s.oposicion_id,
+              (s.creado_por = $1) AS es_propietario,
+              CASE WHEN creador.role = 'admin' THEN 'admin' ELSE 'profesor' END AS origen,
               COALESCE(s.scope, 'experto') AS scope, s.albacer_modulo_id,
               COUNT(DISTINCT sb.id)::int             AS total_bloques,
               COALESCE(SUM(sb.numero_preguntas), 0)::int AS total_preguntas
        FROM simulacros s
        LEFT JOIN oposiciones o      ON o.id = s.oposicion_id
+       LEFT JOIN usuarios creador   ON creador.id = s.creado_por
        LEFT JOIN simulacros_bloques sb ON sb.simulacro_id = s.id
        WHERE ${where}
-       GROUP BY s.id, o.nombre
+       GROUP BY s.id, o.nombre, creador.role
        ORDER BY s.fecha_creacion DESC
        LIMIT $${args.length - 1} OFFSET $${args.length}`,
       args,
@@ -133,5 +135,16 @@ export const profesorSimulacrosRepository = {
       [simulacroId, userId],
     );
     return r.rows.length > 0;
+  },
+
+  async getSimulacroCreatorInfo(simulacroId) {
+    const r = await pool.query(
+      `SELECT s.creado_por, u.role AS creador_role
+       FROM simulacros s
+       LEFT JOIN usuarios u ON u.id = s.creado_por
+       WHERE s.id = $1`,
+      [simulacroId],
+    );
+    return r.rows[0] ?? null;
   },
 };

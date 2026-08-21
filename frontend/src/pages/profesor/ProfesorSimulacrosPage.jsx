@@ -77,6 +77,7 @@ export default function ProfesorSimulacrosPage() {
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [detailTarget, setDetailTarget] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -196,7 +197,7 @@ export default function ProfesorSimulacrosPage() {
         <div>
           <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#111827' }}>Mis simulacros</h2>
           <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#9ca3af' }}>
-            Simulacros que has creado - {total} en total
+            Simulacros disponibles para tus oposiciones - {total} en total
           </p>
         </div>
         <Link to="/profesor/simulacros/nuevo" style={{ background: '#6d28d9', color: '#fff', borderRadius: 10, padding: '10px 20px', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none' }}>
@@ -256,6 +257,9 @@ export default function ProfesorSimulacrosPage() {
                     <td style={TD}>
                       <div style={{ fontWeight: 600 }}>{simulacro.nombre}</div>
                       {simulacro.oposicion_nombre && <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 2 }}>{simulacro.oposicion_nombre}</div>}
+                      <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 4 }}>
+                        {simulacro.es_propietario ? 'Creado por ti' : (simulacro.origen === 'admin' ? 'Creado por administración' : 'Creado por otro profesor')}
+                      </div>
                     </td>
                     <td style={TD}>
                       <span style={{ ...(ESTADO_STYLES[simulacro.estado] ?? {}), borderRadius: 12, padding: '2px 10px', fontSize: '0.77rem', fontWeight: 700 }}>
@@ -269,12 +273,20 @@ export default function ProfesorSimulacrosPage() {
                       {simulacro.fecha_creacion ? new Date(simulacro.fecha_creacion).toLocaleDateString('es-ES') : '-'}
                     </td>
                     <td style={{ ...TD, textAlign: 'center' }}>
-                      <Link to={`/profesor/simulacros/${simulacro.id}/editar`} style={{ display: 'inline-block', background: '#f3f4f6', borderRadius: 6, padding: '5px 12px', fontSize: '0.8rem', marginRight: 6, fontWeight: 600, color: '#374151', textDecoration: 'none' }}>
-                        Editar
-                      </Link>
-                      <button onClick={() => setDeleteTarget(simulacro)} style={{ background: '#fef2f2', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, color: '#dc2626' }}>
-                        Eliminar
-                      </button>
+                      {simulacro.es_propietario ? (
+                        <>
+                          <Link to={`/profesor/simulacros/${simulacro.id}/editar`} style={{ display: 'inline-block', background: '#f3f4f6', borderRadius: 6, padding: '5px 12px', fontSize: '0.8rem', marginRight: 6, fontWeight: 600, color: '#374151', textDecoration: 'none' }}>
+                            Editar
+                          </Link>
+                          <button onClick={() => setDeleteTarget(simulacro)} style={{ background: '#fef2f2', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, color: '#dc2626' }}>
+                            Eliminar
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => setDetailTarget(simulacro)} style={{ background: '#f3f4f6', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, color: '#374151' }}>
+                          Ver detalle
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -373,6 +385,21 @@ export default function ProfesorSimulacrosPage() {
               <button onClick={handleDelete} disabled={deleting} style={{ padding: '9px 22px', borderRadius: 9, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer' }}>
                 {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailTarget && (
+        <div style={MODAL_OVERLAY} onClick={() => setDetailTarget(null)}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, boxShadow: '0 8px 32px rgba(0,0,0,.18)' }} onClick={(event) => event.stopPropagation()}>
+            <h3 style={{ margin: '0 0 12px', fontWeight: 800, color: '#111827' }}>{detailTarget.nombre}</h3>
+            <p style={{ margin: '0 0 8px', color: '#6b7280', fontSize: '0.9rem' }}>{detailTarget.descripcion || 'Sin descripción.'}</p>
+            <p style={{ margin: '0 0 4px', color: '#374151', fontSize: '0.85rem' }}><strong>Oposición:</strong> {detailTarget.oposicion_nombre || '-'}</p>
+            <p style={{ margin: '0 0 4px', color: '#374151', fontSize: '0.85rem' }}><strong>Estado:</strong> {detailTarget.estado}</p>
+            <p style={{ margin: '0 0 18px', color: '#374151', fontSize: '0.85rem' }}><strong>Preguntas:</strong> {detailTarget.total_preguntas ?? 0}</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setDetailTarget(null)} style={{ padding: '9px 20px', borderRadius: 9, border: '1px solid #e5e7eb', background: '#f9fafb', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Cerrar</button>
             </div>
           </div>
         </div>

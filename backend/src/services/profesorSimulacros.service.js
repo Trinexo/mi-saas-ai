@@ -61,9 +61,19 @@ export const profesorSimulacrosService = {
   async getSimulacro(userId, simulacroId) {
     const data = await adminSimulacrosRepository.getSimulacro(simulacroId);
     if (!data) throw new ApiError(404, 'Simulacro no encontrado');
-    const esPropio = await profesorSimulacrosRepository.simulacroEsPropio(userId, simulacroId);
-    if (!esPropio) throw new ApiError(403, 'No tienes acceso a este simulacro');
     await this.assertOposicionAsignada(userId, data.oposicion_id);
+    const creator = await profesorSimulacrosRepository.getSimulacroCreatorInfo(simulacroId);
+    const { creado_por: _creatorId, ...publicData } = data;
+    return {
+      ...publicData,
+      es_propietario: String(data.creado_por) === String(userId),
+      origen: creator?.creador_role === 'admin' ? 'admin' : 'profesor',
+    };
+  },
+
+  async getSimulacroEditable(userId, simulacroId) {
+    const data = await this.getSimulacro(userId, simulacroId);
+    if (!data.es_propietario) throw new ApiError(403, 'Solo puedes modificar simulacros creados por ti');
     return data;
   },
 
@@ -102,7 +112,7 @@ export const profesorSimulacrosService = {
   },
 
   async updateSimulacro(userId, simulacroId, fields) {
-    const current = await this.getSimulacro(userId, simulacroId);
+    const current = await this.getSimulacroEditable(userId, simulacroId);
     const oposicionId = hasOwn(fields, 'oposicion_id') ? fields.oposicion_id : current.oposicion_id;
     await this.assertOposicionAsignada(userId, oposicionId);
     await this.assertExistingPreguntasMatchOposicion(simulacroId, oposicionId);
@@ -126,14 +136,14 @@ export const profesorSimulacrosService = {
   },
 
   async deleteSimulacro(userId, simulacroId) {
-    const current = await this.getSimulacro(userId, simulacroId);
+    const current = await this.getSimulacroEditable(userId, simulacroId);
     const data = await adminSimulacrosRepository.deleteSimulacro(current.id);
     if (!data) throw new ApiError(404, 'Simulacro no encontrado');
     return data;
   },
 
   async createBloque(userId, simulacroId, fields) {
-    await this.getSimulacro(userId, simulacroId);
+    await this.getSimulacroEditable(userId, simulacroId);
     return adminSimulacrosRepository.createBloque(simulacroId, {
       nombre: fields.nombre,
       orden: fields.orden ?? 0,
@@ -142,7 +152,7 @@ export const profesorSimulacrosService = {
   },
 
   async updateBloque(userId, simulacroId, bloqueId, fields) {
-    await this.getSimulacro(userId, simulacroId);
+    await this.getSimulacroEditable(userId, simulacroId);
     await this.assertBloqueBelongsToSimulacro(simulacroId, bloqueId);
     const data = await adminSimulacrosRepository.updateBloque(bloqueId, fields);
     if (!data) throw new ApiError(404, 'Bloque no encontrado');
@@ -150,7 +160,7 @@ export const profesorSimulacrosService = {
   },
 
   async deleteBloque(userId, simulacroId, bloqueId) {
-    await this.getSimulacro(userId, simulacroId);
+    await this.getSimulacroEditable(userId, simulacroId);
     await this.assertBloqueBelongsToSimulacro(simulacroId, bloqueId);
     const data = await adminSimulacrosRepository.deleteBloque(bloqueId);
     if (!data) throw new ApiError(404, 'Bloque no encontrado');
@@ -158,7 +168,7 @@ export const profesorSimulacrosService = {
   },
 
   async asignarPreguntas(userId, simulacroId, bloqueId, preguntaIds) {
-    const simulacro = await this.getSimulacro(userId, simulacroId);
+    const simulacro = await this.getSimulacroEditable(userId, simulacroId);
     await this.assertBloqueBelongsToSimulacro(simulacroId, bloqueId);
     await this.assertPreguntasDeOposicion(preguntaIds, simulacro.oposicion_id);
     await adminSimulacrosService.assertPreguntasWithinConfiguration(simulacro, bloqueId, preguntaIds);
@@ -166,7 +176,7 @@ export const profesorSimulacrosService = {
   },
 
   async quitarPregunta(userId, simulacroId, bloqueId, preguntaId) {
-    await this.getSimulacro(userId, simulacroId);
+    await this.getSimulacroEditable(userId, simulacroId);
     await this.assertBloqueBelongsToSimulacro(simulacroId, bloqueId);
     const data = await adminSimulacrosRepository.quitarPregunta(bloqueId, preguntaId);
     if (!data) throw new ApiError(404, 'Asignacion no encontrada');
