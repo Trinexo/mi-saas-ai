@@ -944,9 +944,9 @@ function HomeAlbacer({ nombre, saludo }) {
               <h2 style={{ margin: 0, color: DK, fontSize: '1.1rem', fontWeight: 950 }}>Tu ruta de aprendizaje <span style={{ color: '#64748b' }}>ⓘ</span></h2>
               <p style={{ margin: '8px 0 0', color: '#475569', fontSize: '.86rem', fontWeight: 650 }}>Sigue el camino módulo a módulo para dominar todos los temas.</p>
             </div>
-            <button type="button" style={{ border: `1px solid ${OL}55`, background: '#fff', color: O, borderRadius: 10, padding: '9px 13px', fontWeight: 900 }}>
+            {/*<button type="button" style={{ border: `1px solid ${OL}55`, background: '#fff', color: O, borderRadius: 10, padding: '9px 13px', fontWeight: 900 }}>
               ▶ ¿Cómo funciona?
-            </button>
+            </button>*/}
           </div>
 
           {loading ? (
