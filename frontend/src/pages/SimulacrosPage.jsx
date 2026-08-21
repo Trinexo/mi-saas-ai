@@ -491,21 +491,7 @@ export default function SimulacrosPage() {
             )}
           </div>
 
-          {/* CTA sin accesos */}
-          {accesos.length === 0 && (
-            <div style={{ ...CARD, padding: '24px 26px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontWeight: 700, color: DK, marginBottom: 4 }}>¿Aún no tienes acceso a ninguna oposición?</div>
-                <div style={{ fontSize: '0.82rem', color: GL }}>Adquiere un plan para desbloquear simulacros y acceso ilimitado.</div>
-              </div>
-              <button
-                onClick={() => navigate('/planes')}
-                style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: O, color: '#fff', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: `0 3px 12px ${O}40` }}
-              >
-                Ver planes →
-              </button>
-            </div>
-          )}
+         
         </>
       )}
     </div>
