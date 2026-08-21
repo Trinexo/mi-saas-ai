@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { configuracionPreguntasSchema } from './adminSimulacros.schema.js';
 
 const id = z.coerce.number().int().positive();
 const nonNegativeInt = z.coerce.number().int().min(0);
@@ -29,6 +30,8 @@ export const createSimulacroProfesorSchema = z.object({
   penalizacion: z.coerce.number().min(0).max(1).optional().nullable(),
   mostrar_resultados_al_final: z.boolean().optional(),
   fecha_publicacion: z.string().datetime().optional().nullable(),
+  wizard_simplificado: z.boolean().optional(),
+  configuracion_preguntas: configuracionPreguntasSchema.optional(),
 });
 
 export const updateSimulacroProfesorSchema = createSimulacroProfesorSchema

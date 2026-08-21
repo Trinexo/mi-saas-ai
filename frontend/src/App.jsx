@@ -1,4 +1,4 @@
-﻿import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout.jsx';
 import InstallPrompt from './components/InstallPrompt.jsx';
 import { useAuth } from './state/auth.jsx';
@@ -91,6 +91,7 @@ function OposicionGuard({ children }) {
         nombre: accesos[0].nombre,
         modoPreparacion: accesos[0].modo_preparacion,
         tipoAlumno: accesos[0].tipo_alumno,
+        modelosEfectivos: accesos[0].modelos_efectivos ?? accesos[0].modelos_disponibles,
       });
     } else {
       navigate('/seleccionar-oposicion', { replace: true });

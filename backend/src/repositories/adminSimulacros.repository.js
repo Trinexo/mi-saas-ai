@@ -1,5 +1,24 @@
 import pool from '../config/db.js';
 
+export const configuredExamMatchSql = (configAlias = 'c', questionAlias = 'p') => `
+              CASE WHEN EXISTS (
+                SELECT 1 FROM simulacros_configuracion_examenes ce0
+                WHERE ce0.simulacro_id = ${configAlias}.simulacro_id
+              ) THEN EXISTS (
+                SELECT 1
+                  FROM examenes_oficiales_preguntas ep
+                  JOIN simulacros_configuracion_examenes ce
+                    ON ce.examen_id = ep.examen_id
+                 WHERE ep.pregunta_id = ${questionAlias}.id
+                   AND ce.simulacro_id = ${configAlias}.simulacro_id
+              ) ELSE (
+                ${configAlias}.examen_id IS NULL OR EXISTS (
+                  SELECT 1 FROM examenes_oficiales_preguntas ep
+                  WHERE ep.pregunta_id = ${questionAlias}.id
+                    AND ep.examen_id = ${configAlias}.examen_id
+                )
+              ) END`;
+
 export const adminSimulacrosRepository = {
   // ─── Listado con paginación y filtros ────────────────────────────────────────
   async listSimulacros({ q, estado, oposicionId, allowedOposicionIds, scope, limit, offset }) {
@@ -100,7 +119,98 @@ export const adminSimulacrosRepository = {
       [id],
     );
     simulacro.bloques = bloquesRow.rows;
+    const configRow = await pool.query(
+      `SELECT c.simulacro_id, c.total_preguntas, c.dificultad, c.officialidad,
+              c.reparto_por_tema, c.examen_id,
+              COALESCE((SELECT json_agg(json_build_object('tema_id', t.tema_id::text, 'cantidad', t.cantidad)
+                                       ORDER BY t.tema_id)
+                        FROM simulacros_configuracion_temas t
+                       WHERE t.simulacro_id = c.simulacro_id), '[]'::json) AS temas,
+              COALESCE((SELECT json_agg(a.oposicion_anio_id::text ORDER BY a.oposicion_anio_id)
+                        FROM simulacros_configuracion_anios a
+                       WHERE a.simulacro_id = c.simulacro_id), '[]'::json) AS anio_ids
+              ,COALESCE((SELECT json_agg(e.examen_id::text ORDER BY e.examen_id)
+                        FROM simulacros_configuracion_examenes e
+                       WHERE e.simulacro_id = c.simulacro_id),
+                       CASE WHEN c.examen_id IS NULL THEN '[]'::json ELSE json_build_array(c.examen_id::text) END) AS examen_ids
+         FROM simulacros_configuracion_preguntas c
+        WHERE c.simulacro_id = $1`,
+      [id],
+    );
+    simulacro.configuracion_preguntas = configRow.rows[0] ?? null;
     return simulacro;
+  },
+
+  async saveConfiguracionPreguntas(simulacroId, config) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `INSERT INTO simulacros_configuracion_preguntas
+           (simulacro_id, total_preguntas, dificultad, officialidad, reparto_por_tema, examen_id)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (simulacro_id) DO UPDATE SET
+           total_preguntas=EXCLUDED.total_preguntas, dificultad=EXCLUDED.dificultad,
+           officialidad=EXCLUDED.officialidad, reparto_por_tema=EXCLUDED.reparto_por_tema,
+           examen_id=EXCLUDED.examen_id`,
+        [simulacroId, config.total_preguntas, config.dificultad ?? null, config.officialidad, config.reparto_por_tema, config.examen_id ?? config.examen_ids?.[0] ?? null],
+      );
+      await client.query('DELETE FROM simulacros_configuracion_temas WHERE simulacro_id = $1', [simulacroId]);
+      if (config.temas?.length) {
+        for (const tema of config.temas) {
+          await client.query(
+            `INSERT INTO simulacros_configuracion_temas (simulacro_id, tema_id, cantidad)
+             VALUES ($1,$2,$3)`,
+            [simulacroId, tema.tema_id, tema.cantidad ?? null],
+          );
+        }
+      }
+      await client.query('DELETE FROM simulacros_configuracion_anios WHERE simulacro_id = $1', [simulacroId]);
+      for (const anioId of config.anio_ids ?? []) {
+        await client.query(
+          `INSERT INTO simulacros_configuracion_anios (simulacro_id, oposicion_anio_id)
+           VALUES ($1,$2)`,
+          [simulacroId, anioId],
+        );
+      }
+      await client.query('DELETE FROM simulacros_configuracion_examenes WHERE simulacro_id = $1', [simulacroId]);
+      const examenIds = config.examen_ids?.length
+        ? [...new Set(config.examen_ids.map(String))]
+        : (config.examen_id != null ? [String(config.examen_id)] : []);
+      for (const examenId of examenIds) {
+        await client.query(
+          `INSERT INTO simulacros_configuracion_examenes (simulacro_id, examen_id)
+           VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+          [simulacroId, examenId],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    return this.getSimulacro(simulacroId);
+  },
+
+  async getOfficialFilterScope(oposicionId, anioIds = [], examenIds = []) {
+    const [years, exams] = await Promise.all([
+      pool.query(
+        `SELECT id::text AS id, oposicion_id::text AS oposicion_id, anio
+           FROM oposiciones_anios_oficiales
+          WHERE oposicion_id = $1 AND id = ANY($2::bigint[])`,
+        [oposicionId, anioIds],
+      ),
+      pool.query(
+        `SELECT id::text AS id, oposicion_id::text AS oposicion_id,
+                oposicion_anio_id::text AS oposicion_anio_id, anio
+           FROM examenes_oficiales
+          WHERE oposicion_id = $1 AND id = ANY($2::bigint[])`,
+        [oposicionId, examenIds],
+      ),
+    ]);
+    return { years: years.rows, exams: exams.rows };
   },
 
   // ─── Crear simulacro ─────────────────────────────────────────────────────────
@@ -191,6 +301,73 @@ export const adminSimulacrosRepository = {
       [simulacroId],
     );
     return result.rows.map((row) => Number(row.pregunta_id));
+  },
+
+  async getBloquePreguntaIds(bloqueId) {
+    const result = await pool.query(
+      'SELECT pregunta_id FROM simulacros_preguntas WHERE bloque_id = $1',
+      [bloqueId],
+    );
+    return result.rows.map((row) => row.pregunta_id);
+  },
+
+  async getPreguntaTopicIds(preguntaIds) {
+    if (!preguntaIds?.length) return [];
+    const result = await pool.query(
+      'SELECT id, tema_id FROM preguntas WHERE id = ANY($1::bigint[])',
+      [preguntaIds],
+    );
+    return result.rows;
+  },
+
+  async getPreguntasForAssignmentValidation(simulacroId, preguntaIds) {
+    if (!preguntaIds?.length) return [];
+    const result = await pool.query(
+      `SELECT p.id, p.tema_id, t.oposicion_id, p.estado, p.nivel_dificultad,
+              c.dificultad, c.officialidad, c.examen_id, c.reparto_por_tema,
+              EXISTS (SELECT 1 FROM preguntas_anios_oficiales pa
+                      WHERE pa.pregunta_id = p.id) AS es_oficial,
+              EXISTS (SELECT 1
+                        FROM preguntas_anios_oficiales pa
+                        JOIN simulacros_configuracion_anios ca
+                          ON ca.oposicion_anio_id = pa.oposicion_anio_id
+                       WHERE pa.pregunta_id = p.id
+                         AND ca.simulacro_id = c.simulacro_id) AS coincide_anio,
+              ${configuredExamMatchSql('c', 'p')} AS coincide_examen,
+              EXISTS (SELECT 1
+                        FROM simulacros_configuracion_temas ct
+                       WHERE ct.simulacro_id = c.simulacro_id
+                         AND ct.tema_id = p.tema_id) AS tema_configurado
+         FROM preguntas p
+         JOIN temas t ON t.id = p.tema_id
+         JOIN simulacros_configuracion_preguntas c ON c.simulacro_id = $1
+        WHERE p.id = ANY($2::bigint[])`,
+      [simulacroId, preguntaIds],
+    );
+    return result.rows;
+  },
+
+  async getConfiguracionPreguntasValidation(simulacroId) {
+    const result = await pool.query(
+      `SELECT p.id, p.tema_id, t.oposicion_id, p.estado, p.nivel_dificultad,
+              EXISTS (SELECT 1 FROM preguntas_anios_oficiales pa
+                      WHERE pa.pregunta_id = p.id) AS es_oficial,
+              EXISTS (SELECT 1
+                        FROM preguntas_anios_oficiales pa
+                        JOIN simulacros_configuracion_anios ca
+                          ON ca.oposicion_anio_id = pa.oposicion_anio_id
+                       WHERE pa.pregunta_id = p.id AND ca.simulacro_id = sb.simulacro_id) AS coincide_anio,
+              ${configuredExamMatchSql('c', 'p')} AS coincide_examen
+         FROM simulacros s
+         JOIN simulacros_configuracion_preguntas c ON c.simulacro_id = s.id
+         JOIN simulacros_bloques sb ON sb.simulacro_id = s.id
+         LEFT JOIN simulacros_preguntas sp ON sp.bloque_id = sb.id
+         LEFT JOIN preguntas p ON p.id = sp.pregunta_id
+         LEFT JOIN temas t ON t.id = p.tema_id
+        WHERE s.id = $1 AND p.id IS NOT NULL`,
+      [simulacroId],
+    );
+    return result.rows;
   },
 
   async updateBloque(bloqueId, fields) {
