@@ -38,6 +38,7 @@ function AccesoSinActividadCard({ curso, onPracticar, onModoChange, savingMode }
           <ModoPreparacionControls
             modo={modoPreparacion}
             tipoAlumno={tipoAlumno}
+            modelosDisponibles={curso.modelosDisponibles}
             saving={savingMode}
             onChange={onModoChange}
           />
@@ -64,7 +65,8 @@ const TIPO_ALUMNO_LABELS = {
   libre: 'Alumno libre',
 };
 
-function ModoPreparacionControls({ modo, tipoAlumno, saving, onChange }) {
+function ModoPreparacionControls({ modo, tipoAlumno, modelosDisponibles = ['experto', 'guiado'], saving, onChange }) {
+  const allowedModes = modelosDisponibles.map((model) => model === 'guiado' ? 'albacer' : 'experto');
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
       <span style={{ background: modo === 'albacer' ? '#ede9fe' : '#e0f2fe', color: modo === 'albacer' ? '#5b21b6' : '#075985', fontSize: '0.7rem', fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>
@@ -85,8 +87,8 @@ function ModoPreparacionControls({ modo, tipoAlumno, saving, onChange }) {
         title="Cambia la experiencia activa sin mezclar historiales"
       >
         {modo === null && <option value="" disabled>Selecciona un modo</option>}
-        <option value="albacer">Modo Albacer</option>
-        <option value="experto">Modo Experto</option>
+        {allowedModes.includes('albacer') && <option value="albacer">Modo Albacer</option>}
+        {allowedModes.includes('experto') && <option value="experto">Modo Experto</option>}
       </select>
     </div>
   );
@@ -140,6 +142,11 @@ export default function MisOposicionesPage() {
     modoPreparacion: a.modo_preparacion ?? null,
     pendienteModo: a.estado_efectivo === 'pendiente_modo',
     tipoAlumno: a.tipo_alumno ?? 'libre',
+    modelosDisponibles: Array.isArray(a.modelos_efectivos) && a.modelos_efectivos.length
+      ? a.modelos_efectivos
+      : Array.isArray(a.modelos_disponibles) && a.modelos_disponibles.length
+        ? a.modelos_disponibles
+        : (a.modo_activo ? [a.modo_activo] : (a.modo_preparacion === 'experto' ? ['experto'] : ['guiado'])),
     stats: statsMap[Number(a.oposicion_id)] ?? null,
   }));
 
@@ -160,6 +167,7 @@ export default function MisOposicionesPage() {
       nombre: nombre ?? nombreMap[oposicionId] ?? `Oposicion ${oposicionId}`,
       modoPreparacion: curso?.modoPreparacion ?? 'albacer',
       tipoAlumno: curso?.tipoAlumno ?? 'libre',
+      modelosEfectivos: curso?.modelosDisponibles ?? ['experto', 'guiado'],
     });
   };
 
@@ -252,6 +260,7 @@ export default function MisOposicionesPage() {
                   <ModoPreparacionControls
                     modo={c.modoPreparacion}
                     tipoAlumno={c.tipoAlumno}
+                    modelosDisponibles={c.modelosDisponibles}
                     saving={savingModeFor === c.oposicionId}
                     onChange={(modo) => cambiarModoPreparacion(c, modo)}
                   />

@@ -67,6 +67,7 @@ export const accesoOposicionRepository = {
               o.id IS NOT NULL AS oposicion_existe,
               u.id AS usuario_id,
               o.id AS oposicion_id,
+              o.modelos_disponibles AS modelos_disponibles_oposicion,
               ao.id AS acceso_id,
               ao.estado,
               ao.modo_activo,
@@ -87,7 +88,7 @@ export const accesoOposicionRepository = {
            ON ao.usuario_id = requested.usuario_id
           AND ao.oposicion_id = requested.oposicion_id
          LEFT JOIN acceso_oposicion_modelos aom ON aom.acceso_id = ao.id
-        GROUP BY u.id, o.id, ao.id, ao.estado, ao.modo_activo,
+        GROUP BY u.id, o.id, o.modelos_disponibles, ao.id, ao.estado, ao.modo_activo,
                  ao.modo_preparacion, ao.fecha_inicio, ao.fecha_fin`,
       [usuarioId, oposicionId],
     );
@@ -105,6 +106,7 @@ export const accesoOposicionRepository = {
               ao.fecha_inicio::TEXT AS fecha_inicio,
               ao.fecha_fin::TEXT AS fecha_fin,
               o.nombre,
+              o.modelos_disponibles AS modelos_disponibles_oposicion,
               ao.tipo_alumno,
               ao.ranking_publico,
               COALESCE(
@@ -120,7 +122,7 @@ export const accesoOposicionRepository = {
         WHERE ao.usuario_id = $1
         GROUP BY ao.usuario_id, ao.oposicion_id, ao.id, ao.estado,
                  ao.modo_activo, ao.modo_preparacion, ao.fecha_inicio, ao.fecha_fin,
-                 o.nombre, ao.tipo_alumno, ao.ranking_publico
+                 o.nombre, o.modelos_disponibles, ao.tipo_alumno, ao.ranking_publico
         ORDER BY ao.fecha_inicio DESC, ao.id DESC` ,
       [usuarioId],
     );
@@ -133,6 +135,7 @@ export const accesoOposicionRepository = {
               u.id IS NOT NULL AS usuario_existe,
               o.id IS NOT NULL AS oposicion_existe,
               o.id AS oposicion_id,
+              o.modelos_disponibles AS modelos_disponibles_oposicion,
               ao.id AS acceso_id,
               ao.estado,
               ao.modo_activo,
@@ -153,7 +156,7 @@ export const accesoOposicionRepository = {
            ON ao.usuario_id = requested.usuario_id
           AND ao.oposicion_id = $2::BIGINT
          LEFT JOIN acceso_oposicion_modelos aom ON aom.acceso_id = ao.id
-        GROUP BY requested.usuario_id, u.id, o.id, ao.id, ao.estado,
+        GROUP BY requested.usuario_id, u.id, o.id, o.modelos_disponibles, ao.id, ao.estado,
                  ao.modo_activo, ao.modo_preparacion, ao.fecha_inicio, ao.fecha_fin
         ORDER BY requested.usuario_id` ,
       [usuarioIds, oposicionId],
@@ -443,8 +446,12 @@ export const accesoOposicionRepository = {
       pool.query(
         `SELECT ao.id, ao.estado, ao.fecha_inicio, ao.fecha_fin, ao.precio_pagado, ao.notas,
                 ao.usuario_id, u.nombre AS usuario_nombre, u.email AS usuario_email,
-                ao.tipo_alumno, ao.modo_preparacion, ao.ranking_publico,
-                ao.oposicion_id, o.nombre AS oposicion_nombre
+                ao.tipo_alumno, ao.modo_preparacion, ao.modo_activo, ao.ranking_publico,
+                COALESCE((SELECT array_agg(aom.modelo ORDER BY aom.modelo)
+                            FROM acceso_oposicion_modelos aom
+                           WHERE aom.acceso_id = ao.id), ARRAY[]::text[]) AS modelos_disponibles,
+                 ao.oposicion_id, o.nombre AS oposicion_nombre
+                 , o.modelos_disponibles AS modelos_disponibles_oposicion
          FROM accesos_oposicion ao
          JOIN usuarios   u ON u.id = ao.usuario_id
          JOIN oposiciones o ON o.id = ao.oposicion_id

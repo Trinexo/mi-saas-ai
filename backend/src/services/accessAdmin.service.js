@@ -3,6 +3,7 @@ import { accesoOposicionRepository } from '../repositories/accesoOposicion.repos
 import { accesoOposicionModelosRepository } from '../repositories/accesoOposicionModelos.repository.js';
 import { accesoOposicionHistorialRepository } from '../repositories/accesoOposicionHistorial.repository.js';
 import { createAccessContextService } from './accessContext.service.js';
+import { DEFAULT_OPPOSITION_MODES, normalizeModes } from './accessModes.js';
 
 const MAX_BIGINT = 9223372036854775807n;
 const MODOS = Object.freeze(['experto', 'guiado']);
@@ -139,6 +140,13 @@ function validarAccesoCoherente(access, modelos) {
   }
   if (modelos.length === 1 && access.modo_activo !== legacy) {
     throw errorConCodigo('ACCESS_ADMIN_INCONSISTENT', 'Modo legacy discrepante', 500);
+  }
+}
+
+function validarModosOposicion(modelos, modosOposicion) {
+  const allowed = normalizeModes(modosOposicion, DEFAULT_OPPOSITION_MODES);
+  if (modelos.some((modelo) => !allowed.includes(modelo))) {
+    throw errorConCodigo('ACCESS_ADMIN_MODE_NOT_ALLOWED_BY_OPPOSITION', 'El acceso solicita un modo no permitido por la oposición', 409);
   }
 }
 
@@ -330,10 +338,13 @@ export function createAccessAdminService({
       return mutate({ actorUsuarioId, principal, motivo, callback: async ({ client, actor, reason }) => {
         const [user, opposition] = await Promise.all([
           client.query('SELECT id FROM usuarios WHERE id = $1', [userId]),
-          client.query('SELECT id FROM oposiciones WHERE id = $1', [oppositionId]),
+          client.query('SELECT id, modelos_disponibles FROM oposiciones WHERE id = $1', [oppositionId]),
         ]);
         if (user.rowCount === 0) throw errorConCodigo('ACCESS_ADMIN_USER_NOT_FOUND', 'Usuario no encontrado', 404);
         if (opposition.rowCount === 0) throw errorConCodigo('ACCESS_ADMIN_OPPOSITION_NOT_FOUND', 'Oposición no encontrada', 404);
+        if (opposition.rows[0]?.modelos_disponibles !== undefined) {
+          validarModosOposicion(canonicalModels, opposition.rows[0].modelos_disponibles);
+        }
         const duplicate = await client.query(
           'SELECT id FROM accesos_oposicion WHERE usuario_id = $1 AND oposicion_id = $2 FOR UPDATE',
           [userId, oppositionId],
@@ -375,6 +386,10 @@ export function createAccessAdminService({
         if (!access) throw errorConCodigo('ACCESS_ADMIN_NOT_FOUND', 'Acceso no encontrado', 404);
         if (!ESTADOS_MODELOS.has(access.estado)) throw errorConCodigo('ACCESS_ADMIN_STATE', 'Estado no modificable', 409);
         const currentModels = await leerModelos(client, id, modelosRepository);
+        const opposition = await client.query('SELECT modelos_disponibles FROM oposiciones WHERE id = $1', [access.oposicion_id]);
+        if (opposition.rows[0]?.modelos_disponibles !== undefined) {
+          validarModosOposicion(canonicalModels, opposition.rows[0].modelos_disponibles);
+        }
         const selected = modoActivo == null
           ? (canonicalModels.includes(access.modo_activo) ? access.modo_activo : canonicalModels.length === 1 ? canonicalModels[0] : null)
           : validarModo(modoActivo, canonicalModels);

@@ -18,7 +18,7 @@ export const listOposiciones = async (req, res, next) => {
 
 export const createOposicion = async (req, res, next) => {
   try {
-    const data = await catalogAdminService.createOposicion(req.body.nombre, req.body.descripcion);
+    const data = await catalogAdminService.createOposicion(req.body.nombre, req.body.descripcion, req.body.modelos_disponibles);
     return created(res, data, 'Oposición creada');
   } catch (e) { return next(e); }
 };

@@ -3,7 +3,8 @@ import pool from '../config/db.js';
 export const catalogRepository = {
   async getOposiciones({ includeEmpty = false } = {}) {
     const result = await pool.query(
-      `SELECT o.id, o.nombre, o.descripcion, o.precio_mensual_cents, o.tiempo_limite_minutos
+      `SELECT o.id, o.nombre, o.descripcion, o.precio_mensual_cents, o.tiempo_limite_minutos,
+              o.modelos_disponibles
        FROM oposiciones o
        WHERE ($1::boolean = TRUE OR EXISTS (
          SELECT 1 FROM temas t

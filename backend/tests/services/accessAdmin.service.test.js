@@ -29,6 +29,8 @@ function harness({ access = accessBase(), duplicate = false, models = ['experto'
       }
       if (normalized.startsWith('SELECT id FROM usuarios')) return { rows: [{ id: params[0] }], rowCount: 1 };
       if (normalized.startsWith('SELECT id FROM oposiciones')) return { rows: [{ id: params[0] }], rowCount: 1 };
+      if (normalized.startsWith('SELECT id, modelos_disponibles FROM oposiciones')) return { rows: [{ id: params[0], modelos_disponibles: ['experto', 'guiado'] }], rowCount: 1 };
+      if (normalized.startsWith('SELECT modelos_disponibles FROM oposiciones')) return { rows: [{ modelos_disponibles: ['experto', 'guiado'] }], rowCount: 1 };
       if (normalized.startsWith('SELECT id FROM accesos_oposicion WHERE usuario_id')) {
         return duplicate ? { rows: [{ id: current.id }], rowCount: 1 } : { rows: [], rowCount: 0 };
       }

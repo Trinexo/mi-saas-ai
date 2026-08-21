@@ -29,7 +29,8 @@ const MODAL_OVERLAY = {
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
 };
 
-const emptyForm = { nombre: '', descripcion: '', categoria: '', estado: 'activa' };
+const emptyForm = { nombre: '', descripcion: '', categoria: '', estado: 'activa', modelos_disponibles: ['experto', 'guiado'] };
+const MODE_LABELS = { experto: 'Experto', guiado: 'Guiado' };
 
 export default function AdminOposicionesPage() {
   const { token } = useAuth();
@@ -51,6 +52,7 @@ export default function AdminOposicionesPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [conflictDetails, setConflictDetails] = useState(null);
 
   // Modal eliminar
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -78,18 +80,20 @@ export default function AdminOposicionesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setForm(emptyForm); setFormError(''); setModal('create'); };
+  const openCreate = () => { setForm(emptyForm); setFormError(''); setConflictDetails(null); setModal('create'); };
   const openEdit = (op) => {
     setEditTarget(op);
-    setForm({ nombre: op.nombre, descripcion: op.descripcion ?? '', categoria: op.categoria ?? '', estado: op.estado ?? 'activa' });
+    setForm({ nombre: op.nombre, descripcion: op.descripcion ?? '', categoria: op.categoria ?? '', estado: op.estado ?? 'activa', modelos_disponibles: op.modelos_disponibles ?? ['experto', 'guiado'] });
     setFormError('');
+    setConflictDetails(null);
     setModal('edit');
   };
-  const closeModal = () => { setModal(null); setEditTarget(null); };
+  const closeModal = () => { setModal(null); setEditTarget(null); setConflictDetails(null); };
 
   const handleSave = async () => {
     if (!form.nombre.trim()) { setFormError('El nombre es obligatorio.'); return; }
-    setSaving(true); setFormError('');
+    if (!form.modelos_disponibles.length) { setFormError('Selecciona al menos un modo.'); return; }
+    setSaving(true); setFormError(''); setConflictDetails(null);
     try {
       if (modal === 'create') {
         await adminApi.createOposicion(token, form);
@@ -100,6 +104,7 @@ export default function AdminOposicionesPage() {
       load();
     } catch (e) {
       setFormError(e?.message ?? 'Error al guardar.');
+      setConflictDetails(e?.status === 409 ? e?.details : null);
     } finally {
       setSaving(false);
     }
@@ -262,7 +267,46 @@ export default function AdminOposicionesPage() {
               <option value="inactiva">Inactiva</option>
             </select>
 
-            {formError && <p style={{ color: '#dc2626', fontSize: '0.82rem', margin: '0 0 12px' }}>{formError}</p>}
+            <fieldset style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', marginBottom: 18 }}>
+              <legend style={{ fontSize: '0.82rem', fontWeight: 600 }}>Modos de preparación disponibles</legend>
+              {[['guiado', 'Modo Albacer / Guiado'], ['experto', 'Modo Experto']].map(([mode, label]) => (
+                <label key={mode} style={{ display: 'block', fontSize: '0.84rem', margin: '5px 0' }}>
+                  <input type="checkbox" checked={form.modelos_disponibles.includes(mode)}
+                    onChange={() => setForm((current) => {
+                      const next = current.modelos_disponibles.includes(mode)
+                        ? current.modelos_disponibles.filter((item) => item !== mode)
+                        : [...current.modelos_disponibles, mode];
+                      return { ...current, modelos_disponibles: next };
+                    })} />{' '}{label}
+                </label>
+              ))}
+            </fieldset>
+
+            {formError && (
+              <div role="alert" style={{ color: '#991b1b', background: '#fef2f2', borderRadius: 8, padding: '10px 12px', margin: '0 0 12px', fontSize: '0.82rem' }}>
+                <p style={{ margin: 0 }}>{formError}</p>
+                {conflictDetails?.accesosIncompatibles?.length > 0 && (
+                  <>
+                    <p style={{ margin: '8px 0 6px', fontWeight: 700 }}>
+                      No puedes aplicar esta restricción porque hay {conflictDetails.accesosIncompatibles.length} acceso{conflictDetails.accesosIncompatibles.length === 1 ? '' : 's'} incompatible{conflictDetails.accesosIncompatibles.length === 1 ? '' : 's'}.
+                    </p>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {conflictDetails.accesosIncompatibles.map((access) => (
+                        <li key={access.accesoId} style={{ marginBottom: 6 }}>
+                          <div>{access.alumno?.nombre || access.alumno?.email || `Usuario ${access.usuarioId}`}</div>
+                          {access.alumno?.nombre && access.alumno?.email && <div>{access.alumno.email}</div>}
+                          <div>Solo tiene: {access.modelosAcceso.map((mode) => MODE_LABELS[mode] ?? mode).join(', ')}.</div>
+                          <div>{access.motivo}</div>
+                        </li>
+                      ))}
+                    </ul>
+                    <a href={`/admin/accesos?oposicion_id=${encodeURIComponent(editTarget?.id ?? '')}`} style={{ display: 'inline-block', marginTop: 8, color: P, fontWeight: 700 }}>
+                      Gestionar accesos
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={closeModal} style={{ padding: '9px 20px', borderRadius: 9, border: '1px solid #e5e7eb', background: '#f9fafb', fontWeight: 600, cursor: 'pointer', color: '#374151' }}>

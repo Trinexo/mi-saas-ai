@@ -294,4 +294,3 @@ test('requireAccesoOposicion usa contexto canónico', options, async () => {
     accessContextService.obtenerContextoUsuario = original;
   }
 });
-
