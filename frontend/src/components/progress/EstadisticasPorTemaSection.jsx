@@ -199,7 +199,7 @@ export default function EstadisticasPorTemaSection() {
               </button>
             ) : (
               <button
-                onClick={() => navigate('/planes')}
+                onClick={() => navigate('/catalogo')}
                 style={{ padding: '4px 12px', borderRadius: 7, border: '1px solid #1d4ed8', background: '#fff', color: '#1d4ed8', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
               >
                 🔒 Pro
