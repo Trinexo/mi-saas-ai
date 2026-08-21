@@ -6,7 +6,8 @@ export const testSessionDetailConfigRepository = {
       `SELECT t.id, t.tema_id, t.oposicion_id, t.numero_preguntas, t.tipo_test, t.estado,
               json_agg(json_build_object('id', p.id, 'enunciado', p.enunciado, 'nivel_dificultad', p.nivel_dificultad, 'imagen_url', p.imagen_url, 'audio_url', p.audio_url,
                 'opciones', (
-                  SELECT json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id)
+                  SELECT json_agg(json_build_object('id', o.id::text, 'texto', o.texto)
+                    ORDER BY COALESCE(array_position(tp.opciones_orden, o.id), 2147483647), o.id)
                   FROM opciones_respuesta o WHERE o.pregunta_id = p.id
                 )) ORDER BY tp.orden) AS preguntas
        FROM tests t

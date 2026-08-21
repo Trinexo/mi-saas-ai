@@ -24,14 +24,15 @@ export const testSessionDetailReviewRepository = {
     const preguntasResult = await pool.query(
       `SELECT p.id AS pregunta_id, p.enunciado, p.explicacion, p.imagen_url, p.audio_url,
               ru.respuesta_id AS elegida_id, ru.correcta,
-              (SELECT o2.id FROM opciones_respuesta o2 WHERE o2.pregunta_id = p.id AND o2.correcta = TRUE LIMIT 1) AS correcta_id,
-              json_agg(json_build_object('id', o.id, 'texto', o.texto, 'correcta', o.correcta) ORDER BY o.id) AS opciones
+              (SELECT o2.id::text FROM opciones_respuesta o2 WHERE o2.pregunta_id = p.id AND o2.correcta = TRUE LIMIT 1) AS correcta_id,
+              json_agg(json_build_object('id', o.id::text, 'texto', o.texto, 'correcta', o.correcta)
+                ORDER BY COALESCE(array_position(tp.opciones_orden, o.id), 2147483647), o.id) AS opciones
        FROM tests_preguntas tp
        JOIN preguntas p ON p.id = tp.pregunta_id
        JOIN opciones_respuesta o ON o.pregunta_id = p.id
        LEFT JOIN respuestas_usuario ru ON ru.test_id = tp.test_id AND ru.pregunta_id = tp.pregunta_id
        WHERE tp.test_id = $1
-       GROUP BY p.id, tp.orden, ru.respuesta_id, ru.correcta
+       GROUP BY p.id, tp.orden, tp.opciones_orden, ru.respuesta_id, ru.correcta
        ORDER BY tp.orden`,
       [testId],
     );
@@ -66,9 +67,9 @@ export const testSessionDetailReviewRepository = {
         explicacion: revisionLimitada ? null : (p.explicacion || null),
         imagen_url: p.imagen_url || null,
         audio_url: p.audio_url || null,
-        respuestaUsuarioId: p.elegida_id ? Number(p.elegida_id) : null,
+        respuestaUsuarioId: p.elegida_id ? String(p.elegida_id) : null,
         esCorrecta: Boolean(p.correcta),
-        correctaId: revisionLimitada ? null : Number(p.correcta_id),
+        correctaId: revisionLimitada ? null : (p.correcta_id ? String(p.correcta_id) : null),
         opciones: revisionLimitada
           ? p.opciones.map((opcion) => ({ ...opcion, correcta: false }))
           : p.opciones,
