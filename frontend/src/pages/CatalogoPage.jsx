@@ -93,15 +93,6 @@ export default function CatalogoPage() {
           Compra acceso al banco de preguntas de la oposición que quieres preparar. Con cualquier curso obtienes acceso completo a sus preguntas; las funcionalidades avanzadas (simulacros, repaso espaciado, refuerzo).
         </p>
       </div>
-
-      {/* Banner plan */}
-      <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: '0.85rem', color: '#374151' }}>
-          Tu plan actual: <strong style={{ textTransform: 'capitalize', color: plan === 'elite' ? '#b45309' : plan === 'pro' ? '#1d4ed8' : '#6b7280' }}>{plan === 'elite' ? '🏆 Elite' : plan === 'pro' ? '⭐ Pro' : '◯ Gratuito'}</strong>
-          {plan === 'free' && <span style={{ color: '#6b7280', marginLeft: 8 }}>— Puedes hacer tests de demo de cualquier oposición</span>}
-          {plan === 'pro' && <span style={{ color: '#6b7280', marginLeft: 8 }}>— Simulacros, repaso y refuerzo incluidos</span>}
-      
-        </div>
   
       </div>
 
