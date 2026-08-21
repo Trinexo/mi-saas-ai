@@ -201,12 +201,6 @@ export default function HistorialPage() {
           <span style={{ fontSize: '0.82rem', color: '#92400e' }}>
             📋 Con el plan gratuito ves los últimos <strong>{planLimit ?? 5} tests</strong>. Actualiza a Pro para acceder a todo tu historial.
           </span>
-          <button
-            onClick={() => navigate('/planes')}
-            style={{ padding: '5px 14px', borderRadius: 7, border: '1px solid #d97706', background: '#fff', color: '#92400e', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            Ver planes
-          </button>
         </div>
       )}
 

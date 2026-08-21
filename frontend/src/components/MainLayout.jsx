@@ -9,7 +9,7 @@ import { useRevision } from '../state/revisionContext.jsx';
 
 const PLAN_BADGE = {
   pro:   { label: 'Pro',   color: '#ea580c' },
-  elite: { label: 'Elite', color: '#fb923c' },
+
 };
 
 const NAV_LINKS = [
@@ -185,7 +185,8 @@ function Shell() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const inicial = (user?.nombre || user?.email || '?')[0].toUpperCase();
-  const planBadge = PLAN_BADGE[plan] ?? null;
+ const planNormalizado = plan === 'elite' ? 'pro' : plan;
+const planBadge = PLAN_BADGE[planNormalizado] ?? null;
   const isStaff = user && ['admin', 'profesor'].includes(user.role);
   const canUseNotifications = user?.role !== 'admin';
   const notificationsPath = user?.role === 'profesor' ? '/profesor/notificaciones' : '/notificaciones';
@@ -279,19 +280,7 @@ function Shell() {
                 {planBadge.label}
               </span>
             )}
-            {!isStaff && (
-              <Link
-                to="/planes"
-                style={{
-                  fontSize: '0.7rem', fontWeight: 600, color: '#6b7280',
-                  textDecoration: 'none', marginLeft: 'auto',
-                  padding: '3px 8px', borderRadius: 6,
-                  border: '1px solid rgba(255,255,255,.1)',
-                }}
-              >
-                Planes
-              </Link>
-            )}
+            
             {canUseNotifications && (
               <Link
                 to={notificationsPath}

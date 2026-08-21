@@ -3,7 +3,7 @@ import { apiRequest } from './api';
 export const repasoApi = {
   /**
    * Devuelve preguntas pendientes de repaso para el usuario.
-   * Requiere plan pro o elite.
+   * Requiere plan pro.
    */
   getPendientes: (token, limit = 20, oposicionId = null) =>
     apiRequest('/repaso/pendientes', {

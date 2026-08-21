@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
@@ -79,11 +78,9 @@ function AlbacerModuloFilter({ oposicionId, value, onChange }) {
 }
 
 export default function ProgressPage() {
-  const navigate = useNavigate();
   const { hasAccess, loading } = useUserPlan();
   const { oposicionActiva } = useOposicionActiva();
   const [albacerModuloId, setAlbacerModuloId] = useState(null);
-  const esElite = hasAccess('elite');
   const esPro = hasAccess('pro');
   const modoPreparacion = oposicionActiva?.modoPreparacion ?? 'experto';
   const isAlbacer = modoPreparacion === 'albacer';
@@ -136,30 +133,17 @@ export default function ProgressPage() {
       <SectionLabel>Tu nivel</SectionLabel>
       <TuNivelWidget oposicionId={oposicionActiva?.id} options={progressOptions} />
 
-      {!loading && esElite && (
-        <>
-          <SectionLabel>Analíticas avanzadas</SectionLabel>
-          <AnaliticasAvanzadasSection oposicionId={oposicionActiva?.id} options={progressOptions} />
-        </>
-      )}
+      {!loading && esPro && (
+  <>
+    <SectionLabel>Analíticas avanzadas</SectionLabel>
+    <AnaliticasAvanzadasSection
+      oposicionId={oposicionActiva?.id}
+      options={progressOptions}
+    />
+  </>
+)}
 
-      {!loading && !esElite && esPro && (
-        <div style={{ marginTop: '2rem', background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 16, padding: '24px 28px', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>🔒</div>
-          <div>
-            <h3 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 800, color: '#111827' }}>Analíticas avanzadas — Plan Elite</h3>
-            <p style={{ margin: '0 0 14px', fontSize: '0.85rem', color: '#374151', lineHeight: 1.6 }}>
-              Desglosa tu rendimiento por materia, analiza tu eficiencia de tiempo, detecta patrones de error y sigue tu tendencia mensual con precisión.
-            </p>
-            <button
-              onClick={() => navigate('/planes')}
-              style={{ padding: '9px 22px', borderRadius: 10, border: 'none', background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
-            >
-              Ver plan Elite
-            </button>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 }

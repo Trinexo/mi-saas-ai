@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
+import { useUserPlan } from '../hooks/useUserPlan';
 import { catalogApi } from '../services/catalogApi';
 import { billingApi } from '../services/billingApi';
 import { testApi } from '../services/testApi';
 import { useUserAccesos } from '../hooks/useUserAccesos';
-import { useUserPlan } from '../hooks/useUserPlan';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 
 const CARD = {
@@ -23,8 +23,8 @@ export default function CatalogoPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { accesos, tieneAcceso, loading: loadingAccesos } = useUserAccesos();
-  const { plan } = useUserPlan();
   const { setOposicionActiva } = useOposicionActiva();
+  const { plan } = useUserPlan();
   const [oposiciones, setOposiciones] = useState([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);
   const [comprando, setComprando] = useState(null); // oposicionId en proceso de pago
@@ -90,28 +90,9 @@ export default function CatalogoPage() {
       <div style={{ marginBottom: 28 }}>
         <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, color: '#111827' }}>Catálogo de cursos</h2>
         <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: '#6b7280', lineHeight: 1.6 }}>
-          Compra acceso al banco de preguntas de la oposición que quieres preparar. Con cualquier curso obtienes acceso completo a sus preguntas; las funcionalidades avanzadas (simulacros, repaso espaciado, refuerzo) dependen de tu plan.
+          Compra acceso al banco de preguntas de la oposición que quieres preparar. Con cualquier curso obtienes acceso completo a sus preguntas; las funcionalidades avanzadas (simulacros, repaso espaciado, refuerzo).
         </p>
       </div>
-
-      {/* Banner plan */}
-      <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: '0.85rem', color: '#374151' }}>
-          Tu plan actual: <strong style={{ textTransform: 'capitalize', color: plan === 'elite' ? '#b45309' : plan === 'pro' ? '#1d4ed8' : '#6b7280' }}>{plan === 'elite' ? '🏆 Elite' : plan === 'pro' ? '⭐ Pro' : '◯ Gratuito'}</strong>
-          {plan === 'free' && <span style={{ color: '#6b7280', marginLeft: 8 }}>— Puedes hacer tests de demo de cualquier oposición</span>}
-          {plan === 'pro' && <span style={{ color: '#6b7280', marginLeft: 8 }}>— Simulacros, repaso y refuerzo incluidos</span>}
-          {plan === 'elite' && <span style={{ color: '#6b7280', marginLeft: 8 }}>— Todas las funcionalidades incluidas</span>}
-        </div>
-        {plan === 'free' && (
-          <button
-            onClick={() => navigate('/planes')}
-            style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#1d4ed8', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0 }}
-          >
-            Ver planes →
-          </button>
-        )}
-      </div>
-
       {/* Grid de oposiciones */}
       {oposiciones.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
@@ -214,7 +195,7 @@ export default function CatalogoPage() {
 
       {/* Nota aclaratoria */}
       <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.78rem', marginTop: 32 }}>
-        El acceso a cada curso es independiente del plan. Una vez comprado, tienes el banco de preguntas completo de esa oposición. Las funcionalidades de aprendizaje avanzado (simulacros, repaso espaciado, refuerzo) requieren adicionalmente un plan Pro o Elite.
+        El acceso a cada curso completo es mediante el pago de la suscripción. Una vez comprado, tienes el banco de preguntas completo de esa oposición.
       </p>
     </div>
   );

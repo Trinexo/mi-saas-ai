@@ -5,7 +5,7 @@ import { subscriptionApi } from '../../services/subscriptionApi';
 import { useAuth } from '../../state/auth.jsx';
 
 const ROLES = ['alumno', 'admin'];
-const PLANES = ['free', 'pro', 'elite'];
+const PLANES = ['free', 'pro'];
 
 const TH = { textAlign: 'left', padding: '7px 12px', borderBottom: '2px solid #e5e7eb', color: '#374151', fontWeight: 600, fontSize: 13 };
 const TD = { padding: '7px 12px', borderBottom: '1px solid #e5e7eb', color: '#111827', fontSize: 14 };
@@ -19,7 +19,6 @@ const ROLE_BADGE = {
 const PLAN_BADGE = {
   free:  { background: '#f3f4f6', color: '#6b7280' },
   pro:   { background: '#fff7ed', color: '#ea580c' },
-  elite: { background: '#fef9c3', color: '#92400e' },
 };
 
 export default function AdminUsersPage() {
@@ -418,6 +417,7 @@ export default function AdminUsersPage() {
               const isMe = String(u.id) === String(me?.id);
               const isSel = selected.has(String(u.id));
               const isConfirmDel = confirmDelete === u.id;
+              const planNormalizado = u.plan === 'elite' ? 'pro' : (u.plan ?? 'free');
               return (
                 <tr key={u.id} style={{ background: isSel ? '#fff7ed' : undefined }}>
                   <td style={{ ...TD, textAlign: 'center' }}>
@@ -439,9 +439,10 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td style={TD}>
-                    <span style={{ ...(PLAN_BADGE[u.plan] ?? PLAN_BADGE.free), padding: '2px 8px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 600 }}>
-                      {u.plan ?? 'free'}
-                    </span>
+                    <span style={{ ...(PLAN_BADGE[planNormalizado] ?? PLAN_BADGE.free), padding: '2px 8px', borderRadius: 12, fontSize: '0.78rem', fontWeight: 600 }}>
+  {planNormalizado}
+</span>
+                  
                   </td>
                   <td style={{ ...TD, fontSize: '0.8rem', color: '#6b7280' }}>
                     {u.fechaRegistro ? new Date(u.fechaRegistro).toLocaleDateString() : '—'}
@@ -465,7 +466,7 @@ export default function AdminUsersPage() {
                       <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>— (tú)</span>
                     ) : (
                       <select
-                        value={u.plan ?? 'free'}
+                       value={planNormalizado}
                         disabled={savingPlan === u.id}
                         onChange={(e) => handlePlanChange(u.id, e.target.value)}
                         style={{ padding: '2px 6px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: '0.85rem', background: '#fff' }}

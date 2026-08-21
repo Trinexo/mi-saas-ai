@@ -20,7 +20,6 @@ const HistorialPage = lazy(() => import('./pages/HistorialPage.jsx'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
 const MarcadasPage = lazy(() => import('./pages/MarcadasPage.jsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
-const PlanesPage = lazy(() => import('./pages/PlanesPage.jsx'));
 const CatalogoPage = lazy(() => import('./pages/CatalogoPage.jsx'));
 const OposicionPage = lazy(() => import('./pages/OposicionPage.jsx'));
 const MateriaPage = lazy(() => import('./pages/MateriaPage.jsx'));
@@ -68,8 +67,7 @@ const ProfesorCalendarioPage = lazy(() => import('./pages/profesor/ProfesorCalen
  * activa y no ha seleccionado ninguna todavÃ­a. Auto-selecciona si solo hay una.
  */
 // Rutas accesibles sin tener ninguna oposición comprada (usuario free o nuevo)
-const RUTAS_LIBRES = ['/catalogo', '/configurar-test', '/planes', '/perfil', '/test', '/resultado'];
-
+const RUTAS_LIBRES = ['/catalogo', '/configurar-test', '/perfil', '/test', '/resultado'];
 function OposicionGuard({ children }) {
   const { user } = useAuth();
   const { oposicionActiva, setOposicionActiva } = useOposicionActiva();
@@ -199,7 +197,6 @@ export default function App() {
         <Route path="bloque/:id" element={<TemaPage />} />
         <Route path="mis-oposiciones" element={<MisOposicionesPage />} />
         <Route path="configurar-test" element={<AlumnoModeRoute blockInAlbacer><ConfigurarTestPage /></AlumnoModeRoute>} />
-        <Route path="planes" element={<PlanesPage />} />
         <Route path="catalogo" element={<CatalogoPage />} />
         <Route path="notificaciones" element={<NotificacionesPage />} />
         <Route path="simulacros" element={<SimulacrosPage />} />

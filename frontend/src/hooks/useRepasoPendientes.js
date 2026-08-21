@@ -6,7 +6,7 @@ import { useOposicionActiva } from '../state/oposicionActiva.jsx';
 
 /**
  * Devuelve las preguntas pendientes de repaso para el usuario.
- * Solo carga datos si el usuario tiene plan pro o elite.
+ * Solo carga datos si el usuario tiene plan pro.
  * - total: número de preguntas pendientes
  * - temaIdSugerido: tema con más pendientes
  * - items: array de preguntas pendientes
@@ -14,14 +14,14 @@ import { useOposicionActiva } from '../state/oposicionActiva.jsx';
  */
 export function useRepasoPendientes() {
   const { token } = useAuth();
-  const { esPro, esElite } = useUserPlan();
+  const { esPro } = useUserPlan();
   const { oposicionActiva } = useOposicionActiva();
   const [total, setTotal] = useState(0);
   const [temaIdSugerido, setTemaIdSugerido] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const puedeUsar = esPro || esElite;
+  const puedeUsar = esPro;
 
   useEffect(() => {
     if (!token || !puedeUsar) {
