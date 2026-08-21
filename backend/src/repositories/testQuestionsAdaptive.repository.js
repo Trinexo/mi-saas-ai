@@ -1,8 +1,9 @@
 import pool from '../config/db.js';
+import { appendOfficialQuestionFilter } from './questionOfficialFilter.js';
 
 const SELECT_DUE_QUESTIONS_SQL = `
   SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
-         json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
+         json_agg(json_build_object('id', o.id::text, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM repeticion_espaciada re
   JOIN preguntas p ON p.id = re.pregunta_id
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
@@ -32,7 +33,7 @@ const SELECT_ADAPTIVE_QUESTIONS_SQL = `
     p.explicacion,
     p.nivel_dificultad,
     (
-      SELECT json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id)
+      SELECT json_agg(json_build_object('id', o.id::text, 'texto', o.texto) ORDER BY o.id)
       FROM opciones_respuesta o
       WHERE o.pregunta_id = p.id
     ) AS opciones,
@@ -65,8 +66,10 @@ const SELECT_ADAPTIVE_QUESTIONS_SQL = `
 `;
 
 export const testQuestionsAdaptiveRepository = {
-  async pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
-    const result = await pool.query(SELECT_ADAPTIVE_QUESTIONS_SQL, [userId, temaId, excludePreguntaIds, numeroPreguntas, nivelDificultad]);
+  async pickAdaptiveQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null, officialidad = 'all', anio = null, anioIds = [], examenId = null }) {
+    const params = [userId, temaId, excludePreguntaIds, numeroPreguntas, nivelDificultad];
+    const sql = SELECT_ADAPTIVE_QUESTIONS_SQL.replace('AND p.tema_id = $2', `AND p.tema_id = $2${appendOfficialQuestionFilter({ officialidad, anio, anioIds, examenId }, params, 6)}`);
+    const result = await pool.query(sql, params);
     return result.rows;
   },
 

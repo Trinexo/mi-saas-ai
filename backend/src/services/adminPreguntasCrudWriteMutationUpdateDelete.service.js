@@ -17,8 +17,30 @@ export const adminPreguntasCrudWriteMutationUpdateDeleteService = {
         throw new ApiError(404, 'Pregunta no encontrada');
       }
 
+      if (isProfesor({ role: userRole })) {
+        const allowed = await profesorAccessRepository.hasAssignedPregunta(userId, preguntaId);
+        if (!allowed) {
+          throw new ApiError(403, 'No tienes acceso a esta pregunta');
+        }
+
+        // El tema puede cambiarse durante la edición: el destino también debe
+        // permanecer dentro del ámbito de oposiciones asignadas al profesor.
+        if (payload.temaId !== undefined) {
+          const allowedTarget = await profesorAccessRepository.hasAssignedTema(userId, payload.temaId);
+          if (!allowedTarget) {
+            throw new ApiError(403, 'El tema no pertenece a tus oposiciones asignadas');
+          }
+        }
+      }
+
       await adminRepository.updatePregunta(client, preguntaId, payload);
       await adminRepository.updateOpciones(client, preguntaId, payload.opciones);
+      if (Array.isArray(payload.anioIds)) {
+        await adminRepository.setYearsForPreguntaWithClient(client, preguntaId, payload.anioIds);
+      }
+      if (Array.isArray(payload.examenIds)) {
+        await adminRepository.setExamsForPreguntaWithClient(client, preguntaId, payload.examenIds);
+      }
 
       await client.query('COMMIT');
       adminRepository.insertAuditoria({ accion: 'update', preguntaId, userId, userRole, datosAnteriores: exists }).catch(() => {});

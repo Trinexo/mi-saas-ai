@@ -4,14 +4,14 @@ import { testGenerationGenerateSelectionEspecialService } from './testGeneration
 import { testGenerationGenerateSelectionAdaptativoService } from './testGenerationGenerateSelectionAdaptativo.service.js';
 
 export const testGenerationGenerateSelectionService = {
-  async selectPreguntas({ userId, temaId, bloqueId, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto' }) {
+  async selectPreguntas({ userId, temaId, bloqueId, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', officialidad = 'all', anioExamen = null, anioIds = [], examenId = null }) {
     let preguntas = await testGenerationGenerateSelectionEspecialService.pickEspecial({
-      userId, oposicionId, temaId, bloqueId, numeroPreguntas, modo,
+      userId, oposicionId, temaId, bloqueId, numeroPreguntas, modo, officialidad, anio: anioExamen, anioIds, examenId,
     });
 
     if (preguntas === null) {
       preguntas = await testGenerationGenerateSelectionAdaptativoService.pickAdaptativo({
-        userId, temaId, numeroPreguntas, modo, dificultad,
+        userId, temaId, numeroPreguntas, modo, dificultad, officialidad, anio: anioExamen, anioIds, examenId,
       });
     }
 
@@ -22,6 +22,10 @@ export const testGenerationGenerateSelectionService = {
         temaId,
         numeroPreguntas: numeroPreguntas - preguntas.length,
         excludePreguntaIds: excludeIds,
+        officialidad,
+        anio: anioExamen,
+        anioIds,
+        examenId,
       });
       preguntas = [...preguntas, ...extra];
 

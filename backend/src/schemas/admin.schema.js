@@ -15,6 +15,14 @@ const basePreguntaSchema = {
   opciones: z.array(opcionSchema).min(2).max(4),
   imagenUrl: z.string().optional().nullable(),
   audioUrl: z.string().optional().nullable(),
+  anioIds: z.array(z.string().regex(/^\d+$/).refine((value) => {
+    const id = BigInt(value);
+    return id > 0n && id <= 9223372036854775807n;
+  }, 'official year ID is invalid')).optional(),
+  examenIds: z.array(z.string().regex(/^\d+$/).refine((value) => {
+    const id = BigInt(value);
+    return id > 0n && id <= 9223372036854775807n;
+  }, 'official exam ID is invalid')).optional(),
 };
 
 const estadoPreguntaSchema = z.enum(['aprobada', 'revision', 'cancelada']);
@@ -35,6 +43,12 @@ export const updatePreguntaSchema = z.object({ ...basePreguntaSchema, estado: es
 export const importPreguntasCsvSchema = z.object({
   csv: z.string().min(1),
   delimiter: z.string().length(1).optional().default(','),
+  oficial: z.boolean().optional().default(false),
+  examenIds: z.array(z.string().regex(/^\d+$/).refine((value) => {
+    const id = BigInt(value);
+    return id > 0n && id <= 9223372036854775807n;
+  }, 'official exam ID is invalid')).optional().default([]),
+  anioIds: z.array(z.string().regex(/^\d+$/).refine((value) => { const id = BigInt(value); return id > 0n && id <= 9223372036854775807n; }, 'ID de año oficial fuera de rango')).optional().default([]),
 });
 
 export const updateReporteEstadoSchema = z.object({
@@ -67,6 +81,11 @@ export const listPreguntasQuerySchema = z.object({
   tema_ids: z.string().optional(),
   bloque_id: z.coerce.number().int().positive().optional(),
   nivel_dificultad: z.enum(['facil', 'media', 'dificil']).optional(),
+  officialidad: z.enum(['all', 'official', 'non_official']).optional(),
+  anio: z.coerce.number().int().min(1900).max(2200).optional(),
+  anio_ids: z.string().regex(/^\d+(,\d+)*$/).optional(),
+  examen_id: z.string().regex(/^\d+$/).optional(),
+  examen_ids: z.string().regex(/^\d+(,\d+)*$/).optional(),
 });
 
 export const listAuditoriaQuerySchema = z.object({

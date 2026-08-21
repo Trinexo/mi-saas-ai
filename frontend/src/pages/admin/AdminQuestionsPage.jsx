@@ -7,6 +7,9 @@ import { useAuth } from '../../state/auth.jsx';
 import MediaBrowserModal from '../../components/admin/MediaBrowserModal.jsx';
 import AudioRecorder from '../../components/admin/AudioRecorder.jsx';
 import AudioBrowserModal from '../../components/admin/AudioBrowserModal.jsx';
+import OfficialYearsSelector from '../../components/questions/OfficialYearsSelector.jsx';
+import OfficialExamsSelector from '../../components/questions/OfficialExamsSelector.jsx';
+import { examenesOficialesApi } from '../../services/examenesOficialesApi';
 
 const EMPTY_FORM = {
   temaId: '',
@@ -62,6 +65,9 @@ export default function AdminQuestionsPage() {
     temaId: '',
     nivelDificultad: '',
     estado: '',
+    officialidad: 'all',
+    anio: '',
+    examenId: '',
     page: 1,
     pageSize: 10,
   });
@@ -90,6 +96,10 @@ export default function AdminQuestionsPage() {
   const [formOposicionId, setFormOposicionId] = useState('');
   const [formTemaId, setFormTemaId] = useState('');
   const [formTemas, setFormTemas] = useState([]);
+  const [official, setOfficial] = useState(false);
+  const [officialYearIds, setOfficialYearIds] = useState([]);
+  const [officialExamIds, setOfficialExamIds] = useState([]);
+  const [filterExams, setFilterExams] = useState([]);
 
   useEffect(() => {
     catalogApi.getOposiciones(token).then(setCatOposiciones).catch(() => {});
@@ -103,7 +113,7 @@ export default function AdminQuestionsPage() {
   }, []);
 
   const handleFiltroOposicion = (oposicionId) => {
-    setFilters((prev) => ({ ...prev, oposicionId, temaId: '', page: 1 }));
+    setFilters((prev) => ({ ...prev, oposicionId, temaId: '', examenId: '', page: 1 }));
     setCatTemas([]);
     if (oposicionId) {
       catalogApi.getTemas(oposicionId).then(setCatTemas).catch(() => {});
@@ -134,14 +144,39 @@ export default function AdminQuestionsPage() {
     tema_id: filters.temaId,
     nivel_dificultad: filters.nivelDificultad,
     estado: filters.estado,
+    officialidad: filters.officialidad,
+    anio: filters.anio,
+    examen_id: filters.examenId,
     page: filters.page,
     page_size: filters.pageSize,
   });
 
+  const isValidYearFilter = (value) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) return true;
+    if (!/^\d{4}$/.test(raw)) return false;
+    const year = Number(raw);
+    return year >= 1900 && year <= 2200;
+  };
+
+  useEffect(() => {
+    if (!filters.oposicionId) { setFilterExams([]); return; }
+    examenesOficialesApi.listForOposicion(token, filters.oposicionId, filters.anio ? { anio: filters.anio } : {})
+      .then(setFilterExams).catch(() => setFilterExams([]));
+  }, [token, filters.oposicionId, filters.anio]);
+
   const loadPreguntas = async () => {
-    const query = buildPreguntasQuery();
-    const response = await adminApi.listPreguntas(token, query);
-    setData(response);
+    if (!isValidYearFilter(filters.anio)) {
+      setError('El año debe tener cuatro dígitos y estar entre 1900 y 2200');
+      return;
+    }
+    try {
+      const query = buildPreguntasQuery();
+      const response = await adminApi.listPreguntas(token, query);
+      setData(response);
+    } catch (e) {
+      setError(getErrorMessage(e));
+    }
   };
 
   const loadReportes = async () => {
@@ -216,6 +251,10 @@ export default function AdminQuestionsPage() {
         audioUrl: pregunta.audio_url || null,
         opciones: pregunta.opciones.map((opt) => ({ texto: opt.texto, correcta: opt.correcta })),
       });
+      const officialYears = pregunta.anios_oficiales ?? [];
+      setOfficialYearIds(officialYears.map((year) => String(year.id)));
+      setOfficial(officialYears.length > 0);
+      setOfficialExamIds((pregunta.examenes_oficiales ?? []).map((exam) => String(exam.id)));
       setEditingId(id);
       window.scrollTo({ top: document.getElementById('pregunta-form')?.offsetTop ?? 0, behavior: 'smooth' });
     } catch (e) {
@@ -229,6 +268,9 @@ export default function AdminQuestionsPage() {
     setFormOposicionId('');
     setFormTemaId('');
     setFormTemas([]);
+    setOfficial(false);
+    setOfficialYearIds([]);
+    setOfficialExamIds([]);
     setError('');
     setMsg('');
   };
@@ -300,6 +342,8 @@ export default function AdminQuestionsPage() {
         ...form,
         temaId: Number(form.temaId),
         nivelDificultad: form.nivelDificultad,
+        anioIds: official ? officialYearIds : [],
+        examenIds: official ? officialExamIds : [],
       });
       setMsg('Pregunta actualizada correctamente');
       setEditingId(null);
@@ -399,12 +443,30 @@ export default function AdminQuestionsPage() {
             <option value="revision">En revisión</option>
             <option value="cancelada">Cancelada</option>
           </select>
+          <select value={filters.officialidad} onChange={(e) => setFilters((prev) => ({ ...prev, officialidad: e.target.value, page: 1 }))} style={SELECT_STYLE}>
+            <option value="all">— Oficialidad —</option>
+            <option value="official">Solo oficiales</option>
+            <option value="non_official">Solo no oficiales</option>
+          </select>
+          <input
+            type="number"
+            min="1900"
+            max="2200"
+            placeholder="Año examen"
+            value={filters.anio}
+            onChange={(e) => setFilters((prev) => ({ ...prev, anio: e.target.value, examenId: '', page: 1 }))}
+            style={{ ...INPUT_STYLE, width: 130 }}
+          />
+          <select value={filters.examenId} onChange={(e) => setFilters((prev) => ({ ...prev, examenId: e.target.value, page: 1 }))} style={SELECT_STYLE}>
+            <option value="">Todos los exámenes</option>
+            {filterExams.map((exam) => <option key={exam.id} value={exam.id}>{exam.nombre} ({exam.anio})</option>)}
+          </select>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               type="button"
               style={BTN_OUTLINE}
               onClick={() => {
-                setFilters((prev) => ({ ...prev, oposicionId: '', temaId: '', nivelDificultad: '', estado: '', page: 1 }));
+                setFilters((prev) => ({ ...prev, oposicionId: '', temaId: '', nivelDificultad: '', estado: '', officialidad: 'all', anio: '', examenId: '', page: 1 }));
                 setCatTemas([]);
               }}
             >
@@ -651,6 +713,16 @@ export default function AdminQuestionsPage() {
               </select>
             </label>
           </div>
+
+          <OfficialYearsSelector
+            token={token}
+            oposicionId={formOposicionId}
+            official={official}
+            selectedIds={officialYearIds}
+            onOfficialChange={setOfficial}
+            onChange={setOfficialYearIds}
+          />
+          <OfficialExamsSelector token={token} oposicionId={formOposicionId} selectedYearIds={officialYearIds} selectedExamIds={officialExamIds} onChange={setOfficialExamIds} />
 
           <div>
             <p style={{ margin: '0 0 8px', fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>Opciones de respuesta *</p>

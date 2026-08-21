@@ -1,8 +1,9 @@
 import pool from '../config/db.js';
+import { appendOfficialQuestionFilter } from './questionOfficialFilter.js';
 
 const SELECT_QUESTIONS_SQL = `
   SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
-         json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
+         json_agg(json_build_object('id', o.id::text, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE p.estado = 'aprobada' AND p.tema_id = $1
@@ -21,7 +22,7 @@ const SELECT_QUESTIONS_SQL = `
 
 const SELECT_FRESH_QUESTIONS_SQL = `
   SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
-         json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
+         json_agg(json_build_object('id', o.id::text, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE p.estado = 'aprobada' AND p.tema_id = $1
@@ -41,7 +42,7 @@ const SELECT_FRESH_QUESTIONS_SQL = `
 
 const SELECT_ANY_QUESTIONS_SQL = `
   SELECT p.id, p.enunciado, p.explicacion, p.nivel_dificultad, p.imagen_url, p.audio_url,
-         json_agg(json_build_object('id', o.id, 'texto', o.texto) ORDER BY o.id) AS opciones
+         json_agg(json_build_object('id', o.id::text, 'texto', o.texto) ORDER BY o.id) AS opciones
   FROM preguntas p
   JOIN opciones_respuesta o ON o.pregunta_id = p.id
   WHERE p.estado = 'aprobada' AND p.tema_id = $1
@@ -53,18 +54,24 @@ const SELECT_ANY_QUESTIONS_SQL = `
 `;
 
 export const testQuestionsThemeRepository = {
-  async pickQuestions({ userId, temaId, numeroPreguntas }) {
-    const result = await pool.query(SELECT_QUESTIONS_SQL, [temaId, userId, numeroPreguntas]);
+  async pickQuestions({ userId, temaId, numeroPreguntas, officialidad = 'all', anio = null, anioIds = [], examenId = null }) {
+    const params = [temaId, userId, numeroPreguntas];
+    const sql = SELECT_QUESTIONS_SQL.replace('AND p.tema_id = $1', `AND p.tema_id = $1${appendOfficialQuestionFilter({ officialidad, anio, anioIds, examenId }, params)}`);
+    const result = await pool.query(sql, params);
     return result.rows;
   },
 
-  async pickFreshQuestions({ userId, temaId, numeroPreguntas, nivelDificultad = null }) {
-    const result = await pool.query(SELECT_FRESH_QUESTIONS_SQL, [temaId, userId, numeroPreguntas, nivelDificultad]);
+  async pickFreshQuestions({ userId, temaId, numeroPreguntas, nivelDificultad = null, officialidad = 'all', anio = null, anioIds = [], examenId = null }) {
+    const params = [temaId, userId, numeroPreguntas, nivelDificultad];
+    const sql = SELECT_FRESH_QUESTIONS_SQL.replace('AND p.tema_id = $1', `AND p.tema_id = $1${appendOfficialQuestionFilter({ officialidad, anio, anioIds, examenId }, params, 5)}`);
+    const result = await pool.query(sql, params);
     return result.rows;
   },
 
-  async pickAnyQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null }) {
-    const result = await pool.query(SELECT_ANY_QUESTIONS_SQL, [temaId, numeroPreguntas, excludePreguntaIds, nivelDificultad]);
+  async pickAnyQuestions({ userId, temaId, numeroPreguntas, excludePreguntaIds = [], nivelDificultad = null, officialidad = 'all', anio = null, anioIds = [], examenId = null }) {
+    const params = [temaId, numeroPreguntas, excludePreguntaIds, nivelDificultad];
+    const sql = SELECT_ANY_QUESTIONS_SQL.replace('AND p.tema_id = $1', `AND p.tema_id = $1${appendOfficialQuestionFilter({ officialidad, anio, anioIds, examenId }, params, 5)}`);
+    const result = await pool.query(sql, params);
     return result.rows;
   },
 };

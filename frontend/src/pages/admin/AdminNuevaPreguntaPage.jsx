@@ -8,6 +8,8 @@ import { useAuth } from '../../state/auth.jsx';
 import MediaBrowserModal from '../../components/admin/MediaBrowserModal.jsx';
 import AudioRecorder from '../../components/admin/AudioRecorder.jsx';
 import AudioBrowserModal from '../../components/admin/AudioBrowserModal.jsx';
+import OfficialYearsSelector from '../../components/questions/OfficialYearsSelector.jsx';
+import OfficialExamsSelector from '../../components/questions/OfficialExamsSelector.jsx';
 
 const EMPTY_FORM = {
   temaId: '',
@@ -51,6 +53,9 @@ export default function AdminNuevaPreguntaPage() {
   const [formTemaId, setFormTemaId] = useState('');
   const [catOposiciones, setCatOposiciones] = useState([]);
   const [formTemas, setFormTemas] = useState([]);
+  const [official, setOfficial] = useState(false);
+  const [officialYearIds, setOfficialYearIds] = useState([]);
+  const [officialExamIds, setOfficialExamIds] = useState([]);
 
   const [csvText, setCsvText] = useState('');
   const [csvPreview, setCsvPreview] = useState([]);
@@ -89,6 +94,9 @@ export default function AdminNuevaPreguntaPage() {
     setFormOposicionId(oposicionId);
     setFormTemaId('');
     setFormTemas([]);
+    setOfficialYearIds([]);
+    setOfficialExamIds([]);
+    setOfficial(false);
     setForm((prev) => ({ ...prev, temaId: '' }));
     if (oposicionId) {
       catalogApi.getTemas(oposicionId).then(setFormTemas).catch(() => {});
@@ -135,6 +143,10 @@ export default function AdminNuevaPreguntaPage() {
     event.preventDefault();
     setError('');
     setMsg('');
+    if (official && officialYearIds.length === 0) {
+      setError('Selecciona al menos un año oficial');
+      return;
+    }
     try {
       const questionApi = isProfesor ? profesorApi : adminApi;
       const result = await questionApi.createPregunta(token, {
@@ -143,6 +155,8 @@ export default function AdminNuevaPreguntaPage() {
         nivelDificultad: form.nivelDificultad,
         imagenUrl: pendingImageUrl || undefined,
         audioUrl: pendingAudioUrl || undefined,
+        anioIds: official ? officialYearIds : [],
+        examenIds: official ? officialExamIds : [],
       });
       if (pendingImage && result?.id) {
         setImgLoading(true);
@@ -154,6 +168,9 @@ export default function AdminNuevaPreguntaPage() {
           setImgLoading(false);
           setPendingImage(null);
           setForm(EMPTY_FORM);
+          setOfficial(false);
+          setOfficialYearIds([]);
+          setOfficialExamIds([]);
           if (isProfesor && catOposiciones.length === 1) {
             handleFormOposicion(String(catOposiciones[0].id));
           } else {
@@ -181,6 +198,9 @@ export default function AdminNuevaPreguntaPage() {
       setPendingAudioBlob(null);
       setPendingAudioUrl(null);
       setForm(EMPTY_FORM);
+      setOfficial(false);
+      setOfficialYearIds([]);
+      setOfficialExamIds([]);
       if (isProfesor && catOposiciones.length === 1) {
         handleFormOposicion(String(catOposiciones[0].id));
       } else {
@@ -218,7 +238,7 @@ export default function AdminNuevaPreguntaPage() {
     }
     try {
       const questionApi = isProfesor ? profesorApi : adminApi;
-      const result = await questionApi.importPreguntasCsv(token, { csv: csvText, delimiter });
+      const result = await questionApi.importPreguntasCsv(token, { csv: csvText, delimiter, oficial: official, anioIds: official ? officialYearIds : [], examenIds: official ? officialExamIds : [] });
       setImportResult(result);
       setShowImportModal(true);
     } catch (e) {
@@ -293,6 +313,16 @@ export default function AdminNuevaPreguntaPage() {
               </select>
             </label>
           </div>
+
+          <OfficialYearsSelector
+            token={token}
+            oposicionId={formOposicionId}
+            official={official}
+            selectedIds={officialYearIds}
+            onOfficialChange={setOfficial}
+            onChange={setOfficialYearIds}
+          />
+          <OfficialExamsSelector token={token} oposicionId={formOposicionId} selectedYearIds={officialYearIds} selectedExamIds={officialExamIds} onChange={setOfficialExamIds} />
 
           <label style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
             Enunciado *
