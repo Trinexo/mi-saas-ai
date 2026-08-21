@@ -476,7 +476,17 @@ export default function GenerarTestForm({ modoSugerido = null }) {
               const sel = modo === opt.value;
               return (
                 <label key={opt.value} style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '8px 10px', borderRadius: 8, cursor: locked ? 'not-allowed' : 'pointer', border: `1.5px solid ${sel ? '#fed7aa' : '#e2e8f0'}`, background: sel ? '#fff7ed' : '#f8fafc', opacity: locked ? 0.6 : 1 }}>
-                  <input type="radio" name="modo" value={opt.value} checked={sel} onChange={() => locked ? navigate('/planes') : setModo(opt.value)} style={{ display: 'none' }} />
+                  <input
+  type="radio"
+  name="modo"
+  value={opt.value}
+  checked={sel}
+  disabled={locked}
+  onChange={() => {
+    if (!locked) setModo(opt.value);
+  }}
+  style={{ display: 'none' }}
+/>
                   <strong style={{ fontSize: '0.8rem', color: sel ? '#92400e' : '#111827' }}>{locked ? `🔒 ${opt.label}` : opt.label}</strong>
                   <span style={{ fontSize: '0.7rem', color: '#64748b', lineHeight: 1.3 }}>{opt.desc}</span>
                 </label>
@@ -537,9 +547,12 @@ export default function GenerarTestForm({ modoSugerido = null }) {
               🔁 Test de refuerzo
             </button>
           ) : (
-            <button onClick={() => navigate('/planes')} style={{ width: '100%', padding: '9px', borderRadius: 9, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#94a3b8', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>
-              🔒 Test de refuerzo (Pro)
-            </button>
+            <button
+  disabled
+  style={{ width: '100%', padding: '9px', borderRadius: 9, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#94a3b8', fontWeight: 600, fontSize: '0.875rem', cursor: 'not-allowed' }}
+>
+  🔒 Test de refuerzo (Pro)
+</button>
           )}
           <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4, textAlign: 'center' }}>
             Las preguntas se seleccionan según tus criterios
