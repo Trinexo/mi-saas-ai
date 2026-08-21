@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
 import { useUserPlan } from '../hooks/useUserPlan';
 import { useOposicionActiva } from '../state/oposicionActiva.jsx';
@@ -79,7 +78,6 @@ function AlbacerModuloFilter({ oposicionId, value, onChange }) {
 }
 
 export default function ProgressPage() {
-  const navigate = useNavigate();
   const { hasAccess, loading } = useUserPlan();
   const { oposicionActiva } = useOposicionActiva();
   const [albacerModuloId, setAlbacerModuloId] = useState(null);
@@ -151,12 +149,7 @@ export default function ProgressPage() {
             <p style={{ margin: '0 0 14px', fontSize: '0.85rem', color: '#374151', lineHeight: 1.6 }}>
               Desglosa tu rendimiento por materia, analiza tu eficiencia de tiempo, detecta patrones de error y sigue tu tendencia mensual con precisión.
             </p>
-            <button
-              onClick={() => navigate('/planes')}
-              style={{ padding: '9px 22px', borderRadius: 10, border: 'none', background: '#ea580c', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
-            >
-              Ver plan Elite
-            </button>
+            
           </div>
         </div>
       )}
