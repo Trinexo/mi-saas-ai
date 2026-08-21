@@ -137,7 +137,7 @@ export default function MisOposicionesPage() {
   // Cursos comprados (acceso activo)
   const cursosComprados = accesos.map((a) => ({
     oposicionId: Number(a.oposicion_id),
-    nombre: nombreMap[a.oposicion_id] ?? `Oposición ${a.oposicion_id}`,
+    nombre: nombreMap[a.oposicion_id] ?? a.nombre ?? `Oposición ${a.oposicion_id}`,
     fechaFin: a.fecha_fin,
     modoPreparacion: a.modo_preparacion ?? null,
     pendienteModo: a.estado_efectivo === 'pendiente_modo',
