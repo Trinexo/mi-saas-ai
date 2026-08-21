@@ -120,10 +120,15 @@ export const seleccionPreguntasSchema = z.object({
   })).max(100).optional(),
   cantidad: z.coerce.number().int().positive().optional(),
   dificultad: z.enum(['facil', 'media', 'dificil']).optional().nullable(),
+  officialidad: z.enum(['all', 'official', 'non_official']).optional().default('all'),
+  anio_ids: z.array(id).max(100).optional().default([]),
+  examen_ids: z.array(id).max(100).optional().default([]),
+  examen_id: id.optional().nullable(),
   exclude_ids: z.array(id).max(500).optional().default([]),
   plantilla_test_id: id.optional().nullable(),
   simulacro_id: id.optional().nullable(),
   permitir_completar_con_otros_temas: z.boolean().optional().default(false),
+  reparto_por_tema: z.boolean().optional(),
 }).superRefine((payload, ctx) => {
   if (payload.temas?.length) return;
   if (!payload.tema_ids?.length) {
