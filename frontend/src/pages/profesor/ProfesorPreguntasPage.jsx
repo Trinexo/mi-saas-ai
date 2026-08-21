@@ -144,13 +144,13 @@ export default function ProfesorPreguntasPage() {
 
   return (
     <PageShell>
-      <Header title="Banco de preguntas" subtitle="Detecta preguntas ambiguas, demasiado faciles o con baja tasa de aciertos." action={<Button to="/profesor/preguntas/nueva">+ Nueva pregunta</Button>} />
+      <Header title="Banco de preguntas" subtitle="Detecta preguntas ambiguas, demasiado fáciles o con baja tasa de aciertos." action={<Button to="/profesor/preguntas/nueva">+ Nueva pregunta</Button>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
         <MiniKpi label="Preguntas disponibles" value={total} />
         <MiniKpi label="Acierto estimado" value={mediaAcierto === null ? '-' : `${mediaAcierto}%`} />
         <MiniKpi label="Reportes abiertos" value={totalReportes} />
-        <MiniKpi label="Problematicas" value={problematicas.length} />
+        <MiniKpi label="Problemáticas" value={problematicas.length} />
       </div>
 
       <Panel>
@@ -187,7 +187,7 @@ export default function ProfesorPreguntasPage() {
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={TH}>Pregunta</th><th style={TH}>Oposición</th><th style={TH}>Tema</th><th style={TH}>Dificultad</th><th style={TH}>Estado</th><th style={TH}>Intentos</th><th style={TH}>Aciertos</th><th style={TH}>Reportes</th><th style={TH}>Revisión</th><th style={TH}></th></tr></thead>
+            <thead><tr><th style={TH}>Pregunta</th><th style={TH}>Oposición</th><th style={TH}>Tema</th><th style={TH}>Dificultad</th><th style={TH}>Estado</th><th style={TH}>Intentos</th><th style={TH}>Aciertos</th><th style={TH}>Reportes</th><th style={TH}>Problemática</th><th style={TH}></th></tr></thead>
             <tbody>
               {loading && <tr><td colSpan={10} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Cargando...</td></tr>}
               {!loading && preguntas.length === 0 && <tr><td colSpan={10} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Sin resultados</td></tr>}
@@ -210,7 +210,14 @@ export default function ProfesorPreguntasPage() {
                     <td style={TD}>{intentos || '-'}</td>
                     <td style={{ ...TD, minWidth: 130 }}>{intentos > 0 ? <Progress value={aciertos} color={P} /> : '-'}</td>
                     <td style={TD}>{reportes}</td>
-                    <td style={TD}>{problematica ? <Badge tone="danger">Revisar</Badge> : <Badge tone="ok">Correcta</Badge>}</td>
+                    <td style={TD}>
+                      {problematica ? (
+                        <details>
+                          <summary style={{ cursor: 'pointer', color: '#dc2626', fontWeight: 900, fontSize: '.75rem' }}>Revisar</summary>
+                          <ProblematicReasons item={problematica} />
+                        </details>
+                      ) : <Badge tone="ok">Sin alertas</Badge>}
+                    </td>
                     <td style={TD}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <button onClick={() => editingId === p.id ? cancelEdit() : startEdit(p)} style={{ border: 'none', borderRadius: 7, padding: '4px 12px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer', background: editingId === p.id ? '#ede9fe' : '#f1f5f9', color: editingId === p.id ? '#7c3aed' : '#475569' }}>{editingId === p.id ? 'Cerrar' : 'Editar'}</button>
@@ -326,8 +333,21 @@ function Badge({ children, tone = 'default' }) {
     medium: { background: '#fff7ed', color: '#ea580c' },
     danger: { background: '#fef2f2', color: '#dc2626' },
     ok: { background: '#dcfce7', color: '#15803d' },
+    warning: { background: '#fef3c7', color: '#b45309' },
   };
   return <span style={{ ...(tones[tone] ?? tones.default), borderRadius: 999, padding: '3px 8px', fontWeight: 900, fontSize: '.72rem' }}>{children}</span>;
+}
+
+function ProblematicReasons({ item }) {
+  const motivos = Array.isArray(item.motivos) ? item.motivos : [];
+  if (motivos.length === 0) return null;
+  return (
+    <div style={{ marginTop: 6, padding: 8, background: '#fff7ed', borderRadius: 8, fontSize: '.72rem', color: '#7c2d12' }}>
+      {motivos.includes('reportes_abiertos') && <div>Reportes abiertos: {item.reportesAbiertos ?? item.reportes ?? 0}</div>}
+      {motivos.includes('tasa_fallo') && <div>Tasa de fallos: {item.tasaFallo ?? item.tasa_fallo ?? 0}% ({item.fallos ?? 0} de {item.intentos ?? 0} respuestas). Umbral: 60% con mínimo de 5 intentos.</div>}
+      {motivos.includes('tasa_blancos') && <div>Tasa de respuestas en blanco: {item.tasaBlancos ?? item.tasa_blancos ?? 0}% ({item.blancos ?? 0} de {item.intentos ?? 0} respuestas). Umbral: 30% con mínimo de 5 intentos.</div>}
+    </div>
+  );
 }
 
 function getDifficultyTone(difficulty) {

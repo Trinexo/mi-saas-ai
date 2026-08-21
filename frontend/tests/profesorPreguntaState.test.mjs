@@ -22,3 +22,12 @@ test('la tabla usa las etiquetas del estado editorial vigente', () => {
   assert.doesNotMatch(source, /revision: 'Revisar'/);
 });
 
+test('la problemática se representa desde motivos del backend y permanece separada del estado editorial', () => {
+  assert.match(source, /<th style=\{TH\}>Problemática<\/th>/);
+  assert.match(source, /Sin alertas/);
+  assert.match(source, /<ProblematicReasons item=\{problematica\} \/>/);
+  assert.match(source, /motivos\.includes\('reportes_abiertos'\)/);
+  assert.match(source, /motivos\.includes\('tasa_fallo'\)/);
+  assert.match(source, /motivos\.includes\('tasa_blancos'\)/);
+  assert.doesNotMatch(source, /intentos\s*[>=].*60/);
+});
