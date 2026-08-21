@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:albacer-progress": "node --test tests/services/albacer-item-progress.test.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "db:bootstrap": "node scripts/bootstrap-schema-if-empty.mjs",

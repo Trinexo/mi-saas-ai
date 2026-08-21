@@ -52,6 +52,12 @@ El backend usa `node --test` con suites enfocadas en servicios, schemas, reposit
 
 La fase 3 es exclusivamente documental. No debe alterar codigo, dependencias, migraciones, scripts SQL ni configuracion de produccion.
 
+## D-006 Progreso Secuencial De Tests Albacer
+
+Los tests de modulo con `obligatorio = true` se superan con nota mayor o igual a 5, de forma acumulativa y sin que un intento posterior suspendido revierta la superacion. El backend deriva su disponibilidad: el primero esta disponible, los siguientes requieren que el obligatorio anterior este superado y el simulacro final permanece disponible desde el inicio del modulo.
+
+El simulacro final sigue siendo la unica actividad que supera el modulo. Superarlo desbloquea los tests obligatorios pendientes, pero no los marca como superados individualmente. Los items no obligatorios no participan en la secuencia ni en el progreso obligatorio.
+
 ## Contradicciones Resueltas Provisionalmente
 
 - Documentos historicos prometian arquitecturas de gran escala, 80/120 tablas o bancos masivos de preguntas. La implementacion real es monolito modular con PostgreSQL y dominio ya amplio, pero no confirma esas cifras objetivo.

@@ -13,6 +13,16 @@ const mapItem = (row) => ({
   total_preguntas: Number(row.total_preguntas ?? 0),
   duracion_segundos: row.duracion_segundos == null ? null : Number(row.duracion_segundos),
   estado_contenido: row.estado_contenido ?? null,
+  progreso: {
+    intentos: Number(row.intentos ?? 0),
+    superado: Boolean(row.item_superado),
+    mejor_nota: row.item_mejor_nota == null ? null : Number(row.item_mejor_nota),
+    ultima_nota: row.item_ultima_nota == null ? null : Number(row.item_ultima_nota),
+    ultimo_test_id: row.ultimo_test_id == null ? null : Number(row.ultimo_test_id),
+    test_id_mejor_intento: row.item_test_id_mejor_intento == null ? null : Number(row.item_test_id_mejor_intento),
+    iniciado_en: row.item_iniciado_en ?? null,
+    superado_en: row.item_superado_en ?? null,
+  },
 });
 
 const mapModulo = (row) => ({
@@ -80,6 +90,14 @@ export const albacerAlumnoRepository = {
              'orden', mi.orden,
              'obligatorio', mi.obligatorio,
              'estado_contenido', COALESCE(at.estado, s.estado),
+             'intentos', COALESCE(ip.intentos, 0),
+             'item_superado', COALESCE(ip.superado, FALSE),
+             'item_mejor_nota', ip.mejor_nota,
+             'item_ultima_nota', ip.ultima_nota,
+             'ultimo_test_id', ip.ultimo_test_id,
+             'item_test_id_mejor_intento', ip.test_id_mejor_intento,
+             'item_iniciado_en', ip.iniciado_en,
+             'item_superado_en', ip.superado_en,
              'total_preguntas', CASE
                WHEN mi.tipo = 'simulacro_final' THEN COALESCE(sim_q.total_preguntas, 0)
                ELSE COALESCE(test_q.total_preguntas, 0)
@@ -89,6 +107,9 @@ export const albacerAlumnoRepository = {
            ORDER BY mi.orden, mi.id
          ) AS items
          FROM albacer_modulo_items mi
+         LEFT JOIN albacer_item_progreso ip
+           ON ip.item_id = mi.id
+          AND ip.usuario_id = $1
          LEFT JOIN admin_tests at ON at.id = mi.plantilla_test_id
          LEFT JOIN LATERAL (
            SELECT COUNT(*)::int AS total_preguntas
@@ -173,6 +194,18 @@ export const albacerAlumnoRepository = {
          END,
          actualizado_en = NOW()`,
       [userId, moduloId],
+    );
+  },
+
+  async upsertItemIniciado(userId, itemId) {
+    await pool.query(
+      `INSERT INTO albacer_item_progreso (usuario_id, item_id, iniciado_en)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (usuario_id, item_id)
+       DO UPDATE SET
+         iniciado_en = COALESCE(albacer_item_progreso.iniciado_en, EXCLUDED.iniciado_en),
+         actualizado_en = NOW()`,
+      [userId, itemId],
     );
   },
 };

@@ -35,8 +35,45 @@ function addAvailability(modulos) {
 
     if (!isSuperado(modulo)) previousAreCompleted = false;
 
+    const moduloDisponible = estadoCalculado !== 'bloqueado';
+    const moduloSuperado = estadoCalculado === 'superado';
+    let previousMandatoryPassed = true;
+    const items = (modulo.items ?? []).map((item) => {
+      const progreso = item.progreso ?? {};
+      const individuallyPassed = item.tipo === 'test' && item.obligatorio && progreso.superado === true;
+      let estado = 'locked';
+
+      if (moduloDisponible) {
+        if (item.tipo === 'simulacro_final') {
+          estado = moduloSuperado ? 'passed' : 'available';
+        } else if (!item.obligatorio) {
+          estado = 'available';
+        } else if (individuallyPassed) {
+          estado = 'passed';
+        } else if (moduloSuperado || previousMandatoryPassed) {
+          estado = progreso.iniciado_en || Number(progreso.intentos ?? 0) > 0 ? 'in_progress' : 'available';
+        }
+      }
+
+      if (item.tipo === 'test' && item.obligatorio) {
+        previousMandatoryPassed = individuallyPassed;
+      }
+
+      return {
+        ...item,
+        estado,
+        disponible: estado !== 'locked',
+        bloqueado: estado === 'locked',
+        superado: estado === 'passed',
+        intentos: Number(progreso.intentos ?? 0),
+        mejor_nota: progreso.mejor_nota ?? null,
+        ultima_nota: progreso.ultima_nota ?? null,
+      };
+    });
+
     return {
       ...modulo,
+      items,
       estado_calculado: estadoCalculado,
       bloqueado: estadoCalculado === 'bloqueado',
       actual: estadoCalculado === 'disponible',
@@ -119,7 +156,11 @@ export const albacerAlumnoService = {
     if (!item) throw new ApiError(404, 'Actividad Albacer no encontrada');
     await assertAccesoGuiado(userId, item.oposicion_id);
 
-    await this.assertModuloDisponible(userId, item.modulo_id);
+    const modulo = await this.assertModuloDisponible(userId, item.modulo_id);
+    const resolvedItem = modulo.items?.find((candidate) => Number(candidate.id) === Number(itemId));
+    if (!resolvedItem?.disponible) {
+      throw new ApiError(403, 'Este test esta bloqueado hasta superar el test obligatorio anterior');
+    }
 
     if (item.tipo === 'test') return this.empezarPlantilla(userId, item);
     if (item.tipo === 'simulacro_final') return this.empezarSimulacroFinal(userId, item);
@@ -173,6 +214,9 @@ export const albacerAlumnoService = {
       scoringSnapshot: buildTestScoringSnapshot(plantilla),
     });
     await testRepository.insertTestPreguntas(test.id, preguntaIds);
+    if (item.obligatorio) {
+      await albacerAlumnoRepository.upsertItemIniciado(userId, item.id);
+    }
     const data = await testRepository.getTestConfig(userId, test.id);
     return {
       ...data,
