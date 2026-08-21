@@ -48,13 +48,13 @@ export default function ResultAcciones({ activeTest, result }) {
             {isLoading ? 'Generando...' : '🔁 Reforzar preguntas falladas'}
           </button>
         ) : (
-          <button
-            onClick={() => navigate('/planes')}
-            style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #dc2626', background: '#fff', color: '#dc2626', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
-          >
-            🔒 Reforzar (Pro)
-          </button>
-        )
+  <button
+    disabled
+    style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #d1d5db', background: '#f9fafb', color: '#9ca3af', fontWeight: 600, fontSize: 14, cursor: 'not-allowed' }}
+  >
+    🔒 Reforzar (Pro)
+  </button>
+)
       )}
 
       {activeTest?.testId && (
