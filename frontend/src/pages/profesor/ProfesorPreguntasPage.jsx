@@ -3,12 +3,18 @@ import { useSearchParams } from 'react-router-dom';
 import { getErrorMessage } from '../../services/api';
 import { profesorApi } from '../../services/profesorApi';
 import { useAuth } from '../../state/auth.jsx';
+import AudioRecorder from '../../components/admin/AudioRecorder.jsx';
+import MediaBrowserModal from '../../components/admin/MediaBrowserModal.jsx';
+import AudioBrowserModal from '../../components/admin/AudioBrowserModal.jsx';
+import OfficialYearsSelector from '../../components/questions/OfficialYearsSelector.jsx';
+import OfficialExamsSelector from '../../components/questions/OfficialExamsSelector.jsx';
 import { Button, Header, P, PageShell, Panel, Progress, Select } from './ProfesorSharedUI';
 
 const TH = { textAlign: 'left', padding: '10px 12px', fontSize: '.72rem', fontWeight: 900, color: '#64748b', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', textTransform: 'uppercase' };
 const TD = { padding: '10px 12px', fontSize: '.82rem', color: '#0f172a', borderBottom: '1px solid #f1f5f9' };
 const INPUT = { width: '100%', border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 12px', fontSize: '.85rem', boxSizing: 'border-box' };
-const EMPTY_EDIT = { enunciado: '', explicacion: '', referenciaNormativa: '', nivelDificultad: 'media', opciones: [{texto:'',correcta:true},{texto:'',correcta:false},{texto:'',correcta:false},{texto:'',correcta:false}] };
+const BACKEND_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace('/api', '');
+const EMPTY_EDIT = { temaId: '', enunciado: '', explicacion: '', referenciaNormativa: '', nivelDificultad: 'media', estado: 'aprobada', imagenUrl: null, audioUrl: null, opciones: [{texto:'',correcta:true},{texto:'',correcta:false},{texto:'',correcta:false},{texto:'',correcta:false}] };
 
 export default function ProfesorPreguntasPage() {
   const { token } = useAuth();
@@ -26,6 +32,15 @@ export default function ProfesorPreguntasPage() {
   const [editSaving, setEditSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [temas, setTemas] = useState([]);
+  const [editOposicionId, setEditOposicionId] = useState('');
+  const [editTemas, setEditTemas] = useState([]);
+  const [official, setOfficial] = useState(false);
+  const [officialYearIds, setOfficialYearIds] = useState([]);
+  const [officialExamIds, setOfficialExamIds] = useState([]);
+  const [imgLoading, setImgLoading] = useState(false);
+  const [audioUploading, setAudioUploading] = useState(false);
+  const [showMediaBrowser, setShowMediaBrowser] = useState(false);
+  const [showAudioBrowser, setShowAudioBrowser] = useState(false);
 
   useEffect(() => { profesorApi.getMisOposiciones(token).then((data) => setOposiciones(data ?? [])).catch(() => {}); }, [token]);
 
@@ -47,6 +62,15 @@ export default function ProfesorPreguntasPage() {
     setEditMsg('');
     try {
       const data = await profesorApi.getPregunta(token, p.id);
+      const oposicionId = String(data.oposicion_id ?? '');
+      const temario = oposicionId
+        ? await profesorApi.getWorkspaceTemario(token, { oposicion_id: oposicionId }).catch(() => ({ items: [] }))
+        : { items: [] };
+      setEditOposicionId(oposicionId);
+      setEditTemas((temario?.items ?? []).map((tema) => ({
+        id: tema.tema_id ?? tema.id,
+        nombre: tema.tema_nombre ?? tema.nombre,
+      })));
       setEditForm({
         temaId: data.tema_id,
         enunciado: data.enunciado,
@@ -54,8 +78,14 @@ export default function ProfesorPreguntasPage() {
         referenciaNormativa: data.referencia_normativa || '',
         nivelDificultad: data.nivel_dificultad || 'media',
         estado: data.estado || 'aprobada',
+        imagenUrl: data.imagen_url || null,
+        audioUrl: data.audio_url || null,
         opciones: data.opciones?.map((o) => ({ texto: o.texto, correcta: o.correcta })) ?? EMPTY_EDIT.opciones,
       });
+      const years = data.anios_oficiales ?? [];
+      setOfficial(years.length > 0 || data.es_oficial === true);
+      setOfficialYearIds(years.map((year) => String(year.id)));
+      setOfficialExamIds((data.examenes_oficiales ?? []).map((exam) => String(exam.id)));
       setEditingId(p.id);
       setTimeout(() => document.getElementById('profesor-edit-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
     } catch (e) {
@@ -63,7 +93,25 @@ export default function ProfesorPreguntasPage() {
     }
   };
 
-  const cancelEdit = () => { setEditingId(null); setEditForm(EMPTY_EDIT); setEditMsg(''); setEditError(''); };
+  const cancelEdit = () => {
+    setEditingId(null); setEditForm(EMPTY_EDIT); setEditMsg(''); setEditError('');
+    setEditOposicionId(''); setEditTemas([]); setOfficial(false);
+    setOfficialYearIds([]); setOfficialExamIds([]);
+  };
+
+  const onEditOposicion = async (oposicionId) => {
+    setEditOposicionId(oposicionId);
+    setEditForm((form) => ({ ...form, temaId: '' }));
+    setOfficial(false);
+    setOfficialYearIds([]);
+    setOfficialExamIds([]);
+    if (!oposicionId) { setEditTemas([]); return; }
+    const temario = await profesorApi.getWorkspaceTemario(token, { oposicion_id: oposicionId }).catch(() => ({ items: [] }));
+    setEditTemas((temario?.items ?? []).map((tema) => ({
+      id: tema.tema_id ?? tema.id,
+      nombre: tema.tema_nombre ?? tema.nombre,
+    })));
+  };
 
   const onEditOpcionTexto = (i, val) => setEditForm((f) => { const ops = [...f.opciones]; ops[i] = { ...ops[i], texto: val }; return { ...f, opciones: ops }; });
   const onEditOpcionCorrecta = (i) => setEditForm((f) => { const ops = f.opciones.map((o, idx) => ({ ...o, correcta: idx === i })); return { ...f, opciones: ops }; });
@@ -78,6 +126,8 @@ export default function ProfesorPreguntasPage() {
         ...editForm,
         temaId: Number(editForm.temaId),
         explicacion: editForm.explicacion || '',
+        anioIds: official ? officialYearIds : [],
+        examenIds: official ? officialExamIds : [],
       });
       setEditMsg('Pregunta actualizada correctamente.');
       setEditingId(null);
@@ -88,6 +138,44 @@ export default function ProfesorPreguntasPage() {
     } finally {
       setEditSaving(false);
     }
+  };
+
+  const onImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !editingId) return;
+    setImgLoading(true); setEditError('');
+    try {
+      const result = await profesorApi.uploadImagenPregunta(token, editingId, file);
+      setEditForm((form) => ({ ...form, imagenUrl: result.imagenUrl }));
+    } catch (error) { setEditError(getErrorMessage(error)); }
+    finally { setImgLoading(false); event.target.value = ''; }
+  };
+
+  const onImageDelete = async () => {
+    setImgLoading(true); setEditError('');
+    try {
+      await profesorApi.deleteImagenPregunta(token, editingId);
+      setEditForm((form) => ({ ...form, imagenUrl: null }));
+    } catch (error) { setEditError(getErrorMessage(error)); }
+    finally { setImgLoading(false); }
+  };
+
+  const onAudioRecorded = async (blob) => {
+    setAudioUploading(true); setEditError('');
+    try {
+      const result = await profesorApi.uploadAudioPregunta(token, editingId, blob);
+      setEditForm((form) => ({ ...form, audioUrl: result.audioUrl }));
+    } catch (error) { setEditError(getErrorMessage(error)); }
+    finally { setAudioUploading(false); }
+  };
+
+  const onAudioDelete = async () => {
+    setAudioUploading(true); setEditError('');
+    try {
+      await profesorApi.deleteAudioPregunta(token, editingId);
+      setEditForm((form) => ({ ...form, audioUrl: null }));
+    } catch (error) { setEditError(getErrorMessage(error)); }
+    finally { setAudioUploading(false); }
   };
 
   const onDelete = async (id) => {
@@ -144,13 +232,13 @@ export default function ProfesorPreguntasPage() {
 
   return (
     <PageShell>
-      <Header title="Banco de preguntas" subtitle="Detecta preguntas ambiguas, demasiado faciles o con baja tasa de aciertos." action={<Button to="/profesor/preguntas/nueva">+ Nueva pregunta</Button>} />
+      <Header title="Banco de preguntas" subtitle="Detecta preguntas ambiguas, demasiado fáciles o con baja tasa de aciertos." action={<Button to="/profesor/preguntas/nueva">+ Nueva pregunta</Button>} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
         <MiniKpi label="Preguntas disponibles" value={total} />
         <MiniKpi label="Acierto estimado" value={mediaAcierto === null ? '-' : `${mediaAcierto}%`} />
         <MiniKpi label="Reportes abiertos" value={totalReportes} />
-        <MiniKpi label="Problematicas" value={problematicas.length} />
+        <MiniKpi label="Problemáticas" value={problematicas.length} />
       </div>
 
       <Panel>
@@ -187,7 +275,7 @@ export default function ProfesorPreguntasPage() {
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr><th style={TH}>Pregunta</th><th style={TH}>Oposición</th><th style={TH}>Tema</th><th style={TH}>Dificultad</th><th style={TH}>Estado</th><th style={TH}>Intentos</th><th style={TH}>Aciertos</th><th style={TH}>Reportes</th><th style={TH}>Revisión</th><th style={TH}></th></tr></thead>
+            <thead><tr><th style={TH}>Pregunta</th><th style={TH}>Oposición</th><th style={TH}>Tema</th><th style={TH}>Dificultad</th><th style={TH}>Estado</th><th style={TH}>Intentos</th><th style={TH}>Aciertos</th><th style={TH}>Reportes</th><th style={TH}>Problemática</th><th style={TH}></th></tr></thead>
             <tbody>
               {loading && <tr><td colSpan={10} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Cargando...</td></tr>}
               {!loading && preguntas.length === 0 && <tr><td colSpan={10} style={{ ...TD, textAlign: 'center', color: '#94a3b8' }}>Sin resultados</td></tr>}
@@ -210,7 +298,14 @@ export default function ProfesorPreguntasPage() {
                     <td style={TD}>{intentos || '-'}</td>
                     <td style={{ ...TD, minWidth: 130 }}>{intentos > 0 ? <Progress value={aciertos} color={P} /> : '-'}</td>
                     <td style={TD}>{reportes}</td>
-                    <td style={TD}>{problematica ? <Badge tone="danger">Revisar</Badge> : <Badge tone="ok">Correcta</Badge>}</td>
+                    <td style={TD}>
+                      {problematica ? (
+                        <details>
+                          <summary style={{ cursor: 'pointer', color: '#dc2626', fontWeight: 900, fontSize: '.75rem' }}>Revisar</summary>
+                          <ProblematicReasons item={problematica} />
+                        </details>
+                      ) : <Badge tone="ok">Sin alertas</Badge>}
+                    </td>
                     <td style={TD}>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <button onClick={() => editingId === p.id ? cancelEdit() : startEdit(p)} style={{ border: 'none', borderRadius: 7, padding: '4px 12px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer', background: editingId === p.id ? '#ede9fe' : '#f1f5f9', color: editingId === p.id ? '#7c3aed' : '#475569' }}>{editingId === p.id ? 'Cerrar' : 'Editar'}</button>
@@ -249,10 +344,50 @@ export default function ProfesorPreguntasPage() {
           </h3>
           {editError && <div style={{ padding: 10, background: '#fef2f2', color: '#dc2626', borderRadius: 8, marginBottom: 12, fontSize: '.82rem' }}>{editError}</div>}
           <form onSubmit={onSaveEdit} style={{ display: 'grid', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '.85rem', fontWeight: 600 }}>
+                Oposición
+                <select value={editOposicionId} onChange={(e) => onEditOposicion(e.target.value)} style={INPUT}>
+                  <option value="">Selecciona una oposición</option>
+                  {oposiciones.map((oposicion) => <option key={oposicion.id} value={oposicion.id}>{oposicion.nombre}</option>)}
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '.85rem', fontWeight: 600 }}>
+                Tema
+                <select required value={editForm.temaId} onChange={(e) => setEditForm((form) => ({ ...form, temaId: e.target.value }))} style={INPUT}>
+                  <option value="">Selecciona un tema</option>
+                  {editTemas.map((tema) => <option key={tema.id} value={tema.id}>{tema.nombre}</option>)}
+                </select>
+              </label>
+            </div>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '.85rem', fontWeight: 600 }}>
               Enunciado *
               <textarea rows={3} required value={editForm.enunciado} onChange={(e) => setEditForm((f) => ({ ...f, enunciado: e.target.value }))} style={{ ...INPUT, resize: 'vertical' }} />
             </label>
+
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+              <strong style={{ fontSize: '.85rem' }}>Imagen del enunciado (opcional)</strong>
+              {editForm.imagenUrl && <img src={`${BACKEND_BASE}${editForm.imagenUrl}`} alt="Imagen del enunciado" style={{ display: 'block', maxWidth: 260, maxHeight: 160, margin: '10px 0', objectFit: 'contain' }} />}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                <label style={MEDIA_BUTTON}>
+                  {imgLoading ? 'Procesando...' : editForm.imagenUrl ? 'Sustituir imagen' : 'Añadir imagen'}
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={onImageUpload} disabled={imgLoading} style={{ display: 'none' }} />
+                </label>
+                <button type="button" onClick={() => setShowMediaBrowser(true)} disabled={imgLoading} style={MEDIA_BUTTON}>Banco de medios</button>
+                {editForm.imagenUrl && <button type="button" onClick={onImageDelete} disabled={imgLoading} style={{ ...MEDIA_BUTTON, color: '#b91c1c' }}>Eliminar imagen</button>}
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+              <strong style={{ display: 'block', marginBottom: 8, fontSize: '.85rem' }}>Audio de explicación (opcional)</strong>
+              <AudioRecorder
+                existingUrl={editForm.audioUrl}
+                uploading={audioUploading}
+                onRecorded={onAudioRecorded}
+                onDelete={onAudioDelete}
+                onOpenBrowser={() => setShowAudioBrowser(true)}
+              />
+            </div>
 
             <div>
               <div style={{ fontSize: '.85rem', fontWeight: 600, marginBottom: 8 }}>Opciones (marca la correcta)</div>
@@ -290,7 +425,34 @@ export default function ProfesorPreguntasPage() {
                   <option value="dificil">Difícil</option>
                 </select>
               </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '.85rem', fontWeight: 600 }}>
+                Estado editorial
+                <select value={editForm.estado} onChange={(e) => setEditForm((f) => ({ ...f, estado: e.target.value }))} style={{ ...INPUT, width: 150 }}>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="revision">En revisión</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </label>
             </div>
+
+            <OfficialYearsSelector
+              token={token}
+              oposicionId={editOposicionId}
+              official={official}
+              selectedIds={officialYearIds}
+              onOfficialChange={(value) => {
+                setOfficial(value);
+                if (!value) { setOfficialYearIds([]); setOfficialExamIds([]); }
+              }}
+              onChange={setOfficialYearIds}
+            />
+            {official && <OfficialExamsSelector
+              token={token}
+              oposicionId={editOposicionId}
+              selectedYearIds={officialYearIds}
+              selectedExamIds={officialExamIds}
+              onChange={setOfficialExamIds}
+            />}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="submit" disabled={editSaving} style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 700, cursor: 'pointer', opacity: editSaving ? 0.7 : 1 }}>
@@ -303,6 +465,17 @@ export default function ProfesorPreguntasPage() {
           </form>
         </Panel>
       )}
+      {showMediaBrowser && <MediaBrowserModal
+        onSelect={(url) => {
+          setEditForm((form) => ({ ...form, imagenUrl: url }));
+          setShowMediaBrowser(false);
+        }}
+        onClose={() => setShowMediaBrowser(false)}
+      />}
+      {showAudioBrowser && <AudioBrowserModal
+        readOnly
+        onClose={() => setShowAudioBrowser(false)}
+      />}
     </PageShell>
   );
 }
@@ -318,8 +491,21 @@ function Badge({ children, tone = 'default' }) {
     medium: { background: '#fff7ed', color: '#ea580c' },
     danger: { background: '#fef2f2', color: '#dc2626' },
     ok: { background: '#dcfce7', color: '#15803d' },
+    warning: { background: '#fef3c7', color: '#b45309' },
   };
   return <span style={{ ...(tones[tone] ?? tones.default), borderRadius: 999, padding: '3px 8px', fontWeight: 900, fontSize: '.72rem' }}>{children}</span>;
+}
+
+function ProblematicReasons({ item }) {
+  const motivos = Array.isArray(item.motivos) ? item.motivos : [];
+  if (motivos.length === 0) return null;
+  return (
+    <div style={{ marginTop: 6, padding: 8, background: '#fff7ed', borderRadius: 8, fontSize: '.72rem', color: '#7c2d12' }}>
+      {motivos.includes('reportes_abiertos') && <div>Reportes abiertos: {item.reportesAbiertos ?? item.reportes ?? 0}</div>}
+      {motivos.includes('tasa_fallo') && <div>Tasa de fallos: {item.tasaFallo ?? item.tasa_fallo ?? 0}% ({item.fallos ?? 0} de {item.intentos ?? 0} respuestas). Umbral: 60% con mínimo de 5 intentos.</div>}
+      {motivos.includes('tasa_blancos') && <div>Tasa de respuestas en blanco: {item.tasaBlancos ?? item.tasa_blancos ?? 0}% ({item.blancos ?? 0} de {item.intentos ?? 0} respuestas). Umbral: 30% con mínimo de 5 intentos.</div>}
+    </div>
+  );
 }
 
 function getDifficultyTone(difficulty) {
@@ -331,3 +517,4 @@ function getDifficultyTone(difficulty) {
 
 const ICON_BTN = { minWidth: 34, height: 28, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#64748b', display: 'inline-grid', placeItems: 'center', marginRight: 5, cursor: 'pointer', fontSize: '.7rem', fontWeight: 800 };
 const PAGER = { border: '1px solid #e5e7eb', background: '#fff', borderRadius: 8, padding: '6px 12px', color: '#334155', fontWeight: 800, cursor: 'pointer' };
+const MEDIA_BUTTON = { border: '1px solid #d1d5db', background: '#fff', borderRadius: 7, padding: '6px 10px', color: '#374151', fontSize: '.78rem', fontWeight: 700, cursor: 'pointer' };

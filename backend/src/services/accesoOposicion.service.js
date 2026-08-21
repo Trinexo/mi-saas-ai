@@ -40,7 +40,10 @@ export const accesoOposicionService = {
           estado: contexto.estado,
           estado_efectivo: contexto.estado_efectivo,
           modo_activo: contexto.modo_activo,
-          modelos_disponibles: contexto.modelos_disponibles,
+           modelos_disponibles: contexto.modelos_disponibles,
+           modelos_disponibles_acceso: contexto.modelos_disponibles_acceso,
+           modelos_disponibles_oposicion: contexto.modelos_disponibles_oposicion,
+           modelos_efectivos: contexto.modelos_efectivos,
           modo_preparacion: contexto.modo_activo === null
             ? null
             : (contexto.modo_activo === 'guiado' ? 'albacer' : 'experto'),

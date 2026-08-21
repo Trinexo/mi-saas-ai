@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { accesosApi } from '../../services/accesosApi';
 import { catalogApi } from '../../services/catalogApi';
 import { adminApi } from '../../services/adminApi';
@@ -14,14 +15,25 @@ const ESTADO_BADGE = {
   cancelado: { bg: '#fee2e2', color: '#991b1b' },
   expirado:  { bg: '#f3f4f6', color: '#6b7280' },
 };
+const ALL_MODELS = ['experto', 'guiado'];
+const MODEL_LABELS = { experto: 'Modo Experto', guiado: 'Modo Albacer / Guiado' };
+function normalizeModels(access) {
+  const models = Array.isArray(access?.modelos_disponibles)
+    ? access.modelos_disponibles.filter((model) => ALL_MODELS.includes(model))
+    : [];
+  if (models.length) return models;
+  if (ALL_MODELS.includes(access?.modo_activo)) return [access.modo_activo];
+  return access?.modo_preparacion === 'experto' ? ['experto'] : ['guiado'];
+}
 
 export default function AdminAccesosPage() {
   const { token } = useAuth();
+  const [searchParams] = useSearchParams();
   const [accesos, setAccesos] = useState([]);
   const [pagination, setPagination] = useState({});
   const [oposiciones, setOposiciones] = useState([]);
   const [stats, setStats] = useState(null);
-  const [filters, setFilters] = useState({ page: 1, pageSize: 20, email: '', oposicionId: '' });
+  const [filters, setFilters] = useState({ page: 1, pageSize: 20, email: '', oposicionId: searchParams.get('oposicion_id') ?? '' });
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -35,6 +47,9 @@ export default function AdminAccesosPage() {
     notas: '',
     tipoAlumno: 'libre',
     modoPreparacion: 'albacer',
+    modelos: ['experto', 'guiado'],
+    modoActivo: 'guiado',
+    motivo: 'Asignación manual desde administración',
   });
   const [saving, setSaving] = useState(false);
   // Modal editar
@@ -46,6 +61,9 @@ export default function AdminAccesosPage() {
     estado: 'activo',
     tipoAlumno: 'libre',
     modoPreparacion: 'albacer',
+    modelos: ['guiado'],
+    modoActivo: 'guiado',
+    motivo: 'Actualización manual desde administración',
   });
   const [editSaving, setEditSaving] = useState(false);
 
@@ -123,6 +141,9 @@ export default function AdminAccesosPage() {
       estado:       a.estado ?? 'activo',
       tipoAlumno:   a.tipo_alumno ?? 'libre',
       modoPreparacion: a.modo_preparacion ?? 'albacer',
+      modelos: normalizeModels(a),
+      modoActivo: a.modo_activo ?? null,
+      motivo: 'Actualización manual desde administración',
     });
     setError('');
   };
@@ -132,15 +153,35 @@ export default function AdminAccesosPage() {
     setEditSaving(true);
     setError('');
     try {
+      if (!editForm.modelos.length) throw new Error('Selecciona al menos un modelo');
+      if (editForm.modoActivo === null && editForm.modelos.length === 1) throw new Error('Selecciona el modo activo');
+      if (editForm.modoActivo !== null && !editForm.modelos.includes(editForm.modoActivo)) throw new Error('El modo activo debe estar incluido en los modelos');
+      const originalModels = normalizeModels(editAcceso);
+      const originalMode = editAcceso.modo_activo ?? null;
+      const modelsChanged = JSON.stringify(originalModels) !== JSON.stringify(editForm.modelos) || originalMode !== editForm.modoActivo;
+      if (modelsChanged) {
+        await accesosApi.modificarModelosAdministrativo(token, editAcceso.id, {
+          modelos: editForm.modelos,
+          modoActivo: editForm.modoActivo,
+          motivo: editForm.motivo.trim() || 'Actualización manual desde administración',
+        });
+      }
       const payload = {
         estado:       editForm.estado,
         fechaFin:     editForm.fechaFin     || null,
         precioPagado: editForm.precioPagado ? Number(editForm.precioPagado) : null,
         notas:        editForm.notas        || null,
         tipoAlumno:   editForm.tipoAlumno,
-        modoPreparacion: editForm.modoPreparacion,
+        motivo:       editForm.motivo.trim() || 'Actualización manual desde administración',
       };
-      await accesosApi.updateAcceso(token, editAcceso.usuario_id, editAcceso.oposicion_id, payload);
+      const legacyChanged = editForm.estado !== editAcceso.estado
+        || editForm.tipoAlumno !== (editAcceso.tipo_alumno ?? 'libre')
+        || payload.fechaFin !== (editAcceso.fecha_fin ? new Date(editAcceso.fecha_fin).toISOString().slice(0, 10) : null)
+        || payload.precioPagado !== (editAcceso.precio_pagado != null ? Number(editAcceso.precio_pagado) : null)
+        || payload.notas !== (editAcceso.notas ?? null);
+      if (legacyChanged) {
+        await accesosApi.updateAcceso(token, editAcceso.usuario_id, editAcceso.oposicion_id, payload);
+      }
       setMsg('Acceso actualizado correctamente');
       setEditAcceso(null);
       loadAccesos();
@@ -158,16 +199,19 @@ export default function AdminAccesosPage() {
     setSaving(true);
     setError('');
     try {
-      const payload = { email: form.email.trim(), oposicionId: Number(form.oposicionId) };
+      const payload = { email: form.email.trim(), oposicionId: form.oposicionId };
       if (form.fechaFin)     payload.fechaFin      = form.fechaFin;
       if (form.precioPagado) payload.precioPagado  = Number(form.precioPagado);
       if (form.notas)        payload.notas         = form.notas;
       payload.tipoAlumno = form.tipoAlumno;
       payload.modoPreparacion = form.modoPreparacion;
+      payload.modelos = form.modelos;
+      payload.modoActivo = form.modoActivo;
+      payload.motivo = form.motivo.trim() || 'Asignación manual desde administración';
       await accesosApi.asignarAcceso(token, payload);
       setMsg('Acceso asignado correctamente');
       setShowModal(false);
-      setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '', tipoAlumno: 'libre', modoPreparacion: 'albacer' });
+      setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '', tipoAlumno: 'libre', modoPreparacion: 'albacer', modelos: ['experto', 'guiado'], modoActivo: 'guiado', modelos_disponibles: ['experto', 'guiado'], motivo: 'Asignación manual desde administración' });
       loadAccesos();
       loadStats();
     } catch (e) {
@@ -178,6 +222,46 @@ export default function AdminAccesosPage() {
   };
 
   const totalPages = Math.max(1, Math.ceil((pagination.total ?? 0) / (pagination.pageSize ?? filters.pageSize)));
+
+  const toggleModels = (setter, current, model) => {
+    const models = current.includes(model)
+      ? current.filter((item) => item !== model)
+      : [...current, model];
+    if (!models.length) return;
+    setter((previous) => ({
+      ...previous,
+      modelos: models,
+      modoActivo: models.includes(previous.modoActivo) ? previous.modoActivo : models[0],
+    }));
+  };
+
+  const renderModelFields = (state, setter, allowedModels = state.allowedModels ?? ALL_MODELS) => (
+    <>
+      <fieldset style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '8px 10px' }}>
+        <legend style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0 4px' }}>Modelos permitidos</legend>
+        {allowedModels.map((model) => (
+          <label key={model} style={{ display: 'block', fontSize: '0.82rem', margin: '4px 0' }}>
+            <input
+              type="checkbox"
+              checked={state.modelos.includes(model)}
+              onChange={() => toggleModels(setter, state.modelos, model)}
+            />{' '}{MODEL_LABELS[model]}
+          </label>
+        ))}
+      </fieldset>
+      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>
+        Modo activo
+        <select
+          value={state.modoActivo ?? ''}
+          onChange={(event) => setter((previous) => ({ ...previous, modoActivo: event.target.value }))}
+          style={{ display: 'block', width: '100%', marginTop: 4, padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', background: '#fff' }}
+        >
+          {state.modelos.length > 1 && <option value="">Pendiente de selección</option>}
+          {state.modelos.map((model) => <option key={model} value={model}>{MODEL_LABELS[model]}</option>)}
+        </select>
+      </label>
+    </>
+  );
 
   return (
     <div>
@@ -272,7 +356,7 @@ export default function AdminAccesosPage() {
                   <th style={TH}>Nombre</th>
                   <th style={TH}>Oposición</th>
                   <th style={TH}>Alumno</th>
-                  <th style={TH}>Modo</th>
+                  <th style={TH}>Modelos / modo</th>
                   <th style={TH}>Estado</th>
                   <th style={TH}>Inicio</th>
                   <th style={TH}>Fin</th>
@@ -297,8 +381,9 @@ export default function AdminAccesosPage() {
                         </span>
                       </td>
                       <td style={TD}>
-                        <span style={{ background: a.modo_preparacion === 'albacer' ? '#ede9fe' : '#e0f2fe', color: a.modo_preparacion === 'albacer' ? '#5b21b6' : '#075985', padding: '2px 9px', borderRadius: 12, fontSize: '0.76rem', fontWeight: 700 }}>
-                          {a.modo_preparacion === 'experto' ? 'Experto' : 'Albacer'}
+                        <div style={{ fontSize: '0.76rem', color: '#374151' }}>{normalizeModels(a).map((model) => MODEL_LABELS[model]).join(' · ')}</div>
+                        <span style={{ background: a.modo_activo === 'guiado' ? '#ede9fe' : '#e0f2fe', color: a.modo_activo === 'guiado' ? '#5b21b6' : '#075985', padding: '2px 9px', borderRadius: 12, fontSize: '0.7rem', fontWeight: 700 }}>
+                          {a.modo_activo ? `Activo: ${a.modo_activo === 'guiado' ? 'Albacer' : 'Experto'}` : 'Pendiente de selección'}
                         </span>
                       </td>
                       <td style={TD}>
@@ -387,18 +472,8 @@ export default function AdminAccesosPage() {
                     <option value="albacer">Albacer</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Modo inicial</label>
-                  <select
-                    value={editForm.modoPreparacion}
-                    onChange={(e) => setEditForm((p) => ({ ...p, modoPreparacion: e.target.value }))}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
-                  >
-                    <option value="albacer">Albacer</option>
-                    <option value="experto">Experto</option>
-                  </select>
-                </div>
               </div>
+              {renderModelFields(editForm, setEditForm, editAcceso?.modelos_disponibles_oposicion ?? ALL_MODELS)}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Fecha de fin</label>
                 <input
@@ -407,6 +482,10 @@ export default function AdminAccesosPage() {
                   onChange={(e) => setEditForm((p) => ({ ...p, fechaFin: e.target.value }))}
                   style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', boxSizing: 'border-box' }}
                 />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Motivo</label>
+                <input value={editForm.motivo} onChange={(e) => setEditForm((p) => ({ ...p, motivo: e.target.value }))} required style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Precio pagado (€)</label>
@@ -474,7 +553,12 @@ export default function AdminAccesosPage() {
                 <select
                   required
                   value={form.oposicionId}
-                  onChange={(e) => setForm((p) => ({ ...p, oposicionId: e.target.value }))}
+                   onChange={(e) => setForm((p) => {
+                     const opposition = oposiciones.find((op) => String(op.id) === String(e.target.value));
+                     const allowed = opposition?.modelos_disponibles ?? ALL_MODELS;
+                     const modelos = p.modelos.filter((model) => allowed.includes(model));
+                     return { ...p, oposicionId: e.target.value, modelos: modelos.length ? modelos : [allowed[0]], modoActivo: modelos.includes(p.modoActivo) ? p.modoActivo : allowed[0] };
+                   })}
                   style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
                 >
                   <option value="">— Selecciona oposición —</option>
@@ -493,18 +577,8 @@ export default function AdminAccesosPage() {
                     <option value="albacer">Albacer</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Modo inicial</label>
-                  <select
-                    value={form.modoPreparacion}
-                    onChange={(e) => setForm((p) => ({ ...p, modoPreparacion: e.target.value }))}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', fontSize: '0.875rem', background: '#fff', boxSizing: 'border-box' }}
-                  >
-                    <option value="albacer">Albacer</option>
-                    <option value="experto">Experto</option>
-                  </select>
-                </div>
               </div>
+              {renderModelFields(form, setForm, oposiciones.find((op) => String(op.id) === String(form.oposicionId))?.modelos_disponibles ?? ALL_MODELS)}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Fecha de fin (opcional)</label>
                 <input
@@ -536,10 +610,14 @@ export default function AdminAccesosPage() {
                   placeholder="Pago por transferencia, beca, etc."
                 />
               </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>Motivo</label>
+                <input value={form.motivo} onChange={(e) => setForm((p) => ({ ...p, motivo: e.target.value }))} required style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #e5e7eb', boxSizing: 'border-box' }} />
+              </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '', tipoAlumno: 'libre', modoPreparacion: 'albacer' }); setError(''); }}
+                  onClick={() => { setShowModal(false); setForm({ email: '', oposicionId: '', fechaFin: '', precioPagado: '', notas: '', tipoAlumno: 'libre', modoPreparacion: 'albacer', modelos: ['experto', 'guiado'], modoActivo: 'guiado', modelos_disponibles: ['experto', 'guiado'], motivo: 'Asignación manual desde administración' }); setError(''); }}
                   style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#374151', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
                 >
                   Cancelar

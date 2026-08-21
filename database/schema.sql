@@ -555,6 +555,21 @@ CREATE TABLE IF NOT EXISTS albacer_modulo_progreso (
   PRIMARY KEY (usuario_id, modulo_id)
 );
 
+CREATE TABLE IF NOT EXISTS albacer_item_progreso (
+  usuario_id BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  item_id BIGINT NOT NULL REFERENCES albacer_modulo_items(id) ON DELETE CASCADE,
+  intentos INT NOT NULL DEFAULT 0 CHECK (intentos >= 0),
+  superado BOOLEAN NOT NULL DEFAULT FALSE,
+  mejor_nota NUMERIC(5,2),
+  ultima_nota NUMERIC(5,2),
+  ultimo_test_id BIGINT REFERENCES tests(id) ON DELETE SET NULL,
+  test_id_mejor_intento BIGINT REFERENCES tests(id) ON DELETE SET NULL,
+  iniciado_en TIMESTAMPTZ,
+  superado_en TIMESTAMPTZ,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (usuario_id, item_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_tipo_modo
   ON accesos_oposicion(oposicion_id, tipo_alumno, modo_preparacion);
 CREATE INDEX IF NOT EXISTS idx_accesos_oposicion_ranking_publico
@@ -574,6 +589,8 @@ CREATE INDEX IF NOT EXISTS idx_albacer_modulo_items_simulacro
   WHERE simulacro_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_albacer_modulo_progreso_modulo_estado
   ON albacer_modulo_progreso(modulo_id, estado);
+CREATE INDEX IF NOT EXISTS idx_albacer_item_progreso_item_superado
+  ON albacer_item_progreso(item_id, superado);
 CREATE INDEX IF NOT EXISTS idx_tests_modo_oposicion_fecha
   ON tests(modo_preparacion, oposicion_id, fecha_creacion DESC);
 CREATE INDEX IF NOT EXISTS idx_tests_albacer_modulo_usuario

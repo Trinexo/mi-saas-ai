@@ -3,7 +3,7 @@ import { testGenerationGenerateSelectionMixtoService } from './testGenerationGen
 import { testGenerationGeneratePersistenceService } from './testGenerationGeneratePersistence.service.js';
 
 export const testGenerationGenerateOrchestratorService = {
-  async generate({ userId, temaId, bloqueId, temasMix, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', duracionSegundos, feedbackInmediato = false }) {
+  async generate({ userId, temaId, bloqueId, temasMix, oposicionId, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', duracionSegundos, feedbackInmediato = false, officialidad = 'all', anioExamen = null, anioIds = [], examenId = null }) {
     let preguntas;
 
     if (temasMix && temasMix.length > 0) {
@@ -13,6 +13,10 @@ export const testGenerationGenerateOrchestratorService = {
         numeroPreguntas,
         modo,
         dificultad,
+        officialidad,
+        anioExamen,
+        anioIds,
+        examenId,
       });
     } else {
       preguntas = await testGenerationGenerateSelectionService.selectPreguntas({
@@ -23,6 +27,10 @@ export const testGenerationGenerateOrchestratorService = {
         numeroPreguntas,
         modo,
         dificultad,
+        officialidad,
+        anioExamen,
+        anioIds,
+        examenId,
       });
     }
 

@@ -36,6 +36,12 @@ const buildWhere = (filters, args) => {
     args.push(`%${filters.q}%`);
     where.push(`p.enunciado ILIKE $${args.length}`);
   }
+  if (filters.officialidad === 'official') where.push('EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id)');
+  if (filters.officialidad === 'non_official') where.push('NOT EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id)');
+  if (filters.anio != null) { args.push(filters.anio); where.push(`EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao JOIN oposiciones_anios_oficiales oao ON oao.id = pao.oposicion_anio_id WHERE pao.pregunta_id = p.id AND oao.anio = $${args.length})`); }
+  if (filters.anioIds?.length) { args.push(filters.anioIds); where.push(`EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id AND pao.oposicion_anio_id = ANY($${args.length}::bigint[]))`); }
+  const examenIds = filters.examenIds?.length ? filters.examenIds : (filters.examenId != null ? [filters.examenId] : []);
+  if (examenIds.length) { args.push(examenIds); where.push(`EXISTS (SELECT 1 FROM examenes_oficiales_preguntas eop WHERE eop.pregunta_id = p.id AND eop.examen_id = ANY($${args.length}::bigint[]))`); }
 
   return where.length ? `WHERE ${where.join(' AND ')}` : '';
 };
@@ -48,6 +54,7 @@ export const adminPreguntasListadoBrowseRepository = {
 
     const result = await pool.query(
       `SELECT p.id, p.tema_id, p.enunciado, p.nivel_dificultad, p.estado,
+              EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id) AS es_oficial,
               t.nombre  AS tema_nombre,
               o.nombre  AS oposicion_nombre
        FROM preguntas p

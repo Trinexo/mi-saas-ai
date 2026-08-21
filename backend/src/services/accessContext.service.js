@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import { accesoOposicionRepository } from '../repositories/accesoOposicion.repository.js';
+import { effectiveModes, normalizeModes, DEFAULT_OPPOSITION_MODES } from './accessModes.js';
 
 const MAX_BIGINT = 9223372036854775807n;
 const MAX_SAFE_BIGINT = BigInt(Number.MAX_SAFE_INTEGER);
@@ -122,6 +123,9 @@ function dtoSinAcceso(usuarioId, oposicionId) {
     estado_efectivo: 'sin_acceso',
     vigencia: { fecha_inicio: null, fecha_fin: null, esta_vigente: false, dias_restantes: null },
     modelos_disponibles: [],
+    modelos_disponibles_acceso: [],
+    modelos_disponibles_oposicion: [],
+    modelos_efectivos: [],
     modo_activo: null,
     permisos: permisosVacios(),
     acciones_administrativas: accionesVacias(),
@@ -174,6 +178,11 @@ function construirContexto(row, principal, usuarioId, oposicionId, clock) {
     modelos.push(modelo);
   }
   modelos.sort((left, right) => (left === 'experto' ? 0 : 1) - (right === 'experto' ? 0 : 1));
+  const modelosOposicion = normalizeModes(row.modelos_disponibles_oposicion, DEFAULT_OPPOSITION_MODES);
+  const modelosEfectivos = effectiveModes(modelosOposicion, modelos);
+  if (!modelosEfectivos.length) {
+    throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'El acceso no tiene modos permitidos por la oposición');
+  }
   const legacyNormalizado = normalizarLegacy(row.modo_preparacion);
   if (legacyNormalizado !== null && !modelos.includes(legacyNormalizado)) {
     throw errorConCodigo('ACCESS_CONTEXT_INCONSISTENT', 'Legacy no incluido');
@@ -207,13 +216,14 @@ function construirContexto(row, principal, usuarioId, oposicionId, clock) {
   const permisos = permisosVacios();
   if (principal.tipo === 'alumno' && estaVigente) {
     permisos.puede_acceder_contenido = true;
-    permisos.puede_usar_experto = modelos.includes('experto');
-    permisos.puede_usar_guiado = modelos.includes('guiado');
-    permisos.puede_cambiar_modo = modelos.length > 1 || estadoEfectivo === 'pendiente_modo';
+    permisos.puede_usar_experto = modelosEfectivos.includes('experto');
+    permisos.puede_usar_guiado = modelosEfectivos.includes('guiado');
+    permisos.puede_cambiar_modo = modelosEfectivos.length > 1 || estadoEfectivo === 'pendiente_modo';
   }
   return {
     usuario_id: usuarioId,
     oposicion_id: oposicionId,
+    tipo_alumno: row.tipo_alumno ?? null,
     tiene_acceso: true,
     acceso_id: accesoId,
     estado: row.estado,
@@ -225,6 +235,9 @@ function construirContexto(row, principal, usuarioId, oposicionId, clock) {
       dias_restantes: diasRestantes,
     },
     modelos_disponibles: modelos,
+    modelos_disponibles_acceso: modelos,
+    modelos_disponibles_oposicion: modelosOposicion,
+    modelos_efectivos: modelosEfectivos,
     modo_activo: row.modo_activo,
     permisos,
     acciones_administrativas: accionesPara(estadoEfectivo, principal),

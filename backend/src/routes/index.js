@@ -18,6 +18,8 @@ import planEstudioRoutes from './v1/planEstudio.routes.js';
 import simulacrosRoutes from './v1/simulacros.routes.js';
 import misTestsRoutes from './v1/misTests.routes.js';
 import albacerRoutes from './v1/albacer.routes.js';
+import examenesOficialesRoutes from './v1/examenesOficiales.routes.js';
+import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
@@ -44,5 +46,8 @@ router.use('/plan-estudio', planEstudioRoutes);
 router.use('/simulacros', simulacrosRoutes);
 router.use('/mis-tests', misTestsRoutes);
 router.use('/albacer', albacerRoutes);
+router.use('/examenes-oficiales', examenesOficialesRoutes);
+router.use('/admin/examenes-oficiales', requireAuth, requireRole('admin', 'profesor'), examenesOficialesRoutes);
+router.use('/v1/profesor/examenes-oficiales', requireAuth, requireRole('profesor'), examenesOficialesRoutes);
 
 export default router;

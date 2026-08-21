@@ -2,8 +2,10 @@ import { z } from 'zod';
 
 const nombre = z.string().min(2).max(200);
 const descripcion = z.string().max(500).optional();
+const modelosDisponibles = z.array(z.enum(['experto', 'guiado'])).min(1).max(2)
+  .refine((items) => new Set(items).size === items.length, 'No puede haber modos duplicados');
 
-export const createOposicionSchema = z.object({ nombre, descripcion });
+export const createOposicionSchema = z.object({ nombre, descripcion, modelos_disponibles: modelosDisponibles.optional() });
 
 export const listOposicionesQuerySchema = z.object({
   q:         z.string().optional(),
@@ -19,13 +21,15 @@ export const updateOposicionSchema = z.object({
   tiempo_limite_minutos:  z.coerce.number().int().min(1).max(600).nullable().optional(),
   categoria:              z.string().max(100).nullable().optional(),
   estado:                 z.enum(['activa', 'borrador', 'inactiva']).optional(),
+  modelos_disponibles:    modelosDisponibles.optional(),
 }).refine(
   (d) =>
     d.nombre !== undefined ||
     d.descripcion !== undefined ||
     d.tiempo_limite_minutos !== undefined ||
     d.categoria !== undefined ||
-    d.estado !== undefined,
+    d.estado !== undefined ||
+    d.modelos_disponibles !== undefined,
   { message: 'Proporciona al menos un campo a actualizar' },
 );
 

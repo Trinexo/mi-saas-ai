@@ -11,7 +11,20 @@ export const adminPreguntasEntityReadRepository = {
       `SELECT p.id, p.tema_id, p.bloque_id, p.enunciado, p.explicacion,
               p.referencia_normativa, p.nivel_dificultad, p.estado,
               p.imagen_url, p.audio_url, p.fecha_actualizacion,
-              t.oposicion_id
+              t.oposicion_id,
+              COALESCE((SELECT json_agg(json_build_object(
+                'id', eo.id::text, 'nombre', eo.nombre, 'anio', eo.anio,
+                'convocatoria', eo.convocatoria, 'fecha', eo.fecha, 'orden', eop.orden
+              ) ORDER BY eo.anio DESC, eo.nombre)
+                FROM examenes_oficiales_preguntas eop
+                JOIN examenes_oficiales eo ON eo.id = eop.examen_id
+               WHERE eop.pregunta_id = p.id), '[]'::json) AS examenes_oficiales
+              ,COALESCE((SELECT json_agg(json_build_object(
+                'id', oao.id::text, 'oposicion_id', oao.oposicion_id::text, 'anio', oao.anio
+              ) ORDER BY oao.anio DESC)
+                FROM preguntas_anios_oficiales pao
+                JOIN oposiciones_anios_oficiales oao ON oao.id = pao.oposicion_anio_id
+               WHERE pao.pregunta_id = p.id), '[]'::json) AS anios_oficiales
        FROM preguntas p
        JOIN temas t ON t.id = p.tema_id
        WHERE p.id = $1`,

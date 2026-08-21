@@ -13,6 +13,16 @@ const mapItem = (row) => ({
   total_preguntas: Number(row.total_preguntas ?? 0),
   duracion_segundos: row.duracion_segundos == null ? null : Number(row.duracion_segundos),
   estado_contenido: row.estado_contenido ?? null,
+  progreso: {
+    intentos: Number(row.intentos ?? 0),
+    superado: Boolean(row.item_superado),
+    mejor_nota: row.item_mejor_nota == null ? null : Number(row.item_mejor_nota),
+    ultima_nota: row.item_ultima_nota == null ? null : Number(row.item_ultima_nota),
+    ultimo_test_id: row.ultimo_test_id == null ? null : Number(row.ultimo_test_id),
+    test_id_mejor_intento: row.item_test_id_mejor_intento == null ? null : Number(row.item_test_id_mejor_intento),
+    iniciado_en: row.item_iniciado_en ?? null,
+    superado_en: row.item_superado_en ?? null,
+  },
 });
 
 const mapModulo = (row) => ({
@@ -80,6 +90,14 @@ export const albacerAlumnoRepository = {
              'orden', mi.orden,
              'obligatorio', mi.obligatorio,
              'estado_contenido', COALESCE(at.estado, s.estado),
+             'intentos', GREATEST(COALESCE(ip.intentos, 0), COALESCE(hist.intentos, 0)),
+             'item_superado', COALESCE(ip.superado, FALSE) OR COALESCE(hist.superado, FALSE),
+             'item_mejor_nota', GREATEST(ip.mejor_nota, hist.mejor_nota),
+             'item_ultima_nota', COALESCE(hist.ultima_nota, ip.ultima_nota),
+             'ultimo_test_id', COALESCE(hist.ultimo_test_id, ip.ultimo_test_id),
+             'item_test_id_mejor_intento', COALESCE(hist.test_id_mejor_intento, ip.test_id_mejor_intento),
+             'item_iniciado_en', COALESCE(ip.iniciado_en, hist.iniciado_en),
+             'item_superado_en', COALESCE(ip.superado_en, hist.superado_en),
              'total_preguntas', CASE
                WHEN mi.tipo = 'simulacro_final' THEN COALESCE(sim_q.total_preguntas, 0)
                ELSE COALESCE(test_q.total_preguntas, 0)
@@ -89,7 +107,50 @@ export const albacerAlumnoRepository = {
            ORDER BY mi.orden, mi.id
          ) AS items
          FROM albacer_modulo_items mi
+         LEFT JOIN albacer_item_progreso ip
+           ON ip.item_id = mi.id
+          AND ip.usuario_id = $1
          LEFT JOIN admin_tests at ON at.id = mi.plantilla_test_id
+         LEFT JOIN LATERAL (
+           SELECT
+             COUNT(*)::int AS intentos,
+             MAX(rt.nota) AS mejor_nota,
+             (ARRAY_AGG(rt.nota ORDER BY rt.fecha DESC, rt.id DESC))[1] AS ultima_nota,
+             (ARRAY_AGG(t.id ORDER BY rt.fecha DESC, rt.id DESC))[1] AS ultimo_test_id,
+             (ARRAY_AGG(t.id ORDER BY rt.nota DESC, rt.fecha ASC, rt.id ASC))[1] AS test_id_mejor_intento,
+             MIN(t.fecha_creacion) AS iniciado_en,
+             BOOL_OR(rt.nota >= 5.00) AS superado,
+             MIN(rt.fecha) FILTER (WHERE rt.nota >= 5.00) AS superado_en
+           FROM tests t
+           JOIN resultados_test rt ON rt.test_id = t.id
+           WHERE mi.tipo = 'test'
+             AND t.usuario_id = $1
+             AND t.modo_preparacion = 'albacer'
+             AND t.oposicion_id = m.oposicion_id
+             AND (
+               t.albacer_item_id = mi.id
+               OR (
+                 t.albacer_item_id IS NULL
+                 AND mi.plantilla_test_id IS NOT NULL
+                 AND (t.scoring_snapshot ->> 'plantilla_test_id') ~ '^[0-9]+$'
+                 AND (t.scoring_snapshot ->> 'plantilla_test_id')::bigint = mi.plantilla_test_id
+                 AND (
+                   t.albacer_modulo_id = mi.modulo_id
+                   OR (
+                     t.albacer_modulo_id IS NULL
+                     AND NOT EXISTS (
+                       SELECT 1
+                       FROM albacer_modulo_items other_item
+                       JOIN albacer_modulos other_modulo ON other_modulo.id = other_item.modulo_id
+                       WHERE other_item.plantilla_test_id = mi.plantilla_test_id
+                         AND other_item.id <> mi.id
+                         AND other_modulo.oposicion_id = m.oposicion_id
+                     )
+                   )
+                 )
+               )
+             )
+         ) hist ON TRUE
          LEFT JOIN LATERAL (
            SELECT COUNT(*)::int AS total_preguntas
            FROM admin_tests_preguntas atp
@@ -173,6 +234,18 @@ export const albacerAlumnoRepository = {
          END,
          actualizado_en = NOW()`,
       [userId, moduloId],
+    );
+  },
+
+  async upsertItemIniciado(userId, itemId) {
+    await pool.query(
+      `INSERT INTO albacer_item_progreso (usuario_id, item_id, iniciado_en)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (usuario_id, item_id)
+       DO UPDATE SET
+         iniciado_en = COALESCE(albacer_item_progreso.iniciado_en, EXCLUDED.iniciado_en),
+         actualizado_en = NOW()`,
+      [userId, itemId],
     );
   },
 };

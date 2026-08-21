@@ -2,6 +2,38 @@ import { z } from 'zod';
 
 const id = z.coerce.number().int().positive();
 const nonNegativeInt = z.coerce.number().int().min(0);
+const configId = z.union([
+  z.number().int().positive(),
+  z.string().regex(/^\d+$/).refine((value) => BigInt(value) > 0n),
+]).transform((value) => {
+  const text = String(value);
+  const numberValue = Number(text);
+  return Number.isSafeInteger(numberValue) ? numberValue : text;
+});
+export const configuracionPreguntasSchema = z.object({
+  total_preguntas: z.coerce.number().int().positive(),
+  tema_ids: z.array(configId).min(1).max(200),
+  dificultad: z.enum(['facil', 'media', 'dificil']).nullable().optional(),
+  officialidad: z.enum(['all', 'official', 'non_official']).default('all'),
+  anio_ids: z.array(configId).max(100).default([]),
+  examen_ids: z.array(configId).max(100).default([]),
+  examen_id: configId.nullable().optional(),
+  reparto_por_tema: z.boolean().default(false),
+  reparto: z.array(z.object({ tema_id: configId, cantidad: z.coerce.number().int().positive() })).optional().default([]),
+}).superRefine((value, ctx) => {
+  const temas = new Set(value.tema_ids.map(String));
+  if (value.reparto_por_tema) {
+    const reparto = new Map(value.reparto.map((item) => [String(item.tema_id), item.cantidad]));
+    if (reparto.size !== temas.size || [...temas].some((temaId) => !reparto.has(temaId))) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reparto'], message: 'El reparto debe cubrir exactamente los temas seleccionados' });
+    } else if ([...reparto.values()].reduce((sum, count) => sum + count, 0) !== value.total_preguntas) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reparto'], message: 'El reparto debe sumar el total de preguntas' });
+    }
+  }
+  if (value.officialidad !== 'official' && (value.anio_ids.length || value.examen_ids.length || value.examen_id != null)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['officialidad'], message: 'Años y examen solo aplican a preguntas oficiales' });
+  }
+});
 
 export const listSimulacrosQuerySchema = z.object({
   q:           z.string().optional(),
@@ -22,6 +54,8 @@ export const createSimulacroSchema = z.object({
   penalizacion:                z.coerce.number().min(0).optional().default(0),
   mostrar_resultados_al_final: z.boolean().optional().default(true),
   fecha_publicacion:           z.string().datetime().optional().nullable(),
+  wizard_simplificado:         z.boolean().optional().default(false),
+  configuracion_preguntas:     configuracionPreguntasSchema.optional(),
 });
 
 export const updateSimulacroSchema = z.object({
@@ -34,6 +68,8 @@ export const updateSimulacroSchema = z.object({
   penalizacion:                z.coerce.number().min(0).optional(),
   mostrar_resultados_al_final: z.boolean().optional(),
   fecha_publicacion:           z.string().datetime().nullable().optional(),
+  wizard_simplificado:         z.boolean().optional(),
+  configuracion_preguntas:     configuracionPreguntasSchema.optional(),
 }).refine(
   (d) => Object.keys(d).length > 0,
   { message: 'Proporciona al menos un campo a actualizar' },

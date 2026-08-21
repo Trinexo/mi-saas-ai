@@ -1,8 +1,12 @@
 import { profesorWorkspaceSeleccionRepository } from '../repositories/profesorWorkspaceSeleccion.repository.js';
 import { profesorAccessRepository } from '../repositories/profesorAccess.repository.js';
 import { ApiError } from '../utils/api-error.js';
+import { adminSimulacrosService } from './adminSimulacros.service.js';
 
 const uniqNumbers = (items = []) => [...new Set(items.map(Number).filter(Boolean))];
+const getExamenIds = (payload = {}) => payload.examen_ids?.length
+  ? payload.examen_ids
+  : (payload.examen_id != null ? [payload.examen_id] : []);
 
 const buildTemaRequests = (payload) => {
   if (payload.temas?.length) {
@@ -24,10 +28,65 @@ const buildTemaRequests = (payload) => {
   });
 };
 
+async function seleccionarSinReparto(payload) {
+  const exclude = new Set(uniqNumbers(payload.exclude_ids));
+  const candidates = [];
+  const seen = new Set(exclude);
+  for (const temaId of uniqNumbers(payload.tema_ids)) {
+    const rows = await profesorWorkspaceSeleccionRepository.listPreguntasDisponibles({
+      oposicionId: payload.oposicion_id,
+      temaId,
+      cantidad: Number(payload.cantidad),
+      dificultad: payload.dificultad,
+      excludeIds: [...exclude],
+      officialidad: payload.officialidad,
+      anioIds: payload.anio_ids,
+      examenId: payload.examen_id,
+      examenIds: getExamenIds(payload),
+    });
+    rows.forEach((row) => {
+      const id = Number(row.id);
+      if (!seen.has(id)) { seen.add(id); candidates.push(row); }
+    });
+  }
+  const cantidad = Number(payload.cantidad);
+  const avisos = candidates.length < cantidad
+    ? [{
+      tipo: 'preguntas_insuficientes_global',
+      mensaje: `Necesitas ${cantidad} preguntas y hay ${candidates.length} disponibles con los filtros seleccionados.`,
+      faltantes: cantidad - candidates.length,
+    }]
+    : [];
+  candidates.sort(() => Math.random() - 0.5);
+  const preguntas = candidates.slice(0, cantidad);
+  const grupos = new Map();
+  preguntas.forEach((pregunta) => {
+    const key = Number(pregunta.tema_id);
+    if (!grupos.has(key)) grupos.set(key, { tema_id: key, tema_nombre: pregunta.tema_nombre, preguntas: [] });
+    grupos.get(key).preguntas.push(pregunta);
+  });
+  return { preguntas, grupos: [...grupos.values()], resumen_temas: [], total_seleccionadas: preguntas.length, avisos };
+}
+
+async function validateScopeAndExclusions(payload) {
+  const temaIds = uniqNumbers(payload.tema_ids);
+  const validTemaIds = await profesorWorkspaceSeleccionRepository.listTemaIdsInOposicion(payload.oposicion_id, temaIds);
+  if (validTemaIds.length !== temaIds.length) {
+    throw new ApiError(400, 'Todos los temas deben pertenecer a la oposicion indicada');
+  }
+  const [plantillaIds, simulacroIds] = await Promise.all([
+    profesorWorkspaceSeleccionRepository.getPreguntasByPlantilla(payload.plantilla_test_id),
+    profesorWorkspaceSeleccionRepository.getPreguntasBySimulacro(payload.simulacro_id),
+  ]);
+  return [...new Set([...uniqNumbers(payload.exclude_ids), ...plantillaIds, ...simulacroIds])];
+}
+
 export const profesorWorkspaceSeleccionService = {
   async seleccionar(userId, payload) {
     const hasOposicion = await profesorAccessRepository.hasAssignedOposicion(userId, payload.oposicion_id);
     if (!hasOposicion) throw new ApiError(403, 'No tienes asignada esa oposicion');
+
+    await adminSimulacrosService.assertConfigOfficialFilters(payload, payload.oposicion_id);
 
     if (payload.plantilla_test_id) {
       const allowed = await profesorAccessRepository.hasAssignedPlantillaTest(userId, payload.plantilla_test_id);
@@ -39,12 +98,19 @@ export const profesorWorkspaceSeleccionService = {
       if (!allowed) throw new ApiError(403, 'No tienes acceso a ese simulacro');
     }
 
+    if (payload.reparto_por_tema === false) {
+      const excludeIds = await validateScopeAndExclusions(payload);
+      return seleccionarSinReparto({ ...payload, exclude_ids: excludeIds });
+    }
+
     const temaRequests = buildTemaRequests(payload);
     const temaIds = uniqNumbers(temaRequests.map((item) => item.temaId));
     const validTemaIds = await profesorWorkspaceSeleccionRepository.listTemaIdsInOposicion(payload.oposicion_id, temaIds);
     if (validTemaIds.length !== temaIds.length) {
       throw new ApiError(400, 'Todos los temas deben pertenecer a la oposicion indicada');
     }
+    const temas = await profesorWorkspaceSeleccionRepository.listTemasInOposicion(payload.oposicion_id, temaIds);
+    const nombresTema = new Map(temas.map((tema) => [Number(tema.id), tema.nombre]));
 
     const exclude = new Set(uniqNumbers(payload.exclude_ids));
     const [plantillaIds, simulacroIds] = await Promise.all([
@@ -65,6 +131,10 @@ export const profesorWorkspaceSeleccionService = {
           temaId: request.temaId,
           dificultad: payload.dificultad,
           excludeIds,
+          officialidad: payload.officialidad,
+          anioIds: payload.anio_ids,
+          examenId: payload.examen_id,
+          examenIds: getExamenIds(payload),
         }),
         profesorWorkspaceSeleccionRepository.listPreguntasDisponibles({
           oposicionId: payload.oposicion_id,
@@ -72,6 +142,10 @@ export const profesorWorkspaceSeleccionService = {
           cantidad: request.cantidad,
           dificultad: payload.dificultad,
           excludeIds,
+          officialidad: payload.officialidad,
+          anioIds: payload.anio_ids,
+          examenId: payload.examen_id,
+          examenIds: getExamenIds(payload),
         }),
       ]);
 
@@ -81,6 +155,7 @@ export const profesorWorkspaceSeleccionService = {
       const faltantes = Math.max(0, request.cantidad - preguntas.length);
       resumenTemas.push({
         tema_id: request.temaId,
+        tema_nombre: nombresTema.get(request.temaId) ?? `Tema ${request.temaId}`,
         solicitadas: request.cantidad,
         disponibles,
         seleccionadas: preguntas.length,
@@ -90,7 +165,7 @@ export const profesorWorkspaceSeleccionService = {
         avisos.push({
           tipo: 'preguntas_insuficientes',
           tema_id: request.temaId,
-          mensaje: `Faltan ${faltantes} preguntas para completar el tema ${request.temaId}`,
+          mensaje: `Faltan ${faltantes} preguntas para completar el tema ${nombresTema.get(request.temaId) ?? `Tema ${request.temaId}`}`,
           faltantes,
         });
       }
@@ -133,6 +208,10 @@ export const profesorWorkspaceSeleccionService = {
       dificultad: payload.dificultad,
       excludeIds: [...exclude],
       excludeTemaIds: temaIds,
+      officialidad: payload.officialidad,
+      anioIds: payload.anio_ids,
+      examenId: payload.examen_id,
+      examenIds: getExamenIds(payload),
     });
 
     preguntas.forEach((pregunta) => exclude.add(Number(pregunta.id)));
@@ -156,12 +235,19 @@ export const profesorWorkspaceSeleccionService = {
   // Igual que seleccionar() pero sin validaciones de acceso de profesor.
   // Solo para rutas protegidas por requireRole('admin').
   async seleccionarAdmin(payload) {
+    await adminSimulacrosService.assertConfigOfficialFilters(payload, payload.oposicion_id);
+    if (payload.reparto_por_tema === false) {
+      const excludeIds = await validateScopeAndExclusions(payload);
+      return seleccionarSinReparto({ ...payload, exclude_ids: excludeIds });
+    }
     const temaRequests = buildTemaRequests(payload);
     const temaIds = uniqNumbers(temaRequests.map((item) => item.temaId));
     const validTemaIds = await profesorWorkspaceSeleccionRepository.listTemaIdsInOposicion(payload.oposicion_id, temaIds);
     if (validTemaIds.length !== temaIds.length) {
       throw new ApiError(400, 'Todos los temas deben pertenecer a la oposicion indicada');
     }
+    const temas = await profesorWorkspaceSeleccionRepository.listTemasInOposicion(payload.oposicion_id, temaIds);
+    const nombresTema = new Map(temas.map((tema) => [Number(tema.id), tema.nombre]));
 
     const exclude = new Set(uniqNumbers(payload.exclude_ids));
     const [plantillaIds, simulacroIds] = await Promise.all([
@@ -182,6 +268,10 @@ export const profesorWorkspaceSeleccionService = {
           temaId: request.temaId,
           dificultad: payload.dificultad,
           excludeIds,
+          officialidad: payload.officialidad,
+          anioIds: payload.anio_ids,
+          examenId: payload.examen_id,
+          examenIds: getExamenIds(payload),
         }),
         profesorWorkspaceSeleccionRepository.listPreguntasDisponibles({
           oposicionId: payload.oposicion_id,
@@ -189,6 +279,10 @@ export const profesorWorkspaceSeleccionService = {
           cantidad: request.cantidad,
           dificultad: payload.dificultad,
           excludeIds,
+          officialidad: payload.officialidad,
+          anioIds: payload.anio_ids,
+          examenId: payload.examen_id,
+          examenIds: getExamenIds(payload),
         }),
       ]);
 
@@ -196,9 +290,9 @@ export const profesorWorkspaceSeleccionService = {
       seleccionadas.push(...preguntas);
 
       const faltantes = Math.max(0, request.cantidad - preguntas.length);
-      resumenTemas.push({ tema_id: request.temaId, solicitadas: request.cantidad, disponibles, seleccionadas: preguntas.length, faltantes });
+      resumenTemas.push({ tema_id: request.temaId, tema_nombre: nombresTema.get(request.temaId) ?? `Tema ${request.temaId}`, solicitadas: request.cantidad, disponibles, seleccionadas: preguntas.length, faltantes });
       if (faltantes > 0) {
-        avisos.push({ tipo: 'preguntas_insuficientes', tema_id: request.temaId, mensaje: `Faltan ${faltantes} preguntas para el tema ${request.temaId}`, faltantes });
+        avisos.push({ tipo: 'preguntas_insuficientes', tema_id: request.temaId, mensaje: `Faltan ${faltantes} preguntas para completar el tema ${nombresTema.get(request.temaId) ?? `Tema ${request.temaId}`}`, faltantes });
       }
     }
 

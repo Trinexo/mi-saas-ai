@@ -7,6 +7,14 @@ export const adminPreguntasCrudReadListPreguntasService = {
       .split(',')
       .map((value) => Number(value.trim()))
       .filter((value) => Number.isInteger(value) && value > 0);
+    const anioIds = String(query.anio_ids ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => /^\d+$/.test(value));
+    const examenIds = String(query.examen_ids ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => /^\d+$/.test(value));
 
     const {
       page,
@@ -17,6 +25,9 @@ export const adminPreguntasCrudReadListPreguntasService = {
       tema_id: temaId,
       bloque_id: bloqueId,
       nivel_dificultad: nivelDificultad,
+      officialidad,
+      anio,
+      examen_id: examenId,
     } = query;
 
     const filters = {
@@ -27,6 +38,11 @@ export const adminPreguntasCrudReadListPreguntasService = {
       nivelDificultad: nivelDificultad ?? null,
       q: q ?? null,
       estado: estado ?? null,
+      officialidad: officialidad ?? 'all',
+      anio: anio ?? null,
+      anioIds: anioIds.length ? [...new Set(anioIds)] : [],
+      examenId: examenId ?? null,
+      examenIds: examenIds.length ? [...new Set(examenIds)] : [],
     };
 
     if (caller.role === 'profesor') {

@@ -3,11 +3,16 @@ import { accessContextService, normalizarIdentificador } from './accessContext.s
 import { testGenerationGeneratePersistenceService } from './testGenerationGeneratePersistence.service.js';
 import { ApiError } from '../utils/api-error.js';
 
+function puedeAccederSimulacrosAcademia(contexto) {
+  return contexto?.permisos?.puede_acceder_contenido === true
+    && contexto.tipo_alumno === 'albacer';
+}
+
 export const simulacrosPublicosService = {
   async getPublicados(userId, requestedOposicionId = null) {
     const accesos = await accessContextService.obtenerContextosUsuario({ usuarioId: userId });
     const activeIds = accesos
-      .filter((acceso) => acceso.permisos.puede_acceder_contenido && acceso.modo_activo === 'guiado')
+      .filter(puedeAccederSimulacrosAcademia)
       .map((acceso) => acceso.oposicion_id);
     const requestedId = requestedOposicionId == null
       ? null
@@ -30,7 +35,7 @@ export const simulacrosPublicosService = {
       oposicionId: data.simulacro.oposicion_id,
       principal: { tipo: 'alumno', usuarioId: userId },
     });
-    if (!contexto.permisos.puede_acceder_contenido || contexto.modo_activo !== 'guiado') {
+    if (!puedeAccederSimulacrosAcademia(contexto)) {
       throw new ApiError(403, 'Este simulacro esta disponible solo para alumnos Albacer');
     }
 

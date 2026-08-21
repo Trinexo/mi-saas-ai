@@ -24,6 +24,14 @@ export const adminPreguntasCrudWriteMutationCreateService = {
       await client.query('BEGIN');
       const pregunta = await adminRepository.createPregunta(client, { ...payload, estado: estadoInicial });
       await adminRepository.createOpciones(client, pregunta.id, payload.opciones);
+      // Una pregunta no oficial no debe tocar las relaciones editoriales
+      // opcionales. Solo se sincronizan cuando el payload las proporciona.
+      if (Array.isArray(payload.anioIds)) {
+        await adminRepository.setYearsForPreguntaWithClient(client, pregunta.id, payload.anioIds);
+      }
+      if (Array.isArray(payload.examenIds)) {
+        await adminRepository.setExamsForPreguntaWithClient(client, pregunta.id, payload.examenIds);
+      }
       await client.query('COMMIT');
       adminRepository.insertAuditoria({ accion: 'create', preguntaId: pregunta.id, userId, userRole }).catch(() => {});
       return { id: pregunta.id, estado: estadoInicial };

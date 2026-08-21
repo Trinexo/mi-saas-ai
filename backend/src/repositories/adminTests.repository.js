@@ -92,7 +92,9 @@ export const adminTestsRepository = {
            )
            OR COALESCE(t.scope, 'experto') = $5
          )
-       GROUP BY t.id, o.nombre, te.nombre, tt.temas_resumen, tt.tema_ids
+       GROUP BY t.id, o.nombre, te.nombre,
+                tt.temas_resumen, tt.tema_ids, tt.temas_oposicion_id,
+                tp.preguntas_oposicion_id
        ORDER BY t.fecha_creacion DESC
        LIMIT $6 OFFSET $7`,
       params,

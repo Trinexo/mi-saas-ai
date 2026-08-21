@@ -13,6 +13,8 @@ const originalCreateOposicion = catalogAdminRepository.createOposicion;
 const originalSyncOposicionIdSequence = catalogAdminRepository.syncOposicionIdSequence;
 const originalCreateTema = catalogAdminRepository.createTema;
 const originalSyncTemaIdSequence = catalogAdminRepository.syncTemaIdSequence;
+const originalDeleteTema = catalogAdminRepository.deleteTema;
+const originalGetTemaDeleteDependencies = catalogAdminRepository.getTemaDeleteDependencies;
 
 test.afterEach(() => {
   catalogRepository.getOposiciones = originalGetOposiciones;
@@ -20,6 +22,8 @@ test.afterEach(() => {
   catalogAdminRepository.syncOposicionIdSequence = originalSyncOposicionIdSequence;
   catalogAdminRepository.createTema = originalCreateTema;
   catalogAdminRepository.syncTemaIdSequence = originalSyncTemaIdSequence;
+  catalogAdminRepository.deleteTema = originalDeleteTema;
+  catalogAdminRepository.getTemaDeleteDependencies = originalGetTemaDeleteDependencies;
 });
 
 test('catalog materias query: rechaza oposicion_id inválido', () => {
@@ -273,5 +277,92 @@ test('admin catalog temas: no reintenta duplicados que no son drift de secuencia
   await assert.rejects(
     () => catalogAdminService.createTema(7, 'Tema repetido'),
     (error) => error.code === '23505' && error.constraint === 'temas_oposicion_id_nombre_key',
+  );
+});
+
+test('admin catalog temas: elimina un tema vacío', async () => {
+  let deleted = false;
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({ preguntas: 0, colecciones: 0 });
+  catalogAdminRepository.deleteTema = async (id) => {
+    deleted = id === 7;
+    return { id };
+  };
+
+  await assert.doesNotReject(() => catalogAdminService.deleteTema(7));
+  assert.equal(deleted, true);
+});
+
+test('admin catalog temas: bloquea borrado con preguntas y conserva el contenido', async () => {
+  let deleteCalls = 0;
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({ preguntas: 27, colecciones: 0 });
+  catalogAdminRepository.deleteTema = async () => { deleteCalls += 1; };
+
+  await assert.rejects(
+    () => catalogAdminService.deleteTema(7),
+    (error) => error instanceof ApiError
+      && error.status === 409
+      && error.message === 'No se puede eliminar este tema porque tiene 27 preguntas asociadas. Reasigna o elimina las preguntas antes de eliminarlo.',
+  );
+  assert.equal(deleteCalls, 0);
+});
+
+test('admin catalog temas: bloquea otras dependencias protegidas y traduce una carrera FK a 409', async () => {
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({ preguntas: 0, colecciones: 2 });
+  await assert.rejects(
+    () => catalogAdminService.deleteTema(7),
+    (error) => error instanceof ApiError && error.status === 409 && error.message.includes('2 colecciones asociadas'),
+  );
+
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({ preguntas: 0, colecciones: 0 });
+  catalogAdminRepository.deleteTema = async () => {
+    const error = new Error('foreign key violation');
+    error.code = '23503';
+    throw error;
+  };
+  await assert.rejects(
+    () => catalogAdminService.deleteTema(7),
+    (error) => error instanceof ApiError && error.status === 409 && error.message.includes('contenido asociado'),
+  );
+});
+
+test('admin catalog temas: bloquea configuraciones y relaciones protegidas aunque no haya preguntas', async () => {
+  let deleteCalls = 0;
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({
+    preguntas: 0,
+    colecciones: 0,
+    simulacros_configuracion_temas: 1,
+  });
+  catalogAdminRepository.deleteTema = async () => { deleteCalls += 1; };
+
+  await assert.rejects(
+    () => catalogAdminService.deleteTema(7),
+    (error) => error instanceof ApiError
+      && error.status === 409
+      && error.message.includes('1 configuraciones de simulacros'),
+  );
+  assert.equal(deleteCalls, 0);
+});
+
+test('admin catalog temas: no convierte errores ajenos a integridad en 409', async () => {
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({ preguntas: 0, colecciones: 0 });
+  catalogAdminRepository.deleteTema = async () => {
+    const error = new Error('database unavailable');
+    error.code = '57P01';
+    throw error;
+  };
+
+  await assert.rejects(
+    () => catalogAdminService.deleteTema(7),
+    (error) => error.code === '57P01' && error.status === undefined,
+  );
+});
+
+test('admin catalog temas: mantiene 404 para un tema inexistente', async () => {
+  catalogAdminRepository.getTemaDeleteDependencies = async () => ({ preguntas: 0, colecciones: 0 });
+  catalogAdminRepository.deleteTema = async () => null;
+
+  await assert.rejects(
+    () => catalogAdminService.deleteTema(999),
+    (error) => error instanceof ApiError && error.status === 404 && error.message === 'Tema no encontrado',
   );
 });

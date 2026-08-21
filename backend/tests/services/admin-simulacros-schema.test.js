@@ -5,6 +5,7 @@ import {
   bloqueIdParamSchema,
   createBloqueSchema,
   createSimulacroSchema,
+  configuracionPreguntasSchema,
   listSimulacrosQuerySchema,
   updateBloqueSchema,
   updateSimulacroSchema,
@@ -85,4 +86,45 @@ test('schemas de simulacro admin rechazan valores invalidos', () => {
   assert.equal(listSimulacrosQuerySchema.safeParse({ page_size: '500' }).success, false);
   assert.equal(createSimulacroSchema.safeParse({ nombre: 'Ok', penalizacion: '-1' }).success, false);
   assert.equal(asignarPreguntasSchema.safeParse({ pregunta_ids: ['abc'] }).success, false);
+});
+
+test('configuracion simplificada exige temas y reparto exacto cuando procede', () => {
+  const value = configuracionPreguntasSchema.parse({
+    total_preguntas: '5', tema_ids: ['10', '11'], dificultad: null,
+    officialidad: 'all', reparto_por_tema: true,
+    reparto: [{ tema_id: '10', cantidad: 2 }, { tema_id: '11', cantidad: 3 }],
+  });
+  assert.deepEqual(value.tema_ids, [10, 11]);
+  assert.equal(value.total_preguntas, 5);
+  assert.equal(configuracionPreguntasSchema.safeParse({
+    total_preguntas: 5, tema_ids: [10, 11], reparto_por_tema: true,
+    reparto: [{ tema_id: 10, cantidad: 4 }],
+  }).success, false);
+  assert.equal(configuracionPreguntasSchema.safeParse({
+    total_preguntas: 5, tema_ids: [10], officialidad: 'all', anio_ids: [2],
+  }).success, false);
+});
+
+test('configuracion simplificada conserva varios exámenes oficiales', () => {
+  const result = configuracionPreguntasSchema.parse({
+    total_preguntas: 4,
+    tema_ids: [10, 11],
+    officialidad: 'official',
+    anio_ids: [20],
+    examen_ids: ['30', '31'],
+  });
+  assert.deepEqual(result.examen_ids, [30, 31]);
+});
+
+test('configuracion simplificada conserva IDs BIGINT fuera del rango seguro', () => {
+  const result = configuracionPreguntasSchema.parse({
+    total_preguntas: 1,
+    tema_ids: ['9007199254740993'],
+    officialidad: 'official',
+    anio_ids: ['9007199254740994'],
+    examen_ids: ['9007199254740995'],
+  });
+  assert.deepEqual(result.tema_ids, ['9007199254740993']);
+  assert.deepEqual(result.anio_ids, ['9007199254740994']);
+  assert.deepEqual(result.examen_ids, ['9007199254740995']);
 });

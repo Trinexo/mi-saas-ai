@@ -12,7 +12,7 @@ import { testQuestionsThemeRepository } from '../repositories/testQuestionsTheme
  * @param {string} params.dificultad
  */
 export const testGenerationGenerateSelectionMixtoService = {
-  async pickMixto({ userId, temasMix, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto' }) {
+  async pickMixto({ userId, temasMix, numeroPreguntas, modo = 'adaptativo', dificultad = 'mixto', officialidad = 'all', anioExamen = null, anioIds = [], examenId = null }) {
     // Calcula cuántas preguntas corresponden a cada tema (reparte el sobrante al mayor pct)
     const cuotas = calcCuotasAbsolutas(temasMix, numeroPreguntas);
 
@@ -25,14 +25,14 @@ export const testGenerationGenerateSelectionMixtoService = {
             temaId,
             numeroPreguntas: cantidad,
             excludePreguntaIds: [],
-            nivelDificultad: null,
+            nivelDificultad: null, officialidad, anio: anioExamen, anioIds, examenId,
           });
         }
         return testQuestionsThemeRepository.pickFreshQuestions({
           userId,
           temaId,
           numeroPreguntas: cantidad,
-          nivelDificultad: null,
+          nivelDificultad: null, officialidad, anio: anioExamen, anioIds, examenId,
         });
       }),
     );

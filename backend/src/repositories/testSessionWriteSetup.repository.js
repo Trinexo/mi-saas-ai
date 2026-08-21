@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { fisherYates } from '../utils/test-option-order.js';
 
 export const testSessionWriteSetupRepository = {
   async createTest({
@@ -49,8 +50,37 @@ export const testSessionWriteSetupRepository = {
   },
 
   async insertTestPreguntas(testId, preguntaIds) {
-    const values = preguntaIds.map((preguntaId, index) => `($1, ${preguntaId}, ${index + 1})`).join(',');
-    await pool.query(`INSERT INTO tests_preguntas (test_id, pregunta_id, orden) VALUES ${values}`, [testId]);
+    const ids = preguntaIds.map((item) => (typeof item === 'object' ? item.id : item));
+    if (ids.length === 0) return [];
+    const optionsResult = await pool.query(
+      `SELECT pregunta_id::text AS pregunta_id, id::text AS opcion_id
+         FROM opciones_respuesta
+        WHERE pregunta_id = ANY($1::bigint[])
+        ORDER BY pregunta_id, id`,
+      [ids],
+    );
+    const optionsByQuestion = new Map();
+    for (const row of optionsResult.rows) {
+      const current = optionsByQuestion.get(row.pregunta_id) ?? [];
+      current.push(row.opcion_id);
+      optionsByQuestion.set(row.pregunta_id, current);
+    }
+    const orders = ids.map((preguntaId) => ({
+      preguntaId: String(preguntaId),
+      opcionesOrden: fisherYates(optionsByQuestion.get(String(preguntaId)) ?? []),
+    }));
+    const values = [];
+    const placeholders = orders.map((item, index) => {
+      const offset = index * 4;
+      values.push(testId, item.preguntaId, index + 1, item.opcionesOrden.length ? item.opcionesOrden : null);
+      return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}::bigint[])`;
+    }).join(',');
+    await pool.query(
+      `INSERT INTO tests_preguntas (test_id, pregunta_id, orden, opciones_orden)
+       VALUES ${placeholders}`,
+      values,
+    );
+    return orders;
   },
 
   async setPlanificacion(testId, planificacionId) {

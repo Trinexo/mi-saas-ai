@@ -2,6 +2,7 @@ import { albacerProgressRepository } from '../repositories/albacerProgress.repos
 
 const DEFAULT_PASS_NOTA = 5;
 const DEFAULT_PASS_PERCENT = 50;
+export const MANDATORY_ITEM_PASS_NOTA = 5;
 
 const toNumber = (value, fallback = 0) => {
   const n = Number(value);
@@ -9,9 +10,30 @@ const toNumber = (value, fallback = 0) => {
 };
 
 export const albacerProgressService = {
-  async processFinalAttempt({ userId, testId, aciertos, nota }) {
-    const context = await albacerProgressRepository.getFinalAttemptContext(userId, testId);
+  async processAttempt({ userId, testId, aciertos, nota }) {
+    const context = await albacerProgressRepository.getAttemptContext(userId, testId);
     if (!context) return null;
+
+    if (context.item_tipo === 'test') {
+      if (!context.obligatorio) return null;
+      const progreso = await albacerProgressRepository.refreshMandatoryItemProgress(userId, testId);
+      if (!progreso) return null;
+      return {
+        tipo: 'test_obligatorio',
+        moduloId: Number(context.albacer_modulo_id),
+        itemId: Number(context.albacer_item_id),
+        criterioSuperacion: 'nota',
+        valorSuperacion: MANDATORY_ITEM_PASS_NOTA,
+        nota: Number(Number(nota ?? 0).toFixed(2)),
+        superadoIntento: Number(nota ?? 0) >= MANDATORY_ITEM_PASS_NOTA,
+        superado: Boolean(progreso.superado),
+        intentos: Number(progreso.intentos),
+        mejorNota: progreso.mejor_nota == null ? null : Number(progreso.mejor_nota),
+        ultimaNota: progreso.ultima_nota == null ? null : Number(progreso.ultima_nota),
+      };
+    }
+
+    if (context.item_tipo !== 'simulacro_final') return null;
 
     const totalPreguntas = Math.max(1, Number(context.numero_preguntas ?? 0));
     const porcentaje = Number(((Number(aciertos ?? 0) / totalPreguntas) * 100).toFixed(2));
@@ -34,6 +56,13 @@ export const albacerProgressService = {
       superado,
     });
 
+    const itemsCompletados = superado
+      ? await albacerProgressRepository.completeModuleItemsFromFinal(
+        userId,
+        Number(context.albacer_modulo_id),
+      )
+      : [];
+
     const siguienteModuloId = superado
       ? await albacerProgressRepository.unlockNextModulo(userId, Number(context.albacer_modulo_id))
       : null;
@@ -49,7 +78,12 @@ export const albacerProgressService = {
       superado,
       mejorNota: progreso?.mejor_nota == null ? notaFinal : Number(progreso.mejor_nota),
       mejorPorcentaje: progreso?.mejor_porcentaje == null ? porcentaje : Number(progreso.mejor_porcentaje),
+      itemsCompletados,
       siguienteModuloId,
     };
+  },
+
+  async processFinalAttempt(payload) {
+    return this.processAttempt(payload);
   },
 };

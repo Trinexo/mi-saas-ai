@@ -27,6 +27,9 @@ const router = Router();
 
 router.use(requireAuth, requireRole('admin', 'profesor'));
 
+// Ruta estÃ¡tica antes de /:id/preguntas para que "seleccion" no se trate como ID.
+router.post('/seleccion/preguntas', requireRole('admin'), validate(seleccionPreguntasSchema, 'body'), seleccionarPreguntasAdmin);
+
 // GET    /api/admin/tests                         → listado paginado
 // GET    /api/admin/tests/:id                     → detalle con preguntas
 // POST   /api/admin/tests                         → crear test
@@ -49,6 +52,4 @@ router.patch('/:id/demo', validate(testIdParamSchema, 'params'), validate(setDem
 
 // Selección automática de preguntas (solo admin)
 // POST /api/admin/tests/seleccion/preguntas
-router.post('/seleccion/preguntas', requireRole('admin'), validate(seleccionPreguntasSchema, 'body'), seleccionarPreguntasAdmin);
-
 export default router;

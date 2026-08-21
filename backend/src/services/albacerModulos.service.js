@@ -203,7 +203,7 @@ export const albacerModulosService = {
       descripcion: test.descripcion ?? null,
       plantilla_test_id: test.id,
       orden: payload.orden,
-      obligatorio: false,
+      obligatorio: payload.obligatorio ?? true,
     }, caller);
     return { test, item };
   },

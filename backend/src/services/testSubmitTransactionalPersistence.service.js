@@ -1,4 +1,5 @@
 import { testRepository } from '../repositories/test.repository.js';
+import { albacerProgressRepository } from '../repositories/albacerProgress.repository.js';
 
 export const testSubmitTransactionalPersistenceService = {
   async persistSubmission({
@@ -32,5 +33,6 @@ export const testSubmitTransactionalPersistenceService = {
 
     await testRepository.markTestAsDone(client, testId);
     await testRepository.updateProgress(client, { userId, testId });
+    await albacerProgressRepository.refreshMandatoryItemProgress(userId, testId, client);
   },
 };

@@ -41,7 +41,7 @@ export const profesorDashboardRepository = {
     return result.rows;
   },
 
-  async getMisPreguntas(userId, { oposicionId, temaId, temaIds, nivelDificultad, estado, q, page, pageSize }) {
+  async getMisPreguntas(userId, { oposicionId, temaId, temaIds, nivelDificultad, estado, q, page, pageSize, officialidad = 'all', anio = null, anioIds = [], examenId = null, examenIds = [] }) {
     const args = [userId];
     const conditions = ['po.user_id = $1'];
 
@@ -69,6 +69,12 @@ export const profesorDashboardRepository = {
       args.push(estado);
       conditions.push(`p.estado = $${args.length}`);
     }
+    if (officialidad === 'official') conditions.push('EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id)');
+    if (officialidad === 'non_official') conditions.push('NOT EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id)');
+    if (anio != null) { args.push(anio); conditions.push(`EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao JOIN oposiciones_anios_oficiales oao ON oao.id = pao.oposicion_anio_id WHERE pao.pregunta_id = p.id AND oao.anio = $${args.length})`); }
+    if (anioIds?.length) { args.push(anioIds); conditions.push(`EXISTS (SELECT 1 FROM preguntas_anios_oficiales pao WHERE pao.pregunta_id = p.id AND pao.oposicion_anio_id = ANY($${args.length}::bigint[]))`); }
+    const selectedExamenIds = examenIds?.length ? examenIds : (examenId != null ? [examenId] : []);
+    if (selectedExamenIds.length) { args.push(selectedExamenIds); conditions.push(`EXISTS (SELECT 1 FROM examenes_oficiales_preguntas eop WHERE eop.pregunta_id = p.id AND eop.examen_id = ANY($${args.length}::bigint[]))`); }
 
     const where = conditions.join(' AND ');
     const offset = (page - 1) * pageSize;

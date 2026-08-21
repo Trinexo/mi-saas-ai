@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../state/auth.jsx';
 import { adminApi } from '../../services/adminApi';
 import { catalogApi } from '../../services/catalogApi';
@@ -164,7 +164,7 @@ export default function AdminCatalogPage() {
   });
 
   const handleDeleteTema = (id) => guardoConError(async () => {
-    if (!window.confirm('Eliminar este tema y todos sus bloques?')) return;
+    if (!window.confirm('Eliminar este tema?')) return;
     await adminApi.deleteTema(token, id);
     if (selTema?.id === id) { setSelTema(null); setBloques([]); }
     loadTemas(selOposicion.id);

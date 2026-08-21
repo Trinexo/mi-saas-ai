@@ -9,6 +9,7 @@ import { catalogApi } from '../../services/catalogApi';
 import { testApi } from '../../services/testApi';
 import { repasoApi } from '../../services/repasoApi';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
+import { examenesOficialesApi } from '../../services/examenesOficialesApi';
 
 const O = '#ea580c';
 const CARD = {
@@ -94,6 +95,9 @@ export default function GenerarTestForm({ modoSugerido = null }) {
   const [feedbackInmediato, setFeedbackInmediato] = useState(false);
   const [repasoDisponible, setRepasoDisponible] = useState(false);
   const [adaptativoDisponible, setAdaptativoDisponible] = useState(false);
+  const [officialidad, setOfficialidad] = useState('all');
+  const [aniosOficiales, setAniosOficiales] = useState([]);
+  const [aniosSeleccionados, setAniosSeleccionados] = useState([]);
 
   // Calculados
   const difActivas = DIF_OPTIONS.filter((d) => dificultades[d.key]);
@@ -191,6 +195,17 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     }
   };
 
+  useEffect(() => {
+    if (officialidad !== 'official' || !efectivoOposicionId) {
+      setAniosOficiales([]);
+      setAniosSeleccionados([]);
+      return;
+    }
+    examenesOficialesApi.getAnios(token, efectivoOposicionId)
+      .then((years) => setAniosOficiales(Array.isArray(years) ? years : (years?.data ?? [])))
+      .catch(() => setAniosOficiales([]));
+  }, [token, officialidad, efectivoOposicionId]);
+
   const toggleTema = (id) => {
     setTemasSeleccionados((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -244,7 +259,8 @@ export default function GenerarTestForm({ modoSugerido = null }) {
       return;
     }
     const realOposicionId = Number(efectivoOposicionId) || undefined;
-    const payload = { numeroPreguntas: n, modo, dificultad: dificultadBackend, feedbackInmediato };
+    const payload = { numeroPreguntas: n, modo, dificultad: dificultadBackend, feedbackInmediato, officialidad };
+    if (officialidad === 'official') payload.anioIds = aniosSeleccionados;
     if (modo === 'marcadas' || modo === 'repaso') {
       if (realOposicionId) payload.oposicionId = realOposicionId;
     } else {
@@ -427,6 +443,31 @@ export default function GenerarTestForm({ modoSugerido = null }) {
 
           <div style={DIVIDER} />
 
+          <label style={{ ...LBL, marginBottom: 8 }}>Procedencia de preguntas</label>
+          <select value={officialidad} onChange={(e) => setOfficialidad(e.target.value)} style={{ ...SEL, marginBottom: 8 }}>
+            <option value="all">Todas</option>
+            <option value="official">Solo oficiales</option>
+            <option value="non_official">Solo no oficiales</option>
+          </select>
+          {officialidad === 'official' && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {aniosOficiales.map((year) => (
+                <label key={year.id} style={{ display: 'flex', gap: 4, alignItems: 'center', fontSize: '.8rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={aniosSeleccionados.includes(String(year.id))}
+                    onChange={() => setAniosSeleccionados((current) => current.includes(String(year.id))
+                      ? current.filter((id) => id !== String(year.id))
+                      : [...current, String(year.id)])}
+                  />
+                  {year.anio}
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div style={DIVIDER} />
+
           {/* Modo de práctica en grid 2 cols */}
           <label style={{ ...LBL, marginBottom: 8 }}>Modo de práctica</label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
@@ -515,4 +556,3 @@ export default function GenerarTestForm({ modoSugerido = null }) {
     </div>
   );
 }
-

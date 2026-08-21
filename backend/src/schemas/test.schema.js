@@ -5,6 +5,14 @@ const temasMixItemSchema = z.object({
   pct: z.coerce.number().int().min(1).max(100),
 });
 
+const opcionIdSchema = z.union([
+  z.string().regex(/^\d+$/).refine((value) => {
+    const id = BigInt(value);
+    return id > 0n && id <= 9223372036854775807n;
+  }),
+  z.number().int().positive(),
+]).nullable();
+
 export const generateTestSchema = z.object({
   temaId: z.coerce.number().int().positive().optional(),
   bloqueId: z.coerce.number().int().positive().optional(),
@@ -15,6 +23,10 @@ export const generateTestSchema = z.object({
   dificultad: z.enum(['facil', 'media', 'dificil', 'mixto']).optional().default('mixto'),
   duracionSegundos: z.coerce.number().int().positive().optional(),
   feedbackInmediato: z.boolean().optional().default(false),
+  officialidad: z.enum(['all', 'official', 'non_official']).optional().default('all'),
+  anioExamen: z.coerce.number().int().min(1900).max(2200).optional(),
+  anioIds: z.array(z.string().regex(/^\d+$/).refine((value) => { const id = BigInt(value); return id > 0n && id <= 9223372036854775807n; })).optional().default([]),
+  examenId: z.string().regex(/^\d+$/).optional(),
 }).refine(
   (d) => d.modo !== 'simulacro' || d.oposicionId != null,
   { message: 'El modo simulacro requiere oposicionId', path: ['oposicionId'] },
@@ -33,6 +45,10 @@ export const generateRefuerzoSchema = z.object({
   temaId: z.coerce.number().int().positive().optional(),
   oposicionId: z.coerce.number().int().positive().optional(),
   numeroPreguntas: z.number().int().min(1).max(100).default(10),
+  officialidad: z.enum(['all', 'official', 'non_official']).optional().default('all'),
+  anioExamen: z.coerce.number().int().min(1900).max(2200).optional(),
+  anioIds: z.array(z.string().regex(/^\d+$/).refine((value) => { const id = BigInt(value); return id > 0n && id <= 9223372036854775807n; })).optional().default([]),
+  examenId: z.string().regex(/^\d+$/).optional(),
 }).refine(
   (d) => d.temaId != null || d.oposicionId != null,
   { message: 'El refuerzo requiere temaId u oposicionId', path: ['oposicionId'] },
@@ -48,7 +64,7 @@ export const submitTestSchema = z.object({
     .array(
       z.object({
         preguntaId: z.coerce.number().int().positive(),
-        respuestaId: z.coerce.number().int().positive().nullable(),
+        respuestaId: opcionIdSchema,
       }),
     )
     .default([]),

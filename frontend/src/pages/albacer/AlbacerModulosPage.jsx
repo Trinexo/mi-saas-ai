@@ -1027,7 +1027,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
 
   const loadOposiciones = useCallback(async () => {
     const payload = isAdmin
-      ? await adminApi.listOposicionesConStats(token, { page_size: 200 })
+      ? await adminApi.listOposicionesConStats(token, { page_size: 100 })
       : await profesorApi.getWorkspaceOposiciones(token);
     const items = normalizeOposiciones(payload);
     setOposiciones(items);
@@ -1203,7 +1203,7 @@ export default function AlbacerModulosPage({ scope = 'profesor' }) {
         titulo: selected?.nombre ?? (itemTipo === 'test' ? 'Test del módulo' : 'Simulacro final'),
         plantilla_test_id: itemTipo === 'test' ? Number(selectedCandidateId) : undefined,
         simulacro_id: itemTipo === 'simulacro_final' ? Number(selectedCandidateId) : undefined,
-        obligatorio: itemTipo === 'simulacro_final',
+        obligatorio: true,
       });
       setSelectedCandidateId('');
       await loadItems(contentModulo);

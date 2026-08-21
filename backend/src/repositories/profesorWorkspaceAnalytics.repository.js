@@ -532,27 +532,33 @@ export const profesorWorkspaceAnalyticsRepository = {
   async getPreguntasProblematicas(userId, { oposicionId = null, temaId = null, limit, offset }) {
     const result = await pool.query(
       `WITH stats AS (
-         SELECT
-           p.id,
-           p.enunciado,
-           p.nivel_dificultad,
-           te.id AS tema_id,
-           te.nombre AS tema_nombre,
-           o.id AS oposicion_id,
-           o.nombre AS oposicion_nombre,
-           COUNT(ru.id)::int AS intentos,
-           COUNT(ru.id) FILTER (WHERE ru.correcta = false)::int AS fallos,
-           COUNT(ru.id) FILTER (WHERE ru.respuesta_id IS NULL)::int AS blancos,
-           COUNT(DISTINCT rp.id) FILTER (WHERE rp.estado IN ('abierto', 'en_revision'))::int AS reportes
+         SELECT p.id, p.enunciado, p.nivel_dificultad,
+                te.id AS tema_id, te.nombre AS tema_nombre,
+                o.id AS oposicion_id, o.nombre AS oposicion_nombre,
+                COALESCE(rs.intentos, 0)::int AS intentos,
+                COALESCE(rs.fallos, 0)::int AS fallos,
+                COALESCE(rs.blancos, 0)::int AS blancos,
+                COALESCE(rps.reportes, 0)::int AS reportes
          FROM preguntas p
          ${questionAssignedJoin}
          JOIN profesores_oposiciones po ON po.oposicion_id = o.id
-         LEFT JOIN respuestas_usuario ru ON ru.pregunta_id = p.id
-         LEFT JOIN reportes_preguntas rp ON rp.pregunta_id = p.id
+         LEFT JOIN (
+           SELECT ru.pregunta_id,
+                  COUNT(*)::int AS intentos,
+                  COUNT(*) FILTER (WHERE ru.respuesta_id IS NOT NULL AND ru.correcta = false)::int AS fallos,
+                  COUNT(*) FILTER (WHERE ru.respuesta_id IS NULL)::int AS blancos
+           FROM respuestas_usuario ru
+           GROUP BY ru.pregunta_id
+         ) rs ON rs.pregunta_id = p.id
+         LEFT JOIN (
+           SELECT rp.pregunta_id,
+                  COUNT(*) FILTER (WHERE rp.estado IN ('abierto', 'en_revision'))::int AS reportes
+           FROM reportes_preguntas rp
+           GROUP BY rp.pregunta_id
+         ) rps ON rps.pregunta_id = p.id
          WHERE po.user_id = $1
            AND ($2::bigint IS NULL OR o.id = $2)
            AND ($3::bigint IS NULL OR te.id = $3)
-         GROUP BY p.id, te.id, o.id
        )
        SELECT *,
               CASE WHEN intentos > 0 THEN ROUND(100.0 * fallos / intentos)::int ELSE 0 END AS tasa_fallo,

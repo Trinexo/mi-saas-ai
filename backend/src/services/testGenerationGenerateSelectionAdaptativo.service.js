@@ -6,11 +6,11 @@ const calcCuotas = (numeroPreguntas) => {
 };
 
 export const testGenerationGenerateSelectionAdaptativoService = {
-  async pickAdaptativo({ userId, temaId, numeroPreguntas, modo, dificultad = 'mixto' }) {
+  async pickAdaptativo({ userId, temaId, numeroPreguntas, modo, dificultad = 'mixto', officialidad = 'all', anio = null, anioIds = [], examenId = null }) {
     const pickPrimary = (params) =>
       modo === 'adaptativo'
-        ? testRepository.pickAdaptiveQuestions({ ...params, excludePreguntaIds: [] })
-        : testRepository.pickFreshQuestions(params);
+        ? testRepository.pickAdaptiveQuestions({ ...params, excludePreguntaIds: [], officialidad, anio, anioIds, examenId })
+        : testRepository.pickFreshQuestions({ ...params, officialidad, anio, anioIds, examenId });
 
     if (dificultad === 'mixto') {
       const cuotas = calcCuotas(numeroPreguntas);

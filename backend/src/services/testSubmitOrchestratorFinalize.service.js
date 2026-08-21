@@ -13,7 +13,7 @@ export const testSubmitOrchestratorFinalizeService = {
       && result.testContext?.albacer_item_id;
     if (!isAlbacerAttempt) return response;
 
-    const albacer = await albacerProgressService.processFinalAttempt({
+    const albacer = await albacerProgressService.processAttempt({
       userId,
       testId: result.testId,
       aciertos: result.aciertos,

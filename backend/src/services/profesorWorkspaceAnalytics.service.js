@@ -297,12 +297,19 @@ export const profesorWorkspaceAnalyticsService = {
     await this.assertOposicion(userId, oposicionId);
     const page = query.page ?? 1;
     const pageSize = query.page_size ?? 20;
-    const items = await profesorWorkspaceAnalyticsRepository.getPreguntasProblematicas(userId, {
+    const rawItems = await profesorWorkspaceAnalyticsRepository.getPreguntasProblematicas(userId, {
       oposicionId,
       temaId: query.tema_id ?? null,
       limit: pageSize,
       offset: (page - 1) * pageSize,
     });
+    const items = rawItems.map((item) => ({
+      ...item,
+      motivos: item.motivos ?? [],
+      reportesAbiertos: Number(item.reportes ?? 0),
+      tasaFallo: Number(item.tasa_fallo ?? 0),
+      tasaBlancos: Number(item.tasa_blancos ?? 0),
+    }));
     return { items, pagination: { page, pageSize, total: items.length } };
   },
 

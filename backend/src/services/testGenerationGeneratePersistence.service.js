@@ -1,4 +1,5 @@
 import { testRepository } from '../repositories/test.repository.js';
+import { orderOptions } from '../utils/test-option-order.js';
 
 export const testGenerationGeneratePersistenceService = {
   async persistAndBuildResponse({ userId, temaId, oposicionId, modo, dificultad, duracionSegundos, preguntas, feedbackInmediato = false }) {
@@ -10,14 +11,18 @@ export const testGenerationGeneratePersistenceService = {
       numeroPreguntas: preguntas.length,
       duracionSegundos: duracionSegundos || null,
     });
-    await testRepository.insertTestPreguntas(test.id, preguntas.map((item) => item.id));
+    const optionOrders = (await testRepository.insertTestPreguntas(test.id, preguntas.map((item) => item.id))) ?? [];
 
     const { temaNombre, oposicionNombre } = await testRepository.getContextoNombres(temaId || null, oposicionId || null);
 
-    let preguntasResponse = preguntas;
+    const orderByQuestion = new Map(optionOrders.map((item) => [item.preguntaId, item.opcionesOrden]));
+    let preguntasResponse = preguntas.map((pregunta) => ({
+      ...pregunta,
+      opciones: orderOptions(pregunta.opciones, orderByQuestion.get(String(pregunta.id))),
+    }));
     if (feedbackInmediato) {
       const correctasMap = await testRepository.getOpcionesCorrectasByPreguntaIds(preguntas.map((p) => p.id));
-      preguntasResponse = preguntas.map((p) => ({ ...p, opcionCorrectaId: correctasMap[p.id] ?? null }));
+      preguntasResponse = preguntasResponse.map((p) => ({ ...p, opcionCorrectaId: correctasMap[p.id] ?? null }));
     }
 
     return {
