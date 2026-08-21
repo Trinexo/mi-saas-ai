@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../state/auth.jsx';
+import { useUserPlan } from '../hooks/useUserPlan';
 import { catalogApi } from '../services/catalogApi';
 import { billingApi } from '../services/billingApi';
 import { testApi } from '../services/testApi';
@@ -23,6 +24,7 @@ export default function CatalogoPage() {
   const { token } = useAuth();
   const { accesos, tieneAcceso, loading: loadingAccesos } = useUserAccesos();
   const { setOposicionActiva } = useOposicionActiva();
+  const { plan } = useUserPlan();
   const [oposiciones, setOposiciones] = useState([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);
   const [comprando, setComprando] = useState(null); // oposicionId en proceso de pago
